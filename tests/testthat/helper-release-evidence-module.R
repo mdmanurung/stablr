@@ -20,6 +20,14 @@
   stop("Could not locate the Release Contract.", call. = FALSE)
 }
 
+.stablr_description_path <- function() {
+  source_path <- testthat::test_path("..", "..", "DESCRIPTION")
+  if (file.exists(source_path)) return(source_path)
+  installed <- system.file("DESCRIPTION", package = "stablr")
+  if (nzchar(installed)) return(installed)
+  stop("Could not locate the stablr DESCRIPTION.", call. = FALSE)
+}
+
 .release_module_env <- function() {
   env <- new.env(parent = globalenv())
   sys.source(.release_evidence_source_path(), envir = env)

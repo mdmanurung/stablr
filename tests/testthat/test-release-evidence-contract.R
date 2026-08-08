@@ -191,7 +191,7 @@ test_that("RE-02 malformed references fail with identity conditions", {
 })
 
 test_that("RE-02 jsonlite is declared only as release tooling Suggests", {
-  description <- read.dcf(testthat::test_path("..", "..", "DESCRIPTION"))
+  description <- read.dcf(.stablr_description_path())
   suggests <- trimws(strsplit(description[1L, "Suggests"], ",")[[1L]])
   imports <- trimws(strsplit(description[1L, "Imports"], ",")[[1L]])
   expect_true("jsonlite" %in% suggests)
