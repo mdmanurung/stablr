@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mdmanurung.github.io/stablr/schemas/packet-reference-v1.json",
+  "title": "stablr Packet Reference v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "kind", "packet_id", "validation_id", "status",
+    "packet_path", "packet_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": "stablr.packet-ref/v1"},
+    "kind": {"const": "validation_packet"},
+    "packet_id": {"type": "string", "minLength": 16},
+    "validation_id": {"enum": ["methodology", "late_fusion"]},
+    "status": {"enum": ["passing", "failed"]},
+    "packet_path": {"type": "string", "pattern": "^/"},
+    "packet_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mdmanurung.github.io/stablr/schemas/validation-run-packet-v1.json",
+  "title": "stablr Validation Run Packet v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "packet_id", "validation_id", "status", "promotable",
+    "candidate_sha256", "runtime_id", "contract_sha256", "artifacts",
+    "gates", "manifest_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": "stablr.validation-run-packet/v1"},
+    "packet_id": {"type": "string", "minLength": 16},
+    "validation_id": {"enum": ["methodology", "late_fusion"]},
+    "status": {"enum": ["passing", "failed"]},
+    "promotable": {"type": "boolean"},
+    "candidate_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "runtime_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "contract_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "artifacts": {"type": "array"},
+    "gates": {"type": "array"},
+    "manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

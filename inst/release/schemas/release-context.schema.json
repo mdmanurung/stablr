@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mdmanurung.github.io/stablr/schemas/release-context-v1.json",
+  "title": "stablr Release Context Reference v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "kind", "context_id", "store", "context_path",
+    "context_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": "stablr.release-context-ref/v1"},
+    "kind": {"const": "release_context"},
+    "context_id": {"type": "string", "minLength": 16},
+    "store": {"type": "string", "pattern": "^/"},
+    "context_path": {"type": "string", "pattern": "^/"},
+    "context_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

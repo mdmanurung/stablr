@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mdmanurung.github.io/stablr/schemas/release-contract-v1.json",
+  "title": "stablr Release Contract v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "contract_id", "candidate", "hash_algorithm",
+    "promotable", "blockers", "runtime", "required_validations"
+  ],
+  "properties": {
+    "schema_version": {"const": "stablr.release-contract/v1"},
+    "contract_id": {"type": "string", "minLength": 1},
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["package", "version"],
+      "properties": {
+        "package": {"const": "stablr"},
+        "version": {"const": "0.1.1"}
+      }
+    },
+    "hash_algorithm": {"const": "sha256"},
+    "promotable": {"type": "boolean"},
+    "blockers": {"type": "array", "items": {"type": "string"}},
+    "runtime": {"type": "object"},
+    "required_validations": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {"type": "object"}
+    }
+  }
+}

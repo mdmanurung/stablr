@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mdmanurung.github.io/stablr/schemas/runtime-artifact-v1.json",
+  "title": "stablr Runtime Artifact v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "runtime_id", "rscript", "r_executable", "r_home",
+    "r_version", "platform", "locale", "blas", "lapack", "library",
+    "packages", "native_libraries"
+  ],
+  "properties": {
+    "schema_version": {"const": "stablr.runtime-artifact/v1"},
+    "runtime_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "rscript": {"type": "object"},
+    "r_executable": {"type": "object"},
+    "r_home": {"type": "string", "pattern": "^/"},
+    "r_version": {"type": "string", "minLength": 1},
+    "platform": {"type": "string", "minLength": 1},
+    "locale": {"type": "object"},
+    "blas": {},
+    "lapack": {},
+    "library": {"type": "object"},
+    "packages": {"type": "array"},
+    "native_libraries": {"type": "array"}
+  }
+}

@@ -59,6 +59,7 @@ Suggests:
     furrr,
     future,
     ggplot2,
+    jsonlite,
     knockoff,
     knitr,
     mixOmics,

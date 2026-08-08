@@ -1,0 +1,184 @@
+{
+  "schema_version": "stablr.release-contract/v1",
+  "contract_id": "stablr-0.1.1-release-v1",
+  "candidate": {
+    "package": "stablr",
+    "version": "0.1.1"
+  },
+  "hash_algorithm": "sha256",
+  "promotable": false,
+  "blockers": [
+    "SCI-04-null-selected-fraction-v2-pending-independent-acceptance"
+  ],
+  "runtime": {
+    "platform": "linux-posix",
+    "dependency_roots": [
+      "jsonlite",
+      "glmnet",
+      "Matrix",
+      "matrixStats",
+      "RColorBrewer",
+      "Rcpp",
+      "RcppEigen",
+      "survival",
+      "knockoff"
+    ],
+    "environment": {
+      "TZ": "UTC",
+      "LC_ALL": "C",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "R_PROFILE_USER": "/dev/null",
+      "R_ENVIRON_USER": "/dev/null"
+    }
+  },
+  "required_validations": [
+    {
+      "validation_id": "methodology",
+      "adapter": "methodology_validation",
+      "settings": {
+        "profile": "release",
+        "replicates": 100,
+        "n_bootstraps": 1000,
+        "n_lambda": 30,
+        "families": ["gaussian", "binomial", "multinomial", "cox"],
+        "artificial_types": [
+          "random_permutation",
+          "knockoff",
+          "knockoff_equi",
+          "knockoff_mvr"
+        ],
+        "scenario_ids": [
+          "null_independent",
+          "null_correlated",
+          "signal_independent",
+          "signal_correlated",
+          "null_high_dim",
+          "signal_high_dim"
+        ],
+        "seed": 270627,
+        "target_fdp": 0.1,
+        "workers": 32
+      },
+      "artifacts": [
+        {
+          "name": "replicates",
+          "path": "methodology_validation_replicates.csv",
+          "schema": "methodology-replicates/v2"
+        },
+        {
+          "name": "summary",
+          "path": "methodology_validation_summary.csv",
+          "schema": "methodology-summary/v2"
+        },
+        {
+          "name": "warnings",
+          "path": "methodology_validation_warnings.csv",
+          "schema": "methodology-warnings/v2"
+        },
+        {
+          "name": "parity",
+          "path": "python_metrics_parity.csv",
+          "schema": "python-metrics-parity/v1"
+        },
+        {
+          "name": "gates",
+          "path": "methodology_validation_gates.csv",
+          "schema": "methodology-gates/v2"
+        }
+      ],
+      "scientific_gates": [
+        {
+          "gate_id": "cell_completeness",
+          "gate_version": "methodology-cell-completeness/v1",
+          "decision_status": "accepted"
+        },
+        {
+          "gate_id": "python_metrics_parity",
+          "gate_version": "python-metrics-parity/v1",
+          "decision_status": "accepted"
+        },
+        {
+          "gate_id": "null_select_any",
+          "gate_version": "methodology-null-select-any/v1",
+          "decision_status": "accepted"
+        },
+        {
+          "gate_id": "null_selected_fraction",
+          "gate_version": "SCI-04-null-selected-fraction-v2-draft",
+          "decision_status": "proposed_unaccepted"
+        },
+        {
+          "gate_id": "null_select_90pct",
+          "gate_version": "methodology-null-select-90pct/v1",
+          "decision_status": "accepted"
+        },
+        {
+          "gate_id": "signal_mean_fdp",
+          "gate_version": "methodology-signal-mean-fdp/v1",
+          "decision_status": "accepted"
+        },
+        {
+          "gate_id": "signal_tpr",
+          "gate_version": "methodology-signal-tpr/v1",
+          "decision_status": "accepted"
+        }
+      ]
+    },
+    {
+      "validation_id": "late_fusion",
+      "adapter": "late_fusion_validation",
+      "settings": {
+        "replicates": 50,
+        "n_bootstraps": 20,
+        "n_iter": 500,
+        "seed": 220711
+      },
+      "artifacts": [
+        {
+          "name": "replicates",
+          "path": "late_fusion_replicates.csv",
+          "schema": "late-fusion-replicates/v1"
+        },
+        {
+          "name": "summary",
+          "path": "late_fusion_summary.csv",
+          "schema": "late-fusion-summary/v1"
+        },
+        {
+          "name": "warnings",
+          "path": "late_fusion_warnings.csv",
+          "schema": "late-fusion-warnings/v1"
+        },
+        {
+          "name": "gates",
+          "path": "late_fusion_gates.csv",
+          "schema": "common-gates/v1"
+        }
+      ],
+      "scientific_gates": [
+        {
+          "gate_id": "cell_completeness",
+          "gate_version": "late-fusion-cell-completeness/v1",
+          "decision_status": "accepted"
+        },
+        {
+          "gate_id": "reduced_optimism",
+          "gate_version": "late-fusion-reduced-optimism/v1",
+          "decision_status": "accepted"
+        },
+        {
+          "gate_id": "noninferiority",
+          "gate_version": "late-fusion-noninferiority-0.02/v1",
+          "decision_status": "accepted"
+        },
+        {
+          "gate_id": "fallback_rate",
+          "gate_version": "late-fusion-signal-fallback-0.05/v1",
+          "decision_status": "accepted"
+        }
+      ]
+    }
+  ]
+}
