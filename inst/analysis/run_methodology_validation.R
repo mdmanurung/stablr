@@ -803,6 +803,10 @@
   if (side == "upper") min(1, mean(x) + half) else max(0, mean(x) - half)
 }
 
+.selected_fraction_gate_version <-
+  "SCI-04-null-selected-fraction-v2-draft"
+.selected_fraction_gate_status <- "proposed_unaccepted"
+
 .gate_cell_status <- function(cell, expected_replicates) {
   expected_ids <- seq_len(expected_replicates)
   if (!nrow(cell)) return("missing_cell")
@@ -849,14 +853,11 @@
           select_any <- if (complete) {
             .wilson_bound(sum(cell$n_selected > 0L), expected_replicates, "upper")
           } else NA_real_
-          # Each Monte Carlo replicate contributes one bounded selected-fraction
-          # observation. Fractional Wilson successes retain the replicate, not
-          # individual correlated features, as the experimental unit.
-          selected_fraction <- if (complete) {
-            .wilson_bound(
-              sum(cell$n_selected / cell$p), expected_replicates, "upper"
-            )
-          } else NA_real_
+          # SCI-04: replicate-level selected fractions are continuous bounded
+          # observations, not binomial successes. The proposed v2 decision
+          # record is deliberately unaccepted, so this release gate stays
+          # unavailable and fails closed until independent review is recorded.
+          selected_fraction <- NA_real_
           collapses <- if (complete) {
             sum(cell$n_selected >= 0.9 * cell$p)
           } else NA_real_
@@ -864,10 +865,24 @@
             gate = c("null_select_any", "null_selected_fraction",
                      "null_90pct_collapse"),
             bound = c(select_any, selected_fraction, collapses),
-            criterion = c("<= 0.10", "<= 0.10", "== 0"),
+            criterion = c(
+              "<= 0.10",
+              "<= 0.10 after independent acceptance",
+              "== 0"
+            ),
+            gate_version = c(
+              "null-select-any-wilson-v1",
+              .selected_fraction_gate_version,
+              "null-90pct-collapse-count-v1"
+            ),
+            decision_status = c(
+              "active",
+              .selected_fraction_gate_status,
+              "active"
+            ),
             pass = complete & c(
               is.finite(select_any) && select_any <= 0.10,
-              is.finite(selected_fraction) && selected_fraction <= 0.10,
+              FALSE,
               is.finite(collapses) && collapses == 0L
             ),
             stringsAsFactors = FALSE
@@ -883,6 +898,11 @@
             gate = c("signal_mean_fdp", "signal_tpr"),
             bound = c(fdp_upper, tpr_lower),
             criterion = c("<= 0.12", ">= 0.50"),
+            gate_version = c(
+              "signal-mean-fdp-t-v1",
+              "signal-tpr-t-v1"
+            ),
+            decision_status = "active",
             pass = complete & c(
               is.finite(fdp_upper) && fdp_upper <= 0.12,
               is.finite(tpr_lower) && tpr_lower >= 0.50

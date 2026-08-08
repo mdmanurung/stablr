@@ -222,7 +222,14 @@ test_that("release gates are per cell and use replicate-level observations", {
     artificial_types = c("good", "bad"),
     expected_replicates = 100L
   )
-  expect_true(all(gates$pass[gates$artificial_type == "good"]))
+  expect_true(all(gates$pass[
+    gates$artificial_type == "good" &
+      gates$gate != "null_selected_fraction"
+  ]))
+  expect_false(gates$pass[
+    gates$artificial_type == "good" &
+      gates$gate == "null_selected_fraction"
+  ])
   expect_false(all(gates$pass[gates$artificial_type == "bad"]))
   expect_false(gates$pass[
     gates$artificial_type == "bad" & gates$gate == "null_select_any"
@@ -236,10 +243,35 @@ test_that("release gates are per cell and use replicate-level observations", {
     gates$artificial_type == "bad" &
       gates$gate == "null_selected_fraction"
   ]
-  expect_equal(
-    selected_fraction,
-    env$.wilson_bound(sum(rep(1 / 20, 100)), 100L, "upper")
+  selected_fraction_row <- gates[
+    gates$artificial_type == "bad" &
+      gates$gate == "null_selected_fraction",
+    , drop = FALSE
+  ]
+  expect_true(is.na(selected_fraction))
+  expect_identical(
+    selected_fraction_row$gate_version,
+    "SCI-04-null-selected-fraction-v2-draft"
   )
+  expect_identical(selected_fraction_row$decision_status, "proposed_unaccepted")
+  expect_false(selected_fraction_row$pass)
+})
+
+test_that("SCI-04 statistical decision record is versioned and unaccepted", {
+  source_record <- testthat::test_path(
+    "..", "..", "inst", "analysis", "contracts",
+    "SCI-04-null-selected-fraction-v2.md"
+  )
+  record <- if (file.exists(source_record)) source_record else system.file(
+    "analysis", "contracts", "SCI-04-null-selected-fraction-v2.md",
+    package = "stablr"
+  )
+  expect_true(nzchar(record))
+  text <- readLines(record, warn = FALSE)
+  document <- paste(text, collapse = " ")
+  expect_true(any(text == "Status: proposed, not accepted"))
+  expect_true(grepl("Hoeffding", document, fixed = TRUE))
+  expect_true(grepl("must not be implemented", document, fixed = TRUE))
 })
 
 test_that("missing and errored release cells fail explicitly", {
