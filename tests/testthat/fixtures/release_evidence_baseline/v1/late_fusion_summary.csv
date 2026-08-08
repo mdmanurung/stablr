@@ -1,0 +1,7 @@
+"family","regime","replicates","successful_replicates","mean_legacy_optimism","mean_oof_optimism","mean_test_difference","fallback_rate","reduced_optimism","noninferior","fallback_ok"
+"binomial","null",1,1,0.210964344297678,-0.0993939393939394,-0.0106293706293706,0,TRUE,TRUE,TRUE
+"gaussian","null",1,1,0.513346846054825,0.275462686633064,-0.000364579235188955,0,TRUE,TRUE,TRUE
+"multinomial","null",1,1,0.180555555555556,0.0333333333333333,-0.0083333333333333,0,TRUE,TRUE,TRUE
+"binomial","signal",1,1,0.0728621094963815,-0.0957355901519006,-0.0272525027808677,0,TRUE,FALSE,TRUE
+"gaussian","signal",1,1,0.163149419262483,-0.00442303064850025,0.153600402862584,0,TRUE,TRUE,TRUE
+"multinomial","signal",1,1,0.0249999999999999,0.025,0.0333333333333333,0,FALSE,TRUE,TRUE

@@ -1,0 +1,42 @@
+stablr methodology validation manifest
+created_at: <normalized>
+seed: 270627
+validation_profile: bounded
+replicates: 2
+n_bootstraps: 2
+n_lambda: 2
+target_fdp: 0.1
+workers: 1
+package_mode: <normalized>
+package_version: 0.1.1
+source_git_commit: <normalized>
+source_git_tree: <normalized>
+source_tracked_dirty: <normalized>
+end_git_commit: <normalized>
+end_git_tree: <normalized>
+end_tracked_dirty: <normalized>
+source_git_stable: <normalized>
+families: gaussian,binomial,multinomial,cox
+artificial_types: random_permutation,knockoff,knockoff_equi,knockoff_mvr
+scenarios: null_independent,null_correlated,signal_independent,signal_correlated,null_high_dim,signal_high_dim
+
+hypotheses:
+1. FDP+ should avoid all-feature collapse under null settings, including correlated predictors.
+2. In signal settings, empirical FDP and TPR quantify the calibration-power tradeoff across artificial-feature strategies.
+3. Knockoff fallback frequency should be visible through warnings and additive fit provenance.
+4. Bundled Python metric fixtures should remain numerically identical to exported R metrics.
+5. The fitting rule selects the FDP+ minimizer; target_fdp is a reporting reference, not a fitting target or universal guarantee.
+
+artifacts:
+replicates: <normalized>
+summary: <normalized>
+warnings: <normalized>
+parity: <normalized>
+gates: <normalized>
+
+artifact_sha256:
+methodology_validation_replicates.csv <normalized>
+methodology_validation_summary.csv <normalized>
+methodology_validation_warnings.csv <normalized>
+python_metrics_parity.csv <normalized>
+methodology_validation_gates.csv <normalized>

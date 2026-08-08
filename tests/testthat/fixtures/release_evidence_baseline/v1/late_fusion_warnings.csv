@@ -1,0 +1,2 @@
+"family","regime","replicate","seed","mode","warning"
+"multinomial","signal",1,221317,"python_legacy","one multinomial or binomial class has fewer than 8  observations; dangerous ground"

@@ -1,0 +1,21 @@
+R R version 4.5.1 (2025-06-13)
+stablr 0.1.1
+package_mode <normalized>
+source_git_commit <normalized>
+source_git_tree <normalized>
+source_tracked_dirty <normalized>
+end_git_commit <normalized>
+end_git_tree <normalized>
+end_tracked_dirty <normalized>
+source_git_stable <normalized>
+replicates_per_cell 1
+n_bootstraps 2
+n_iter 2
+Families: gaussian, binomial, multinomial; regimes: null, signal.
+Classification simulations require at least 10 samples per class in train and test; classification bootstraps are stratified.
+Independent test samples are never used to fit selectors, learners, or weights.
+Gates: fallback < 5% in signal, reduced directional optimism, test noninferiority margin 0.02.
+artifact_sha256:
+late_fusion_replicates.csv <normalized>
+late_fusion_summary.csv <normalized>
+late_fusion_warnings.csv <normalized>
