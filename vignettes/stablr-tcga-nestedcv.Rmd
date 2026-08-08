@@ -1,8 +1,8 @@
 ---
-title: "TCGA Breast Cancer Nested-CV Head-to-Head: stablr vs DIABLO"
+title: "Research protocol: TCGA nested-CV stablr-DIABLO comparison"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{TCGA Breast Cancer Nested-CV Head-to-Head: stablr vs DIABLO}
+  %\VignetteIndexEntry{Research protocol: TCGA nested-CV stablr-DIABLO comparison}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -20,13 +20,10 @@ knitr::opts_chunk$set(
 )
 ```
 
-> **Note:** This vignette documents the benchmark design and cache-reading
-> workflow.  The benchmark results are external and are not bundled with the
-> package until the expected cache exists.  Code chunks are set to `eval = FALSE`
-> because the nested-CV comparison against DIABLO requires the TCGA dataset and
-> runs for several hours. To run it interactively, set `eval = TRUE` in the setup
-> chunk above and supply the TCGA data (available via the `mixOmics` package), or
-> rebuild via `pkgdown::build_site()` with the data in place.
+> **Non-executable research protocol.** This page specifies the benchmark and
+> cache-reading contract. No TCGA head-to-head result is bundled or counted as
+> release evidence. The external dataset, long-running fits, exact candidate,
+> and output cache must be pinned before execution.
 
 ## Overview
 

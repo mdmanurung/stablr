@@ -26,6 +26,15 @@
 #' @return Invisibly returns `TRUE` when all checks pass.  Raises an
 #'   informative error as soon as the first violation is found.
 #'
+#' @examples
+#' x <- matrix(
+#'   1:12, 4, 3,
+#'   dimnames = list(paste0("s", 1:4), paste0("f", 1:3))
+#' )
+#' y <- setNames(c(0, 1, 0, 1), c("s3", "s1", "s4", "s2"))
+#' validate_sample_alignment(x, y)
+#' try(validate_sample_alignment(x, setNames(y, paste0("v", 1:4))))
+#'
 #' @seealso [validate_multiomic_inputs()] for multi-omic list inputs.
 #' @export
 validate_sample_alignment <- function(x, y, groups = NULL) {
@@ -132,6 +141,16 @@ validate_sample_alignment <- function(x, y, groups = NULL) {
 #'
 #' @return Invisibly returns `TRUE` when all checks pass.  Raises an
 #'   informative error as soon as the first violation is found.
+#'
+#' @examples
+#' ids <- paste0("s", 1:4)
+#' x_list <- list(
+#'   rna = matrix(1:12, 4, 3, dimnames = list(ids, paste0("g", 1:3))),
+#'   protein = matrix(1:8, 4, 2, dimnames = list(ids, paste0("p", 1:2)))
+#' )
+#' y <- setNames(c(0, 1, 0, 1), ids)
+#' validate_multiomic_inputs(x_list, y)
+#' try(validate_multiomic_inputs(x_list[c("rna", "rna")], y))
 #'
 #' @seealso [validate_sample_alignment()] for single-omic inputs,
 #'   [stabl_multiomic_train_validate()] which calls this automatically.

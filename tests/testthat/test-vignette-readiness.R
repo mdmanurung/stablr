@@ -84,3 +84,33 @@ test_that("fusion interpretation prose avoids leakage and causal overclaiming", 
   expect_false(grepl("actively helped each other", text))
   expect_false(grepl("not benefiting from cooperation", text))
 })
+
+test_that("bounded OOL tutorial discloses its exact non-evidence subset", {
+  text <- paste(vignette_lines("stablr-multiomic.Rmd"), collapse = "\n")
+
+  expect_match(text, "150 training samples", fixed = TRUE)
+  expect_match(text, "21 aligned validation samples", fixed = TRUE)
+  expect_match(text, "first 100 features from each", fixed = TRUE)
+  expect_match(text, "not publication evidence", ignore.case = TRUE)
+})
+
+test_that("TCGA pages are explicitly non-executable research protocols", {
+  for (file in c("stablr-tcga.Rmd", "stablr-tcga-nestedcv.Rmd")) {
+    text <- paste(vignette_lines(file), collapse = "\n")
+    expect_match(text, "Research protocol", ignore.case = TRUE, info = file)
+    expect_match(text, "Non-executable research protocol", fixed = TRUE, info = file)
+    expect_match(text, "No TCGA", fixed = TRUE, info = file)
+  }
+})
+
+test_that("explicit eval-false package calls name their execution coverage", {
+  expectations <- list(
+    "stablr-advanced.Rmd" = "test-phase7.R",
+    "stablr-cooperative.Rmd" = "test-multiomic-workflows.R",
+    "stablr-intro.Rmd" = "test-phase7.R"
+  )
+  for (file in names(expectations)) {
+    text <- paste(vignette_lines(file), collapse = "\n")
+    expect_match(text, expectations[[file]], fixed = TRUE, info = file)
+  }
+})

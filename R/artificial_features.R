@@ -648,6 +648,19 @@ make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
 #'       counts and reasons remain available for 0.1.x compatibility.}
 #'   }
 #'
+#' @examples
+#' set.seed(1L)
+#' x <- matrix(
+#'   rnorm(20 * 4), 20, 4,
+#'   dimnames = list(paste0("s", 1:20), paste0("f", 1:4))
+#' )
+#' generated <- make_artificial_features(
+#'   x, n_injected = 2L, type = "random_permutation", random_state = 1L
+#' )
+#' dim(generated$x_augmented)
+#' generated$artificial_provenance$actual_type
+#' try(make_artificial_features(x, 0L, "random_permutation"))
+#'
 #' @seealso [compute_fdp_plus()] which consumes the artificial-feature scores,
 #'   [stabl_fit()] which calls this function automatically.
 #' @export

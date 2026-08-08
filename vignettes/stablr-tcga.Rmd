@@ -1,8 +1,8 @@
 ---
-title: "TCGA Breast Cancer: Multi-Omic Biomarker Discovery with stablr"
+title: "Research protocol: TCGA multi-omic biomarker discovery"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{TCGA Breast Cancer: Multi-Omic Biomarker Discovery with stablr}
+  %\VignetteIndexEntry{Research protocol: TCGA multi-omic biomarker discovery}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -21,11 +21,10 @@ knitr::opts_chunk$set(
 )
 ```
 
-> **Note:** This vignette is illustrative — code chunks are set to `eval = FALSE`
-> because the TCGA dataset is large and the fits take significant time. To run it
-> interactively, set `eval = TRUE` in the setup chunk above and supply the TCGA
-> data (available via the `mixOmics` package), or rebuild via
-> `pkgdown::build_site()` with the data in place.
+> **Non-executable research protocol.** No TCGA result in this page is package
+> or release evidence. Code chunks are set to `eval = FALSE` because the data
+> are external and the fits are long-running. Execute the protocol only after
+> pinning the dataset, candidate tarball, settings, and output manifest.
 
 ## Overview
 
@@ -40,9 +39,9 @@ multi-block Discriminant Analysis (sgccaDA) to classify breast cancer subtypes.
 Here we ask a narrower question: which mRNA and miRNA features robustly
 distinguish Basal-like tumours from all other subtypes?
 
-The analysis uses the real `breast.TCGA` train/test split from `mixOmics`, with
-compact STABL settings so the vignette stays practical.  Increase the bootstrap
-count and lambda-grid size before treating the result as publication evidence.
+The proposed analysis uses the `breast.TCGA` train/test split from `mixOmics`,
+with compact settings shown only to specify the workflow. No result is reported
+here. A publication analysis requires a separately predeclared and hashed run.
 
 **Dataset:** `breast.TCGA` from the `mixOmics` package.
 

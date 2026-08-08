@@ -381,6 +381,7 @@ realistic analysis pattern, but it multiplies cost by the number of outer
 folds, so the code is shown but not evaluated during vignette builds:
 
 ```{r cv-fit, eval = FALSE}
+# Long-running vignette branch; exercised by test-multiomic-workflows.R.
 cv_fit <- stabl_multiomic_cv(
   x_list                = ool_train$x_list,
   y                     = ool_train$y,
@@ -405,6 +406,7 @@ The `$diagnostics` data frame includes cooperative-specific columns
 possible to inspect how `rho` was selected in each outer fold:
 
 ```{r cv-diagnostics, eval = FALSE}
+# Output contract exercised by test-multiomic-workflows.R.
 print(cv_fit$diagnostics[, c("fold", "omic", "n_selected",
                               "cooperative_rho", "cooperative_score")])
 ```

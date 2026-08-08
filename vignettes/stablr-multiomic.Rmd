@@ -17,9 +17,11 @@ knitr::opts_chunk$set(
 set.seed(42)
 ```
 
-> **Note:** This vignette is executable. It uses the bundled OOL subset, compact
-> lambda grids, small bootstrap counts, and random-permutation decoys so package
-> renders catch API drift without requiring optional knockoff dependencies.
+> **Workflow tutorial, not publication evidence.** This executable vignette
+> uses 150 training samples, 21 aligned validation samples, and the first 100
+> features from each of the CyTOF and Proteomics assays. Compact lambda grids,
+> small bootstrap counts, and random-permutation decoys keep package builds
+> bounded and catch API drift without optional knockoff dependencies.
 
 ## Overview
 
@@ -77,8 +79,10 @@ The notebook uses the full OOL-CV training files (`CyTOF`, `Proteomics`, and
 `Metabolomics`) and the COVID-19 proteomics classification dataset.  It also
 applies a preprocessing pipeline before STABL: zero-variance filtering,
 high-missingness feature filtering, median imputation, and standardisation.
-Here, `load_ool_data()` ships a compact 100-feature OOL subset for `CyTOF` and
-`Proteomics` only, already aligned and without missing values.  Use
+Here, `load_ool_data()` ships 150 training samples and 21 aligned validation
+samples for `CyTOF` and `Proteomics` only, with the first 100 features from each
+assay, already aligned and without missing values. These are quick-build
+settings, not the predeclared full OOL parity analysis. Use
 `docs/PYTHON_TO_R_MAPPING.md` when the goal is to mirror the tutorial
 notebook's datasets and preprocessing choices.
 

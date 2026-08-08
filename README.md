@@ -58,7 +58,7 @@ Optional functionality uses optional packages:
 - `sparsegl`: `base_learner = "sparse_group_lasso"`
 - `mixOmics`: TCGA vignette dataset
 
-## Quick Start
+## Five-minute example
 
 ```r
 library(stablr)
@@ -89,9 +89,10 @@ get_feature_names_out(fit)
 head(sort(get_importances(fit), decreasing = TRUE))
 ```
 
-Use larger bootstrap counts and broader lambda grids for final analyses. The
-quick-start vignette intentionally uses small settings to keep package builds
-fast.
+This is an executable orientation example, not release or publication evidence.
+Use larger bootstrap counts and broader lambda grids for a predeclared final
+analysis, and inspect the FDP+ diagnostic rather than interpreting the selected
+set alone.
 
 ## Main Workflows
 
@@ -196,11 +197,16 @@ claim bit-identical coefficients.
 Canonical source vignettes live in `vignettes/`:
 
 - `stablr-intro.Rmd`: quick simulated-data start
-- `stablr-multiomic.Rmd`: real OOL multi-omic train/validation workflow
-- `stablr-tcga.Rmd`: TCGA Breast Cancer multi-omic workflow
-- `stablr-tcga-nestedcv.Rmd`: TCGA nested CV and DIABLO comparison workflow
+- `stablr-multiomic.Rmd`: executable OOL workflow tutorial using 150 training
+  samples, 21 aligned validation samples, and 100 features per assay
+- `stablr-tcga.Rmd`: non-executable TCGA workflow research protocol
+- `stablr-tcga-nestedcv.Rmd`: non-executable TCGA/DIABLO benchmark protocol;
+  no external results are bundled
 - `stablr-cooperative.Rmd`: cooperative fusion with the built-in multiview engine
 - `stablr-advanced.Rmd`: Cox, multinomial, knockoffs, grouped bootstrap, metrics, export, outer CV
+
+The machine-readable audit of all 42 exports and 19 registered S3 methods is
+maintained in `inst/release/public-interface-audit.csv`.
 
 The Python-to-R API mapping is maintained as developer documentation in
 `docs/PYTHON_TO_R_MAPPING.md`, not as a source vignette.
@@ -219,17 +225,21 @@ conda run -n R4_51 Rscript -e "pkgdown::build_site('.', install = FALSE)"
 
 The site reference index is configured in `_pkgdown.yml`.
 
-## Application Note reproduction
+## Application workflow status
 
-Publication-scale OOL parity metrics (Bioinformatics Advances track):
+The bundled OOL vignette is a workflow tutorial. It is not application-note
+evidence. Release claims require a separate run from an exact, hashed candidate
+source tarball and the predeclared full OOL inputs and gates; mutable-checkout
+execution does not qualify.
 
 ```bash
-# From stablr-experiments/ root (requires sample-data/Onset of Labor)
-conda run -n R4_51 Rscript analysis/generate_publication_parity_table.R
-
-# Smoke check on bundled extdata only
-conda run -n R4_51 Rscript analysis/generate_publication_parity_table.R --allow-bundled
+# From stablr-experiments/ after building the candidate tarball
+conda run -n R4_51 Rscript analysis/generate_publication_parity_table.R \
+  --candidate-tarball /absolute/path/to/stablr_0.1.1.tar.gz
 ```
+
+If the candidate-bound parity gates fail, the resulting negative artifact is
+retained and the package remains not ready for release review.
 
 ## Citation
 

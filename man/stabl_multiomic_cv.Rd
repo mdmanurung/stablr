@@ -135,3 +135,20 @@ forwarded to each fold-specific \code{\link[=stabl_multiomic_train_validate]{sta
 \code{stabl_multiomic_cv} object; invisibly returns \code{x}.
 
 }}
+\examples{
+set.seed(2L)
+ids <- paste0("s", 1:12)
+x_list <- list(
+  rna = matrix(rnorm(12 * 4), 12, 4,
+               dimnames = list(ids, paste0("g", 1:4))),
+  protein = matrix(rnorm(12 * 3), 12, 3,
+                   dimnames = list(ids, paste0("p", 1:3)))
+)
+y <- setNames(rnorm(12), ids)
+cv <- stabl_multiomic_cv(
+  x_list, y, lambda_grid = data.frame(lambda = 0.1), v = 2L,
+  n_bootstraps = 2L, artificial_type = NULL, hard_threshold = 0.5,
+  random_state = 2L
+)
+cv$diagnostics
+}

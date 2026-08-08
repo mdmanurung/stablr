@@ -53,6 +53,26 @@
 #' @return An object of class `"stabl_multiomic_nested_cv"` containing fold
 #'   definitions, inner candidate diagnostics, outer held-out predictions,
 #'   selected features, and aggregate performance.
+#'
+#' @examples
+#' set.seed(3L)
+#' ids <- paste0("s", 1:18)
+#' y <- setNames(factor(rep(c("A", "B", "C"), each = 6L)), ids)
+#' signal <- stats::model.matrix(~ y - 1)
+#' x <- matrix(
+#'   rnorm(18 * 6, sd = 0.3), 18, 6,
+#'   dimnames = list(ids, paste0("g", 1:6))
+#' )
+#' x[, 1:3] <- x[, 1:3] + signal
+#' nested <- suppressWarnings(stabl_multiomic_nested_cv(
+#'   x_list = list(rna = x), y = y,
+#'   candidates = list(list(name = "rna", blocks = "rna")),
+#'   lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+#'   outer_v = 3L, inner_v = 3L, n_bootstraps = 3L,
+#'   artificial_type = NULL, hard_threshold = 1e-9,
+#'   sample_fraction = 1, random_state = 3L
+#' ))
+#' nested$performance$balanced_error_rate
 #' @export
 stabl_multiomic_nested_cv <- function(
     x_list,

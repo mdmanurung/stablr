@@ -51,6 +51,7 @@ decoys.
 ## Installation
 
 ```{r install, eval = FALSE}
+# Interactive installation protocol; not a package API example.
 # From the repository root after cloning:
 devtools::install(".")
 ```
@@ -84,9 +85,10 @@ sample order.
 | `y` | outcome vector with one value per row of `x` | Use `0`/`1` or a factor-like outcome for `family = "binomial"`; use numeric values for `family = "gaussian"`. |
 | `lambda_grid` | data frame returned by `auto_lambda_grid()` | Each row defines a sparse model setting evaluated during bootstrapping. |
 
-If `x` has row names and `y` has names, they should refer to the same samples in
-the same order.  In biomarker work, a silent sample mismatch is worse than a
-model error because it can look perfectly plausible.
+If `x` has row names and `y` has names, both must contain the same unique sample
+IDs. Their order may differ: `stablr` aligns the outcome to predictor rows by
+ID. In biomarker work, a silent sample mismatch is worse than a model error
+because it can look perfectly plausible.
 
 ---
 
@@ -246,22 +248,27 @@ The plotting helpers return ordinary `ggplot` objects, so the same figure can
 be displayed, modified, or saved.
 
 ```{r save-path-plot, eval = FALSE}
+# Optional file writing; plot contract exercised by test-phase7.R.
 path_plot <- plot_stabl_path(fit_bin, title = "Binary classification - stability path")
 ggplot2::ggsave("stability-path.png", path_plot, width = 7, height = 5)
 ```
 
-**FDR graph.**  The x-axis sweeps candidate stability thresholds.  The y-axis
-shows the estimated FDP at each threshold.  The vertical dashed line marks the
-chosen threshold, and the horizontal dashed line marks the default FDP target.
-In this tiny five-signal simulation the FDP+ lower bound is `1 / 5 = 0.2`, so
-the graph is best read as a threshold diagnostic rather than a promise that the
-curve will fall below 0.05.
+**FDP+ diagnostic (`plot_fdr_graph()`).** The function retains its historical
+name, but the plotted quantity is FDP+. At threshold $t$, the numerator is the
+artificial-feature exceedance count adjusted for the injected proportion, plus
+one; the denominator is the real-feature exceedance count, bounded below by
+one. The fitted threshold is the first grid value attaining the minimum FDP+.
+The vertical dashed line marks that threshold, while the horizontal line is a
+visual target only. In this tiny five-signal simulation the FDP+ lower bound is
+`1 / 5 = 0.2`, so the graph is a calibration diagnostic, not a universal
+false-discovery guarantee.
 
 ```{r fdr-binary, fig.alt = "FDR estimate graph for binary classification"}
 plot_fdr_graph(fit_bin, title = "Binary classification - FDR estimate")
 ```
 
 ```{r save-fdr-plot, eval = FALSE}
+# Optional file writing; plot contract exercised by test-phase7.R.
 fdr_plot <- plot_fdr_graph(fit_bin, title = "Binary classification - FDR estimate")
 ggplot2::ggsave("fdr-graph.png", fdr_plot, width = 7, height = 5)
 ```

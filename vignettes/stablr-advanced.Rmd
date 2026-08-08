@@ -246,6 +246,7 @@ jaccard_matrix(sels)
 `save_stabl_results()` bundles scores, diagnostics, selected-feature tables, and feature-distribution figures for a full analysis folder. It writes `STABL scores.csv`, `Max STABL scores.csv`, `FDR Graph.<fmt>`, `Stability Path.<fmt>`, `Selected Features/Selected features.csv`, and `Selected Features/Feature distributions.<fmt>` when the relevant diagnostics and selected features are available.
 
 ```{r export, eval = FALSE}
+# File-writing path; exercised by tests/testthat/test-phase7.R.
 tmp <- tempfile("stablr_export")
 dir.create(tmp)
 

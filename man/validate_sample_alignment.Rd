@@ -38,6 +38,16 @@ This function is called automatically by \code{\link[=stabl_fit]{stabl_fit()}} a
 \code{\link[=stabl_multiomic_train_validate]{stabl_multiomic_train_validate()}}; you only need to call it directly when
 building a custom pre-processing step that receives \code{x} and \code{y} separately.
 }
+\examples{
+x <- matrix(
+  1:12, 4, 3,
+  dimnames = list(paste0("s", 1:4), paste0("f", 1:3))
+)
+y <- setNames(c(0, 1, 0, 1), c("s3", "s1", "s4", "s2"))
+validate_sample_alignment(x, y)
+try(validate_sample_alignment(x, setNames(y, paste0("v", 1:4))))
+
+}
 \seealso{
 \code{\link[=validate_multiomic_inputs]{validate_multiomic_inputs()}} for multi-omic list inputs.
 }

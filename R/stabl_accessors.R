@@ -174,6 +174,22 @@ get_feature_names_out.stabl_fit <- function(object, new_hard_threshold = NULL) {
 #' @return A matrix when `x` is a matrix, or a `data.frame` when `x` is a
 #'   `data.frame`, containing selected columns in fitted feature order.
 #'
+#' @examples
+#' set.seed(1L)
+#' x <- matrix(
+#'   rnorm(30 * 5), 30, 5,
+#'   dimnames = list(paste0("s", 1:30), paste0("f", 1:5))
+#' )
+#' y <- setNames(rnorm(30), rownames(x))
+#' fit <- stabl_fit(
+#'   x, y, lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+#'   n_bootstraps = 2L, artificial_type = NULL, hard_threshold = 0.5,
+#'   random_state = 1L
+#' )
+#' transformed <- transform_stabl(fit, x)
+#' dim(transformed)
+#' try(transform_stabl(fit, unname(x)))
+#'
 #' @seealso [get_feature_names_out()], [get_support()]
 #' @export
 transform_stabl <- function(object, x, new_hard_threshold = NULL) {
