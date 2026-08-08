@@ -802,18 +802,28 @@ stabl_multiomic_cv <- function(
   }
 
   if (length(units) < v) {
-    stop("The number of folds cannot exceed the number of samples/groups.",
-         call. = FALSE)
+    .abort_stablr(
+      "stablr_cv_infeasible",
+      "The number of folds cannot exceed the number of samples/groups.",
+      requested_folds = v,
+      available_units = length(units)
+    )
   }
 
   unit_strata <- NULL
+  sample_strata <- NULL
   if (!is.null(strata)) {
-    strata <- as.character(strata[sample_ids])
-    if (anyNA(strata)) stop("CV strata must be complete and named by sample ID.")
+    sample_strata <- setNames(as.character(strata[sample_ids]), sample_ids)
+    if (anyNA(sample_strata)) {
+      stop("CV strata must be complete and named by sample ID.", call. = FALSE)
+    }
     if (is.null(groups)) {
-      unit_strata <- setNames(strata, sample_ids)
+      unit_strata <- sample_strata
     } else {
-      group_values <- split(strata, as.character(groups[sample_ids]))
+      group_values <- split(
+        sample_strata,
+        as.character(groups[sample_ids])
+      )
       if (all(vapply(group_values, function(x) length(unique(x)) == 1L, logical(1L)))) {
         unit_strata <- vapply(group_values, `[[`, character(1L), 1L)
       } else {
@@ -827,15 +837,21 @@ stabl_multiomic_cv <- function(
     unit_to_fold <- setNames(rep(seq_len(v), length.out = length(ordered_units)),
                              ordered_units)
   } else {
-    strata_levels <- sort(unique(unit_strata))
-    mappings <- lapply(seq_along(strata_levels), function(i) {
-      members <- names(unit_strata)[unit_strata == strata_levels[[i]]]
-      ordered <- .permute_for_cv(
-        members, .derive_nested_seed(random_state, i, 39001L)
+    unit_sizes <- if (is.null(groups)) {
+      setNames(rep.int(1L, length(units)), units)
+    } else {
+      group_ids <- as.character(groups[sample_ids])
+      setNames(
+        vapply(units, function(unit) sum(group_ids == unit), integer(1L)),
+        units
       )
-      setNames(rep(seq_len(v), length.out = length(ordered)), ordered)
-    })
-    unit_to_fold <- unlist(mappings, use.names = TRUE)
+    }
+    unit_to_fold <- .assign_stratified_cv_units(
+      unit_strata = unit_strata,
+      unit_sizes = unit_sizes,
+      v = v,
+      random_state = random_state
+    )
   }
 
   assessment_fold <- if (is.null(groups)) {
@@ -844,7 +860,7 @@ stabl_multiomic_cv <- function(
     unit_to_fold[as.character(groups[sample_ids])]
   }
 
-  lapply(seq_len(v), function(fold_index) {
+  folds <- lapply(seq_len(v), function(fold_index) {
     valid_ids <- sample_ids[assessment_fold == fold_index]
     train_ids <- sample_ids[assessment_fold != fold_index]
     list(
@@ -853,6 +869,87 @@ stabl_multiomic_cv <- function(
       valid_ids = valid_ids
     )
   })
+
+  .validate_multiomic_cv_folds(folds, sample_strata)
+  folds
+}
+
+.assign_stratified_cv_units <- function(unit_strata,
+                                        unit_sizes,
+                                        v,
+                                        random_state) {
+  fold_loads <- integer(v)
+  unit_to_fold <- setNames(integer(length(unit_strata)), names(unit_strata))
+  strata_levels <- sort(unique(unit_strata))
+
+  for (stratum_index in seq_along(strata_levels)) {
+    stratum <- strata_levels[[stratum_index]]
+    members <- names(unit_strata)[unit_strata == stratum]
+    ordered <- .permute_for_cv(
+      members,
+      .derive_nested_seed(random_state, stratum_index, 39001L)
+    )
+    stratum_loads <- integer(v)
+
+    for (unit in ordered) {
+      candidates <- which(fold_loads == min(fold_loads))
+      candidates <- candidates[
+        stratum_loads[candidates] == min(stratum_loads[candidates])
+      ]
+      fold_index <- candidates[[1L]]
+      unit_to_fold[[unit]] <- fold_index
+      fold_loads[[fold_index]] <-
+        fold_loads[[fold_index]] + unit_sizes[[unit]]
+      stratum_loads[[fold_index]] <-
+        stratum_loads[[fold_index]] + unit_sizes[[unit]]
+    }
+  }
+
+  unit_to_fold
+}
+
+.validate_multiomic_cv_folds <- function(folds,
+                                         sample_strata,
+                                         min_train_per_stratum = 2L) {
+  assessment_sizes <- vapply(
+    folds,
+    function(fold) length(fold$valid_ids),
+    integer(1L)
+  )
+  if (any(assessment_sizes == 0L)) {
+    .abort_stablr(
+      "stablr_cv_infeasible",
+      "Cross-validation produced an empty assessment fold.",
+      assessment_sizes = assessment_sizes
+    )
+  }
+
+  if (is.null(sample_strata)) {
+    return(invisible(folds))
+  }
+
+  strata_levels <- sort(unique(sample_strata))
+  for (fold in folds) {
+    train_counts <- table(factor(
+      sample_strata[fold$train_ids],
+      levels = strata_levels
+    ))
+    if (any(train_counts < min_train_per_stratum)) {
+      .abort_stablr(
+        "stablr_cv_infeasible",
+        paste0(
+          "Cross-validation fold `", fold$fold,
+          "` leaves fewer than ", min_train_per_stratum,
+          " training observations for at least one modeled class."
+        ),
+        fold = fold$fold,
+        training_class_counts = train_counts,
+        minimum_per_class = min_train_per_stratum
+      )
+    }
+  }
+
+  invisible(folds)
 }
 
 .permute_for_cv <- function(x, random_state = NULL) {

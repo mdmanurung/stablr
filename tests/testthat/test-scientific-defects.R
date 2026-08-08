@@ -206,3 +206,73 @@ test_that("SCI-02 stacking rejects mixed, duplicate, and mismatched IDs", {
     "same sample IDs"
   )
 })
+
+test_that("SCI-03 stratified folds share loads and remain learner-feasible", {
+  ids <- paste0("s", seq_len(6L))
+  strata <- stats::setNames(rep(c("A", "B"), each = 3L), ids)
+
+  first <- stablr:::.make_multiomic_cv_folds(
+    sample_ids = ids,
+    groups = NULL,
+    v = 5L,
+    random_state = 804L,
+    strata = strata
+  )
+  second <- stablr:::.make_multiomic_cv_folds(
+    sample_ids = ids,
+    groups = NULL,
+    v = 5L,
+    random_state = 804L,
+    strata = strata
+  )
+
+  expect_identical(first, second)
+  expect_identical(
+    sort(vapply(first, function(fold) length(fold$valid_ids), integer(1L))),
+    c(1L, 1L, 1L, 1L, 2L)
+  )
+  expect_true(all(vapply(first, function(fold) {
+    all(table(factor(strata[fold$train_ids], levels = c("A", "B"))) >= 2L)
+  }, logical(1L))))
+  expect_setequal(unlist(lapply(first, `[[`, "valid_ids")), ids)
+})
+
+test_that("SCI-03 infeasible classification folds raise a typed condition", {
+  ids <- paste0("s", seq_len(6L))
+  strata <- stats::setNames(c("rare", "rare", rep("common", 4L)), ids)
+
+  condition <- tryCatch(
+    stablr:::.make_multiomic_cv_folds(
+      sample_ids = ids,
+      groups = NULL,
+      v = 3L,
+      random_state = 805L,
+      strata = strata
+    ),
+    error = identity
+  )
+
+  expect_s3_class(condition, "stablr_cv_infeasible")
+  expect_s3_class(condition, "stablr_error")
+  expect_identical(condition$minimum_per_class, 2L)
+  expect_match(conditionMessage(condition), "modeled class", fixed = TRUE)
+})
+
+test_that("SCI-03 fold counts exceeding grouped units fail closed", {
+  ids <- paste0("s", seq_len(6L))
+  groups <- stats::setNames(rep(paste0("g", 1:2), each = 3L), ids)
+
+  condition <- tryCatch(
+    stablr:::.make_multiomic_cv_folds(
+      sample_ids = ids,
+      groups = groups,
+      v = 3L,
+      random_state = 806L
+    ),
+    error = identity
+  )
+
+  expect_s3_class(condition, "stablr_cv_infeasible")
+  expect_identical(condition$requested_folds, 3L)
+  expect_identical(condition$available_units, 2L)
+})
