@@ -49,6 +49,19 @@
   .release_typed_error("stablr_release_assembly_error", message, ...)
 }
 
+.release_incomplete_error <- function(message, ...) {
+  .release_typed_error("stablr_validation_incomplete", message, ...)
+}
+
+.release_validation_failed_error <- function(message, packet_reference, ...) {
+  .release_typed_error(
+    "stablr_validation_failed",
+    message,
+    packet_reference = packet_reference,
+    ...
+  )
+}
+
 .release_require_jsonlite <- function() {
   if (!requireNamespace("jsonlite", quietly = TRUE)) {
     .release_runtime_error(
@@ -291,6 +304,29 @@
         "cell_completeness", "reduced_optimism", "noninferiority",
         "fallback_rate"
       )
+    ),
+    gate_versions = list(
+      methodology = c(
+        "methodology-cell-completeness/v1",
+        "python-metrics-parity/v1",
+        "null-select-any-wilson-v1",
+        "SCI-04-null-selected-fraction-v2-draft",
+        "null-90pct-collapse-count-v1",
+        "signal-mean-fdp-t-v1",
+        "signal-tpr-t-v1"
+      ),
+      late_fusion = c(
+        "late-fusion-cell-completeness/v1",
+        "late-fusion-reduced-optimism/v1",
+        "late-fusion-noninferiority-0.02/v1",
+        "late-fusion-signal-fallback-0.05/v1"
+      )
+    ),
+    gate_statuses = list(
+      methodology = c(
+        rep("accepted", 3L), "proposed_unaccepted", rep("accepted", 3L)
+      ),
+      late_fusion = rep("accepted", 4L)
     )
   )
 }
@@ -361,7 +397,8 @@
   invisible(TRUE)
 }
 
-.release_validate_gates <- function(gates, validation_id, expected_ids) {
+.release_validate_gates <- function(gates, validation_id, expected_ids,
+                                    expected_versions, expected_statuses) {
   gates <- .release_json_array(
     gates, paste0("scientific_gates for `", validation_id, "`")
   )
@@ -372,6 +409,8 @@
     )
   }
   observed <- character(length(gates))
+  versions <- character(length(gates))
+  statuses <- character(length(gates))
   for (i in seq_along(gates)) {
     gate <- gates[[i]]
     .release_assert_exact_fields(
@@ -385,11 +424,15 @@
       .release_contract_error("Unknown Scientific Gate decision status.")
     }
     observed[[i]] <- gate$gate_id
+    versions[[i]] <- gate$gate_version
+    statuses[[i]] <- gate$decision_status
   }
-  if (!identical(observed, expected_ids) || anyDuplicated(observed)) {
+  if (!identical(observed, expected_ids) || anyDuplicated(observed) ||
+      !identical(versions, expected_versions) ||
+      !identical(statuses, expected_statuses)) {
     .release_contract_error(
       "Required validation `", validation_id,
-      "` Scientific Gate IDs do not match the locked v1 contract."
+      "` Scientific Gates do not match the locked v1 contract."
     )
   }
   selected_fraction <- gates[[match("null_selected_fraction", observed)]]
@@ -492,7 +535,11 @@
       validation$artifacts, id, expected$artifact_names[[id]]
     )
     .release_validate_gates(
-      validation$scientific_gates, id, expected$gate_ids[[id]]
+      validation$scientific_gates,
+      id,
+      expected$gate_ids[[id]],
+      expected$gate_versions[[id]],
+      expected$gate_statuses[[id]]
     )
   }
   invisible(contract)
@@ -561,6 +608,31 @@
   invisible(record)
 }
 
+.release_validate_release_ref <- function(record) {
+  .release_assert_exact_fields(
+    record,
+    c(
+      "schema_version", "kind", "release_id", "store", "release_path",
+      "release_sha256"
+    ),
+    "Release Evidence Reference",
+    condition = "identity"
+  )
+  valid <- identical(
+    record$schema_version, "stablr.release-evidence-ref/v1"
+  ) && identical(record$kind, "release_evidence") &&
+    .release_is_scalar_character(record$release_id) &&
+    nchar(record$release_id) >= 16L &&
+    .release_is_scalar_character(record$store) && grepl("^/", record$store) &&
+    .release_is_scalar_character(record$release_path) &&
+    grepl("^/", record$release_path) &&
+    .release_is_sha256(record$release_sha256)
+  if (!isTRUE(valid)) {
+    .release_identity_error("Invalid Release Evidence Reference.")
+  }
+  invisible(record)
+}
+
 .release_new_context_ref <- function(record) {
   .release_validate_context_ref(record)
   structure(
@@ -577,12 +649,22 @@
   )
 }
 
+.release_new_release_ref <- function(record) {
+  .release_validate_release_ref(record)
+  structure(
+    .release_sort_json_object(record),
+    class = c("stablr_release_ref", "list")
+  )
+}
+
 write_release_reference <- function(reference, path) {
   record <- unclass(reference)
   if (inherits(reference, "stablr_release_context")) {
     .release_validate_context_ref(record)
   } else if (inherits(reference, "stablr_packet_ref")) {
     .release_validate_packet_ref(record)
+  } else if (inherits(reference, "stablr_release_ref")) {
+    .release_validate_release_ref(record)
   } else {
     .release_identity_error("Unsupported release reference class.")
   }
@@ -597,6 +679,9 @@ read_release_reference <- function(path) {
   }
   if (identical(record$schema_version, "stablr.packet-ref/v1")) {
     return(.release_new_packet_ref(record))
+  }
+  if (identical(record$schema_version, "stablr.release-evidence-ref/v1")) {
+    return(.release_new_release_ref(record))
   }
   .release_identity_error("Unknown release reference schema version.")
 }
@@ -994,7 +1079,8 @@ read_release_reference <- function(path) {
     r_executable,
     c(
       "CMD", "INSTALL", paste0("--library=", shQuote(library)),
-      "--no-multiarch", "--no-test-load", shQuote(candidate_tarball)
+      "--no-multiarch", "--no-test-load", "--install-tests",
+      shQuote(candidate_tarball)
     ),
     environment,
     "Candidate installation"
@@ -1645,4 +1731,1197 @@ prepare_release_context <- function(candidate_tarball, runtime, store) {
   }
   list(reference = context, record = record, contract = contract,
        runtime = runtime)
+}
+
+.release_validation_declaration <- function(contract, validation_id) {
+  if (!.release_is_scalar_character(validation_id)) {
+    .release_contract_error("`validation_id` must be a non-empty string.")
+  }
+  ids <- vapply(
+    contract$required_validations, `[[`, character(1L), "validation_id"
+  )
+  index <- match(validation_id, ids)
+  if (is.na(index)) {
+    .release_contract_error(
+      "Unknown Required Validation `", validation_id, "`."
+    )
+  }
+  contract$required_validations[[index]]
+}
+
+.release_gate_records_from_data_frame <- function(gates) {
+  required <- c(
+    "gate_id", "gate_version", "scope", "observed", "criterion", "pass",
+    "reason"
+  )
+  if (!is.data.frame(gates) || !identical(names(gates), required)) {
+    stop("Adapter common gate table has an invalid schema.", call. = FALSE)
+  }
+  lapply(seq_len(nrow(gates)), function(i) {
+    list(
+      gate_id = as.character(gates$gate_id[[i]]),
+      gate_version = as.character(gates$gate_version[[i]]),
+      scope = as.character(gates$scope[[i]]),
+      observed = as.character(gates$observed[[i]]),
+      criterion = as.character(gates$criterion[[i]]),
+      pass = as.logical(gates$pass[[i]]),
+      reason = as.character(gates$reason[[i]])
+    )
+  })
+}
+
+.release_adapter_artifact_records <- function(declaration, artifacts,
+                                               artifact_dir) {
+  expected_names <- vapply(
+    declaration$artifacts, `[[`, character(1L), "name"
+  )
+  if (!is.list(artifacts) || is.null(names(artifacts)) ||
+      !identical(names(artifacts), expected_names)) {
+    stop("Adapter returned a foreign artifact set.", call. = FALSE)
+  }
+  expected_files <- vapply(
+    declaration$artifacts, `[[`, character(1L), "path"
+  )
+  actual_files <- sort(
+    list.files(artifact_dir, all.files = TRUE, no.. = TRUE),
+    method = "radix"
+  )
+  if (!identical(actual_files, sort(expected_files, method = "radix"))) {
+    stop("Adapter wrote an undeclared or incomplete artifact set.",
+         call. = FALSE)
+  }
+  lapply(seq_along(declaration$artifacts), function(i) {
+    declared <- declaration$artifacts[[i]]
+    actual <- normalizePath(
+      artifacts[[declared$name]], winslash = "/", mustWork = TRUE
+    )
+    expected <- normalizePath(
+      file.path(artifact_dir, declared$path),
+      winslash = "/",
+      mustWork = TRUE
+    )
+    if (!identical(actual, expected) || dir.exists(actual) ||
+        nzchar(Sys.readlink(actual))) {
+      stop("Adapter artifact path or type changed.", call. = FALSE)
+    }
+    list(
+      name = declared$name,
+      path = file.path("artifacts", declared$path),
+      schema = declared$schema
+    )
+  })
+}
+
+.release_adapter_child_main <- function(context_reference_path, validation_id,
+                                        attempt, result_path) {
+  context_reference_path <- .release_normalize_absolute(
+    context_reference_path, "child Release Context Reference", "file"
+  )
+  attempt <- .release_normalize_absolute(
+    attempt, "Validation Attempt", "dir"
+  )
+  if (!.release_is_scalar_character(result_path) ||
+      !identical(dirname(result_path), attempt) ||
+      !identical(basename(result_path), "adapter-result.json") ||
+      file.exists(result_path)) {
+    .release_identity_error("Adapter result destination is invalid.")
+  }
+  context <- read_release_reference(context_reference_path)
+  verified <- .release_verify_context(context)
+  if (!identical(dirname(attempt), file.path(
+    verified$record$store, "attempts"
+  )) || !grepl("^[.]attempt-[0-9a-f]{32}$", basename(attempt))) {
+    .release_identity_error("Validation Attempt is outside its owned store path.")
+  }
+  declaration <- .release_validation_declaration(
+    verified$contract, validation_id
+  )
+  candidate_path <- file.path(verified$record$library$path, "stablr")
+  loaded_path <- normalizePath(
+    getNamespaceInfo(asNamespace("stablr"), "path"),
+    winslash = "/",
+    mustWork = TRUE
+  )
+  if (!identical(loaded_path, candidate_path)) {
+    .release_identity_error("Adapter child loaded a foreign stablr namespace.")
+  }
+  artifact_dir <- file.path(attempt, "artifacts")
+  if (!dir.create(artifact_dir, showWarnings = FALSE)) {
+    .release_identity_error("Adapter artifact directory could not be created.")
+  }
+  settings <- declaration$settings
+
+  if (identical(declaration$adapter, "methodology_validation")) {
+    adapter <- new.env(parent = globalenv())
+    sys.source(
+      file.path(candidate_path, "analysis", "run_methodology_validation.R"),
+      envir = adapter
+    )
+    artifacts <- adapter$run_methodology_validation(
+      out = artifact_dir,
+      profile = settings$profile,
+      replicates = as.integer(settings$replicates),
+      n_bootstraps = as.integer(settings$n_bootstraps),
+      n_lambda = as.integer(settings$n_lambda),
+      families = unlist(settings$families, use.names = FALSE),
+      artificial_types = unlist(
+        settings$artificial_types, use.names = FALSE
+      ),
+      scenario_ids = unlist(settings$scenario_ids, use.names = FALSE),
+      seed = as.integer(settings$seed),
+      target_fdp = as.numeric(settings$target_fdp),
+      workers = as.integer(settings$workers),
+      candidate_only = TRUE,
+      candidate_path = candidate_path
+    )
+    details <- utils::read.csv(
+      artifacts$gates, stringsAsFactors = FALSE, check.names = FALSE
+    )
+    parity <- utils::read.csv(
+      artifacts$parity, stringsAsFactors = FALSE, check.names = FALSE
+    )
+    gates <- adapter$.methodology_common_gate_table(details, parity)
+  } else if (identical(declaration$adapter, "late_fusion_validation")) {
+    adapter <- new.env(parent = globalenv())
+    sys.source(
+      file.path(candidate_path, "analysis", "run_late_fusion_validation.R"),
+      envir = adapter
+    )
+    artifacts <- adapter$run_late_fusion_validation(
+      out = artifact_dir,
+      replicates = as.integer(settings$replicates),
+      n_bootstraps = as.integer(settings$n_bootstraps),
+      n_iter = as.integer(settings$n_iter),
+      seed = as.integer(settings$seed),
+      candidate_only = TRUE,
+      fail_on_gates = FALSE,
+      candidate_path = candidate_path
+    )
+    gates <- utils::read.csv(
+      artifacts$gates, stringsAsFactors = FALSE, check.names = FALSE
+    )
+  } else {
+    .release_contract_error("Required Validation Adapter is unsupported.")
+  }
+
+  artifact_records <- .release_adapter_artifact_records(
+    declaration, artifacts, artifact_dir
+  )
+  gate_records <- .release_gate_records_from_data_frame(gates)
+  result <- list(
+    schema_version = "stablr.adapter-result/v1",
+    validation_id = validation_id,
+    adapter = declaration$adapter,
+    bounded = FALSE,
+    artifacts = artifact_records,
+    gates = gate_records,
+    metadata = list(
+      candidate_path = candidate_path,
+      candidate_version = as.character(utils::packageVersion("stablr")),
+      settings_sha256 = .release_hash_record(settings)
+    )
+  )
+  .release_write_canonical_json(result, result_path)
+  invisible(result_path)
+}
+
+.release_csv_schema_columns <- function(schema) {
+  switch(
+    schema,
+    "methodology-replicates/v2" = c(
+      "family", "scenario", "regime", "correlation", "profile", "replicate",
+      "artificial_type", "actual_artificial_type", "actual_artificial_types",
+      "fallback_event_count", "fallback_random_permutation_events",
+      "fallback_equi_events", "fallback_history", "data_seed", "fit_seed",
+      "status", "n", "p", "n_signal", "n_bootstraps", "n_lambda",
+      "fallback_random_permutation_warnings", "fallback_equi_warnings",
+      "warning_count", "elapsed_sec", "n_selected", "true_positives",
+      "false_positives", "empirical_fdp", "tpr", "min_fdp_plus",
+      "fdp_threshold", "mean_max_real_score", "mean_max_artificial_score",
+      "max_artificial_score", "selected_features", "error"
+    ),
+    "methodology-summary/v2" = c(
+      "family", "scenario", "artificial_type", "actual_artificial_types",
+      "generator_identity_complete", "profile", "regime", "correlation",
+      "n", "p", "n_signal", "replicates", "ok_replicates",
+      "mean_selected", "sd_selected", "se_selected", "mean_empirical_fdp",
+      "sd_empirical_fdp", "se_empirical_fdp", "mean_tpr", "sd_tpr",
+      "se_tpr", "empirical_fdp_exceedance_rate",
+      "sd_empirical_fdp_exceedance", "se_empirical_fdp_exceedance_rate",
+      "mean_min_fdp_plus", "mean_fdp_threshold",
+      "fallback_random_permutation_rate",
+      "se_fallback_random_permutation_rate", "fallback_equi_rate",
+      "se_fallback_equi_rate", "mean_elapsed_sec"
+    ),
+    "methodology-warnings/v2" = c(
+      "family", "scenario", "replicate", "artificial_type", "warning_index",
+      "warning"
+    ),
+    "python-metrics-parity/v1" = c(
+      "metric", "index", "reference", "observed", "abs_error", "status"
+    ),
+    "methodology-gates/v2" = c(
+      "family", "scenario", "regime", "profile", "artificial_type",
+      "actual_artificial_type", "expected_replicates", "observed_replicates",
+      "ok_replicates", "cell_status", "gate", "bound", "criterion",
+      "gate_version", "decision_status", "pass"
+    ),
+    "late-fusion-replicates/v1" = c(
+      "family", "regime", "replicate", "seed", "data_seed",
+      "simulation_attempt", "status", "legacy_train", "oof_train",
+      "legacy_test", "oof_test", "legacy_optimism", "oof_optimism",
+      "oof_fallback_rate", "error"
+    ),
+    "late-fusion-summary/v1" = c(
+      "family", "regime", "replicates", "successful_replicates",
+      "mean_legacy_optimism", "mean_oof_optimism", "mean_test_difference",
+      "fallback_rate", "reduced_optimism", "noninferior", "fallback_ok"
+    ),
+    "late-fusion-warnings/v1" = c(
+      "family", "regime", "replicate", "seed", "mode", "warning"
+    ),
+    "common-gates/v1" = c(
+      "gate_id", "gate_version", "scope", "observed", "criterion", "pass",
+      "reason"
+    ),
+    NULL
+  )
+}
+
+.release_validate_csv_artifact <- function(path, schema) {
+  columns <- .release_csv_schema_columns(schema)
+  if (is.null(columns)) {
+    return(list(valid = FALSE, reason = paste0("unknown schema `", schema, "`")))
+  }
+  parsed <- tryCatch(
+    utils::read.csv(
+      path, stringsAsFactors = FALSE, check.names = FALSE,
+      na.strings = c("NA")
+    ),
+    error = identity
+  )
+  if (inherits(parsed, "error")) {
+    return(list(
+      valid = FALSE,
+      reason = paste0("CSV parse failed: ", conditionMessage(parsed))
+    ))
+  }
+  if (!identical(names(parsed), columns)) {
+    return(list(valid = FALSE, reason = "CSV columns do not match the schema"))
+  }
+  allow_empty <- schema %in% c(
+    "methodology-warnings/v2", "late-fusion-warnings/v1"
+  )
+  if (!allow_empty && nrow(parsed) == 0L) {
+    return(list(valid = FALSE, reason = "required CSV has no data rows"))
+  }
+  if (schema %in% c("methodology-gates/v2", "common-gates/v1") &&
+      (anyNA(parsed$pass) || !is.logical(parsed$pass))) {
+    return(list(valid = FALSE, reason = "gate pass values are not complete logicals"))
+  }
+  list(valid = TRUE, reason = "schema validated")
+}
+
+.release_validate_adapter_result <- function(result, declaration,
+                                             candidate_path) {
+  .release_assert_exact_fields(
+    result,
+    c(
+      "schema_version", "validation_id", "adapter", "bounded", "artifacts",
+      "gates", "metadata"
+    ),
+    "Adapter Result",
+    condition = "identity"
+  )
+  .release_assert_exact_fields(
+    result$metadata,
+    c("candidate_path", "candidate_version", "settings_sha256"),
+    "Adapter Result metadata",
+    condition = "identity"
+  )
+  if (!identical(result$schema_version, "stablr.adapter-result/v1") ||
+      !identical(result$validation_id, declaration$validation_id) ||
+      !identical(result$adapter, declaration$adapter) ||
+      !identical(result$bounded, FALSE) ||
+      !identical(result$metadata$candidate_path, candidate_path) ||
+      !identical(result$metadata$candidate_version, "0.1.1") ||
+      !.release_is_sha256(result$metadata$settings_sha256) ||
+      !identical(
+        result$metadata$settings_sha256,
+        .release_hash_record(declaration$settings)
+      ) || !is.list(result$artifacts) || !is.list(result$gates)) {
+    .release_identity_error("Adapter Result identity is invalid.")
+  }
+  invisible(result)
+}
+
+.release_normalize_gate_records <- function(raw_gates, declaration) {
+  expected <- declaration$scientific_gates
+  expected_ids <- vapply(expected, `[[`, character(1L), "gate_id")
+  raw_ids <- vapply(raw_gates, function(gate) {
+    if (is.list(gate) && .release_is_scalar_character(gate$gate_id)) {
+      gate$gate_id
+    } else {
+      ""
+    }
+  }, character(1L))
+  table_valid <- length(raw_gates) == length(expected) &&
+    !anyDuplicated(raw_ids) && identical(raw_ids, expected_ids)
+  normalized <- vector("list", length(expected))
+
+  for (i in seq_along(expected)) {
+    declared <- expected[[i]]
+    matches <- which(raw_ids == declared$gate_id)
+    valid <- length(matches) == 1L
+    gate <- if (valid) raw_gates[[matches]] else NULL
+    if (valid) {
+      valid <- tryCatch({
+        .release_assert_exact_fields(
+          gate,
+          c(
+            "gate_id", "gate_version", "scope", "observed", "criterion",
+            "pass", "reason"
+          ),
+          paste0("Adapter gate `", declared$gate_id, "`"),
+          condition = "identity"
+        )
+        strings <- gate[c(
+          "gate_id", "gate_version", "scope", "observed", "criterion", "reason"
+        )]
+        all(vapply(strings, .release_is_scalar_character, logical(1L))) &&
+          .release_is_scalar_logical(gate$pass) &&
+          identical(gate$gate_version, declared$gate_version)
+      }, stablr_release_error = function(e) FALSE)
+    }
+    if (isTRUE(valid)) {
+      if (!identical(declared$decision_status, "accepted") &&
+          identical(gate$pass, TRUE)) {
+        gate$pass <- FALSE
+        gate$reason <- paste0(
+          "gate decision status is `", declared$decision_status,
+          "`; a scientific pass is unavailable"
+        )
+      }
+      normalized[[i]] <- gate
+    } else {
+      table_valid <- FALSE
+      normalized[[i]] <- list(
+        gate_id = declared$gate_id,
+        gate_version = declared$gate_version,
+        scope = "required validation",
+        observed = "missing or invalid",
+        criterion = "adapter must report exactly one schema-valid gate",
+        pass = FALSE,
+        reason = "required gate record is missing, duplicated, or invalid"
+      )
+    }
+  }
+  if (!isTRUE(table_valid) && length(normalized) &&
+      all(vapply(normalized, `[[`, logical(1L), "pass"))) {
+    normalized[[1L]]$pass <- FALSE
+    normalized[[1L]]$reason <- "gate table contains an unknown or extra record"
+  }
+  list(gates = normalized, complete = isTRUE(table_valid))
+}
+
+.release_collect_artifact_records <- function(result_artifacts, declaration,
+                                              artifact_dir) {
+  expected <- declaration$artifacts
+  expected_names <- vapply(expected, `[[`, character(1L), "name")
+  expected_files <- vapply(expected, `[[`, character(1L), "path")
+  actual_entries <- list.files(
+    artifact_dir, all.files = TRUE, no.. = TRUE, full.names = FALSE
+  )
+  extras <- setdiff(actual_entries, expected_files)
+  if (length(extras)) {
+    .release_identity_error(
+      "Adapter wrote undeclared filesystem entries: ",
+      paste(extras, collapse = ", "), "."
+    )
+  }
+  result_names <- vapply(result_artifacts, function(artifact) {
+    if (is.list(artifact) && .release_is_scalar_character(artifact$name)) {
+      artifact$name
+    } else {
+      ""
+    }
+  }, character(1L))
+  declarations_complete <- length(result_artifacts) == length(expected) &&
+    !anyDuplicated(result_names) && identical(result_names, expected_names)
+  records <- vector("list", length(expected))
+
+  for (i in seq_along(expected)) {
+    declared <- expected[[i]]
+    relative <- file.path("artifacts", declared$path)
+    path <- file.path(artifact_dir, declared$path)
+    matches <- which(result_names == declared$name)
+    declaration_valid <- length(matches) == 1L
+    if (declaration_valid) {
+      reported <- result_artifacts[[matches]]
+      declaration_valid <- tryCatch({
+        .release_assert_exact_fields(
+          reported, c("name", "path", "schema"),
+          paste0("Adapter artifact `", declared$name, "`"),
+          condition = "identity"
+        )
+        identical(reported$name, declared$name) &&
+          identical(reported$path, relative) &&
+          identical(reported$schema, declared$schema)
+      }, stablr_release_error = function(e) FALSE)
+    }
+    if (!isTRUE(declaration_valid)) declarations_complete <- FALSE
+
+    link_target <- Sys.readlink(path)
+    present <- file.exists(path)
+    is_link <- !is.na(link_target) && nzchar(link_target)
+    if (is_link || (present && dir.exists(path))) {
+      .release_identity_error("Adapter artifact is not a regular owned file.")
+    }
+    schema <- if (present) {
+      .release_validate_csv_artifact(path, declared$schema)
+    } else {
+      list(valid = FALSE, reason = "required artifact is missing")
+    }
+    schema_valid <- isTRUE(schema$valid) && isTRUE(declaration_valid)
+    reason <- if (!isTRUE(declaration_valid)) {
+      paste("adapter declaration is missing or invalid;", schema$reason)
+    } else {
+      schema$reason
+    }
+    records[[i]] <- list(
+      name = declared$name,
+      path = relative,
+      schema = declared$schema,
+      present = present,
+      schema_valid = schema_valid,
+      sha256 = if (present) .release_hash_file(path) else "",
+      size = if (present) unname(file.info(path)$size) else 0,
+      reason = reason
+    )
+  }
+  list(
+    artifacts = records,
+    complete = isTRUE(declarations_complete) && all(vapply(
+      records,
+      function(record) isTRUE(record$present) && isTRUE(record$schema_valid),
+      logical(1L)
+    ))
+  )
+}
+
+.release_file_manifest_entry <- function(root, relative) {
+  components <- strsplit(relative, "/", fixed = TRUE)[[1L]]
+  if (!.release_is_scalar_character(relative) || grepl("^/", relative) ||
+      any(components %in% c("", ".", ".."))) {
+    .release_identity_error("Packet manifest path is unsafe.")
+  }
+  path <- file.path(root, relative)
+  if (!file.exists(path) || dir.exists(path) || nzchar(Sys.readlink(path))) {
+    .release_identity_error("Packet manifest member is not a regular file.")
+  }
+  list(
+    path = relative,
+    sha256 = .release_hash_file(path),
+    size = unname(file.info(path)$size)
+  )
+}
+
+.release_validate_packet_record <- function(packet, declaration) {
+  .release_assert_exact_fields(
+    packet,
+    c(
+      "schema_version", "packet_id", "validation_id", "status",
+      "promotable", "candidate_sha256", "runtime_id", "contract_sha256",
+      "artifacts", "gates", "manifest_sha256"
+    ),
+    "Validation Run Packet",
+    condition = "identity"
+  )
+  valid <- identical(packet$schema_version, "stablr.validation-run-packet/v1") &&
+    .release_is_scalar_character(packet$packet_id) &&
+    nchar(packet$packet_id) >= 16L &&
+    identical(packet$validation_id, declaration$validation_id) &&
+    packet$status %in% c("passing", "failed") &&
+    .release_is_scalar_logical(packet$promotable) &&
+    .release_is_sha256(packet$candidate_sha256) &&
+    .release_is_sha256(packet$runtime_id) &&
+    .release_is_sha256(packet$contract_sha256) &&
+    .release_is_sha256(packet$manifest_sha256) &&
+    is.list(packet$artifacts) && is.list(packet$gates)
+  if (!isTRUE(valid)) {
+    .release_identity_error("Validation Run Packet identity is invalid.")
+  }
+  invisible(packet)
+}
+
+.release_validate_packet_manifest <- function(manifest, packet_id) {
+  .release_assert_exact_fields(
+    manifest, c("schema_version", "packet_id", "files"),
+    "Packet Manifest", condition = "identity"
+  )
+  if (!identical(manifest$schema_version, "stablr.packet-manifest/v1") ||
+      !identical(manifest$packet_id, packet_id) ||
+      !is.list(manifest$files) || !length(manifest$files)) {
+    .release_identity_error("Packet Manifest identity is invalid.")
+  }
+  paths <- character(length(manifest$files))
+  for (i in seq_along(manifest$files)) {
+    member <- manifest$files[[i]]
+    .release_assert_exact_fields(
+      member, c("path", "sha256", "size"),
+      paste0("Packet Manifest member ", i), condition = "identity"
+    )
+    components <- if (.release_is_scalar_character(member$path)) {
+      strsplit(member$path, "/", fixed = TRUE)[[1L]]
+    } else {
+      ""
+    }
+    if (!.release_is_scalar_character(member$path) ||
+        grepl("^/", member$path) ||
+        any(components %in% c("", ".", "..")) ||
+        !.release_is_sha256(member$sha256) ||
+        !.release_is_scalar_number(member$size) || member$size < 0) {
+      .release_identity_error("Packet Manifest member identity is invalid.")
+    }
+    paths[[i]] <- member$path
+  }
+  if (anyDuplicated(paths) ||
+      !identical(paths, sort(paths, method = "radix"))) {
+    .release_identity_error("Packet Manifest paths are ambiguous or unsorted.")
+  }
+  invisible(manifest)
+}
+
+.release_verify_packet <- function(context, packet_reference,
+                                   require_seal = TRUE) {
+  verified <- .release_verify_context(context)
+  if (is.character(packet_reference) && length(packet_reference) == 1L) {
+    packet_reference <- read_release_reference(packet_reference)
+  }
+  if (!inherits(packet_reference, "stablr_packet_ref")) {
+    .release_identity_error("`packet_reference` is not a Packet Reference.")
+  }
+  reference <- unclass(packet_reference)
+  .release_validate_packet_ref(reference)
+  declaration <- .release_validation_declaration(
+    verified$contract, reference$validation_id
+  )
+  packet_path <- .release_normalize_absolute(
+    reference$packet_path, "Validation Run Packet", "file"
+  )
+  packet_dir <- dirname(packet_path)
+  expected_dir <- file.path(
+    verified$record$store, "packets", paste0("packet-", reference$packet_id)
+  )
+  seal_exists <- dir.exists(file.path(packet_dir, "SEALED"))
+  if (!identical(packet_dir, expected_dir) ||
+      !identical(packet_path, file.path(expected_dir, "packet.json")) ||
+      (isTRUE(require_seal) && !seal_exists) ||
+      (!isTRUE(require_seal) && seal_exists) ||
+      !identical(.release_hash_file(packet_path), reference$packet_sha256)) {
+    .release_identity_error("Packet Reference seal or identity failed.")
+  }
+  packet <- .release_read_json(packet_path, "Validation Run Packet")
+  .release_validate_packet_record(packet, declaration)
+  if (!identical(packet$packet_id, reference$packet_id) ||
+      !identical(packet$status, reference$status) ||
+      !identical(
+        packet$candidate_sha256, verified$record$candidate$sha256
+      ) || !identical(packet$runtime_id, verified$runtime$runtime_id) ||
+      !identical(packet$contract_sha256, verified$record$contract$sha256)) {
+    .release_identity_error("Validation Run Packet targets foreign evidence.")
+  }
+
+  manifest_path <- file.path(packet_dir, "packet-manifest.json")
+  if (!file.exists(manifest_path) ||
+      !identical(.release_hash_file(manifest_path), packet$manifest_sha256)) {
+    .release_identity_error("Packet Manifest identity changed.")
+  }
+  manifest <- .release_read_json(manifest_path, "Packet Manifest")
+  .release_validate_packet_manifest(manifest, packet$packet_id)
+  manifest_ok <- vapply(manifest$files, function(member) {
+    path <- file.path(packet_dir, member$path)
+    file.exists(path) && !dir.exists(path) && !nzchar(Sys.readlink(path)) &&
+      identical(.release_hash_file(path), member$sha256) &&
+      identical(
+        as.numeric(unname(file.info(path)$size)),
+        as.numeric(member$size)
+      )
+  }, logical(1L))
+  if (!all(manifest_ok)) {
+    .release_identity_error("Packet Manifest file closure changed.")
+  }
+  manifest_paths <- vapply(manifest$files, `[[`, character(1L), "path")
+  actual_files <- sort(
+    list.files(
+      packet_dir, all.files = TRUE, no.. = TRUE, recursive = TRUE,
+      full.names = FALSE, include.dirs = FALSE
+    ),
+    method = "radix"
+  )
+  expected_files <- sort(
+    c(manifest_paths, "packet-manifest.json", "packet.json"),
+    method = "radix"
+  )
+  if (!identical(actual_files, expected_files)) {
+    .release_identity_error("Validation Run Packet has an undeclared file.")
+  }
+  directories <- list.dirs(
+    packet_dir, recursive = FALSE, full.names = FALSE
+  )
+  directories <- sort(directories[nzchar(directories)], method = "radix")
+  expected_directories <- c("artifacts", if (isTRUE(require_seal)) "SEALED")
+  if (!identical(directories, sort(expected_directories, method = "radix"))) {
+    .release_identity_error("Validation Run Packet directory closure changed.")
+  }
+  content_paths <- file.path(packet_dir, expected_files)
+  writable_bits <- bitwAnd(
+    as.integer(file.info(content_paths)$mode),
+    as.integer(as.octmode("0222"))
+  )
+  if (any(writable_bits != 0L)) {
+    .release_identity_error("Sealed packet content remains writable.")
+  }
+
+  result_path <- file.path(packet_dir, "adapter-result.json")
+  result <- .release_read_json(result_path, "Adapter Result")
+  candidate_path <- file.path(verified$record$library$path, "stablr")
+  .release_validate_adapter_result(result, declaration, candidate_path)
+  recollected <- .release_collect_artifact_records(
+    result$artifacts,
+    declaration,
+    file.path(packet_dir, "artifacts")
+  )
+  gates <- .release_normalize_gate_records(result$gates, declaration)
+  if (!.release_json_identical(packet$artifacts, recollected$artifacts) ||
+      !.release_json_identical(packet$gates, gates$gates)) {
+    .release_identity_error("Packet lifecycle records changed after derivation.")
+  }
+  gate_pass <- gates$complete && all(vapply(
+    gates$gates, function(gate) identical(gate$pass, TRUE), logical(1L)
+  ))
+  passing <- recollected$complete && gate_pass
+  expected_status <- if (passing) "passing" else "failed"
+  accepted <- all(vapply(
+    declaration$scientific_gates,
+    function(gate) identical(gate$decision_status, "accepted"),
+    logical(1L)
+  ))
+  expected_promotable <- passing && isTRUE(verified$contract$promotable) &&
+    accepted
+  if (!identical(packet$status, expected_status) ||
+      !identical(packet$promotable, expected_promotable)) {
+    .release_identity_error("Packet status or promotability was not derived.")
+  }
+  list(
+    reference = packet_reference,
+    packet = packet,
+    manifest = manifest,
+    context = verified,
+    declaration = declaration
+  )
+}
+
+.release_finalize_validation_attempt <- function(verified, declaration,
+                                                 attempt, packet_id, result) {
+  .release_verify_context(verified$reference)
+  candidate_path <- file.path(verified$record$library$path, "stablr")
+  .release_validate_adapter_result(result, declaration, candidate_path)
+  artifact_dir <- file.path(attempt, "artifacts")
+  if (!dir.exists(artifact_dir)) {
+    .release_identity_error("Validation Attempt has no artifact directory.")
+  }
+  artifacts <- .release_collect_artifact_records(
+    result$artifacts, declaration, artifact_dir
+  )
+  gates <- .release_normalize_gate_records(result$gates, declaration)
+  gate_pass <- gates$complete && all(vapply(
+    gates$gates, function(gate) identical(gate$pass, TRUE), logical(1L)
+  ))
+  passing <- artifacts$complete && gate_pass
+  status <- if (passing) "passing" else "failed"
+  accepted <- all(vapply(
+    declaration$scientific_gates,
+    function(gate) identical(gate$decision_status, "accepted"),
+    logical(1L)
+  ))
+  promotable <- passing && isTRUE(verified$contract$promotable) && accepted
+
+  control_files <- c(
+    "adapter-result.json", "context-reference.json", "process.log"
+  )
+  present_artifacts <- vapply(
+    artifacts$artifacts,
+    function(record) if (isTRUE(record$present)) record$path else "",
+    character(1L)
+  )
+  manifest_paths <- sort(
+    c(control_files, present_artifacts[nzchar(present_artifacts)]),
+    method = "radix"
+  )
+  manifest <- list(
+    schema_version = "stablr.packet-manifest/v1",
+    packet_id = packet_id,
+    files = lapply(
+      manifest_paths,
+      function(path) .release_file_manifest_entry(attempt, path)
+    )
+  )
+  .release_validate_packet_manifest(manifest, packet_id)
+  manifest_path <- file.path(attempt, "packet-manifest.json")
+  manifest_sha256 <- .release_write_canonical_json(manifest, manifest_path)
+  packet <- list(
+    schema_version = "stablr.validation-run-packet/v1",
+    packet_id = packet_id,
+    validation_id = declaration$validation_id,
+    status = status,
+    promotable = promotable,
+    candidate_sha256 = verified$record$candidate$sha256,
+    runtime_id = verified$runtime$runtime_id,
+    contract_sha256 = verified$record$contract$sha256,
+    artifacts = artifacts$artifacts,
+    gates = gates$gates,
+    manifest_sha256 = manifest_sha256
+  )
+  .release_validate_packet_record(packet, declaration)
+  packet_path <- file.path(attempt, "packet.json")
+  packet_sha256 <- .release_write_canonical_json(packet, packet_path)
+  .release_make_read_only(attempt, include_root = FALSE)
+
+  packets_dir <- file.path(verified$record$store, "packets")
+  dir.create(packets_dir, recursive = TRUE, showWarnings = FALSE)
+  final_packet <- file.path(packets_dir, paste0("packet-", packet_id))
+  if (file.exists(final_packet) || dir.exists(final_packet) ||
+      !file.rename(attempt, final_packet)) {
+    .release_identity_error("Atomic Validation Run Packet publication failed.")
+  }
+  reference <- .release_new_packet_ref(list(
+    schema_version = "stablr.packet-ref/v1",
+    kind = "validation_packet",
+    packet_id = packet_id,
+    validation_id = declaration$validation_id,
+    status = status,
+    packet_path = file.path(final_packet, "packet.json"),
+    packet_sha256 = packet_sha256
+  ))
+  .release_verify_packet(
+    verified$reference, reference, require_seal = FALSE
+  )
+  if (!dir.create(file.path(final_packet, "SEALED"), showWarnings = FALSE)) {
+    .release_identity_error("Validation Run Packet seal-last publication failed.")
+  }
+  .release_verify_packet(verified$reference, reference)
+  reference
+}
+
+run_required_validation <- function(context, validation_id) {
+  verified <- .release_verify_context(context)
+  declaration <- .release_validation_declaration(
+    verified$contract, validation_id
+  )
+  packet_id <- .release_random_id()
+  attempts_dir <- file.path(verified$record$store, "attempts")
+  dir.create(attempts_dir, recursive = TRUE, showWarnings = FALSE)
+  attempt <- file.path(attempts_dir, paste0(".attempt-", packet_id))
+  if (!dir.create(attempt, showWarnings = FALSE)) {
+    .release_identity_error("Could not allocate a Validation Attempt.")
+  }
+  artifact_dir <- file.path(attempt, "artifacts")
+  temporary_dir <- file.path(attempt, "tmp")
+  if (!dir.create(temporary_dir, showWarnings = FALSE)) {
+    .release_identity_error("Could not allocate Validation Attempt temporary state.")
+  }
+  context_path <- file.path(attempt, "context-reference.json")
+  write_release_reference(verified$reference, context_path)
+  result_path <- file.path(attempt, "adapter-result.json")
+  process_log <- file.path(attempt, "process.log")
+  child <- .release_normalize_absolute(
+    file.path(
+      verified$record$library$path,
+      "stablr", "analysis", "release_validation_child.R"
+    ),
+    "candidate validation child",
+    "file"
+  )
+  environment <- c(
+    .release_sanitized_environment(
+      verified$contract, verified$record$library$path
+    ),
+    paste0("TMPDIR=", temporary_dir),
+    paste0("TMP=", temporary_dir),
+    paste0("TEMP=", temporary_dir)
+  )
+  output <- suppressWarnings(system2(
+    verified$runtime$rscript$path,
+    c(
+      "--vanilla", shQuote(child), shQuote(context_path),
+      shQuote(validation_id), shQuote(attempt), shQuote(result_path)
+    ),
+    stdout = TRUE,
+    stderr = TRUE,
+    env = environment
+  ))
+  status <- attr(output, "status") %||% 0L
+  writeLines(output, process_log, useBytes = TRUE)
+  if (status != 0L) {
+    .release_incomplete_error(
+      "Required Validation child exited unexpectedly with status ", status,
+      ". The attempt remains unsealed.",
+      attempt_path = attempt,
+      process_status = status,
+      process_output = output
+    )
+  }
+  if (!file.exists(result_path) || dir.exists(result_path)) {
+    .release_incomplete_error(
+      "Required Validation child returned without an Adapter Result. ",
+      "The attempt remains unsealed.",
+      attempt_path = attempt
+    )
+  }
+  if (dir.exists(temporary_dir)) {
+    .release_discard_attempt(temporary_dir)
+  }
+  result <- tryCatch(
+    .release_read_json(result_path, "Adapter Result"),
+    stablr_release_error = function(e) {
+      .release_incomplete_error(
+        "Adapter Result could not be read. The attempt remains unsealed.",
+        attempt_path = attempt,
+        parent = e
+      )
+    }
+  )
+  verified <- .release_verify_context(verified$reference)
+  reference <- .release_finalize_validation_attempt(
+    verified, declaration, attempt, packet_id, result
+  )
+  if (identical(reference$status, "failed")) {
+    .release_validation_failed_error(
+      "Required Validation completed but its sealed packet failed.",
+      packet_reference = reference
+    )
+  }
+  reference
+}
+
+.release_validate_explicit_packet_set <- function(verified, packets) {
+  required_ids <- vapply(
+    verified$contract$required_validations,
+    `[[`, character(1L), "validation_id"
+  )
+  if (!is.list(packets) || length(packets) != length(required_ids)) {
+    .release_assembly_error(
+      "Assembly requires exactly one explicit packet per Required Validation."
+    )
+  }
+  ids <- vapply(packets, function(packet) {
+    if (is.list(packet) && is.list(packet$packet) &&
+        .release_is_scalar_character(packet$packet$validation_id)) {
+      packet$packet$validation_id
+    } else {
+      ""
+    }
+  }, character(1L))
+  if (anyDuplicated(ids) || !setequal(ids, required_ids)) {
+    .release_assembly_error(
+      "Explicit packet set has a duplicate, missing, extra, or foreign validation."
+    )
+  }
+  ordered <- packets[match(required_ids, ids)]
+  eligible <- vapply(ordered, function(packet) {
+    identical(packet$packet$status, "passing") &&
+      identical(packet$packet$promotable, TRUE) &&
+      inherits(packet$reference, "stablr_packet_ref")
+  }, logical(1L))
+  if (!all(eligible)) {
+    .release_assembly_error(
+      "Every explicit packet must be sealed, passing, and promotable."
+    )
+  }
+  if (!isTRUE(verified$contract$promotable) ||
+      length(verified$contract$blockers)) {
+    .release_assembly_error(
+      "The Release Contract is non-promotable or has unresolved blockers.",
+      blockers = verified$contract$blockers
+    )
+  }
+  ordered
+}
+
+.release_validate_release_record <- function(release, verified) {
+  .release_assert_exact_fields(
+    release,
+    c(
+      "schema_version", "release_id", "candidate_sha256", "runtime_id",
+      "contract_sha256", "packet_refs", "manifest_sha256"
+    ),
+    "Release Evidence Packet",
+    condition = "assembly"
+  )
+  valid <- identical(
+    release$schema_version, "stablr.release-evidence-packet/v1"
+  ) && .release_is_scalar_character(release$release_id) &&
+    nchar(release$release_id) >= 16L &&
+    identical(
+      release$candidate_sha256, verified$record$candidate$sha256
+    ) && identical(release$runtime_id, verified$runtime$runtime_id) &&
+    identical(
+      release$contract_sha256, verified$record$contract$sha256
+    ) && is.list(release$packet_refs) &&
+    .release_is_sha256(release$manifest_sha256)
+  if (!isTRUE(valid)) {
+    .release_assembly_error("Release Evidence Packet identity is invalid.")
+  }
+  invisible(release)
+}
+
+.release_verify_release <- function(context, release_reference,
+                                    require_seal = TRUE) {
+  verified <- .release_verify_context(context)
+  if (is.character(release_reference) && length(release_reference) == 1L) {
+    release_reference <- read_release_reference(release_reference)
+  }
+  if (!inherits(release_reference, "stablr_release_ref")) {
+    .release_assembly_error(
+      "`release_reference` is not a Release Evidence Reference."
+    )
+  }
+  reference <- unclass(release_reference)
+  .release_validate_release_ref(reference)
+  release_path <- .release_normalize_absolute(
+    reference$release_path, "Release Evidence Packet", "file"
+  )
+  release_dir <- dirname(release_path)
+  expected_dir <- file.path(
+    verified$record$store,
+    "releases",
+    paste0("release-", reference$release_id)
+  )
+  seal_exists <- dir.exists(file.path(release_dir, "SEALED"))
+  if (!identical(release_dir, expected_dir) ||
+      !identical(release_path, file.path(expected_dir, "release.json")) ||
+      (isTRUE(require_seal) && !seal_exists) ||
+      (!isTRUE(require_seal) && seal_exists) ||
+      !identical(.release_hash_file(release_path), reference$release_sha256)) {
+    .release_assembly_error("Release Evidence Reference identity failed.")
+  }
+  release <- .release_read_json(release_path, "Release Evidence Packet")
+  .release_validate_release_record(release, verified)
+  if (!identical(release$release_id, reference$release_id)) {
+    .release_assembly_error("Release Evidence Reference targets foreign state.")
+  }
+
+  manifest_path <- file.path(release_dir, "release-manifest.json")
+  if (!file.exists(manifest_path) ||
+      !identical(.release_hash_file(manifest_path), release$manifest_sha256)) {
+    .release_assembly_error("Release Manifest identity changed.")
+  }
+  manifest <- .release_read_json(manifest_path, "Release Manifest")
+  .release_assert_exact_fields(
+    manifest, c("schema_version", "release_id", "files"),
+    "Release Manifest", condition = "assembly"
+  )
+  if (!identical(manifest$schema_version, "stablr.release-manifest/v1") ||
+      !identical(manifest$release_id, release$release_id) ||
+      !is.list(manifest$files)) {
+    .release_assembly_error("Release Manifest record is invalid.")
+  }
+  manifest_paths <- character(length(manifest$files))
+  manifest_ok <- vapply(seq_along(manifest$files), function(i) {
+    member <- manifest$files[[i]]
+    valid_fields <- tryCatch({
+      .release_assert_exact_fields(
+        member, c("path", "sha256", "size"),
+        paste0("Release Manifest member ", i), condition = "assembly"
+      )
+      TRUE
+    }, stablr_release_error = function(e) FALSE)
+    components <- if (.release_is_scalar_character(member$path)) {
+      strsplit(member$path, "/", fixed = TRUE)[[1L]]
+    } else {
+      ""
+    }
+    if (!valid_fields || !.release_is_scalar_character(member$path) ||
+        grepl("^/", member$path) ||
+        any(components %in% c("", ".", "..")) ||
+        !.release_is_sha256(member$sha256) ||
+        !.release_is_scalar_number(member$size)) {
+      return(FALSE)
+    }
+    manifest_paths[[i]] <<- member$path
+    path <- file.path(release_dir, member$path)
+    file.exists(path) && !dir.exists(path) && !nzchar(Sys.readlink(path)) &&
+      identical(.release_hash_file(path), member$sha256) &&
+      identical(
+        as.numeric(unname(file.info(path)$size)), as.numeric(member$size)
+      )
+  }, logical(1L))
+  if (!all(manifest_ok) || anyDuplicated(manifest_paths) ||
+      !identical(manifest_paths, sort(manifest_paths, method = "radix"))) {
+    .release_assembly_error("Release Manifest file closure changed.")
+  }
+  actual_files <- sort(
+    list.files(
+      release_dir, all.files = TRUE, no.. = TRUE, recursive = TRUE,
+      full.names = FALSE, include.dirs = FALSE
+    ),
+    method = "radix"
+  )
+  expected_files <- sort(
+    c(manifest_paths, "release-manifest.json", "release.json"),
+    method = "radix"
+  )
+  if (!identical(actual_files, expected_files)) {
+    .release_assembly_error("Release Evidence Packet has an undeclared file.")
+  }
+  directories <- list.dirs(
+    release_dir, recursive = FALSE, full.names = FALSE
+  )
+  directories <- sort(directories[nzchar(directories)], method = "radix")
+  expected_directories <- if (isTRUE(require_seal)) "SEALED" else character()
+  if (!identical(directories, expected_directories)) {
+    .release_assembly_error("Release Evidence Packet directories changed.")
+  }
+  content_paths <- file.path(release_dir, expected_files)
+  writable_bits <- bitwAnd(
+    as.integer(file.info(content_paths)$mode),
+    as.integer(as.octmode("0222"))
+  )
+  if (any(writable_bits != 0L)) {
+    .release_assembly_error("Release Evidence Packet content remains writable.")
+  }
+
+  stored_context <- read_release_reference(
+    file.path(release_dir, "context-reference.json")
+  )
+  if (!identical(stored_context, verified$reference)) {
+    .release_assembly_error("Release Context Reference changed during assembly.")
+  }
+  required_ids <- vapply(
+    verified$contract$required_validations,
+    `[[`, character(1L), "validation_id"
+  )
+  stored_refs <- lapply(required_ids, function(id) {
+    read_release_reference(file.path(
+      release_dir, paste0("packet-reference-", id, ".json")
+    ))
+  })
+  packets <- lapply(stored_refs, function(packet) {
+    tryCatch(
+      .release_verify_packet(verified$reference, packet),
+      stablr_release_error = function(e) {
+        .release_assembly_error(
+          "A stored packet failed re-verification.", parent = e
+        )
+      }
+    )
+  })
+  packets <- .release_validate_explicit_packet_set(verified, packets)
+  normalized_refs <- lapply(packets, function(packet) {
+    unclass(packet$reference)
+  })
+  if (!.release_json_identical(release$packet_refs, normalized_refs)) {
+    .release_assembly_error("Release packet references changed after assembly.")
+  }
+  list(
+    reference = release_reference,
+    release = release,
+    manifest = manifest,
+    context = verified,
+    packets = packets
+  )
+}
+
+assemble_release_evidence <- function(context, packet_refs) {
+  verified <- .release_verify_context(context)
+  if (!is.list(packet_refs) || inherits(packet_refs, "stablr_packet_ref") ||
+      !length(packet_refs)) {
+    .release_assembly_error("`packet_refs` must be an explicit list.")
+  }
+  packets <- lapply(packet_refs, function(packet) {
+    tryCatch(
+      .release_verify_packet(verified$reference, packet),
+      stablr_release_error = function(e) {
+        .release_assembly_error(
+          "An explicit packet is invalid or ineligible.", parent = e
+        )
+      }
+    )
+  })
+  packets <- .release_validate_explicit_packet_set(verified, packets)
+
+  release_id <- .release_random_id()
+  releases_dir <- file.path(verified$record$store, "releases")
+  dir.create(releases_dir, recursive = TRUE, showWarnings = FALSE)
+  staging <- file.path(releases_dir, paste0(".release-", release_id))
+  final_release <- file.path(releases_dir, paste0("release-", release_id))
+  if (!dir.create(staging, showWarnings = FALSE)) {
+    .release_assembly_error("Could not allocate Release Evidence staging.")
+  }
+  write_release_reference(
+    verified$reference, file.path(staging, "context-reference.json")
+  )
+  for (packet in packets) {
+    write_release_reference(
+      packet$reference,
+      file.path(
+        staging,
+        paste0("packet-reference-", packet$packet$validation_id, ".json")
+      )
+    )
+  }
+  reference_paths <- c(
+    "context-reference.json",
+    paste0(
+      "packet-reference-",
+      vapply(packets, function(packet) packet$packet$validation_id,
+             character(1L)),
+      ".json"
+    )
+  )
+  reference_paths <- sort(reference_paths, method = "radix")
+  manifest <- list(
+    schema_version = "stablr.release-manifest/v1",
+    release_id = release_id,
+    files = lapply(
+      reference_paths,
+      function(path) .release_file_manifest_entry(staging, path)
+    )
+  )
+  manifest_path <- file.path(staging, "release-manifest.json")
+  manifest_sha256 <- .release_write_canonical_json(manifest, manifest_path)
+  release <- list(
+    schema_version = "stablr.release-evidence-packet/v1",
+    release_id = release_id,
+    candidate_sha256 = verified$record$candidate$sha256,
+    runtime_id = verified$runtime$runtime_id,
+    contract_sha256 = verified$record$contract$sha256,
+    packet_refs = lapply(packets, function(packet) unclass(packet$reference)),
+    manifest_sha256 = manifest_sha256
+  )
+  .release_validate_release_record(release, verified)
+  release_path <- file.path(staging, "release.json")
+  release_sha256 <- .release_write_canonical_json(release, release_path)
+  .release_make_read_only(staging, include_root = FALSE)
+  if (file.exists(final_release) || dir.exists(final_release) ||
+      !file.rename(staging, final_release)) {
+    .release_assembly_error("Atomic Release Evidence publication failed.")
+  }
+  reference <- .release_new_release_ref(list(
+    schema_version = "stablr.release-evidence-ref/v1",
+    kind = "release_evidence",
+    release_id = release_id,
+    store = verified$record$store,
+    release_path = file.path(final_release, "release.json"),
+    release_sha256 = release_sha256
+  ))
+  .release_verify_release(
+    verified$reference, reference, require_seal = FALSE
+  )
+  if (!dir.create(file.path(final_release, "SEALED"), showWarnings = FALSE)) {
+    .release_assembly_error("Release Evidence seal-last publication failed.")
+  }
+  .release_verify_release(verified$reference, reference)
+  reference
 }

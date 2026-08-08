@@ -95,7 +95,7 @@ test_that("methodology validation runner writes bounded artifact schema", {
   ) %in% names(gate_rows)))
 })
 
-test_that("release provenance detects dirty and moving source trees", {
+test_that("release runners require candidate-bound adapter execution", {
   env <- new.env(parent = globalenv())
   sys.source(.methodology_runner_path(), envir = env)
   clean <- list(commit = "abc", tree = "tree-a", dirty = FALSE)
@@ -107,13 +107,12 @@ test_that("release provenance detects dirty and moving source trees", {
   expect_true(env$.git_provenance_is_stable(clean, clean))
   expect_false(env$.git_provenance_is_stable(clean, moved))
 
-  env$.git_provenance <- function(root) dirty
   expect_error(
     env$run_methodology_validation(
       out = tempfile("method-dirty-release-"),
       profile = "release"
     ),
-    "requires a clean Git source tree"
+    "must run through the candidate-bound release adapter"
   )
 
   late_env <- new.env(parent = globalenv())
@@ -122,7 +121,7 @@ test_that("release provenance detects dirty and moving source trees", {
   expect_false(late_env$.git_provenance_is_available(list(
     commit = NA_character_, tree = NA_character_, dirty = NA
   )))
-  late_env$.source_provenance_start <- dirty
+  late_env$.git_provenance <- function(root) dirty
   expect_error(
     late_env$run_late_fusion_validation(
       out = tempfile("late-fusion-dirty-release-"),
@@ -156,6 +155,88 @@ test_that("locked release methodology profile covers the advertised matrix", {
   expect_true(all(c(0, 0.7) %in% scenarios$correlation))
   expect_true(any(scenarios$profile == "high_dim" & scenarios$regime == "null"))
   expect_true(any(scenarios$profile == "high_dim" & scenarios$regime == "signal"))
+})
+
+test_that("methodology adapter emits the complete common gate contract", {
+  env <- new.env(parent = globalenv())
+  sys.source(.methodology_runner_path(), envir = env)
+  details <- data.frame(
+    family = "gaussian",
+    scenario = c(rep("null", 3L), rep("signal", 2L)),
+    artificial_type = "random_permutation",
+    cell_status = "complete",
+    gate = c(
+      "null_select_any", "null_selected_fraction", "null_90pct_collapse",
+      "signal_mean_fdp", "signal_tpr"
+    ),
+    bound = c(0.05, NA, 0, 0.08, 0.7),
+    pass = c(TRUE, FALSE, TRUE, TRUE, TRUE),
+    stringsAsFactors = FALSE
+  )
+  parity <- data.frame(status = "ok", abs_error = 0)
+
+  gates <- env$.methodology_common_gate_table(details, parity)
+  expect_identical(
+    gates$gate_id,
+    c(
+      "cell_completeness", "python_metrics_parity", "null_select_any",
+      "null_selected_fraction", "null_select_90pct", "signal_mean_fdp",
+      "signal_tpr"
+    )
+  )
+  expect_false(gates$pass[gates$gate_id == "null_selected_fraction"])
+  expect_true(all(gates$pass[gates$gate_id != "null_selected_fraction"]))
+  expect_identical(
+    gates$gate_version[gates$gate_id == "null_select_any"],
+    "null-select-any-wilson-v1"
+  )
+})
+
+test_that("late-fusion adapter emits the complete common gate contract", {
+  env <- new.env(parent = globalenv())
+  sys.source(.late_fusion_runner_path(), envir = env)
+  design <- expand.grid(
+    family = c("gaussian", "binomial", "multinomial"),
+    regime = c("null", "signal"),
+    stringsAsFactors = FALSE
+  )
+  summary <- transform(
+    design,
+    replicates = 50L,
+    successful_replicates = 50L,
+    mean_legacy_optimism = 0.2,
+    mean_oof_optimism = 0.1,
+    mean_test_difference = 0,
+    fallback_rate = 0,
+    reduced_optimism = TRUE,
+    noninferior = TRUE,
+    fallback_ok = TRUE
+  )
+
+  gates <- env$.late_fusion_common_gate_table(summary, 50L)
+  expect_identical(
+    gates$gate_id,
+    c(
+      "cell_completeness", "reduced_optimism", "noninferiority",
+      "fallback_rate"
+    )
+  )
+  expect_true(all(gates$pass))
+  summary$fallback_ok[summary$regime == "signal"] <- FALSE
+  failed <- env$.late_fusion_common_gate_table(summary, 50L)
+  expect_false(failed$pass[failed$gate_id == "fallback_rate"])
+  expect_error(
+    env$run_late_fusion_validation(
+      tempfile("late-invalid-"), replicates = c(1L, 2L)
+    ),
+    "scalar positive integers"
+  )
+  expect_error(
+    env$run_late_fusion_validation(
+      tempfile("late-invalid-"), replicates = 1.5
+    ),
+    "positive integers"
+  )
 })
 
 test_that("methodology scenarios generate valid outcomes for every family", {

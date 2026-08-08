@@ -101,7 +101,7 @@
         },
         {
           "gate_id": "null_select_any",
-          "gate_version": "methodology-null-select-any/v1",
+          "gate_version": "null-select-any-wilson-v1",
           "decision_status": "accepted"
         },
         {
@@ -111,17 +111,17 @@
         },
         {
           "gate_id": "null_select_90pct",
-          "gate_version": "methodology-null-select-90pct/v1",
+          "gate_version": "null-90pct-collapse-count-v1",
           "decision_status": "accepted"
         },
         {
           "gate_id": "signal_mean_fdp",
-          "gate_version": "methodology-signal-mean-fdp/v1",
+          "gate_version": "signal-mean-fdp-t-v1",
           "decision_status": "accepted"
         },
         {
           "gate_id": "signal_tpr",
-          "gate_version": "methodology-signal-tpr/v1",
+          "gate_version": "signal-tpr-t-v1",
           "decision_status": "accepted"
         }
       ]

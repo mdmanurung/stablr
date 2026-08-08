@@ -62,18 +62,68 @@
     identical(start$dirty, end$dirty)
 }
 
-.source_provenance_start <- .git_provenance(.root)
+.late_validation_runtime <- new.env(parent = emptyenv())
 
-if ("stablr" %in% loadedNamespaces()) {
-  .package_mode <- paste0(
-    "loaded:", getNamespaceInfo(asNamespace("stablr"), "path")
-  )
-} else if (!is.na(.root) && requireNamespace("pkgload", quietly = TRUE)) {
-  pkgload::load_all(.root, quiet = TRUE)
-  .package_mode <- paste0("source:", .root)
-} else {
-  if (!requireNamespace("stablr", quietly = TRUE)) stop("stablr must be installed.")
-  .package_mode <- paste0("installed:", system.file(package = "stablr"))
+.load_late_validation_package <- function(candidate_only = FALSE,
+                                          candidate_path = NULL) {
+  if (isTRUE(.late_validation_runtime$loaded)) {
+    if (isTRUE(candidate_only)) {
+      if (!is.character(candidate_path) || length(candidate_path) != 1L ||
+          is.na(candidate_path) || !dir.exists(candidate_path)) {
+        stop("Candidate validation requires an existing candidate path.",
+             call. = FALSE)
+      }
+      expected_mode <- paste0(
+        "installed_candidate:",
+        normalizePath(candidate_path, winslash = "/", mustWork = TRUE)
+      )
+      if (!identical(.late_validation_runtime$mode, expected_mode)) {
+        stop("Candidate validation cannot reuse a foreign package.",
+             call. = FALSE)
+      }
+    }
+    return(.late_validation_runtime$mode)
+  }
+  if (isTRUE(candidate_only)) {
+    if (!is.character(candidate_path) || length(candidate_path) != 1L ||
+        is.na(candidate_path) || !grepl("^/", candidate_path) ||
+        !dir.exists(candidate_path)) {
+      stop("Candidate validation requires an existing absolute candidate path.",
+           call. = FALSE)
+    }
+    if (!requireNamespace("stablr", quietly = TRUE)) {
+      stop("The isolated stablr candidate is unavailable.", call. = FALSE)
+    }
+    candidate_path <- normalizePath(
+      candidate_path, winslash = "/", mustWork = TRUE
+    )
+    loaded_path <- normalizePath(
+      getNamespaceInfo(asNamespace("stablr"), "path"),
+      winslash = "/", mustWork = TRUE
+    )
+    if (!identical(loaded_path, candidate_path)) {
+      stop("The loaded stablr namespace is not the declared candidate.",
+           call. = FALSE)
+    }
+    mode <- paste0(
+      "installed_candidate:", loaded_path
+    )
+  } else if ("stablr" %in% loadedNamespaces()) {
+    mode <- paste0(
+      "loaded:", getNamespaceInfo(asNamespace("stablr"), "path")
+    )
+  } else if (!is.na(.root) && requireNamespace("pkgload", quietly = TRUE)) {
+    pkgload::load_all(.root, quiet = TRUE)
+    mode <- paste0("source:", .root)
+  } else {
+    if (!requireNamespace("stablr", quietly = TRUE)) {
+      stop("stablr must be installed.", call. = FALSE)
+    }
+    mode <- paste0("installed:", system.file(package = "stablr"))
+  }
+  .late_validation_runtime$loaded <- TRUE
+  .late_validation_runtime$mode <- mode
+  mode
 }
 
 .sha256_file <- function(path) {
@@ -178,12 +228,129 @@ if ("stablr" %in% loadedNamespaces()) {
   list(fit = fit, warnings = unique(warnings))
 }
 
+.late_fusion_common_gate_table <- function(summary, expected_replicates) {
+  required <- c(
+    "family", "regime", "replicates", "successful_replicates",
+    "mean_legacy_optimism", "mean_oof_optimism", "mean_test_difference",
+    "fallback_rate", "reduced_optimism", "noninferior", "fallback_ok"
+  )
+  if (!is.data.frame(summary) || !all(required %in% names(summary))) {
+    stop("Late-fusion adapter summary does not match its gate schema.",
+         call. = FALSE)
+  }
+  expected_cells <- 6L
+  complete <- nrow(summary) == expected_cells &&
+    all(summary$replicates == expected_replicates) &&
+    all(summary$successful_replicates == expected_replicates)
+  optimism_pass <- nrow(summary) == expected_cells &&
+    all(!is.na(summary$reduced_optimism) & summary$reduced_optimism)
+  noninferior_pass <- nrow(summary) == expected_cells &&
+    all(!is.na(summary$noninferior) & summary$noninferior)
+  signal <- summary[summary$regime == "signal", , drop = FALSE]
+  fallback_pass <- nrow(signal) == 3L &&
+    all(!is.na(signal$fallback_ok) & signal$fallback_ok)
+
+  data.frame(
+    gate_id = c(
+      "cell_completeness", "reduced_optimism", "noninferiority",
+      "fallback_rate"
+    ),
+    gate_version = c(
+      "late-fusion-cell-completeness/v1",
+      "late-fusion-reduced-optimism/v1",
+      "late-fusion-noninferiority-0.02/v1",
+      "late-fusion-signal-fallback-0.05/v1"
+    ),
+    scope = c(
+      "all family-by-regime cells", "all family-by-regime cells",
+      "all family-by-regime cells", "all signal cells"
+    ),
+    observed = c(
+      paste0(
+        sum(summary$successful_replicates), "/",
+        expected_cells * expected_replicates, " replicates successful"
+      ),
+      paste0(
+        sum(!is.na(summary$reduced_optimism) & summary$reduced_optimism),
+        "/", expected_cells, " cells with reduced optimism"
+      ),
+      paste0(
+        sum(!is.na(summary$noninferior) & summary$noninferior),
+        "/", expected_cells, " cells noninferior"
+      ),
+      paste0(
+        sum(!is.na(signal$fallback_ok) & signal$fallback_ok),
+        "/3 signal cells below threshold"
+      )
+    ),
+    criterion = c(
+      "all six cells contain every predeclared successful replicate",
+      "mean OOF optimism is below mean legacy optimism in every cell",
+      "mean OOF-minus-legacy test score is >= -0.02 in every cell",
+      "mean OOF fallback rate is < 0.05 in every signal cell"
+    ),
+    pass = c(complete, optimism_pass, noninferior_pass, fallback_pass),
+    reason = c(
+      if (complete) "all required replicates completed" else
+        "one or more cells or replicates are missing or failed",
+      if (optimism_pass) "every cell reduced optimism" else
+        "one or more cells did not reduce optimism",
+      if (noninferior_pass) "every cell met the noninferiority margin" else
+        "one or more cells missed the noninferiority margin",
+      if (fallback_pass) "every signal cell met the fallback threshold" else
+        "one or more signal cells missed the fallback threshold"
+    ),
+    stringsAsFactors = FALSE
+  )
+}
+
 run_late_fusion_validation <- function(out, replicates = 50L, n_bootstraps = 20L,
-                                       n_iter = 500L, seed = 220711L) {
-  provenance_start <- .source_provenance_start
+                                       n_iter = 500L, seed = 220711L,
+                                       candidate_only = FALSE,
+                                       fail_on_gates = TRUE,
+                                       candidate_path = NULL) {
+  if (!is.logical(candidate_only) || length(candidate_only) != 1L ||
+      is.na(candidate_only) || !is.logical(fail_on_gates) ||
+      length(fail_on_gates) != 1L || is.na(fail_on_gates)) {
+    stop("`candidate_only` and `fail_on_gates` must be TRUE or FALSE.",
+         call. = FALSE)
+  }
+  raw_settings <- list(replicates, n_bootstraps, n_iter, seed)
+  if (any(lengths(raw_settings) != 1L)) {
+    stop("Release settings must be scalar positive integers.", call. = FALSE)
+  }
+  values <- suppressWarnings(as.integer(unlist(
+    raw_settings, use.names = FALSE
+  )))
+  numeric_values <- suppressWarnings(as.numeric(unlist(
+    raw_settings, use.names = FALSE
+  )))
+  if (length(values) != 4L || anyNA(values) || anyNA(numeric_values) ||
+      any(values < 1L) || !identical(as.numeric(values), numeric_values)) {
+    stop("Release settings must be positive integers.", call. = FALSE)
+  }
+  replicates <- values[[1L]]
+  n_bootstraps <- values[[2L]]
+  n_iter <- values[[3L]]
+  seed <- values[[4L]]
+  if (isTRUE(candidate_only) && !identical(
+    values, c(50L, 20L, 500L, 220711L)
+  )) {
+    stop("Candidate-only late-fusion settings do not match the contract.",
+         call. = FALSE)
+  }
+  package_mode <- .load_late_validation_package(
+    candidate_only,
+    candidate_path = candidate_path
+  )
+  provenance_start <- if (isTRUE(candidate_only)) {
+    list(commit = NA_character_, tree = NA_character_, dirty = NA)
+  } else {
+    .git_provenance(.root)
+  }
   source_repository_present <- !is.na(.root) &&
     file.exists(file.path(.root, ".git"))
-  if ((source_repository_present ||
+  if (!isTRUE(candidate_only) && (source_repository_present ||
        .git_provenance_is_available(provenance_start)) &&
       !.git_provenance_is_clean(provenance_start)) {
     stop(
@@ -192,6 +359,7 @@ run_late_fusion_validation <- function(out, replicates = 50L, n_bootstraps = 20L
     )
   }
   dir.create(out, recursive = TRUE, showWarnings = FALSE)
+  out <- normalizePath(out, winslash = "/", mustWork = TRUE)
   design <- expand.grid(
     family = c("gaussian", "binomial", "multinomial"),
     regime = c("null", "signal"), replicate = seq_len(replicates),
@@ -280,6 +448,7 @@ run_late_fusion_validation <- function(out, replicates = 50L, n_bootstraps = 20L
   results_path <- file.path(out, "late_fusion_replicates.csv")
   summary_path <- file.path(out, "late_fusion_summary.csv")
   warnings_path <- file.path(out, "late_fusion_warnings.csv")
+  gates_path <- file.path(out, "late_fusion_gates.csv")
   utils::write.csv(results, results_path, row.names = FALSE)
   utils::write.csv(summary, summary_path, row.names = FALSE)
   warnings <- if (length(warning_rows)) do.call(rbind, warning_rows) else data.frame(
@@ -287,42 +456,70 @@ run_late_fusion_validation <- function(out, replicates = 50L, n_bootstraps = 20L
     seed = integer(), mode = character(), warning = character()
   )
   utils::write.csv(warnings, warnings_path, row.names = FALSE)
-  provenance_end <- .git_provenance(.root)
-  provenance_stable <- .git_provenance_is_stable(
-    provenance_start,
-    provenance_end
+  gates <- .late_fusion_common_gate_table(summary, replicates)
+  utils::write.csv(gates, gates_path, row.names = FALSE)
+
+  artifacts <- list(
+    replicates = results_path,
+    summary = summary_path,
+    warnings = warnings_path,
+    gates = gates_path
   )
-  artifact_paths <- c(results_path, summary_path, warnings_path)
-  writeLines(c(
-    paste("R", R.version.string),
-    paste("stablr", as.character(utils::packageVersion("stablr"))),
-    paste("package_mode", .package_mode),
-    paste("source_git_commit", provenance_start$commit),
-    paste("source_git_tree", provenance_start$tree),
-    paste("source_tracked_dirty", provenance_start$dirty),
-    paste("end_git_commit", provenance_end$commit),
-    paste("end_git_tree", provenance_end$tree),
-    paste("end_tracked_dirty", provenance_end$dirty),
-    paste("source_git_stable", provenance_stable),
-    paste("replicates_per_cell", replicates),
-    paste("n_bootstraps", n_bootstraps), paste("n_iter", n_iter),
-    "Families: gaussian, binomial, multinomial; regimes: null, signal.",
-    "Classification simulations require at least 10 samples per class in train and test; classification bootstraps are stratified.",
-    "Independent test samples are never used to fit selectors, learners, or weights.",
-    "Gates: fallback < 5% in signal, reduced directional optimism, test noninferiority margin 0.02.",
-    "artifact_sha256:",
-    paste(basename(artifact_paths), vapply(artifact_paths, .sha256_file, character(1L)))
-  ), file.path(out, "late_fusion_manifest.txt"))
-  if (!isTRUE(provenance_stable)) {
-    stop(
-      "Git source provenance changed during late-fusion release validation; artifacts are not release evidence.",
-      call. = FALSE
+  if (!isTRUE(candidate_only)) {
+    provenance_end <- .git_provenance(.root)
+    provenance_stable <- .git_provenance_is_stable(
+      provenance_start,
+      provenance_end
     )
+    artifact_paths <- unlist(artifacts, use.names = FALSE)
+    manifest <- file.path(out, "late_fusion_manifest.txt")
+    writeLines(c(
+      paste("R", R.version.string),
+      paste("stablr", as.character(utils::packageVersion("stablr"))),
+      paste("package_mode", package_mode),
+      paste("source_git_commit", provenance_start$commit),
+      paste("source_git_tree", provenance_start$tree),
+      paste("source_tracked_dirty", provenance_start$dirty),
+      paste("end_git_commit", provenance_end$commit),
+      paste("end_git_tree", provenance_end$tree),
+      paste("end_tracked_dirty", provenance_end$dirty),
+      paste("source_git_stable", provenance_stable),
+      paste("replicates_per_cell", replicates),
+      paste("n_bootstraps", n_bootstraps), paste("n_iter", n_iter),
+      "Families: gaussian, binomial, multinomial; regimes: null, signal.",
+      paste(
+        "Classification simulations require at least 10 samples per class",
+        "in train and test; classification bootstraps are stratified."
+      ),
+      paste(
+        "Independent test samples are never used to fit selectors,",
+        "learners, or weights."
+      ),
+      paste(
+        "Gates: fallback < 5% in signal, reduced directional optimism,",
+        "test noninferiority margin 0.02."
+      ),
+      "artifact_sha256:",
+      paste(
+        basename(artifact_paths),
+        vapply(artifact_paths, .sha256_file, character(1L))
+      )
+    ), manifest)
+    artifacts$manifest <- manifest
+    if (!isTRUE(provenance_stable)) {
+      stop(
+        paste(
+          "Git source provenance changed during late-fusion validation;",
+          "artifacts are not release evidence."
+        ),
+        call. = FALSE
+      )
+    }
   }
-  if (!all(summary$reduced_optimism & summary$noninferior & summary$fallback_ok)) {
+  if (isTRUE(fail_on_gates) && !all(gates$pass)) {
     stop("Late-fusion release gates failed; release must stop.", call. = FALSE)
   }
-  invisible(list(results = results_path, summary = summary_path))
+  invisible(artifacts)
 }
 
 if (sys.nframe() == 0L) {

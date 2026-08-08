@@ -26,6 +26,7 @@ release_source_lines <- function(path) {
 test_that(".Rbuildignore explicitly excludes local release-check byproducts", {
   lines <- release_source_lines(".Rbuildignore")
 
+  expect_true(any(grepl("CONTEXT[.]md", lines, fixed = TRUE)))
   expect_true(any(grepl("Rcheck", lines, fixed = TRUE)))
   expect_true(any(grepl("tar[.]gz", lines, fixed = TRUE)) ||
               any(grepl("tar[.]xz", lines, fixed = TRUE)))

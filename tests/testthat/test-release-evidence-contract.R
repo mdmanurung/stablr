@@ -18,6 +18,19 @@ test_that("RE-02 Release Contract is strict, versioned, and fail-closed", {
     ),
     c("methodology", "late_fusion")
   )
+  methodology_gates <- contract$required_validations[[1L]]$scientific_gates
+  expect_identical(
+    vapply(methodology_gates, `[[`, character(1L), "gate_version"),
+    c(
+      "methodology-cell-completeness/v1",
+      "python-metrics-parity/v1",
+      "null-select-any-wilson-v1",
+      "SCI-04-null-selected-fraction-v2-draft",
+      "null-90pct-collapse-count-v1",
+      "signal-mean-fdp-t-v1",
+      "signal-tpr-t-v1"
+    )
+  )
   expect_match(attr(contract, "sha256"), "^[0-9a-f]{64}$")
 })
 
@@ -71,6 +84,11 @@ test_that("RE-02 contract mutations raise typed contract errors", {
     x
   })
   mutate_and_expect(function(x) {
+    x$required_validations[[1L]]$scientific_gates[[3L]]$gate_version <-
+      "caller-version"
+    x
+  })
+  mutate_and_expect(function(x) {
     x$runtime$dependency_roots <- x$runtime$dependency_roots[-1L]
     x
   })
@@ -90,6 +108,7 @@ test_that("RE-02 schemas are packaged JSON records", {
     "release-context.schema.json",
     "release-contract.schema.json",
     "release-evidence-packet.schema.json",
+    "release-reference.schema.json",
     "runtime-artifact.schema.json",
     "validation-run-packet.schema.json"
   )
@@ -124,14 +143,25 @@ test_that("RE-02 context and packet references round-trip canonically", {
     packet_path = file.path(root, "packet.json"),
     packet_sha256 = paste(rep("d", 64L), collapse = "")
   ))
+  release <- env$.release_new_release_ref(list(
+    schema_version = "stablr.release-evidence-ref/v1",
+    kind = "release_evidence",
+    release_id = paste(rep("e", 32L), collapse = ""),
+    store = root,
+    release_path = file.path(root, "release.json"),
+    release_sha256 = paste(rep("f", 64L), collapse = "")
+  ))
 
   context_path <- tempfile("context-ref-", fileext = ".json")
   packet_path <- tempfile("packet-ref-", fileext = ".json")
+  release_path <- tempfile("release-ref-", fileext = ".json")
   env$write_release_reference(context, context_path)
   env$write_release_reference(packet, packet_path)
+  env$write_release_reference(release, release_path)
 
   expect_identical(env$read_release_reference(context_path), context)
   expect_identical(env$read_release_reference(packet_path), packet)
+  expect_identical(env$read_release_reference(release_path), release)
   expect_false(grepl("[\r\n]", readChar(
     context_path, file.info(context_path)$size, useBytes = TRUE
   )))

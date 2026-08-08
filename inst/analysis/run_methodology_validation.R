@@ -668,10 +668,52 @@
   NA_character_
 }
 
-.load_validation_package <- function() {
-  if (isTRUE(.validation_runtime$loaded)) return(.validation_runtime$mode)
+.load_validation_package <- function(candidate_only = FALSE,
+                                     candidate_path = NULL) {
+  if (isTRUE(.validation_runtime$loaded)) {
+    if (isTRUE(candidate_only)) {
+      if (!is.character(candidate_path) || length(candidate_path) != 1L ||
+          is.na(candidate_path) || !dir.exists(candidate_path)) {
+        stop("Candidate validation requires an existing candidate path.",
+             call. = FALSE)
+      }
+      expected_mode <- paste0(
+        "installed_candidate:",
+        normalizePath(candidate_path, winslash = "/", mustWork = TRUE)
+      )
+      if (!identical(.validation_runtime$mode, expected_mode)) {
+        stop("Candidate validation cannot reuse a foreign package.",
+             call. = FALSE)
+      }
+    }
+    return(.validation_runtime$mode)
+  }
   root <- .find_package_root()
-  if ("stablr" %in% loadedNamespaces()) {
+  if (isTRUE(candidate_only)) {
+    if (!is.character(candidate_path) || length(candidate_path) != 1L ||
+        is.na(candidate_path) || !grepl("^/", candidate_path) ||
+        !dir.exists(candidate_path)) {
+      stop("Candidate validation requires an existing absolute candidate path.",
+           call. = FALSE)
+    }
+    if (!requireNamespace("stablr", quietly = TRUE)) {
+      stop("The isolated stablr candidate is unavailable.", call. = FALSE)
+    }
+    candidate_path <- normalizePath(
+      candidate_path, winslash = "/", mustWork = TRUE
+    )
+    loaded_path <- normalizePath(
+      getNamespaceInfo(asNamespace("stablr"), "path"),
+      winslash = "/", mustWork = TRUE
+    )
+    if (!identical(loaded_path, candidate_path)) {
+      stop("The loaded stablr namespace is not the declared candidate.",
+           call. = FALSE)
+    }
+    mode <- paste0(
+      "installed_candidate:", loaded_path
+    )
+  } else if ("stablr" %in% loadedNamespaces()) {
     mode <- paste0(
       "loaded:", getNamespaceInfo(asNamespace("stablr"), "path")
     )
@@ -1044,6 +1086,125 @@
   do.call(rbind, gate_rows)
 }
 
+.methodology_common_gate_table <- function(details, parity) {
+  required_detail <- c(
+    "family", "scenario", "artificial_type", "cell_status", "gate",
+    "bound", "pass"
+  )
+  if (!is.data.frame(details) ||
+      !all(required_detail %in% names(details)) ||
+      !is.data.frame(parity) || !all(c("status", "abs_error") %in% names(parity))) {
+    stop("Methodology adapter artifacts do not match their gate schema.",
+         call. = FALSE)
+  }
+  cells <- unique(details[c(
+    "family", "scenario", "artificial_type", "cell_status"
+  )])
+  cell_pass <- nrow(cells) > 0L && all(cells$cell_status == "complete")
+  parity_pass <- nrow(parity) > 0L && all(parity$status == "ok")
+
+  summarize_detail <- function(gate) {
+    rows <- details[details$gate == gate, , drop = FALSE]
+    finite <- rows$bound[is.finite(rows$bound)]
+    list(
+      pass = nrow(rows) > 0L && all(!is.na(rows$pass) & rows$pass),
+      observed = paste0(
+        sum(!is.na(rows$pass) & rows$pass), "/", nrow(rows),
+        " cells passed; bound_range=",
+        if (length(finite)) {
+          paste(format(range(finite), digits = 8L, trim = TRUE), collapse = "..")
+        } else {
+          "unavailable"
+        }
+      ),
+      reason = if (!nrow(rows)) {
+        "no applicable detailed gate rows"
+      } else if (all(!is.na(rows$pass) & rows$pass)) {
+        "all applicable detailed gate rows passed"
+      } else {
+        paste0(sum(is.na(rows$pass) | !rows$pass), " detailed gate rows failed")
+      }
+    )
+  }
+
+  null_any <- summarize_detail("null_select_any")
+  null_fraction <- summarize_detail("null_selected_fraction")
+  null_collapse <- summarize_detail("null_90pct_collapse")
+  signal_fdp <- summarize_detail("signal_mean_fdp")
+  signal_tpr <- summarize_detail("signal_tpr")
+  parity_error <- parity$abs_error[is.finite(parity$abs_error)]
+
+  data.frame(
+    gate_id = c(
+      "cell_completeness", "python_metrics_parity", "null_select_any",
+      "null_selected_fraction", "null_select_90pct", "signal_mean_fdp",
+      "signal_tpr"
+    ),
+    gate_version = c(
+      "methodology-cell-completeness/v1",
+      "python-metrics-parity/v1",
+      "null-select-any-wilson-v1",
+      .selected_fraction_gate_version,
+      "null-90pct-collapse-count-v1",
+      "signal-mean-fdp-t-v1",
+      "signal-tpr-t-v1"
+    ),
+    scope = c(
+      "all methodology cells", "all pinned Python parity observations",
+      "all null cells", "all null cells", "all null cells",
+      "all signal cells", "all signal cells"
+    ),
+    observed = c(
+      paste0(sum(cells$cell_status == "complete"), "/", nrow(cells),
+             " cells complete"),
+      paste0(
+        sum(parity$status == "ok"), "/", nrow(parity),
+        " observations matched; max_abs_error=",
+        if (length(parity_error)) {
+          format(max(parity_error), digits = 8L, trim = TRUE)
+        } else {
+          "unavailable"
+        }
+      ),
+      null_any$observed,
+      null_fraction$observed,
+      null_collapse$observed,
+      signal_fdp$observed,
+      signal_tpr$observed
+    ),
+    criterion = c(
+      "every declared cell is complete and uses the requested generator",
+      "every pinned parity observation has status ok",
+      "every null select-any upper bound is <= 0.10",
+      "requires an independently accepted one-sided continuous-fraction bound",
+      "every null cell has zero >=90% selection collapses",
+      "every signal mean-FDP upper bound is <= 0.12",
+      "every signal TPR lower bound is >= 0.50"
+    ),
+    pass = c(
+      cell_pass,
+      parity_pass,
+      null_any$pass,
+      FALSE,
+      null_collapse$pass,
+      signal_fdp$pass,
+      signal_tpr$pass
+    ),
+    reason = c(
+      if (cell_pass) "all declared cells completed" else
+        "one or more declared cells are missing, failed, or changed generator",
+      if (parity_pass) "all pinned parity observations matched" else
+        "one or more pinned parity observations are missing or mismatched",
+      null_any$reason,
+      "SCI-04 v2 remains proposed and unaccepted",
+      null_collapse$reason,
+      signal_fdp$reason,
+      signal_tpr$reason
+    ),
+    stringsAsFactors = FALSE
+  )
+}
+
 run_methodology_validation <- function(out,
                                        profile = c("bounded", "release"),
                                        replicates = 3L,
@@ -1054,18 +1215,42 @@ run_methodology_validation <- function(out,
                                        scenario_ids = "all",
                                        seed = 270627L,
                                        target_fdp = 0.1,
-                                       workers = 1L) {
+                                       workers = 1L,
+                                       candidate_only = FALSE,
+                                       candidate_path = NULL) {
   profile <- match.arg(profile)
-  package_root <- .find_package_root()
-  git_start <- .git_provenance(package_root)
-  if (identical(profile, "release") &&
-      !.git_provenance_is_clean(git_start)) {
+  if (!is.logical(candidate_only) || length(candidate_only) != 1L ||
+      is.na(candidate_only)) {
+    stop("`candidate_only` must be TRUE or FALSE.", call. = FALSE)
+  }
+  if (isTRUE(candidate_only) && !identical(profile, "release")) {
+    stop("Candidate-only methodology validation requires the release profile.",
+         call. = FALSE)
+  }
+  if (identical(profile, "release") && !isTRUE(candidate_only)) {
     stop(
-      "Locked release methodology validation requires a clean Git source tree with an identifiable commit.",
+      "The release profile must run through the candidate-bound release adapter.",
       call. = FALSE
     )
   }
-  package_mode <- .load_validation_package()
+  package_mode <- .load_validation_package(
+    candidate_only = candidate_only,
+    candidate_path = candidate_path
+  )
+  package_root <- if (isTRUE(candidate_only)) {
+    normalizePath(
+      getNamespaceInfo(asNamespace("stablr"), "path"),
+      winslash = "/",
+      mustWork = TRUE
+    )
+  } else {
+    .find_package_root()
+  }
+  git_start <- if (isTRUE(candidate_only)) {
+    list(commit = NA_character_, tree = NA_character_, dirty = NA)
+  } else {
+    .git_provenance(package_root)
+  }
   if (identical(profile, "release")) {
     locked <- .release_profile_settings()
     replicates <- locked$replicates
@@ -1074,6 +1259,13 @@ run_methodology_validation <- function(out,
     families <- locked$families
     artificial_types <- locked$artificial_types
     scenario_ids <- locked$scenario_ids
+  }
+  if (isTRUE(candidate_only) &&
+      (!identical(as.integer(seed), 270627L) ||
+       !identical(as.numeric(target_fdp), 0.1) ||
+       !identical(as.integer(workers), 32L))) {
+    stop("Candidate-only methodology settings do not match the contract.",
+         call. = FALSE)
   }
   if (missing(out) || is.null(out) || !nzchar(out)) {
     stop("`out` must be a non-empty output directory.", call. = FALSE)
@@ -1192,9 +1384,13 @@ run_methodology_validation <- function(out,
     summary = file.path(out, "methodology_validation_summary.csv"),
     warnings = file.path(out, "methodology_validation_warnings.csv"),
     parity = file.path(out, "python_metrics_parity.csv"),
-    manifest = file.path(out, "methodology_validation_manifest.txt"),
     gates = file.path(out, "methodology_validation_gates.csv")
   )
+  if (!isTRUE(candidate_only)) {
+    artifacts$manifest <- file.path(
+      out, "methodology_validation_manifest.txt"
+    )
+  }
 
   utils::write.csv(replicates_df, artifacts$replicates, row.names = FALSE)
   utils::write.csv(summary_df, artifacts$summary, row.names = FALSE)
@@ -1208,34 +1404,29 @@ run_methodology_validation <- function(out,
     expected_replicates = replicates
   )
   utils::write.csv(gates_df, artifacts$gates, row.names = FALSE)
-  git_end <- .git_provenance(package_root)
-  git_stable <- .git_provenance_is_stable(git_start, git_end)
-  .write_manifest(
-    path = artifacts$manifest,
-    settings = list(
-      seed = seed,
-      profile = profile,
-      replicates = replicates,
-      n_bootstraps = n_bootstraps,
-      n_lambda = n_lambda,
-      target_fdp = target_fdp,
-      workers = workers,
-      package_mode = package_mode,
-      package_version = as.character(utils::packageVersion("stablr")),
-      families = families,
-      artificial_types = artificial_types,
-      scenarios = scenarios,
-      git_start = git_start,
-      git_end = git_end,
-      git_stable = git_stable
-    ),
-    artifacts = artifacts
-  )
-
-  if (identical(profile, "release") && !isTRUE(git_stable)) {
-    stop(
-      "Git source provenance changed during locked release methodology validation; artifacts are not release evidence.",
-      call. = FALSE
+  if (!isTRUE(candidate_only)) {
+    git_end <- .git_provenance(package_root)
+    git_stable <- .git_provenance_is_stable(git_start, git_end)
+    .write_manifest(
+      path = artifacts$manifest,
+      settings = list(
+        seed = seed,
+        profile = profile,
+        replicates = replicates,
+        n_bootstraps = n_bootstraps,
+        n_lambda = n_lambda,
+        target_fdp = target_fdp,
+        workers = workers,
+        package_mode = package_mode,
+        package_version = as.character(utils::packageVersion("stablr")),
+        families = families,
+        artificial_types = artificial_types,
+        scenarios = scenarios,
+        git_start = git_start,
+        git_end = git_end,
+        git_stable = git_stable
+      ),
+      artifacts = artifacts
     )
   }
 

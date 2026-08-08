@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mdmanurung.github.io/stablr/schemas/release-reference-v1.json",
+  "title": "stablr Release Evidence Reference v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "kind", "release_id", "store", "release_path",
+    "release_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": "stablr.release-evidence-ref/v1"},
+    "kind": {"const": "release_evidence"},
+    "release_id": {"type": "string", "minLength": 16},
+    "store": {"type": "string", "pattern": "^/"},
+    "release_path": {"type": "string", "pattern": "^/"},
+    "release_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}
