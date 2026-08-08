@@ -144,9 +144,12 @@ selected features, or \code{NULL} when no validation input is provided.}
 list with \code{fit}, \code{selected_features}, \code{selected_train}, and
 \code{selected_valid} for the concatenated single-STABL run.}
 \item{\code{late_fusion}}{\code{NULL} when \code{late_fusion = FALSE}.  Otherwise a
-list with \code{weights} (data.frame), \code{train_predictions} (data.frame),
-\code{valid_predictions}, and \code{score}; multinomial tasks also include
-\code{levels}, \code{log_loss}, and classification metrics.}
+list with \code{weights}, \code{valid_predictions}, and mode-specific training
+results. OOF mode provides \code{oof_predictions} and \code{oof_score}; legacy
+mode provides \code{in_sample_predictions} and \code{in_sample_score}.
+\code{train_predictions} and \code{score} remain exact 0.1.x compatibility
+aliases for the active mode-specific fields. Multinomial tasks also
+include \code{levels}, \code{log_loss}, and classification metrics.}
 \item{\code{cooperative_fusion}}{Present only when
 \code{cooperative_fusion = TRUE}. A list containing the selected multiview
 fit, chosen \code{rho} and \code{lambda}, selected features per view,

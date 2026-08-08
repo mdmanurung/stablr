@@ -80,9 +80,12 @@
 #'       list with `fit`, `selected_features`, `selected_train`, and
 #'       `selected_valid` for the concatenated single-STABL run.}
 #'     \item{`late_fusion`}{`NULL` when `late_fusion = FALSE`.  Otherwise a
-#'       list with `weights` (data.frame), `train_predictions` (data.frame),
-#'       `valid_predictions`, and `score`; multinomial tasks also include
-#'       `levels`, `log_loss`, and classification metrics.}
+#'       list with `weights`, `valid_predictions`, and mode-specific training
+#'       results. OOF mode provides `oof_predictions` and `oof_score`; legacy
+#'       mode provides `in_sample_predictions` and `in_sample_score`.
+#'       `train_predictions` and `score` remain exact 0.1.x compatibility
+#'       aliases for the active mode-specific fields. Multinomial tasks also
+#'       include `levels`, `log_loss`, and classification metrics.}
 #'     \item{`cooperative_fusion`}{Present only when
 #'       `cooperative_fusion = TRUE`. A list containing the selected multiview
 #'       fit, chosen `rho` and `lambda`, selected features per view,
@@ -593,7 +596,7 @@ stabl_multiomic_cv <- function(
     training_mode = "python_legacy",
     binary_event_mapping = binary_mapping
   )
-  out
+  .late_fusion_add_mode_fields(out, "python_legacy")
 }
 
 .late_fusion_multiclass <- function(selected_train, selected_valid, y_train, y_valid,

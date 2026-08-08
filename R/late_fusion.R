@@ -1,6 +1,30 @@
 # Leakage-safe late fusion.  The historical implementation remains in
 # multiomic_workflows.R because it is also the public Python-parity path.
 
+.late_fusion_add_mode_fields <- function(result, training_mode) {
+  if (!training_mode %in% c("oof", "python_legacy")) {
+    stop("Internal error: unknown late-fusion training mode.", call. = FALSE)
+  }
+  if (identical(training_mode, "oof")) {
+    prediction_field <- "oof_predictions"
+    score_field <- "oof_score"
+  } else {
+    prediction_field <- "in_sample_predictions"
+    score_field <- "in_sample_score"
+  }
+  result[[prediction_field]] <- result$train_predictions
+  result[[score_field]] <- result$score
+  result$provenance$result_semantics <- list(
+    predictions = prediction_field,
+    score = score_field,
+    compatibility_aliases = c(
+      train_predictions = prediction_field,
+      score = score_field
+    )
+  )
+  result
+}
+
 .late_fusion_oof_fit <- function(x_train_list, y_train, x_valid_list, y_valid,
                                  groups_train, bootstrap_strata_train,
                                  lambda_by_omic, fit_params,
@@ -157,7 +181,7 @@
       )
     }
   }
-  result
+  .late_fusion_add_mode_fields(result, "oof")
 }
 
 .late_fusion_fit_omic_safe <- function(x_train_sel, y_train, x_valid_sel,

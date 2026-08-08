@@ -185,8 +185,11 @@ established; random-permutation controls remain available at larger dimensions.
 Late-fusion weights default to leakage-safe OOF training. Empty selections or
 downstream fit failures use fold-training means/event priors/class priors and
 record the reason. The historical in-sample algorithm is available only through
-`late_fusion_training = "python_legacy"`. Cross-language solver validation uses
-ranking/support contracts; it does not claim bit-identical coefficients.
+`late_fusion_training = "python_legacy"`. Read `oof_predictions`/`oof_score` in
+OOF mode and `in_sample_predictions`/`in_sample_score` in legacy mode;
+`train_predictions` and `score` are exact 0.1.x compatibility aliases.
+Cross-language solver validation uses ranking/support contracts; it does not
+claim bit-identical coefficients.
 
 ## Vignettes
 

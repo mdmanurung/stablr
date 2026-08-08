@@ -29,6 +29,16 @@ test_that("OOF late fusion is invariant to named outcome order", {
                    shuffled$late_fusion$train_predictions)
   expect_identical(ordered$late_fusion$provenance$fold_id,
                    shuffled$late_fusion$provenance$fold_id)
+  expect_identical(
+    ordered$late_fusion$oof_predictions,
+    ordered$late_fusion$train_predictions
+  )
+  expect_identical(ordered$late_fusion$oof_score, ordered$late_fusion$score)
+  expect_false("in_sample_predictions" %in% names(ordered$late_fusion))
+  expect_identical(
+    ordered$late_fusion$provenance$result_semantics$compatibility_aliases,
+    c(train_predictions = "oof_predictions", score = "oof_score")
+  )
 })
 
 test_that("OOF late fusion covers samples once and separates groups", {
@@ -72,6 +82,22 @@ test_that("legacy late fusion remains explicitly available", {
     n_iter_lf = 10L, random_state = 79L
   )
   expect_identical(fit$late_fusion$provenance$training_mode, "python_legacy")
+  expect_identical(
+    fit$late_fusion$in_sample_predictions,
+    fit$late_fusion$train_predictions
+  )
+  expect_identical(
+    fit$late_fusion$in_sample_score,
+    fit$late_fusion$score
+  )
+  expect_false("oof_predictions" %in% names(fit$late_fusion))
+  expect_identical(
+    fit$late_fusion$provenance$result_semantics$compatibility_aliases,
+    c(
+      train_predictions = "in_sample_predictions",
+      score = "in_sample_score"
+    )
+  )
 })
 
 test_that("stacking rejects malformed scalar outcomes and infinite predictions", {

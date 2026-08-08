@@ -200,7 +200,7 @@ let the views interact:
 | Strategy | How it works | Best when |
 |---|---|---|
 | **Early fusion** | Concatenates all omic matrices into one wide matrix, then runs a *single* STABL fit across all features jointly. | Omics are measured on the same samples; you want a unified biomarker list. |
-| **Late fusion** | Fits one STABL + downstream model per omic separately, learns stacking weights from training-set predictions, and applies the weighted blend to validation predictions. | You want a held-out evaluation of an omic-weighted prediction rule. |
+| **Late fusion** | Fits one STABL + downstream model per omic separately, learns stacking weights from OOF predictions by default, and applies the weighted blend to full-refit validation predictions. | You want a held-out evaluation of an omic-weighted prediction rule. |
 
 Key arguments:
 
@@ -213,7 +213,7 @@ Key arguments:
 | `late_fusion_nfolds` | Number of stacking folds; five folds plus the full refit cost roughly six complete fits. |
 | `n_iter_lf` | Number of optimisation iterations for the late-fusion weight search. |
 
-The printed `multi_fit` object summarises every active branch: per-omic selected-feature counts, whether validation data are present, early-fusion branch presence, and the late-fusion score. In OOF mode, assessment samples and their groups never enter selector or downstream-model fitting. Binary and regression late fusion use parity-preserving batched stacking; multiclass stacking remains scalar by design to preserve probability-normalisation and tie behavior.
+The printed `multi_fit` object summarises every active branch: per-omic selected-feature counts, whether validation data are present, early-fusion branch presence, and the late-fusion score. In OOF mode, assessment samples and their groups never enter selector or downstream-model fitting; use `$oof_predictions` and `$oof_score`. Explicit `"python_legacy"` mode instead exposes `$in_sample_predictions` and `$in_sample_score`. The older `$train_predictions` and `$score` fields are exact 0.1.x compatibility aliases for the active mode. Binary and regression late fusion use parity-preserving batched stacking; multiclass stacking remains scalar by design to preserve probability-normalisation and tie behavior.
 
 ```{r lambda-grid}
 # Build per-omic lambda grids

@@ -663,8 +663,16 @@ test_that("late_fusion = TRUE adds late_fusion field with weights and prediction
 
   expect_false(is.null(fit$late_fusion))
   lf <- fit$late_fusion
-  expect_named(lf, c("weights", "train_predictions", "valid_predictions", "score", "provenance"))
+  expect_named(
+    lf,
+    c(
+      "weights", "train_predictions", "valid_predictions", "score",
+      "provenance", "oof_predictions", "oof_score"
+    )
+  )
   expect_identical(lf$provenance$training_mode, "oof")
+  expect_identical(lf$oof_predictions, lf$train_predictions)
+  expect_identical(lf$oof_score, lf$score)
   expect_s3_class(lf$weights, "data.frame")
   expect_equal(nrow(lf$weights), 2L)             # one row per omic
   expect_s3_class(lf$train_predictions, "data.frame")
@@ -1509,6 +1517,8 @@ test_that("[char-F1] per-omic / early-fusion / late-fusion blocks produce bit-id
 
   # ---- late-fusion block ----
   lf <- fit$late_fusion
+  expect_identical(lf$in_sample_predictions, lf$train_predictions)
+  expect_identical(lf$in_sample_score, lf$score)
   expect_equal(lf$score, 0.642593372115547, tolerance = 1e-13)
   expect_equal(lf$weights$Associated_weight,
                c(4.18270750204101, 2.38248517736793), tolerance = 1e-13)
