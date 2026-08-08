@@ -84,13 +84,16 @@
         oof[assess_ids, omic] <- pred$valid_preds
       }
     }
+    fold_artificial_provenance <- lapply(
+      captured$fits,
+      function(x) x$artificial_provenance %||% NULL
+    )
     fold_details[[i]] <- list(
       fold = fold$fold, train_ids = train_ids, assessment_ids = assess_ids,
       seed = fold_seed,
       selected_features = captured$selected_features,
-      artificial_feature_provenance = lapply(
-        captured$fits, function(x) x$artificial_feature_provenance %||% NULL
-      ),
+      artificial_provenance = fold_artificial_provenance,
+      artificial_feature_provenance = fold_artificial_provenance,
       fallback_reasons = fallback,
       selector_errors = captured$selection_errors
     )
@@ -303,15 +306,18 @@
   } else {
     .weighted_masked_mean(valid, weights)
   }
+  artificial_provenance <- lapply(
+    full_per_omic$fits,
+    function(x) x$artificial_provenance %||% NULL
+  )
   list(
     valid_predictions = combined,
     diagnostics = list(
       selected_features = full_per_omic$selected_features,
       fallback_reasons = fallbacks,
       warnings = downstream_warnings,
-      artificial_feature_provenance = lapply(
-        full_per_omic$fits, function(x) x$artificial_feature_provenance %||% NULL
-      )
+      artificial_provenance = artificial_provenance,
+      artificial_feature_provenance = artificial_provenance
     )
   )
 }

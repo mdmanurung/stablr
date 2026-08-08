@@ -276,3 +276,48 @@ test_that("SCI-03 fold counts exceeding grouped units fail closed", {
   expect_identical(condition$requested_folds, 3L)
   expect_identical(condition$available_units, 2L)
 })
+
+test_that("SCI-08 OOF provenance retains every fitted generator record", {
+  set.seed(807L)
+  ids <- paste0("s", seq_len(12L))
+  x <- matrix(
+    rnorm(36L),
+    nrow = 12L,
+    dimnames = list(ids, paste0("f", seq_len(3L)))
+  )
+  y <- stats::setNames(rnorm(12L), ids)
+
+  fit <- stabl_multiomic_train_validate(
+    x_train_list = list(omic = x),
+    y_train = y,
+    lambda_grid = data.frame(lambda = 0.1),
+    artificial_type = "random_permutation",
+    n_bootstraps = 2L,
+    sample_fraction = 1,
+    late_fusion = TRUE,
+    late_fusion_nfolds = 3L,
+    n_iter_lf = 2L,
+    random_state = 807L
+  )
+
+  for (fold in fit$late_fusion$provenance$folds) {
+    expect_named(fold$artificial_provenance, "omic")
+    expect_identical(
+      fold$artificial_provenance$omic$actual_type,
+      "random_permutation"
+    )
+    expect_identical(
+      fold$artificial_feature_provenance,
+      fold$artificial_provenance
+    )
+  }
+  full <- fit$late_fusion$provenance$full_refit
+  expect_identical(
+    full$artificial_provenance$omic$actual_type,
+    "random_permutation"
+  )
+  expect_identical(
+    full$artificial_feature_provenance,
+    full$artificial_provenance
+  )
+})
