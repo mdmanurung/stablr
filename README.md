@@ -233,13 +233,24 @@ source tarball and the predeclared full OOL inputs and gates; mutable-checkout
 execution does not qualify.
 
 ```bash
-# From stablr-experiments/ after building the candidate tarball
-conda run -n R4_51 Rscript analysis/generate_publication_parity_table.R \
-  --candidate-tarball /absolute/path/to/stablr_0.1.1.tar.gz
+# From stablr-experiments/ after building the candidate tarball. The output
+# directory must not exist.
+RUNTIME=/exports/archive/hg-funcgenom-research/mdmanurung/conda/envs/R4_51/lib/R/bin/Rscript
+"$RUNTIME" --vanilla analysis/generate_publication_parity_table.R \
+  --candidate-tarball /absolute/path/to/stablr_0.1.1.tar.gz \
+  --runtime "$RUNTIME" \
+  --outdir /absolute/new/path/ool-candidate-evidence \
+  --profile full
 ```
 
-If the candidate-bound parity gates fail, the resulting negative artifact is
-retained and the package remains not ready for release review.
+The frozen full-candidate protocol currently produces a negative result:
+support Jaccard 0.778 (required 0.80), score Spearman 0.785 (required 0.90),
+and FDP-threshold delta 0.08 (maximum 0.05). The lambda and training-only
+preprocessing gates pass. The requested fixed knockoff construction is
+infeasible for the 150-by-1,317 matrix (`n > p` is required), so the typed,
+recorded fallback is `random_permutation` and the actual-generator gate also
+fails. The sealed negative artifact is retained; `stablr` 0.1.1 is therefore
+not ready for release review.
 
 ## Citation
 
