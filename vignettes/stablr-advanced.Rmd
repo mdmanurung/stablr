@@ -125,7 +125,9 @@ Supported artificial-feature settings are `"random_permutation"`, `"knockoff"`,
 `"knockoff_equi"`, `"knockoff_mvr"`, and `NULL`.  Use
 `artificial_type = "knockoff"` for fixed-X knockoffs.  Use
 `artificial_type = "knockoff_equi"` or `"knockoff_mvr"` for Model-X Gaussian
-knockoffs when the optional `knockoff` package is installed.
+knockoffs when the optional `knockoff` package is installed. All three
+knockoff modes support at most 3,000 predictors and fail closed above that
+limit; no chunked construction is claimed to be scientifically valid.
 
 ```{r knockoff-check, include = FALSE}
 has_knockoff <- requireNamespace("knockoff", quietly = TRUE)

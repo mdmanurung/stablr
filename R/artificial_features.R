@@ -153,13 +153,33 @@ make_rp_features <- function(x, n_injected) {
   )
 }
 
+.maximum_supported_knockoff_features <- 3000L
+
+.assert_supported_knockoff_dimension <- function(x, requested_type) {
+  n_features <- ncol(x)
+  if (n_features > .maximum_supported_knockoff_features) {
+    .abort_stablr(
+      "stablr_high_dimensional_knockoff_unsupported",
+      paste0(
+        "`", requested_type, "` is scientifically supported for at most ",
+        .maximum_supported_knockoff_features,
+        " predictors; chunked knockoff construction is not supported."
+      ),
+      requested_type = requested_type,
+      n_features = n_features,
+      maximum_supported_features = .maximum_supported_knockoff_features
+    )
+  }
+  invisible(x)
+}
+
 #' Make Knockoff Artificial Features
 #'
 #' Generates **fixed-X** knockoff features via `knockoff::create.fixed()`, with
-#' column-chunking for datasets that exceed 3 000 features (mirroring the
-#' Python STABL implementation that chunks calls to `GaussianSampler`).
-#' Falls back to random-permutation features when the knockoff constructor
-#' fails (e.g., rank-deficient input).
+#' up to 3 000 predictors. Larger inputs fail closed because the former
+#' chunked construction did not establish a valid global knockoff design.
+#' Falls back to random-permutation features when the supported-dimensional
+#' knockoff constructor fails (e.g., rank-deficient input).
 #'
 #' @param x Numeric matrix of predictors (samples \eqn{\times} features).
 #' @param n_injected Integer; number of knockoff columns to select.
@@ -169,13 +189,13 @@ make_rp_features <- function(x, n_injected) {
 #'   `artificial_provenance`; see [make_rp_features()] for details.
 #' @keywords internal
 make_knockoff_features <- function(x, n_injected, random_state = NULL) {
+  .assert_supported_knockoff_dimension(x, "knockoff")
   .require_pkg("knockoff", "for artificial_type = \"knockoff\"")
 
   # NOTE: Seeding is the dispatcher's responsibility (see
   # `make_artificial_features`).  Re-seeding here would mask any RNG
   # consumed by the caller and is intentionally omitted (audit M-5).
   n_features <- ncol(x)
-  chunk_size <- 3000L
 
   .make_ko_chunk <- function(x_chunk) {
     tryCatch(
@@ -229,51 +249,18 @@ make_knockoff_features <- function(x, n_injected, random_state = NULL) {
     )
   }
 
-  if (n_features > chunk_size) {
-    n_chunks          <- ceiling(n_features / chunk_size)
-    ko_blocks         <- vector("list", n_chunks)
-    orig_map_blocks   <- vector("list", n_chunks)  # track source original-feature indices
-    type_blocks       <- vector("list", n_chunks)
-    chunk_records     <- vector("list", n_chunks)
-    fallback_histories <- vector("list", n_chunks)
-    for (i in seq_len(n_chunks)) {
-      col_idx              <- sample.int(n_features, size = min(chunk_size, n_features),
-                                        replace = FALSE)
-      chunk_result         <- .make_ko_chunk(x[, col_idx, drop = FALSE])
-      ko_blocks[[i]]       <- chunk_result$x_art
-      orig_map_blocks[[i]] <- col_idx  # j-th column of ko_blocks[[i]] is knockoff of col_idx[j]
-      type_blocks[[i]]     <- rep.int(chunk_result$actual_type, ncol(chunk_result$x_art))
-      fallback_histories[[i]] <- chunk_result$fallback_history
-      chunk_records[[i]]   <- .artificial_chunk_record(
-        chunk = i,
-        requested_type = "knockoff",
-        actual_type = chunk_result$actual_type,
-        n_columns = ncol(chunk_result$x_art),
-        fallback_reason = chunk_result$fallback_reason
-      )
-    }
-    x_art_full <- do.call(cbind, ko_blocks)   # n_samples × (n_chunks * chunk_size)
-    orig_map   <- unlist(orig_map_blocks)      # maps each x_art_full col -> original feature idx
-    type_map   <- unlist(type_blocks, use.names = FALSE)
-    chunks     <- do.call(rbind, chunk_records)
-    keep_idx   <- sample.int(ncol(x_art_full), size = n_features, replace = FALSE)
-    x_art_full <- x_art_full[, keep_idx, drop = FALSE]
-    orig_map   <- orig_map[keep_idx]           # keep map in sync after trim
-    type_map   <- type_map[keep_idx]
-  } else {
-    chunk_result <- .make_ko_chunk(x)
-    x_art_full <- chunk_result$x_art  # n_samples × n_features, same column order as x
-    orig_map   <- seq_len(n_features)  # identity mapping: col j is knockoff of feature j
-    type_map   <- rep.int(chunk_result$actual_type, n_features)
-    chunks     <- .artificial_chunk_record(
-      chunk = 1L,
-      requested_type = "knockoff",
-      actual_type = chunk_result$actual_type,
-      n_columns = ncol(chunk_result$x_art),
-      fallback_reason = chunk_result$fallback_reason
-    )
-    fallback_histories <- list(chunk_result$fallback_history)
-  }
+  chunk_result <- .make_ko_chunk(x)
+  x_art_full <- chunk_result$x_art
+  orig_map <- seq_len(n_features)
+  type_map <- rep.int(chunk_result$actual_type, n_features)
+  chunks <- .artificial_chunk_record(
+    chunk = 1L,
+    requested_type = "knockoff",
+    actual_type = chunk_result$actual_type,
+    n_columns = ncol(chunk_result$x_art),
+    fallback_reason = chunk_result$fallback_reason
+  )
+  fallback_histories <- list(chunk_result$fallback_history)
 
   sel_idx <- sample.int(n = ncol(x_art_full), size = n_injected, replace = FALSE)
   x_art   <- x_art_full[, sel_idx, drop = FALSE]
@@ -318,9 +305,9 @@ make_knockoff_features <- function(x, n_injected, random_state = NULL) {
 #' `knockoff::create.gaussian(..., method = "equi")`.  This matches the
 #' `GaussianSampler(X, method='equicorrelated')` call used by the Python STABL
 #' library, making it the parity-correct knockoff type for cross-language
-#' comparisons.  Column-chunking for datasets that exceed 3 000 features is
-#' applied (same as [make_knockoff_features()]).  Falls back to random-permutation
-#' features when the knockoff constructor fails.
+#' comparisons. Inputs above 3 000 predictors fail closed because a globally
+#' valid chunked construction has not been established. Supported-dimensional
+#' constructor failures fall back to random-permutation features.
 #'
 #' @param x Numeric matrix of predictors (samples \eqn{\times} features).
 #' @param n_injected Integer; number of knockoff columns to select.
@@ -330,10 +317,10 @@ make_knockoff_features <- function(x, n_injected, random_state = NULL) {
 #'   `artificial_provenance`; see [make_rp_features()] for details.
 #' @keywords internal
 make_knockoff_equi_features <- function(x, n_injected, random_state = NULL) {
+  .assert_supported_knockoff_dimension(x, "knockoff_equi")
   .require_pkg("knockoff", "for artificial_type = \"knockoff_equi\"")
 
   n_features <- ncol(x)
-  chunk_size <- 3000L
 
   .make_equi_chunk <- function(x_chunk) {
     tryCatch(
@@ -370,52 +357,18 @@ make_knockoff_equi_features <- function(x, n_injected, random_state = NULL) {
     )
   }
 
-  if (n_features > chunk_size) {
-    n_chunks        <- ceiling(n_features / chunk_size)
-    ko_blocks       <- vector("list", n_chunks)
-    orig_map_blocks <- vector("list", n_chunks)
-    type_blocks     <- vector("list", n_chunks)
-    chunk_records   <- vector("list", n_chunks)
-    fallback_histories <- vector("list", n_chunks)
-    for (i in seq_len(n_chunks)) {
-      col_idx              <- sample.int(n_features,
-                                         size = min(chunk_size, n_features),
-                                         replace = FALSE)
-      chunk_result         <- .make_equi_chunk(x[, col_idx, drop = FALSE])
-      ko_blocks[[i]]       <- chunk_result$x_art
-      orig_map_blocks[[i]] <- col_idx
-      type_blocks[[i]]     <- rep.int(chunk_result$actual_type, ncol(chunk_result$x_art))
-      fallback_histories[[i]] <- chunk_result$fallback_history
-      chunk_records[[i]]   <- .artificial_chunk_record(
-        chunk = i,
-        requested_type = "knockoff_equi",
-        actual_type = chunk_result$actual_type,
-        n_columns = ncol(chunk_result$x_art),
-        fallback_reason = chunk_result$fallback_reason
-      )
-    }
-    x_art_full <- do.call(cbind, ko_blocks)
-    orig_map   <- unlist(orig_map_blocks)
-    type_map   <- unlist(type_blocks, use.names = FALSE)
-    chunks     <- do.call(rbind, chunk_records)
-    keep_idx   <- sample.int(ncol(x_art_full), size = n_features, replace = FALSE)
-    x_art_full <- x_art_full[, keep_idx, drop = FALSE]
-    orig_map   <- orig_map[keep_idx]
-    type_map   <- type_map[keep_idx]
-  } else {
-    chunk_result <- .make_equi_chunk(x)
-    x_art_full <- chunk_result$x_art
-    orig_map   <- seq_len(n_features)
-    type_map   <- rep.int(chunk_result$actual_type, n_features)
-    chunks     <- .artificial_chunk_record(
-      chunk = 1L,
-      requested_type = "knockoff_equi",
-      actual_type = chunk_result$actual_type,
-      n_columns = ncol(chunk_result$x_art),
-      fallback_reason = chunk_result$fallback_reason
-    )
-    fallback_histories <- list(chunk_result$fallback_history)
-  }
+  chunk_result <- .make_equi_chunk(x)
+  x_art_full <- chunk_result$x_art
+  orig_map <- seq_len(n_features)
+  type_map <- rep.int(chunk_result$actual_type, n_features)
+  chunks <- .artificial_chunk_record(
+    chunk = 1L,
+    requested_type = "knockoff_equi",
+    actual_type = chunk_result$actual_type,
+    n_columns = ncol(chunk_result$x_art),
+    fallback_reason = chunk_result$fallback_reason
+  )
+  fallback_histories <- list(chunk_result$fallback_history)
 
   sel_idx <- sample.int(n = ncol(x_art_full), size = n_injected, replace = FALSE)
   x_art   <- x_art_full[, sel_idx, drop = FALSE]
@@ -440,10 +393,10 @@ make_knockoff_equi_features <- function(x, n_injected, random_state = NULL) {
 #' descent port of `knockpy.mrc._solve_mvr_ungrouped`), then the knockoff
 #' sample is drawn with `knockoff::create.gaussian(..., diag_s = S)`.
 #' This is a novel feature exclusive to `stablr` — the Python STABL library
-#' does not implement MVR knockoffs. High-dimensional chunking is approximate:
-#' global exchangeability across chunks has not been established. Chunking and
-#' fallback behaviour mirror [make_knockoff_equi_features()]: MVR-solver failure falls back to equi;
-#' `create.gaussian` failure falls back to random permutation.
+#' does not implement MVR knockoffs. Inputs above 3 000 predictors fail closed
+#' because global exchangeability for a chunked construction has not been
+#' established. For supported dimensions, MVR-solver failure falls back to
+#' equi; `create.gaussian` failure falls back to random permutation.
 #'
 #' @param x Numeric matrix of predictors (samples \eqn{\times} features).
 #' @param n_injected Integer; number of knockoff columns to select.
@@ -451,16 +404,15 @@ make_knockoff_equi_features <- function(x, n_injected, random_state = NULL) {
 #'   coordinate-shuffle RNG.
 #'
 #' @return Named list with elements `x_augmented`, `noise_col_indices`, and
-#'   `artificial_provenance`; see [make_rp_features()] for details. For MVR,
-#'   `artificial_provenance$mvr_chunking` records whether the approximate
-#'   high-dimensional chunking path was applied and explicitly reports that
-#'   global exchangeability across chunks has not been established.
+#'   `artificial_provenance`; see [make_rp_features()] for details. The retained
+#'   `artificial_provenance$mvr_chunking` compatibility field always records
+#'   that chunking was not applied.
 #' @keywords internal
 make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
+  .assert_supported_knockoff_dimension(x, "knockoff_mvr")
   .require_pkg("knockoff", "for artificial_type = \"knockoff_mvr\"")
 
   n_features <- ncol(x)
-  chunk_size <- 3000L
 
   .make_mvr_chunk <- function(x_chunk) {
     fallback_history <- .empty_artificial_fallback_history()
@@ -537,52 +489,18 @@ make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
     )
   }
 
-  if (n_features > chunk_size) {
-    n_chunks        <- ceiling(n_features / chunk_size)
-    ko_blocks       <- vector("list", n_chunks)
-    orig_map_blocks <- vector("list", n_chunks)
-    type_blocks     <- vector("list", n_chunks)
-    chunk_records   <- vector("list", n_chunks)
-    fallback_histories <- vector("list", n_chunks)
-    for (i in seq_len(n_chunks)) {
-      col_idx              <- sample.int(n_features,
-                                         size = min(chunk_size, n_features),
-                                         replace = FALSE)
-      chunk_result         <- .make_mvr_chunk(x[, col_idx, drop = FALSE])
-      ko_blocks[[i]]       <- chunk_result$x_art
-      orig_map_blocks[[i]] <- col_idx
-      type_blocks[[i]]     <- rep.int(chunk_result$actual_type, ncol(chunk_result$x_art))
-      fallback_histories[[i]] <- chunk_result$fallback_history
-      chunk_records[[i]]   <- .artificial_chunk_record(
-        chunk = i,
-        requested_type = "knockoff_mvr",
-        actual_type = chunk_result$actual_type,
-        n_columns = ncol(chunk_result$x_art),
-        fallback_reason = chunk_result$fallback_reason
-      )
-    }
-    x_art_full <- do.call(cbind, ko_blocks)
-    orig_map   <- unlist(orig_map_blocks)
-    type_map   <- unlist(type_blocks, use.names = FALSE)
-    chunks     <- do.call(rbind, chunk_records)
-    keep_idx   <- sample.int(ncol(x_art_full), size = n_features, replace = FALSE)
-    x_art_full <- x_art_full[, keep_idx, drop = FALSE]
-    orig_map   <- orig_map[keep_idx]
-    type_map   <- type_map[keep_idx]
-  } else {
-    chunk_result <- .make_mvr_chunk(x)
-    x_art_full <- chunk_result$x_art
-    orig_map   <- seq_len(n_features)
-    type_map   <- rep.int(chunk_result$actual_type, n_features)
-    chunks     <- .artificial_chunk_record(
-      chunk = 1L,
-      requested_type = "knockoff_mvr",
-      actual_type = chunk_result$actual_type,
-      n_columns = ncol(chunk_result$x_art),
-      fallback_reason = chunk_result$fallback_reason
-    )
-    fallback_histories <- list(chunk_result$fallback_history)
-  }
+  chunk_result <- .make_mvr_chunk(x)
+  x_art_full <- chunk_result$x_art
+  orig_map <- seq_len(n_features)
+  type_map <- rep.int(chunk_result$actual_type, n_features)
+  chunks <- .artificial_chunk_record(
+    chunk = 1L,
+    requested_type = "knockoff_mvr",
+    actual_type = chunk_result$actual_type,
+    n_columns = ncol(chunk_result$x_art),
+    fallback_reason = chunk_result$fallback_reason
+  )
+  fallback_histories <- list(chunk_result$fallback_history)
 
   sel_idx <- sample.int(n = ncol(x_art_full), size = n_injected, replace = FALSE)
   x_art   <- x_art_full[, sel_idx, drop = FALSE]
@@ -594,12 +512,11 @@ make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
     chunks = chunks,
     fallback_histories = fallback_histories
   )
-  is_chunked <- n_features > chunk_size
   provenance$mvr_chunking <- list(
-    applied = is_chunked,
-    chunk_size = chunk_size,
-    approximate = is_chunked,
-    global_exchangeability_established = if (is_chunked) FALSE else NA
+    applied = FALSE,
+    chunk_size = .maximum_supported_knockoff_features,
+    approximate = FALSE,
+    global_exchangeability_established = NA
   )
 
   list(
@@ -647,7 +564,9 @@ make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
 #'   knockoffs, a fallback to random permutation is attempted when the
 #'   knockoff constructor fails (e.g., rank-deficient input). Fixed-X
 #'   knockoffs that require row augmentation also fall back because augmented
-#'   knockoff rows cannot be aligned with the original outcome.
+#'   knockoff rows cannot be aligned with the original outcome. All knockoff
+#'   modes fail closed above 3 000 predictors; random permutation has no such
+#'   dimensional limit.
 #' @param n_injected Positive integer; number of artificial columns to append.
 #'   Typically `round(ncol(x) * artificial_proportion)` as computed in
 #'   [stabl_fit()].
@@ -692,8 +611,18 @@ make_artificial_features <- function(x, n_injected, type, random_state = NULL) {
   if (!is.character(type) || length(type) != 1L || is.na(type)) {
     stop("`type` must be a single character string.", call. = FALSE)
   }
+  if (!type %in% .artificial_type_levels) {
+    stop(
+      "`type` must be one of \"random_permutation\", \"knockoff\", ",
+      "\"knockoff_equi\", or \"knockoff_mvr\", got: ", type,
+      call. = FALSE
+    )
+  }
   if (!is.null(random_state)) {
     random_state <- .validate_scalar_integer_like(random_state, "random_state")
+  }
+  if (startsWith(type, "knockoff")) {
+    .assert_supported_knockoff_dimension(x, type)
   }
   if (!is.null(random_state)) set.seed(random_state)
   switch(
@@ -704,11 +633,6 @@ make_artificial_features <- function(x, n_injected, type, random_state = NULL) {
     knockoff_equi      = make_knockoff_equi_features(x, n_injected,
                                                      random_state = random_state),
     knockoff_mvr       = make_knockoff_mvr_features(x, n_injected,
-                                                    random_state = random_state),
-    stop(
-      "`type` must be one of \"random_permutation\", \"knockoff\", ",
-      "\"knockoff_equi\", or \"knockoff_mvr\", got: ", type,
-      call. = FALSE
-    )
+                                                    random_state = random_state)
   )
 }

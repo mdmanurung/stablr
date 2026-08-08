@@ -178,8 +178,9 @@ Selection reproducibility metrics:
 The fitted threshold is the first minimizer of the observed FDP+ diagnostic
 curve. A plotted `fdr_target` is a visual reference, not a fitting target, and
 neither is a universal false-discovery guarantee. Interpretation depends on the
-artificial-feature assumptions; high-dimensional MVR chunking is explicitly
-marked approximate because global exchangeability has not been established.
+artificial-feature assumptions. Knockoff modes fail closed above 3,000
+predictors because a globally valid chunked construction has not been
+established; random-permutation controls remain available at larger dimensions.
 
 Late-fusion weights default to leakage-safe OOF training. Empty selections or
 downstream fit failures use fold-training means/event priors/class priors and

@@ -148,6 +148,10 @@ Supported artificial-feature settings are:
 | `"knockoff_mvr"` | Model-X MVR Gaussian knockoffs. |
 | `NULL` | No artificial features; FDP diagnostics are unavailable. |
 
+All knockoff modes fail closed above 3,000 predictors because the package does
+not claim a globally valid chunked construction. Random-permutation controls
+do not have that dimensional restriction.
+
 Scalar tuning arguments such as `n_bootstraps` and `random_state` must be
 finite integer-like scalars.  Plot titles, output paths, and file-format
 arguments must be non-empty character scalars.
