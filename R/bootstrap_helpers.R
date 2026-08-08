@@ -351,12 +351,41 @@ group_bootstrap_indices <- function(y, groups, n_subsamples, replace = FALSE,
   !identical(row_ids, default_row_ids) || setequal(row_ids, sample_ids)
 }
 
-.stratified_counts <- function(strata_ids, n_subsamples, replace) {
+.stratified_counts <- function(strata_ids, n_subsamples, replace,
+                               min_per_stratum = 1L) {
   strata_tab <- table(strata_ids)
   n_strata <- length(strata_tab)
 
+  min_per_stratum <- .validate_scalar_integer_like(
+    min_per_stratum,
+    "min_per_stratum",
+    min = 1L
+  )
+
   if (n_strata == 0L) {
     stop("`strata` must contain at least one sample.", call. = FALSE)
+  }
+  minimum_total <- n_strata * min_per_stratum
+  if (n_subsamples < minimum_total) {
+    if (min_per_stratum == 1L) {
+      stop(
+        "`n_subsamples` must be at least the number of realised strata.",
+        call. = FALSE
+      )
+    }
+    stop(
+      "`n_subsamples` must be at least ", minimum_total,
+      " to allocate ", min_per_stratum,
+      " observation(s) to each realised stratum.",
+      call. = FALSE
+    )
+  }
+  if (!replace && any(as.integer(strata_tab) < min_per_stratum)) {
+    stop(
+      "Each realised stratum must contain at least ", min_per_stratum,
+      " observation(s) when `replace = FALSE`.",
+      call. = FALSE
+    )
   }
   if (n_strata == 1L) {
     out <- n_subsamples
@@ -365,20 +394,13 @@ group_bootstrap_indices <- function(y, groups, n_subsamples, replace = FALSE,
     names(out) <- names(strata_tab)
     return(out)
   }
-  if (n_subsamples < n_strata) {
-    stop(
-      "`n_subsamples` must be at least the number of realised strata.",
-      call. = FALSE
-    )
-  }
-
   exact <- as.numeric(strata_tab) / sum(strata_tab) * n_subsamples
   counts <- floor(exact)
   names(counts) <- names(strata_tab)
 
-  zero_counts <- counts == 0L
-  if (any(zero_counts)) {
-    counts[zero_counts] <- 1L
+  below_minimum <- counts < min_per_stratum
+  if (any(below_minimum)) {
+    counts[below_minimum] <- min_per_stratum
   }
 
   remainders <- exact - floor(exact)
@@ -392,7 +414,7 @@ group_bootstrap_indices <- function(y, groups, n_subsamples, replace = FALSE,
     }
   }
   while (sum(counts) > n_subsamples) {
-    candidates <- names(counts[counts > 1L])
+    candidates <- names(counts[counts > min_per_stratum])
     if (length(candidates) == 0L) {
       stop("Could not allocate stratified bootstrap counts.", call. = FALSE)
     }
@@ -413,9 +435,15 @@ group_bootstrap_indices <- function(y, groups, n_subsamples, replace = FALSE,
   out
 }
 
-.stratified_bootstrap_indices <- function(strata_ids, n_subsamples, replace) {
+.stratified_bootstrap_indices <- function(strata_ids, n_subsamples, replace,
+                                          min_per_stratum = 1L) {
   strata_ids <- as.character(strata_ids)
-  counts <- .stratified_counts(strata_ids, n_subsamples, replace)
+  counts <- .stratified_counts(
+    strata_ids,
+    n_subsamples,
+    replace,
+    min_per_stratum = min_per_stratum
+  )
   idx_by_stratum <- split(seq_along(strata_ids), strata_ids)
 
   idx <- unlist(
@@ -453,7 +481,8 @@ group_bootstrap_indices <- function(y, groups, n_subsamples, replace = FALSE,
 }
 
 .stratified_group_bootstrap_indices <- function(strata_ids, groups, group_levels,
-                                                n_subsamples, replace) {
+                                                n_subsamples, replace,
+                                                min_per_stratum = 1L) {
   group_strata <- vapply(group_levels, function(g) {
     stratum <- unique(as.character(strata_ids[groups == g]))
     if (length(stratum) != 1L) {
@@ -466,7 +495,12 @@ group_bootstrap_indices <- function(y, groups, n_subsamples, replace = FALSE,
     stratum
   }, character(1L))
 
-  target_counts <- .stratified_counts(strata_ids, n_subsamples, replace)
+  target_counts <- .stratified_counts(
+    strata_ids,
+    n_subsamples,
+    replace,
+    min_per_stratum = min_per_stratum
+  )
   # List-collect across strata to avoid quadratic c()-in-loop growth;
   # unlist() once at the end for both the inner (per-stratum) and outer
   # (cross-stratum) accumulations.

@@ -334,6 +334,7 @@ stabl_fit <- function(
 
   n_total_features <- ncol(x_fit)
   n_subsamples     <- as.integer(floor(sample_fraction * n_samples))
+  modeled_classes <- .modeled_class_levels(y, family)
 
   # Fix 7: reject impossible configuration before entering bootstrap
   if (!replace && n_subsamples > n_samples) {
@@ -348,15 +349,31 @@ stabl_fit <- function(
   # ---- Bootstrap index lists ------------------------------------------------
   if (!is.null(boot_seed)) set.seed(boot_seed)
 
-  boot_sampler <- if (is.null(groups)) {
-    function(.) classic_bootstrap_indices(y = y, n_subsamples = n_subsamples,
-                                          replace = replace,
-                                          strata = bootstrap_strata)
+  boot_sampler <- if (!is.null(modeled_classes)) {
+    .classification_bootstrap_sampler(
+      y = y,
+      groups = groups,
+      n_subsamples = n_subsamples,
+      replace = replace,
+      strata_ids = bootstrap_strata_ids,
+      family = family,
+      class_levels = modeled_classes
+    )
+  } else if (is.null(groups)) {
+    function(.) classic_bootstrap_indices(
+      y = y,
+      n_subsamples = n_subsamples,
+      replace = replace,
+      strata = bootstrap_strata
+    )
   } else {
-    function(.) group_bootstrap_indices(y = y, groups = groups,
-                                        n_subsamples = n_subsamples,
-                                        replace = replace,
-                                        strata = bootstrap_strata)
+    function(.) group_bootstrap_indices(
+      y = y,
+      groups = groups,
+      n_subsamples = n_subsamples,
+      replace = replace,
+      strata = bootstrap_strata
+    )
   }
   boot_indices <- lapply(seq_len(n_bootstraps), boot_sampler)
 
@@ -432,6 +449,159 @@ stabl_fit <- function(
     ),
     class = "stabl_fit"
   )
+}
+
+.modeled_class_levels <- function(y, family) {
+  if (!family %in% c("binomial", "multinomial")) {
+    return(NULL)
+  }
+  values <- as.character(y)
+  if (is.factor(y)) {
+    return(levels(droplevels(y)))
+  }
+  sort(unique(values))
+}
+
+.classification_bootstrap_is_feasible <- function(y, indices, class_levels,
+                                                  minimum_per_class = 2L) {
+  observed <- table(factor(as.character(y[indices]), levels = class_levels))
+  all(observed >= minimum_per_class)
+}
+
+.abort_bootstrap_infeasible <- function(family, n_subsamples, class_counts,
+                                        reason, minimum_per_class = 2L) {
+  counts_text <- paste0(names(class_counts), "=", as.integer(class_counts),
+                        collapse = ", ")
+  .abort_stablr(
+    "stablr_bootstrap_infeasible",
+    paste0(
+      "Learner-feasible ", family,
+      " bootstrap sampling is impossible: ", reason,
+      " Modeled class counts are ", counts_text,
+      "; each bootstrap requires at least ", minimum_per_class,
+      " observations from every class."
+    ),
+    family = family,
+    n_subsamples = n_subsamples,
+    class_counts = class_counts,
+    minimum_per_class = minimum_per_class
+  )
+}
+
+.classification_bootstrap_sampler <- function(y, groups, n_subsamples,
+                                              replace, strata_ids, family,
+                                              class_levels,
+                                              minimum_per_class = 2L,
+                                              max_redraws = 1000L) {
+  class_counts <- table(factor(as.character(y), levels = class_levels))
+  if (any(class_counts < minimum_per_class)) {
+    .abort_bootstrap_infeasible(
+      family,
+      n_subsamples,
+      class_counts,
+      "the training population has too few observations in at least one class.",
+      minimum_per_class
+    )
+  }
+  if (is.null(groups) &&
+      n_subsamples < length(class_levels) * minimum_per_class) {
+    .abort_bootstrap_infeasible(
+      family,
+      n_subsamples,
+      class_counts,
+      paste0("`n_subsamples` is only ", n_subsamples, "."),
+      minimum_per_class
+    )
+  }
+
+  group_levels <- if (is.null(groups)) NULL else unique(groups)
+  draw_once <- if (is.null(groups) && is.null(strata_ids)) {
+    function() sample.int(
+      n = length(y),
+      size = n_subsamples,
+      replace = replace
+    )
+  } else if (is.null(groups)) {
+    function() .stratified_bootstrap_indices(
+      strata_ids,
+      n_subsamples,
+      replace
+    )
+  } else if (is.null(strata_ids)) {
+    function() .unstratified_group_bootstrap_indices(
+      groups,
+      group_levels,
+      n_subsamples,
+      replace
+    )
+  } else {
+    function() .stratified_group_bootstrap_indices(
+      strata_ids,
+      groups,
+      group_levels,
+      n_subsamples,
+      replace
+    )
+  }
+
+  function(.) {
+    indices <- draw_once()
+    if (.classification_bootstrap_is_feasible(
+      y,
+      indices,
+      class_levels,
+      minimum_per_class
+    )) {
+      return(indices)
+    }
+
+    if (is.null(groups)) {
+      return(.stratified_bootstrap_indices(
+        factor(as.character(y), levels = class_levels),
+        n_subsamples,
+        replace,
+        min_per_stratum = minimum_per_class
+      ))
+    }
+
+    group_is_class_pure <- all(vapply(group_levels, function(group) {
+      length(unique(as.character(y[groups == group]))) == 1L
+    }, logical(1L)))
+    if (group_is_class_pure) {
+      repair_target <- max(
+        n_subsamples,
+        length(class_levels) * minimum_per_class
+      )
+      return(.stratified_group_bootstrap_indices(
+        factor(as.character(y), levels = class_levels),
+        groups,
+        group_levels,
+        repair_target,
+        replace,
+        min_per_stratum = minimum_per_class
+      ))
+    }
+
+    for (attempt in seq_len(max_redraws)) {
+      indices <- draw_once()
+      if (.classification_bootstrap_is_feasible(
+        y,
+        indices,
+        class_levels,
+        minimum_per_class
+      )) {
+        return(indices)
+      }
+    }
+    .abort_bootstrap_infeasible(
+      family,
+      n_subsamples,
+      class_counts,
+      paste0("no feasible grouped draw was found after ", max_redraws,
+             " deterministic redraws."),
+      minimum_per_class
+    )
+  }
 }
 
 # ---- Package-level constants -------------------------------------------------
