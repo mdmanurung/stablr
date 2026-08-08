@@ -90,8 +90,9 @@
 #'     \item{`hard_threshold`}{As supplied.}
 #'     \item{`artificial_type`}{As supplied.}
 #'     \item{`artificial_provenance`}{List returned by
-#'       [make_artificial_features()] recording actual artificial-feature
-#'       generation modes and fallback counts/reasons, or `NULL` when
+#'       [make_artificial_features()] recording `actual_type`, all selected
+#'       generator modes, and the complete ordered fallback history. This is
+#'       the scientific source of truth for the generator used; or `NULL` when
 #'       `artificial_type = NULL`.}
 #'     \item{`artificial_proportion`}{As supplied.}
 #'     \item{`explore`}{As supplied.}

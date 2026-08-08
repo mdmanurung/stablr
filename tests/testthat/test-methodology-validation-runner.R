@@ -60,7 +60,10 @@ test_that("methodology validation runner writes bounded artifact schema", {
     replicate_rows,
     c(
       "family", "scenario", "regime", "correlation", "profile", "replicate",
-      "artificial_type", "data_seed", "fit_seed", "status", "n", "p", "n_signal",
+      "artificial_type", "actual_artificial_type", "actual_artificial_types",
+      "fallback_event_count", "fallback_random_permutation_events",
+      "fallback_equi_events", "fallback_history", "data_seed", "fit_seed",
+      "status", "n", "p", "n_signal",
       "n_bootstraps", "n_lambda", "fallback_random_permutation_warnings",
       "fallback_equi_warnings", "warning_count", "elapsed_sec",
       "n_selected", "true_positives", "false_positives", "empirical_fdp",
@@ -272,6 +275,109 @@ test_that("SCI-04 statistical decision record is versioned and unaccepted", {
   expect_true(any(text == "Status: proposed, not accepted"))
   expect_true(grepl("Hoeffding", document, fixed = TRUE))
   expect_true(grepl("must not be implemented", document, fixed = TRUE))
+})
+
+test_that("SCI-05 methodology rows use structured generator provenance", {
+  env <- new.env(parent = globalenv())
+  sys.source(.methodology_runner_path(), envir = env)
+  scenario <- data.frame(
+    scenario = "null",
+    regime = "null",
+    correlation = 0,
+    profile = "low_dim",
+    n = 10L,
+    p = 5L,
+    n_signal = 0L,
+    stringsAsFactors = FALSE
+  )
+  history <- data.frame(
+    event = 1L,
+    chunk = 1L,
+    step = 1L,
+    from_type = "knockoff",
+    to_type = "random_permutation",
+    reason = "typed construction failure",
+    condition_class = "stablr_knockoff_infeasible;stablr_error;error;condition",
+    stringsAsFactors = FALSE
+  )
+  fit <- list(
+    stabl_scores_ = matrix(0, 5L, 1L),
+    stabl_scores_artificial_ = matrix(0, 2L, 1L),
+    min_fdr_ = 0,
+    fdr_min_threshold_ = 1,
+    artificial_provenance = list(
+      requested_type = "knockoff",
+      actual_type = "random_permutation",
+      actual_types = "random_permutation",
+      fallback_history = history
+    )
+  )
+
+  row <- env$.replicate_row(
+    scenario = scenario,
+    family = "gaussian",
+    replicate = 1L,
+    artificial_type = "knockoff",
+    data_seed = 1L,
+    fit_seed = 2L,
+    status = "ok",
+    n_bootstraps = 2L,
+    n_lambda = 1L,
+    warnings = "unrelated warning text",
+    elapsed_sec = 0,
+    fit = fit
+  )
+
+  expect_identical(row$actual_artificial_type, "random_permutation")
+  expect_identical(row$fallback_event_count, 1L)
+  expect_identical(row$fallback_random_permutation_events, 1L)
+  expect_identical(row$fallback_equi_events, 0L)
+  expect_match(row$fallback_history, "knockoff>random_permutation", fixed = TRUE)
+  expect_identical(row$fallback_random_permutation_warnings, 0L)
+})
+
+test_that("SCI-05 release gates fail closed on actual-generator mismatch", {
+  env <- new.env(parent = globalenv())
+  sys.source(.methodology_runner_path(), envir = env)
+  scenario <- data.frame(
+    scenario = "null",
+    regime = "null",
+    profile = "low_dim",
+    correlation = 0,
+    n = 50L,
+    p = 20L,
+    n_signal = 0L,
+    stringsAsFactors = FALSE
+  )
+  rows <- data.frame(
+    family = "gaussian",
+    scenario = "null",
+    regime = "null",
+    profile = "low_dim",
+    correlation = 0,
+    replicate = seq_len(3L),
+    artificial_type = "knockoff",
+    actual_artificial_type = "random_permutation",
+    status = "ok",
+    p = 20L,
+    n_selected = 0L,
+    empirical_fdp = 0,
+    tpr = NA_real_,
+    stringsAsFactors = FALSE
+  )
+
+  gates <- env$.release_gate_table(
+    rows,
+    scenarios = scenario,
+    families = "gaussian",
+    artificial_types = "knockoff",
+    expected_replicates = 3L
+  )
+
+  expect_true(all(gates$cell_status == "generator_mismatch"))
+  expect_true(all(gates$actual_artificial_type == "random_permutation"))
+  expect_true(all(is.na(gates$bound)))
+  expect_false(any(gates$pass))
 })
 
 test_that("missing and errored release cells fail explicitly", {

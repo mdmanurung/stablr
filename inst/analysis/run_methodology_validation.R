@@ -233,6 +233,12 @@
     profile = character(),
     replicate = integer(),
     artificial_type = character(),
+    actual_artificial_type = character(),
+    actual_artificial_types = character(),
+    fallback_event_count = integer(),
+    fallback_random_permutation_events = integer(),
+    fallback_equi_events = integer(),
+    fallback_history = character(),
     data_seed = integer(),
     fit_seed = integer(),
     status = character(),
@@ -261,6 +267,75 @@
   )
 }
 
+.methodology_artificial_provenance <- function(fit, requested_type) {
+  if (is.null(fit)) {
+    return(list(
+      actual_type = NA_character_,
+      actual_types = NA_character_,
+      fallback_event_count = NA_integer_,
+      fallback_random_permutation_events = NA_integer_,
+      fallback_equi_events = NA_integer_,
+      fallback_history = NA_character_
+    ))
+  }
+
+  provenance <- fit$artificial_provenance
+  required <- c(
+    "requested_type", "actual_type", "actual_types", "fallback_history"
+  )
+  if (!is.list(provenance) || !all(required %in% names(provenance))) {
+    stop(
+      "A successful methodology fit is missing structured artificial provenance.",
+      call. = FALSE
+    )
+  }
+  if (!identical(provenance$requested_type, requested_type)) {
+    stop(
+      "Artificial provenance requested type does not match the validation task.",
+      call. = FALSE
+    )
+  }
+  history <- provenance$fallback_history
+  history_fields <- c(
+    "event", "chunk", "step", "from_type", "to_type", "reason",
+    "condition_class"
+  )
+  if (!is.data.frame(history) || !identical(names(history), history_fields)) {
+    stop("Artificial fallback history has an invalid schema.", call. = FALSE)
+  }
+  if (nrow(history) && !identical(history$event, seq_len(nrow(history)))) {
+    stop("Artificial fallback history is not in event order.", call. = FALSE)
+  }
+
+  serialized <- if (!nrow(history)) {
+    ""
+  } else {
+    paste(
+      sprintf(
+        "%d:%d:%d:%s>%s:%s:%s",
+        history$event,
+        history$chunk,
+        history$step,
+        history$from_type,
+        history$to_type,
+        history$condition_class,
+        history$reason
+      ),
+      collapse = " || "
+    )
+  }
+  list(
+    actual_type = provenance$actual_type,
+    actual_types = paste(provenance$actual_types, collapse = ";"),
+    fallback_event_count = nrow(history),
+    fallback_random_permutation_events = sum(
+      history$to_type == "random_permutation"
+    ),
+    fallback_equi_events = sum(history$to_type == "knockoff_equi"),
+    fallback_history = serialized
+  )
+}
+
 .replicate_row <- function(scenario, family, replicate, artificial_type,
                            data_seed, fit_seed, status,
                            n_bootstraps, n_lambda, warnings, elapsed_sec,
@@ -271,6 +346,7 @@
   n_selected <- length(selected)
   art_scores <- if (!is.null(fit)) fit$stabl_scores_artificial_ else NULL
   real_scores <- if (!is.null(fit)) fit$stabl_scores_ else NULL
+  provenance <- .methodology_artificial_provenance(fit, artificial_type)
 
   data.frame(
     family = family,
@@ -280,6 +356,13 @@
     profile = scenario$profile,
     replicate = replicate,
     artificial_type = artificial_type,
+    actual_artificial_type = provenance$actual_type,
+    actual_artificial_types = provenance$actual_types,
+    fallback_event_count = provenance$fallback_event_count,
+    fallback_random_permutation_events =
+      provenance$fallback_random_permutation_events,
+    fallback_equi_events = provenance$fallback_equi_events,
+    fallback_history = provenance$fallback_history,
     data_seed = data_seed,
     fit_seed = fit_seed,
     status = status,
@@ -433,6 +516,8 @@
       family = character(),
       scenario = character(),
       artificial_type = character(),
+      actual_artificial_types = character(),
+      generator_identity_complete = logical(),
       profile = character(),
       regime = character(),
       correlation = numeric(),
@@ -472,13 +557,21 @@
       rows$artificial_type == groups$artificial_type[[i]]
     d <- rows[idx, , drop = FALSE]
     ok <- d$status == "ok"
+    actual_types <- sort(unique(d$actual_artificial_type[ok]))
+    actual_types <- actual_types[!is.na(actual_types) & nzchar(actual_types)]
     fdp_exceeded <- as.numeric(d$empirical_fdp[ok] > target_fdp)
-    fallback_rp <- as.numeric(d$fallback_random_permutation_warnings[ok] > 0L)
-    fallback_equi <- as.numeric(d$fallback_equi_warnings[ok] > 0L)
+    fallback_rp <- as.numeric(
+      d$fallback_random_permutation_events[ok] > 0L
+    )
+    fallback_equi <- as.numeric(d$fallback_equi_events[ok] > 0L)
     summaries[[i]] <- data.frame(
       family = d$family[[1L]],
       scenario = d$scenario[[1L]],
       artificial_type = d$artificial_type[[1L]],
+      actual_artificial_types = paste(actual_types, collapse = ";"),
+      generator_identity_complete =
+        length(actual_types) == 1L &&
+        identical(actual_types, d$artificial_type[[1L]]),
       profile = d$profile[[1L]],
       regime = d$regime[[1L]],
       correlation = d$correlation[[1L]],
@@ -821,6 +914,9 @@
 .release_gate_table <- function(rows, scenarios = NULL, families = NULL,
                                 artificial_types = NULL,
                                 expected_replicates = NULL) {
+  if (!"actual_artificial_type" %in% names(rows)) {
+    rows$actual_artificial_type <- rows$artificial_type
+  }
   if (is.null(scenarios)) {
     scenarios <- unique(rows[c(
       "scenario", "regime", "profile", "correlation", "n", "p", "n_signal"
@@ -847,6 +943,17 @@
           , drop = FALSE
         ]
         cell_status <- .gate_cell_status(cell, expected_replicates)
+        actual_generators <- sort(unique(cell$actual_artificial_type[
+          cell$status == "ok"
+        ]))
+        actual_generators <- actual_generators[
+          !is.na(actual_generators) & nzchar(actual_generators)
+        ]
+        generator_matches <- length(actual_generators) == 1L &&
+          identical(actual_generators, artificial_type)
+        if (identical(cell_status, "complete") && !generator_matches) {
+          cell_status <- "generator_mismatch"
+        }
         complete <- identical(cell_status, "complete")
 
         if (identical(scenario$regime, "null")) {
@@ -919,6 +1026,10 @@
             regime = scenario$regime,
             profile = scenario$profile,
             artificial_type = artificial_type,
+            actual_artificial_type = paste(
+              actual_generators,
+              collapse = ";"
+            ),
             expected_replicates = expected_replicates,
             observed_replicates = nrow(cell),
             ok_replicates = sum(cell$status == "ok"),

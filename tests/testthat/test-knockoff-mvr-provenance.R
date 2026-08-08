@@ -25,6 +25,7 @@ test_that("MVR solver failure falls back to equi with recorded provenance", {
 
   provenance <- result$artificial_provenance
   expect_equal(provenance$requested_type, "knockoff_mvr")
+  expect_equal(provenance$actual_type, "knockoff_equi")
   expect_equal(provenance$n_chunks, 1L)
   expect_equal(provenance$fallback_counts[["knockoff_equi"]], 1L)
   expect_equal(provenance$selected_type_counts[["knockoff_equi"]], 3L)
@@ -34,6 +35,9 @@ test_that("MVR solver failure falls back to equi with recorded provenance", {
     "deliberate MVR solver failure",
     fixed = TRUE
   )
+  expect_identical(provenance$fallback_history$event, 1L)
+  expect_identical(provenance$fallback_history$from_type, "knockoff_mvr")
+  expect_identical(provenance$fallback_history$to_type, "knockoff_equi")
 })
 
 test_that("high-dimensional MVR chunking is recorded as approximate", {

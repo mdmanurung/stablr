@@ -13,7 +13,8 @@
 #'     \item{noise_col_indices}{Integer vector (1-based) of original column
 #'       indices selected as sources for the artificial block.}
 #'     \item{artificial_provenance}{List describing the requested generator,
-#'       actual generator modes, and any fallback chunks.}
+#'       `actual_type` used by the selected artificial columns, all
+#'       `actual_types`, and the complete ordered `fallback_history`.}
 #'   }
 #' @keywords internal
 make_rp_features <- function(x, n_injected) {
@@ -35,7 +36,8 @@ make_rp_features <- function(x, n_injected) {
         actual_type = "random_permutation",
         n_columns = n_injected,
         fallback_reason = NA_character_
-      )
+      ),
+      fallback_histories = list(.empty_artificial_fallback_history())
     )
   )
 }
@@ -65,14 +67,88 @@ make_rp_features <- function(x, n_injected) {
   )
 }
 
-.make_artificial_provenance <- function(requested_type, selected_types, chunks) {
+.empty_artificial_fallback_history <- function() {
+  data.frame(
+    step = integer(),
+    from_type = character(),
+    to_type = character(),
+    reason = character(),
+    condition_class = character(),
+    stringsAsFactors = FALSE
+  )
+}
+
+.artificial_fallback_event <- function(from_type, to_type, condition) {
+  data.frame(
+    step = 1L,
+    from_type = from_type,
+    to_type = to_type,
+    reason = conditionMessage(condition),
+    condition_class = paste(class(condition), collapse = ";"),
+    stringsAsFactors = FALSE
+  )
+}
+
+.combine_artificial_fallback_histories <- function(histories, chunks) {
+  if (length(histories) != nrow(chunks)) {
+    stop("Artificial fallback history must have one entry per chunk.",
+         call. = FALSE)
+  }
+  rows <- lapply(seq_along(histories), function(i) {
+    history <- histories[[i]]
+    if (!is.data.frame(history) ||
+        !identical(names(history), names(.empty_artificial_fallback_history()))) {
+      stop("Artificial fallback history has an invalid schema.", call. = FALSE)
+    }
+    if (!nrow(history)) return(NULL)
+    history$step <- seq_len(nrow(history))
+    cbind(
+      data.frame(chunk = chunks$chunk[[i]], stringsAsFactors = FALSE),
+      history
+    )
+  })
+  rows <- Filter(Negate(is.null), rows)
+  if (!length(rows)) {
+    return(data.frame(
+      event = integer(),
+      chunk = integer(),
+      .empty_artificial_fallback_history(),
+      stringsAsFactors = FALSE
+    ))
+  }
+  history <- do.call(rbind, rows)
+  rownames(history) <- NULL
+  history <- cbind(
+    data.frame(event = seq_len(nrow(history)), stringsAsFactors = FALSE),
+    history
+  )
+  history
+}
+
+.make_artificial_provenance <- function(requested_type, selected_types, chunks,
+                                        fallback_histories) {
+  actual_types <- .artificial_type_levels[
+    .count_artificial_types(selected_types) > 0L
+  ]
+  actual_type <- if (length(actual_types) == 1L) {
+    actual_types[[1L]]
+  } else {
+    "mixed"
+  }
+  fallback_history <- .combine_artificial_fallback_histories(
+    fallback_histories,
+    chunks
+  )
   list(
     requested_type = requested_type,
+    actual_type = actual_type,
+    actual_types = actual_types,
     n_generated = as.integer(length(selected_types)),
     n_chunks = as.integer(nrow(chunks)),
     chunk_type_counts = .count_artificial_types(chunks$actual_type),
     selected_type_counts = .count_artificial_types(selected_types),
     fallback_counts = .count_artificial_types(chunks$actual_type[chunks$fallback]),
+    fallback_history = fallback_history,
     chunks = chunks
   )
 }
@@ -126,7 +202,8 @@ make_knockoff_features <- function(x, n_injected, random_state = NULL) {
         list(
           x_art = xk,
           actual_type = "knockoff",
-          fallback_reason = NA_character_
+          fallback_reason = NA_character_,
+          fallback_history = .empty_artificial_fallback_history()
         )
       },
       error = function(e) {
@@ -141,7 +218,12 @@ make_knockoff_features <- function(x, n_injected, random_state = NULL) {
             , ncol(x_chunk) + seq_len(ncol(x_chunk)), drop = FALSE
           ],
           actual_type = "random_permutation",
-          fallback_reason = reason
+          fallback_reason = reason,
+          fallback_history = .artificial_fallback_event(
+            "knockoff",
+            "random_permutation",
+            e
+          )
         )
       }
     )
@@ -153,6 +235,7 @@ make_knockoff_features <- function(x, n_injected, random_state = NULL) {
     orig_map_blocks   <- vector("list", n_chunks)  # track source original-feature indices
     type_blocks       <- vector("list", n_chunks)
     chunk_records     <- vector("list", n_chunks)
+    fallback_histories <- vector("list", n_chunks)
     for (i in seq_len(n_chunks)) {
       col_idx              <- sample.int(n_features, size = min(chunk_size, n_features),
                                         replace = FALSE)
@@ -160,6 +243,7 @@ make_knockoff_features <- function(x, n_injected, random_state = NULL) {
       ko_blocks[[i]]       <- chunk_result$x_art
       orig_map_blocks[[i]] <- col_idx  # j-th column of ko_blocks[[i]] is knockoff of col_idx[j]
       type_blocks[[i]]     <- rep.int(chunk_result$actual_type, ncol(chunk_result$x_art))
+      fallback_histories[[i]] <- chunk_result$fallback_history
       chunk_records[[i]]   <- .artificial_chunk_record(
         chunk = i,
         requested_type = "knockoff",
@@ -188,6 +272,7 @@ make_knockoff_features <- function(x, n_injected, random_state = NULL) {
       n_columns = ncol(chunk_result$x_art),
       fallback_reason = chunk_result$fallback_reason
     )
+    fallback_histories <- list(chunk_result$fallback_history)
   }
 
   sel_idx <- sample.int(n = ncol(x_art_full), size = n_injected, replace = FALSE)
@@ -202,7 +287,8 @@ make_knockoff_features <- function(x, n_injected, random_state = NULL) {
     artificial_provenance = .make_artificial_provenance(
       requested_type = "knockoff",
       selected_types = selected_types,
-      chunks = chunks
+      chunks = chunks,
+      fallback_histories = fallback_histories
     )
   )
 }
@@ -257,7 +343,8 @@ make_knockoff_equi_features <- function(x, n_injected, random_state = NULL) {
         list(
           x_art = knockoff::create.gaussian(x_chunk, mu, Sigma, method = "equi"),
           actual_type = "knockoff_equi",
-          fallback_reason = NA_character_
+          fallback_reason = NA_character_,
+          fallback_history = .empty_artificial_fallback_history()
         )
       },
       error = function(e) {
@@ -272,7 +359,12 @@ make_knockoff_equi_features <- function(x, n_injected, random_state = NULL) {
             , ncol(x_chunk) + seq_len(ncol(x_chunk)), drop = FALSE
           ],
           actual_type = "random_permutation",
-          fallback_reason = reason
+          fallback_reason = reason,
+          fallback_history = .artificial_fallback_event(
+            "knockoff_equi",
+            "random_permutation",
+            e
+          )
         )
       }
     )
@@ -284,6 +376,7 @@ make_knockoff_equi_features <- function(x, n_injected, random_state = NULL) {
     orig_map_blocks <- vector("list", n_chunks)
     type_blocks     <- vector("list", n_chunks)
     chunk_records   <- vector("list", n_chunks)
+    fallback_histories <- vector("list", n_chunks)
     for (i in seq_len(n_chunks)) {
       col_idx              <- sample.int(n_features,
                                          size = min(chunk_size, n_features),
@@ -292,6 +385,7 @@ make_knockoff_equi_features <- function(x, n_injected, random_state = NULL) {
       ko_blocks[[i]]       <- chunk_result$x_art
       orig_map_blocks[[i]] <- col_idx
       type_blocks[[i]]     <- rep.int(chunk_result$actual_type, ncol(chunk_result$x_art))
+      fallback_histories[[i]] <- chunk_result$fallback_history
       chunk_records[[i]]   <- .artificial_chunk_record(
         chunk = i,
         requested_type = "knockoff_equi",
@@ -320,6 +414,7 @@ make_knockoff_equi_features <- function(x, n_injected, random_state = NULL) {
       n_columns = ncol(chunk_result$x_art),
       fallback_reason = chunk_result$fallback_reason
     )
+    fallback_histories <- list(chunk_result$fallback_history)
   }
 
   sel_idx <- sample.int(n = ncol(x_art_full), size = n_injected, replace = FALSE)
@@ -332,7 +427,8 @@ make_knockoff_equi_features <- function(x, n_injected, random_state = NULL) {
     artificial_provenance = .make_artificial_provenance(
       requested_type = "knockoff_equi",
       selected_types = selected_types,
-      chunks = chunks
+      chunks = chunks,
+      fallback_histories = fallback_histories
     )
   )
 }
@@ -367,6 +463,7 @@ make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
   chunk_size <- 3000L
 
   .make_mvr_chunk <- function(x_chunk) {
+    fallback_history <- .empty_artificial_fallback_history()
     tryCatch(
       {
         mu    <- colMeans(x_chunk)
@@ -378,6 +475,14 @@ make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
           solve_mvr(Sigma, random_state = random_state),
           error   = function(e) {
             equi_fallback_reason <<- conditionMessage(e)
+            fallback_history <<- rbind(
+              fallback_history,
+              .artificial_fallback_event(
+                "knockoff_mvr",
+                "knockoff_equi",
+                e
+              )
+            )
             warning("solve_mvr failed; using equi S for this chunk. Reason: ",
                     equi_fallback_reason, call. = FALSE)
             NULL
@@ -388,18 +493,33 @@ make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
           list(
             x_art = knockoff::create.gaussian(x_chunk, mu, Sigma, method = "equi"),
             actual_type = "knockoff_equi",
-            fallback_reason = equi_fallback_reason
+            fallback_reason = equi_fallback_reason,
+            fallback_history = fallback_history
           )
         } else {
           list(
             x_art = knockoff::create.gaussian(x_chunk, mu, Sigma, diag_s = S_diag),
             actual_type = "knockoff_mvr",
-            fallback_reason = NA_character_
+            fallback_reason = NA_character_,
+            fallback_history = fallback_history
           )
         }
       },
       error = function(e) {
         reason <- conditionMessage(e)
+        from_type <- if (nrow(fallback_history)) {
+          fallback_history$to_type[[nrow(fallback_history)]]
+        } else {
+          "knockoff_mvr"
+        }
+        fallback_history <- rbind(
+          fallback_history,
+          .artificial_fallback_event(
+            from_type,
+            "random_permutation",
+            e
+          )
+        )
         warning(
           "knockoff_mvr: create.gaussian failed; falling back to random ",
           "permutation for this chunk. Reason: ", reason,
@@ -410,7 +530,8 @@ make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
             , ncol(x_chunk) + seq_len(ncol(x_chunk)), drop = FALSE
           ],
           actual_type = "random_permutation",
-          fallback_reason = reason
+          fallback_reason = reason,
+          fallback_history = fallback_history
         )
       }
     )
@@ -422,6 +543,7 @@ make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
     orig_map_blocks <- vector("list", n_chunks)
     type_blocks     <- vector("list", n_chunks)
     chunk_records   <- vector("list", n_chunks)
+    fallback_histories <- vector("list", n_chunks)
     for (i in seq_len(n_chunks)) {
       col_idx              <- sample.int(n_features,
                                          size = min(chunk_size, n_features),
@@ -430,6 +552,7 @@ make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
       ko_blocks[[i]]       <- chunk_result$x_art
       orig_map_blocks[[i]] <- col_idx
       type_blocks[[i]]     <- rep.int(chunk_result$actual_type, ncol(chunk_result$x_art))
+      fallback_histories[[i]] <- chunk_result$fallback_history
       chunk_records[[i]]   <- .artificial_chunk_record(
         chunk = i,
         requested_type = "knockoff_mvr",
@@ -458,6 +581,7 @@ make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
       n_columns = ncol(chunk_result$x_art),
       fallback_reason = chunk_result$fallback_reason
     )
+    fallback_histories <- list(chunk_result$fallback_history)
   }
 
   sel_idx <- sample.int(n = ncol(x_art_full), size = n_injected, replace = FALSE)
@@ -467,7 +591,8 @@ make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
   provenance <- .make_artificial_provenance(
     requested_type = "knockoff_mvr",
     selected_types = selected_types,
-    chunks = chunks
+    chunks = chunks,
+    fallback_histories = fallback_histories
   )
   is_chunked <- n_features > chunk_size
   provenance$mvr_chunking <- list(
@@ -545,8 +670,10 @@ make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
 #'       to look up sparse-group-lasso group memberships for the artificial
 #'       block via `.append_noise_groups`.}
 #'     \item{`artificial_provenance`}{Additive metadata describing the
-#'       requested artificial-feature type, actual generator modes used for the
-#'       selected artificial columns, and per-chunk fallback counts/reasons.}
+#'       requested artificial-feature type, `actual_type` used for scientific
+#'       classification, all generator modes used by the selected artificial
+#'       columns, and the ordered structured `fallback_history`. Per-chunk
+#'       counts and reasons remain available for 0.1.x compatibility.}
 #'   }
 #'
 #' @seealso [compute_fdp_plus()] which consumes the artificial-feature scores,

@@ -27,6 +27,14 @@ test_that("make_artificial_features records fixed-X knockoff fallback provenance
 
   expect_true(saw_fallback_warning)
   expect_equal(result$artificial_provenance$requested_type, "knockoff")
+  expect_equal(
+    result$artificial_provenance$actual_type,
+    "random_permutation"
+  )
+  expect_identical(
+    result$artificial_provenance$actual_types,
+    "random_permutation"
+  )
   expect_equal(result$artificial_provenance$n_chunks, 1L)
   expect_equal(result$artificial_provenance$fallback_counts[["random_permutation"]], 1L)
   expect_equal(result$artificial_provenance$selected_type_counts[["random_permutation"]], 2L)
@@ -34,6 +42,18 @@ test_that("make_artificial_features records fixed-X knockoff fallback provenance
   expect_match(
     result$artificial_provenance$chunks$fallback_reason,
     "Input X must have dimensions n > p"
+  )
+  expect_identical(
+    result$artificial_provenance$fallback_history$event,
+    1L
+  )
+  expect_identical(
+    result$artificial_provenance$fallback_history$from_type,
+    "knockoff"
+  )
+  expect_identical(
+    result$artificial_provenance$fallback_history$to_type,
+    "random_permutation"
   )
 })
 
@@ -117,7 +137,57 @@ test_that("stabl_fit preserves artificial-feature fallback provenance", {
   expect_s3_class(fit, "stabl_fit")
   expect_equal(fit$artificial_type, "knockoff")
   expect_equal(fit$artificial_provenance$requested_type, "knockoff")
+  expect_equal(fit$artificial_provenance$actual_type, "random_permutation")
   expect_equal(fit$artificial_provenance$n_generated, 2L)
   expect_equal(fit$artificial_provenance$fallback_counts[["random_permutation"]], 1L)
   expect_equal(fit$artificial_provenance$selected_type_counts[["random_permutation"]], 2L)
+})
+
+test_that("artificial fallback history retains nested event order", {
+  chunks <- stablr:::.artificial_chunk_record(
+    chunk = 1L,
+    requested_type = "knockoff_mvr",
+    actual_type = "random_permutation",
+    n_columns = 4L,
+    fallback_reason = "sampling failed"
+  )
+  first <- simpleError("solver failed")
+  class(first) <- c("stablr_mvr_infeasible", class(first))
+  second <- simpleError("sampling failed")
+  history <- rbind(
+    stablr:::.artificial_fallback_event(
+      "knockoff_mvr",
+      "knockoff_equi",
+      first
+    ),
+    stablr:::.artificial_fallback_event(
+      "knockoff_equi",
+      "random_permutation",
+      second
+    )
+  )
+
+  provenance <- stablr:::.make_artificial_provenance(
+    requested_type = "knockoff_mvr",
+    selected_types = rep("random_permutation", 2L),
+    chunks = chunks,
+    fallback_histories = list(history)
+  )
+
+  expect_identical(provenance$actual_type, "random_permutation")
+  expect_identical(provenance$fallback_history$event, 1:2)
+  expect_identical(provenance$fallback_history$step, 1:2)
+  expect_identical(
+    provenance$fallback_history$from_type,
+    c("knockoff_mvr", "knockoff_equi")
+  )
+  expect_identical(
+    provenance$fallback_history$to_type,
+    c("knockoff_equi", "random_permutation")
+  )
+  expect_match(
+    provenance$fallback_history$condition_class[[1L]],
+    "stablr_mvr_infeasible",
+    fixed = TRUE
+  )
 })
