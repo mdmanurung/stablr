@@ -659,8 +659,13 @@ stabl_multiomic_cv <- function(
     dimnames = list(names(y_train), omic_names)
   )
   valid_preds <- if (!is.null(selected_valid)) {
-    matrix(NA_real_, nrow = length(y_valid), ncol = length(omic_names),
-           dimnames = list(names(y_valid), omic_names))
+    validation_ids <- rownames(selected_valid[[omic_names[[1L]]]])
+    matrix(
+      NA_real_,
+      nrow = nrow(selected_valid[[omic_names[[1L]]]]),
+      ncol = length(omic_names),
+      dimnames = list(validation_ids, omic_names)
+    )
   } else {
     NULL
   }

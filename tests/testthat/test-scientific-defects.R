@@ -345,3 +345,46 @@ test_that("SCI-07 numerical adapters type only recognized failures", {
   expect_false(inherits(programming, "stablr_numerical_infeasibility"))
   expect_match(conditionMessage(programming), "deliberate programming defect")
 })
+
+test_that("SCI-10 legacy validation shape comes only from predictors", {
+  set.seed(808L)
+  train_ids <- paste0("tr", seq_len(12L))
+  valid_ids <- paste0("va", seq_len(5L))
+  x_train <- matrix(
+    rnorm(24L), 12L, 2L,
+    dimnames = list(train_ids, c("x1", "x2"))
+  )
+  x_valid <- matrix(
+    rnorm(10L), 5L, 2L,
+    dimnames = list(valid_ids, colnames(x_train))
+  )
+  y_train <- stats::setNames(rnorm(12L), train_ids)
+  args <- list(
+    x_train_list = list(omic = x_train),
+    y_train = y_train,
+    lambda_grid = data.frame(lambda = 0.1),
+    x_valid_list = list(omic = x_valid),
+    artificial_type = NULL,
+    hard_threshold = 1,
+    n_bootstraps = 2L,
+    sample_fraction = 1,
+    late_fusion = TRUE,
+    late_fusion_training = "python_legacy",
+    n_iter_lf = 2L,
+    random_state = 808L
+  )
+
+  without_labels <- do.call(stabl_multiomic_train_validate, args)
+  with_labels <- do.call(
+    stabl_multiomic_train_validate,
+    c(args, list(y_valid = stats::setNames(rnorm(5L), valid_ids)))
+  )
+
+  expect_type(without_labels$late_fusion$valid_predictions, "double")
+  expect_length(without_labels$late_fusion$valid_predictions, nrow(x_valid))
+  expect_true(all(is.finite(without_labels$late_fusion$valid_predictions)))
+  expect_identical(
+    without_labels$late_fusion$valid_predictions,
+    with_labels$late_fusion$valid_predictions
+  )
+})
