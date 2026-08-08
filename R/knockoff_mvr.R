@@ -141,10 +141,19 @@
     gamma <- (lo + hi) / 2
     V     <- 2 * Sigma - gamma * S
     # Try Cholesky: if it succeeds, gamma is feasible
-    feasible <- tryCatch({
-      min_eig_V <- min(eigen(V, symmetric = TRUE, only.values = TRUE)$values)
-      min_eig_V >= tol
-    }, error = function(e) FALSE)
+    feasible <- tryCatch(
+      .with_linear_algebra_numerical_infeasibility(
+        {
+          min_eig_V <- min(
+            eigen(V, symmetric = TRUE, only.values = TRUE)$values
+          )
+          min_eig_V >= tol
+        },
+        source = "MVR positive-semidefinite feasibility check",
+        subclass = "stablr_mvr_infeasible"
+      ),
+      stablr_numerical_infeasibility = function(e) FALSE
+    )
     if (feasible) lo <- gamma else hi <- gamma
   }
   list(S = lo * S, gamma = lo)

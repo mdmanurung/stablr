@@ -603,11 +603,10 @@ stabl_multiomic_cv <- function(
   y_levels    <- levels(factor(y_train))
 
   for (omic in omic_names) {
-    omic_result <- .late_fusion_fit_omic(
+    omic_result <- .late_fusion_fit_omic_safe(
       x_train_sel  = selected_train[[omic]],
       y_train      = y_train,
       x_valid_sel  = if (!is.null(selected_valid)) selected_valid[[omic]] else NULL,
-      y_train_mean = NA_real_,
       task_type    = "multiclass",
       levels       = y_levels
     )
@@ -650,7 +649,6 @@ stabl_multiomic_cv <- function(
 
 .late_fusion_scalar <- function(selected_train, selected_valid, y_train, y_valid,
                                 omic_names, task_type, n_iter_lf, random_state) {
-  y_train_mean <- if (identical(task_type, "regression")) mean(unname(y_train)) else NA_real_
   train_preds  <- matrix(
     NA_real_,
     nrow     = length(y_train),
@@ -665,11 +663,10 @@ stabl_multiomic_cv <- function(
   }
 
   for (omic in omic_names) {
-    omic_result <- .late_fusion_fit_omic(
+    omic_result <- .late_fusion_fit_omic_safe(
       x_train_sel  = selected_train[[omic]],
       y_train      = y_train,
       x_valid_sel  = if (!is.null(selected_valid)) selected_valid[[omic]] else NULL,
-      y_train_mean = y_train_mean,
       task_type    = task_type,
       levels       = NULL
     )
@@ -1943,17 +1940,24 @@ stacked_multi_omic <- function(
     }
     if (n_sel == 0L) return(fallback_result())
 
-    model_fit <- tryCatch({
+    downstream_folds <- min(5L, min(table(y_train)))
+    if (downstream_folds < 3L) {
+      .abort_numerical_infeasibility(
+        "stablr_downstream_numerical_infeasibility",
+        "Multiclass downstream fitting requires at least three training observations per class.",
+        training_class_counts = table(y_train)
+      )
+    }
+    model_fit <- .with_glmnet_numerical_infeasibility(
       glmnet::cv.glmnet(
         x = as.matrix(x_train_sel),
         y = y_train,
         family = "multinomial",
         type.measure = "class",
-        nfolds = min(5L, min(table(y_train)))
-      )
-    }, error = function(e) NULL)
-
-    if (is.null(model_fit)) return(fallback_result())
+        nfolds = downstream_folds
+      ),
+      source = "glmnet multiclass downstream fit"
+    )
 
     coerce_prob <- function(pred, row_names) {
       pred <- as.matrix(pred[, , 1L])
@@ -1990,15 +1994,26 @@ stacked_multi_omic <- function(
   train_df$.y   <- unname(y_train)
 
   if (task_type == "binary") {
-    m           <- stats::glm(.y ~ ., data = train_df,
-                              family = stats::binomial(link = "logit"))
+    m <- .with_linear_algebra_numerical_infeasibility(
+      stats::glm(
+        .y ~ .,
+        data = train_df,
+        family = stats::binomial(link = "logit")
+      ),
+      source = "binomial downstream fit",
+      subclass = "stablr_downstream_numerical_infeasibility"
+    )
     train_preds <- unname(stats::predict(m, newdata = train_df, type = "response"))
     valid_preds <- if (!is.null(x_valid_sel)) {
       unname(stats::predict(m, newdata = as.data.frame(x_valid_sel),
                             type = "response"))
     } else NULL
   } else {
-    m           <- stats::lm(.y ~ ., data = train_df)
+    m <- .with_linear_algebra_numerical_infeasibility(
+      stats::lm(.y ~ ., data = train_df),
+      source = "regression downstream fit",
+      subclass = "stablr_downstream_numerical_infeasibility"
+    )
     train_preds <- unname(stats::predict(m, newdata = train_df))
     valid_preds <- if (!is.null(x_valid_sel)) {
       unname(stats::predict(m, newdata = as.data.frame(x_valid_sel)))

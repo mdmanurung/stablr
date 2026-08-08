@@ -355,13 +355,16 @@ auto_lambda_grid <- function(
 
   grids <- vector("list", length(alphas))
   for (i in seq_along(alphas)) {
-    fit_tmp <- glmnet::glmnet(
-      x = x,
-      y = y,
-      family   = family,
-      alpha    = alphas[[i]],
-      nlambda  = n_lambda,
-      cox.ties = cox_ties
+    fit_tmp <- .with_glmnet_numerical_infeasibility(
+      glmnet::glmnet(
+        x = x,
+        y = y,
+        family = family,
+        alpha = alphas[[i]],
+        nlambda = n_lambda,
+        cox.ties = cox_ties
+      ),
+      source = "glmnet automatic lambda path"
     )
     lam_seq <- fit_tmp$lambda
     grids[[i]] <- if (add_alpha) {
@@ -496,18 +499,36 @@ auto_lambda_grid <- function(
       for (a in unique(lambda_grid[["alpha"]])) {
         row_idx           <- which(lambda_grid[["alpha"]] == a)
         lambda_seq        <- lambda_grid[["lambda"]][row_idx]
-        fit               <- glmnet::glmnet(x, y, family = family, alpha = a,
-                                            lambda = sort(lambda_seq, decreasing = TRUE),
-                                            cox.ties = cox_ties)
-        result[, row_idx] <- .feature_abs_coefs_batch(fit, lambda_seq, family = family) > bootstrap_threshold
+        fit <- .with_glmnet_numerical_infeasibility(
+          glmnet::glmnet(
+            x,
+            y,
+            family = family,
+            alpha = a,
+            lambda = sort(lambda_seq, decreasing = TRUE),
+            cox.ties = cox_ties
+          ),
+          source = "glmnet bootstrap path"
+        )
+        result[, row_idx] <- .feature_abs_coefs_batch(
+          fit, lambda_seq, family = family
+        ) > bootstrap_threshold
       }
     } else {
       # Single alpha: use alpha_fixed if given, lasso (1.0) as default
       alpha      <- if (!is.null(alpha_fixed)) alpha_fixed else 1.0
       lambda_seq <- lambda_grid[["lambda"]]
-      fit        <- glmnet::glmnet(x, y, family = family, alpha = alpha,
-                                   lambda = sort(lambda_seq, decreasing = TRUE),
-                                   cox.ties = cox_ties)
+      fit <- .with_glmnet_numerical_infeasibility(
+        glmnet::glmnet(
+          x,
+          y,
+          family = family,
+          alpha = alpha,
+          lambda = sort(lambda_seq, decreasing = TRUE),
+          cox.ties = cox_ties
+        ),
+        source = "glmnet bootstrap path"
+      )
       result     <- .feature_abs_coefs_batch(fit, lambda_seq, family = family) > bootstrap_threshold
     }
 
@@ -522,18 +543,35 @@ auto_lambda_grid <- function(
     lambda_seq <- lambda_grid[["lambda"]]
 
     # Ridge initialization to compute adaptive penalty weights
-    init_fit       <- glmnet::glmnet(x, y, family = family, alpha = 0,
-                                     nlambda = 30L, cox.ties = cox_ties)
+    init_fit <- .with_glmnet_numerical_infeasibility(
+      glmnet::glmnet(
+        x,
+        y,
+        family = family,
+        alpha = 0,
+        nlambda = 30L,
+        cox.ties = cox_ties
+      ),
+      source = "glmnet adaptive-lasso ridge initialization"
+    )
     init_lambda    <- tail(init_fit$lambda, n = 1L)
     init_scores    <- .feature_abs_coefs(fit = init_fit, s = init_lambda,
                        family = family)
     penalty_factor <- 1.0 / ((init_scores + epsilon) ^ gamma)
 
     # Fit adaptive lasso across the full lambda path (one call)
-    fit      <- glmnet::glmnet(x, y, family = family, alpha = 1,
-                               lambda         = sort(lambda_seq, decreasing = TRUE),
-                               penalty.factor = penalty_factor,
-                               cox.ties       = cox_ties)
+    fit <- .with_glmnet_numerical_infeasibility(
+      glmnet::glmnet(
+        x,
+        y,
+        family = family,
+        alpha = 1,
+        lambda = sort(lambda_seq, decreasing = TRUE),
+        penalty.factor = penalty_factor,
+        cox.ties = cox_ties
+      ),
+      source = "glmnet adaptive-lasso bootstrap path"
+    )
     coef_mat <- .feature_abs_coefs_batch(fit, lambda_seq, family = family)
     coef_mat > bootstrap_threshold
   }

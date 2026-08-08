@@ -299,27 +299,138 @@ test_that("OOF late fusion is identical for sequential and parallel bootstraps",
                    parallel$late_fusion$valid_predictions)
 })
 
-test_that("OOF selector errors fall back to fold-training predictions", {
+test_that("OOF selector configuration errors are rethrown", {
   ids <- paste0("s", 1:12)
   x <- matrix(rnorm(24), 12, 2, dimnames = list(ids, c("x1", "x2")))
   y <- setNames(rnorm(12), ids)
-  captured <- stablr:::.late_fusion_select_per_omic_safe(
-    x_train_list = list(a = x), y_train = y,
-    lambda_by_omic = list(a = data.frame(lambda = 0.1)),
-    x_valid_list = NULL, omic_names = "a",
-    fit_params = list(
+  expect_error(
+    stabl_multiomic_train_validate(
+      x_train_list = list(a = x), y_train = y,
+      lambda_grid = data.frame(lambda = 0.1),
       base_learner = "not-a-learner", family = "gaussian",
       n_bootstraps = 2L, artificial_type = NULL, hard_threshold = 1,
-      groups = NULL, stratify_bootstrap = FALSE, bootstrap_strata = NULL,
-      l1_ratio = NULL, random_state = 1L
-    )
+      late_fusion = TRUE, late_fusion_nfolds = 3L,
+      n_iter_lf = 2L, random_state = 1L
+    ),
+    "base_learner"
   )
-  expect_match(captured$selection_errors$a, "base_learner")
-  expect_identical(ncol(captured$selected_train$a), 0L)
-  pred <- stablr:::.late_fusion_fit_omic_safe(
-    captured$selected_train$a, y, NULL, "regression",
-    selection_error = captured$selection_errors$a
+})
+
+test_that("OOF selector programming errors escape the public workflow", {
+  ids <- paste0("s", 1:12)
+  x <- matrix(rnorm(24), 12, 2, dimnames = list(ids, c("x1", "x2")))
+  y <- setNames(rnorm(12), ids)
+  testthat::local_mocked_bindings(
+    .fit_multiomic_per_omic = function(...) {
+      stop("deliberate selector programming defect")
+    },
+    .package = "stablr"
   )
+
+  expect_error(
+    stabl_multiomic_train_validate(
+      x_train_list = list(a = x), y_train = y,
+      lambda_grid = data.frame(lambda = 0.1),
+      n_bootstraps = 2L, artificial_type = NULL, hard_threshold = 1,
+      late_fusion = TRUE, late_fusion_nfolds = 3L,
+      n_iter_lf = 2L, random_state = 2L
+    ),
+    "deliberate selector programming defect"
+  )
+})
+
+test_that("OOF typed selector infeasibility uses a structured fallback", {
+  ids <- paste0("s", 1:12)
+  x <- matrix(rnorm(24), 12, 2, dimnames = list(ids, c("x1", "x2")))
+  y <- setNames(rnorm(12), ids)
+  x_valid <- matrix(
+    rnorm(4), 2, 2,
+    dimnames = list(c("v1", "v2"), colnames(x))
+  )
+  testthat::local_mocked_bindings(
+    .fit_multiomic_per_omic = function(...) {
+      stablr:::.abort_numerical_infeasibility(
+        "stablr_learner_numerical_infeasibility",
+        "deliberate selector numerical infeasibility"
+      )
+    },
+    .package = "stablr"
+  )
+
+  fit <- stabl_multiomic_train_validate(
+    x_train_list = list(a = x), y_train = y,
+    lambda_grid = data.frame(lambda = 0.1),
+    x_valid_list = list(a = x_valid),
+    n_bootstraps = 2L, artificial_type = NULL, hard_threshold = 1,
+    late_fusion = TRUE, late_fusion_nfolds = 3L,
+    n_iter_lf = 2L, random_state = 3L
+  )
+
+  captured <- fit$late_fusion$provenance$folds[[1L]]
+  expect_s3_class(
+    captured$selector_conditions$a,
+    "stablr_numerical_infeasibility"
+  )
+  expect_match(captured$selector_errors$a, "deliberate selector")
+  expect_identical(captured$selected_features$a, character())
+  expect_match(captured$fallback_reasons[["a"]], "selector_fit_error")
+  expect_equal(
+    fit$late_fusion$valid_predictions,
+    setNames(rep(mean(y), nrow(x_valid)), rownames(x_valid)),
+    ignore_attr = TRUE
+  )
+  full <- fit$late_fusion$provenance$full_refit
+  expect_s3_class(
+    full$selector_conditions$a,
+    "stablr_numerical_infeasibility"
+  )
+  expect_identical(full$fallback_conditions$a, full$selector_conditions$a)
+})
+
+test_that("OOF downstream programming errors are rethrown", {
+  ids <- paste0("s", 1:12)
+  x <- matrix(rnorm(24), 12, 2, dimnames = list(ids, c("x1", "x2")))
+  y <- setNames(rnorm(12), ids)
+  testthat::local_mocked_bindings(
+    .late_fusion_fit_omic = function(...) {
+      stop("deliberate downstream programming defect")
+    },
+    .package = "stablr"
+  )
+
+  expect_error(
+    stablr:::.late_fusion_fit_omic_safe(x, y, NULL, "regression"),
+    "deliberate downstream programming defect"
+  )
+})
+
+test_that("OOF downstream numerical infeasibility uses a typed fallback", {
+  ids <- paste0("s", 1:12)
+  x <- matrix(rnorm(24), 12, 2, dimnames = list(ids, c("x1", "x2")))
+  y <- setNames(rnorm(12), ids)
+  original_fit <- stablr:::.late_fusion_fit_omic
+  testthat::local_mocked_bindings(
+    .late_fusion_fit_omic = function(x_train_sel, y_train,
+                                     x_valid_sel = NULL, y_train_mean,
+                                     task_type, levels = NULL) {
+      if (ncol(x_train_sel) > 0L) {
+        stablr:::.abort_numerical_infeasibility(
+          "stablr_downstream_numerical_infeasibility",
+          "deliberate downstream numerical infeasibility"
+        )
+      }
+      original_fit(
+        x_train_sel, y_train, x_valid_sel, y_train_mean, task_type, levels
+      )
+    },
+    .package = "stablr"
+  )
+
+  pred <- stablr:::.late_fusion_fit_omic_safe(x, y, NULL, "regression")
   expect_equal(pred$train_preds, rep(mean(y), length(y)))
-  expect_match(pred$fallback_reason, "selector_fit_error")
+  expect_match(pred$fallback_reason, "downstream_fit_error")
+  expect_s3_class(
+    pred$fallback_condition,
+    "stablr_downstream_numerical_infeasibility"
+  )
 })

@@ -2,7 +2,12 @@ test_that("MVR solver failure falls back to equi with recorded provenance", {
   skip_if_not_installed("knockoff")
 
   testthat::local_mocked_bindings(
-    solve_mvr = function(...) stop("deliberate MVR solver failure"),
+    solve_mvr = function(...) {
+      stablr:::.abort_numerical_infeasibility(
+        "stablr_mvr_infeasible",
+        "deliberate MVR solver failure"
+      )
+    },
     .package = "stablr"
   )
   set.seed(4201L)

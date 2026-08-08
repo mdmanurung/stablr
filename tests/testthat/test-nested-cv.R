@@ -194,3 +194,44 @@ test_that("stabl_multiomic_nested_cv forwards l1_ratio to auto lambda grids", {
   expect_true("alpha" %in% names(grid))
   expect_equal(unique(grid$alpha), 0.5)
 })
+
+test_that("selected multinomial fitting rethrows programming errors", {
+  x_train <- matrix(rnorm(20L), nrow = 10L, ncol = 2L)
+  x_valid <- matrix(rnorm(6L), nrow = 3L, ncol = 2L)
+  y_train <- factor(c(rep("A", 6L), rep("B", 4L)))
+  testthat::local_mocked_bindings(
+    .with_glmnet_numerical_infeasibility = function(...) {
+      stop("deliberate selected-model programming defect")
+    },
+    .package = "stablr"
+  )
+
+  expect_error(
+    stablr:::.predict_selected_multinomial(
+      x_train, y_train, x_valid, levels(y_train)
+    ),
+    "deliberate selected-model programming defect"
+  )
+})
+
+test_that("selected multinomial fitting catches typed numerical failures", {
+  x_train <- matrix(rnorm(20L), nrow = 10L, ncol = 2L)
+  x_valid <- matrix(rnorm(6L), nrow = 3L, ncol = 2L)
+  y_train <- factor(c(rep("A", 6L), rep("B", 4L)))
+  testthat::local_mocked_bindings(
+    .with_glmnet_numerical_infeasibility = function(...) {
+      stablr:::.abort_numerical_infeasibility(
+        "stablr_learner_numerical_infeasibility",
+        "deliberate selected-model numerical infeasibility"
+      )
+    },
+    .package = "stablr"
+  )
+
+  expect_identical(
+    stablr:::.predict_selected_multinomial(
+      x_train, y_train, x_valid, levels(y_train)
+    ),
+    rep("A", nrow(x_valid))
+  )
+})

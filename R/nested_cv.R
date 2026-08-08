@@ -509,17 +509,40 @@ stabl_multiomic_nested_cv <- function(
     return(.majority_class_prediction(y_train, nrow(x_valid)))
   }
 
-  pred <- tryCatch({
-    fit <- glmnet::cv.glmnet(
-      x = x_train,
-      y = y_train,
-      family = if (length(levels) == 2L) "binomial" else "multinomial",
-      type.measure = "class"
-    )
-    as.character(stats::predict(fit, newx = x_valid, s = "lambda.min", type = "class")[, 1L])
-  }, error = function(e) {
-    .majority_class_prediction(y_train, nrow(x_valid))
-  })
+  pred <- tryCatch(
+    {
+      class_counts <- table(y_train)
+      if (any(class_counts < 3L)) {
+        .abort_numerical_infeasibility(
+          "stablr_downstream_numerical_infeasibility",
+          paste0(
+            "Selected-feature classification requires at least three ",
+            "training observations per class."
+          ),
+          training_class_counts = class_counts
+        )
+      }
+      fit <- .with_glmnet_numerical_infeasibility(
+        glmnet::cv.glmnet(
+          x = x_train,
+          y = y_train,
+          family = if (length(levels) == 2L) "binomial" else "multinomial",
+          type.measure = "class",
+          nfolds = min(5L, min(class_counts))
+        ),
+        source = "glmnet selected-feature classification fit"
+      )
+      as.character(stats::predict(
+        fit,
+        newx = x_valid,
+        s = "lambda.min",
+        type = "class"
+      )[, 1L])
+    },
+    stablr_numerical_infeasibility = function(e) {
+      .majority_class_prediction(y_train, nrow(x_valid))
+    }
+  )
 
   pred
 }

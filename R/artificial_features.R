@@ -200,23 +200,42 @@ make_knockoff_features <- function(x, n_injected, random_state = NULL) {
   .make_ko_chunk <- function(x_chunk) {
     tryCatch(
       {
+        if (nrow(x_chunk) <= ncol(x_chunk)) {
+          .abort_numerical_infeasibility(
+            "stablr_knockoff_infeasible",
+            "Input X must have dimensions n > p",
+            requested_type = "knockoff",
+            n_samples = nrow(x_chunk),
+            n_features = ncol(x_chunk)
+          )
+        }
         augmented_rows <- FALSE
-        xk <- withCallingHandlers(
-          knockoff::create.fixed(x_chunk, sigma = 1)$Xk,
-          warning = function(w) {
-            if (grepl("Augmenting the model with extra rows",
-                      conditionMessage(w), fixed = TRUE)) {
-              augmented_rows <<- TRUE
-              invokeRestart("muffleWarning")
+        xk <- .with_linear_algebra_numerical_infeasibility(
+          withCallingHandlers(
+            knockoff::create.fixed(x_chunk, sigma = 1)$Xk,
+            warning = function(w) {
+              if (grepl("Augmenting the model with extra rows",
+                        conditionMessage(w), fixed = TRUE)) {
+                augmented_rows <<- TRUE
+                invokeRestart("muffleWarning")
+              }
             }
-          }
+          ),
+          source = "knockoff::create.fixed",
+          subclass = "stablr_knockoff_infeasible"
         )
         if (isTRUE(augmented_rows) || nrow(xk) != nrow(x_chunk)) {
-          stop(
-            "knockoff::create.fixed augmented the design from ",
-            nrow(x_chunk), " to ", nrow(xk), " rows; stablr cannot align ",
-            "augmented knockoffs with the unaugmented outcome.",
-            call. = FALSE
+          .abort_numerical_infeasibility(
+            "stablr_knockoff_infeasible",
+            paste0(
+              "knockoff::create.fixed augmented the design from ",
+              nrow(x_chunk), " to ", nrow(xk),
+              " rows; stablr cannot align augmented knockoffs with the ",
+              "unaugmented outcome."
+            ),
+            requested_type = "knockoff",
+            n_samples = nrow(x_chunk),
+            returned_rows = nrow(xk)
           )
         }
         list(
@@ -226,7 +245,7 @@ make_knockoff_features <- function(x, n_injected, random_state = NULL) {
           fallback_history = .empty_artificial_fallback_history()
         )
       },
-      error = function(e) {
+      stablr_numerical_infeasibility = function(e) {
         reason <- conditionMessage(e)
         warning(
           "knockoff::create.fixed failed; falling back to random ",
@@ -326,15 +345,23 @@ make_knockoff_equi_features <- function(x, n_injected, random_state = NULL) {
     tryCatch(
       {
         mu    <- colMeans(x_chunk)
-        Sigma <- .estimate_pd_sigma(x_chunk)
+        Sigma <- .with_linear_algebra_numerical_infeasibility(
+          .estimate_pd_sigma(x_chunk),
+          source = "equicorrelated covariance estimation",
+          subclass = "stablr_knockoff_infeasible"
+        )
         list(
-          x_art = knockoff::create.gaussian(x_chunk, mu, Sigma, method = "equi"),
+          x_art = .with_linear_algebra_numerical_infeasibility(
+            knockoff::create.gaussian(x_chunk, mu, Sigma, method = "equi"),
+            source = "knockoff::create.gaussian(equi)",
+            subclass = "stablr_knockoff_infeasible"
+          ),
           actual_type = "knockoff_equi",
           fallback_reason = NA_character_,
           fallback_history = .empty_artificial_fallback_history()
         )
       },
-      error = function(e) {
+      stablr_numerical_infeasibility = function(e) {
         reason <- conditionMessage(e)
         warning(
           "knockoff_equi: create.gaussian failed; falling back to random ",
@@ -419,13 +446,21 @@ make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
     tryCatch(
       {
         mu    <- colMeans(x_chunk)
-        Sigma <- .estimate_pd_sigma(x_chunk)
+        Sigma <- .with_linear_algebra_numerical_infeasibility(
+          .estimate_pd_sigma(x_chunk),
+          source = "MVR covariance estimation",
+          subclass = "stablr_mvr_infeasible"
+        )
         equi_fallback_reason <- NA_character_
 
         # Attempt MVR S-solve; fall back to equi on solver failure
         S_diag <- tryCatch(
-          solve_mvr(Sigma, random_state = random_state),
-          error   = function(e) {
+          .with_linear_algebra_numerical_infeasibility(
+            solve_mvr(Sigma, random_state = random_state),
+            source = "MVR S-matrix solver",
+            subclass = "stablr_mvr_infeasible"
+          ),
+          stablr_numerical_infeasibility = function(e) {
             equi_fallback_reason <<- conditionMessage(e)
             fallback_history <<- rbind(
               fallback_history,
@@ -443,21 +478,39 @@ make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
 
         if (is.null(S_diag)) {
           list(
-            x_art = knockoff::create.gaussian(x_chunk, mu, Sigma, method = "equi"),
+            x_art = .with_linear_algebra_numerical_infeasibility(
+              knockoff::create.gaussian(
+                x_chunk,
+                mu,
+                Sigma,
+                method = "equi"
+              ),
+              source = "knockoff::create.gaussian(equi fallback)",
+              subclass = "stablr_knockoff_infeasible"
+            ),
             actual_type = "knockoff_equi",
             fallback_reason = equi_fallback_reason,
             fallback_history = fallback_history
           )
         } else {
           list(
-            x_art = knockoff::create.gaussian(x_chunk, mu, Sigma, diag_s = S_diag),
+            x_art = .with_linear_algebra_numerical_infeasibility(
+              knockoff::create.gaussian(
+                x_chunk,
+                mu,
+                Sigma,
+                diag_s = S_diag
+              ),
+              source = "knockoff::create.gaussian(MVR)",
+              subclass = "stablr_knockoff_infeasible"
+            ),
             actual_type = "knockoff_mvr",
             fallback_reason = NA_character_,
             fallback_history = fallback_history
           )
         }
       },
-      error = function(e) {
+      stablr_numerical_infeasibility = function(e) {
         reason <- conditionMessage(e)
         from_type <- if (nrow(fallback_history)) {
           fallback_history$to_type[[nrow(fallback_history)]]
@@ -601,6 +654,9 @@ make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
 make_artificial_features <- function(x, n_injected, type, random_state = NULL) {
   if (!is.matrix(x) || !is.numeric(x)) {
     stop("`x` must be a numeric matrix.", call. = FALSE)
+  }
+  if (anyNA(x) || any(!is.finite(x))) {
+    stop("`x` must contain only finite, non-missing values.", call. = FALSE)
   }
   n_injected <- .validate_scalar_integer_like(
     n_injected,

@@ -321,3 +321,27 @@ test_that("SCI-08 OOF provenance retains every fitted generator record", {
     full$artificial_provenance
   )
 })
+
+test_that("SCI-07 numerical adapters type only recognized failures", {
+  numerical <- tryCatch(
+    stablr:::.with_glmnet_numerical_infeasibility(
+      stop("from glmnet C++ code (error code -1); Numerical error"),
+      source = "test glmnet fit"
+    ),
+    error = identity
+  )
+  expect_s3_class(numerical, "stablr_learner_numerical_infeasibility")
+  expect_s3_class(numerical, "stablr_numerical_infeasibility")
+  expect_s3_class(numerical$parent, "simpleError")
+
+  programming <- tryCatch(
+    stablr:::.with_glmnet_numerical_infeasibility(
+      stop("deliberate programming defect"),
+      source = "test glmnet fit"
+    ),
+    error = identity
+  )
+  expect_s3_class(programming, "simpleError")
+  expect_false(inherits(programming, "stablr_numerical_infeasibility"))
+  expect_match(conditionMessage(programming), "deliberate programming defect")
+})

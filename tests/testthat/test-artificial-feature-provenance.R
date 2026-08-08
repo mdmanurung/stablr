@@ -100,6 +100,32 @@ test_that("fixed-X row augmentation falls back instead of truncating invalid kno
   )
 })
 
+test_that("artificial-feature programming errors are not scientific fallbacks", {
+  skip_if_not_installed("knockoff")
+
+  x <- matrix(
+    rnorm(80L * 5L),
+    nrow = 80L,
+    dimnames = list(paste0("s", seq_len(80L)), paste0("f", seq_len(5L)))
+  )
+  testthat::local_mocked_bindings(
+    .estimate_pd_sigma = function(...) {
+      stop("deliberate covariance programming defect")
+    },
+    .package = "stablr"
+  )
+
+  expect_error(
+    make_artificial_features(
+      x = x,
+      n_injected = 3L,
+      type = "knockoff_equi",
+      random_state = 1004L
+    ),
+    "deliberate covariance programming defect"
+  )
+})
+
 test_that("stabl_fit preserves artificial-feature fallback provenance", {
   skip_if_not_installed("knockoff")
 

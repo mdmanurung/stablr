@@ -74,7 +74,7 @@
         x_valid_sel = captured$selected_valid[[omic]],
         task_type = task_type,
         levels = if (identical(task_type, "multiclass")) classes else NULL,
-        selection_error = captured$selection_errors[[omic]]
+        selection_condition = captured$selection_conditions[[omic]]
       )
       warnings_seen <- unique(c(warnings_seen, pred$warnings))
       fallback[[omic]] <- pred$fallback_reason %||% NA_character_
@@ -95,6 +95,7 @@
       artificial_provenance = fold_artificial_provenance,
       artificial_feature_provenance = fold_artificial_provenance,
       fallback_reasons = fallback,
+      selector_conditions = captured$selection_conditions,
       selector_errors = captured$selection_errors
     )
   }
@@ -107,7 +108,7 @@
   )
 
   full_captured <- withCallingHandlers(
-    .fit_multiomic_per_omic(
+    .late_fusion_select_per_omic_safe(
       x_train_list = x_train_list, y_train = y_train,
       lambda_by_omic = lambda_by_omic, x_valid_list = x_valid_list,
       omic_names = omic_names, fit_params = fit_params, ...
@@ -161,9 +162,17 @@
 
 .late_fusion_fit_omic_safe <- function(x_train_sel, y_train, x_valid_sel,
                                        task_type, levels = NULL,
-                                       selection_error = NULL) {
-  fallback_reason <- if (!is.null(selection_error)) {
-    paste0("selector_fit_error: ", selection_error)
+                                       selection_condition = NULL) {
+  if (!is.null(selection_condition) &&
+      !inherits(selection_condition, "stablr_numerical_infeasibility")) {
+    stop(
+      "`selection_condition` must be a `stablr_numerical_infeasibility` condition.",
+      call. = FALSE
+    )
+  }
+  fallback_condition <- selection_condition
+  fallback_reason <- if (!is.null(selection_condition)) {
+    paste0("selector_fit_error: ", conditionMessage(selection_condition))
   } else if (ncol(x_train_sel) == 0L) {
     "no_selected_features"
   } else {
@@ -171,33 +180,53 @@
   }
   y_mean <- if (identical(task_type, "regression")) mean(unname(y_train)) else NA_real_
   captured_warnings <- character()
-  out <- tryCatch(
-    withCallingHandlers(
-      .late_fusion_fit_omic(
-        x_train_sel, y_train, x_valid_sel, y_mean, task_type, levels
+  out <- NULL
+  if (is.null(fallback_reason)) {
+    out <- tryCatch(
+      withCallingHandlers(
+        {
+          fitted <- .late_fusion_fit_omic(
+            x_train_sel, y_train, x_valid_sel, y_mean, task_type, levels
+          )
+          fitted_values <- c(
+            unlist(fitted$train_preds, use.names = FALSE),
+            unlist(fitted$valid_preds, use.names = FALSE)
+          )
+          if (length(fitted_values) && any(!is.finite(fitted_values))) {
+            .abort_numerical_infeasibility(
+              "stablr_downstream_numerical_infeasibility",
+              "Late-fusion downstream fitting produced non-finite predictions.",
+              task_type = task_type
+            )
+          }
+          fitted
+        },
+        warning = function(w) {
+          captured_warnings <<- c(captured_warnings, conditionMessage(w))
+          invokeRestart("muffleWarning")
+        }
       ),
-      warning = function(w) {
-        captured_warnings <<- c(captured_warnings, conditionMessage(w))
-        invokeRestart("muffleWarning")
+      stablr_numerical_infeasibility = function(e) {
+        fallback_condition <<- e
+        fallback_reason <<- paste0(
+          "downstream_fit_error: ", conditionMessage(e)
+        )
+        NULL
       }
-    ),
-    error = function(e) {
-      fallback_reason <<- paste0("downstream_fit_error: ", conditionMessage(e))
-      NULL
-    }
-  )
+    )
+  }
+  if (is.null(out)) {
+    empty <- x_train_sel[, integer(), drop = FALSE]
+    empty_valid <- if (is.null(x_valid_sel)) NULL else
+      x_valid_sel[, integer(), drop = FALSE]
+    out <- .late_fusion_fit_omic(
+      empty, y_train, empty_valid, y_mean, task_type, levels
+    )
+  }
   if (!is.null(fallback_reason) && identical(task_type, "binary")) {
     prior <- mean(as.numeric(y_train))
     out$train_preds <- rep(prior, nrow(x_train_sel))
     if (!is.null(x_valid_sel)) out$valid_preds <- rep(prior, nrow(x_valid_sel))
-  }
-  if (is.null(out)) {
-    empty <- x_train_sel[, FALSE, drop = FALSE]
-    empty_valid <- if (is.null(x_valid_sel)) NULL else
-      x_valid_sel[, FALSE, drop = FALSE]
-    out <- .late_fusion_fit_omic(
-      empty, y_train, empty_valid, y_mean, task_type, levels
-    )
   } else if (is.null(out$model) && is.null(fallback_reason)) {
     fallback_reason <- "downstream_fit_fallback"
   }
@@ -209,6 +238,7 @@
     stop("Late-fusion downstream predictions must be finite.", call. = FALSE)
   }
   out$fallback_reason <- fallback_reason
+  out$fallback_condition <- fallback_condition
   out$warnings <- captured_warnings
   out
 }
@@ -222,6 +252,9 @@
     selected_train = setNames(vector("list", length(omic_names)), omic_names),
     selected_valid = if (is.null(x_valid_list)) NULL else
       setNames(vector("list", length(omic_names)), omic_names),
+    selection_conditions = setNames(
+      vector("list", length(omic_names)), omic_names
+    ),
     selection_errors = setNames(vector("list", length(omic_names)), omic_names)
   )
   for (omic in omic_names) {
@@ -232,14 +265,19 @@
         x_valid_list = if (is.null(x_valid_list)) NULL else x_valid_list[omic],
         omic_names = omic, fit_params = fit_params, ...
       ),
-      error = function(e) e
+      stablr_numerical_infeasibility = function(e) e
     )
-    if (inherits(one, "error")) {
+    if (inherits(one, "stablr_numerical_infeasibility")) {
+      out$selection_conditions[[omic]] <- one
       out$selection_errors[[omic]] <- conditionMessage(one)
       out$selected_features[[omic]] <- character()
-      out$selected_train[[omic]] <- as.matrix(x_train_list[[omic]])[, FALSE, drop = FALSE]
+      out$selected_train[[omic]] <- as.matrix(x_train_list[[omic]])[
+        , integer(), drop = FALSE
+      ]
       if (!is.null(x_valid_list)) {
-        out$selected_valid[[omic]] <- as.matrix(x_valid_list[[omic]])[, FALSE, drop = FALSE]
+        out$selected_valid[[omic]] <- as.matrix(x_valid_list[[omic]])[
+          , integer(), drop = FALSE
+        ]
       }
     } else {
       out$fits[[omic]] <- one$fits[[omic]]
@@ -279,6 +317,9 @@
                                                 x_valid_list, task_type,
                                                 omic_names, levels, weights) {
   fallbacks <- setNames(character(length(omic_names)), omic_names)
+  fallback_conditions <- setNames(
+    vector("list", length(omic_names)), omic_names
+  )
   downstream_warnings <- setNames(vector("list", length(omic_names)), omic_names)
   if (identical(task_type, "multiclass")) {
     valid <- if (is.null(x_valid_list)) NULL else .named_omic_list(omic_names)
@@ -292,9 +333,11 @@
     pred <- .late_fusion_fit_omic_safe(
       full_per_omic$selected_train[[omic]], y_train,
       if (is.null(x_valid_list)) NULL else full_per_omic$selected_valid[[omic]],
-      task_type, levels
+      task_type, levels,
+      selection_condition = full_per_omic$selection_conditions[[omic]]
     )
     fallbacks[[omic]] <- pred$fallback_reason %||% NA_character_
+    fallback_conditions[omic] <- list(pred$fallback_condition)
     downstream_warnings[[omic]] <- pred$warnings
     if (!is.null(valid)) {
       if (identical(task_type, "multiclass")) valid[[omic]] <- pred$valid_preds
@@ -315,6 +358,9 @@
     diagnostics = list(
       selected_features = full_per_omic$selected_features,
       fallback_reasons = fallbacks,
+      fallback_conditions = fallback_conditions,
+      selector_conditions = full_per_omic$selection_conditions,
+      selector_errors = full_per_omic$selection_errors,
       warnings = downstream_warnings,
       artificial_provenance = artificial_provenance,
       artificial_feature_provenance = artificial_provenance
