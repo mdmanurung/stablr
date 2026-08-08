@@ -360,6 +360,7 @@ test_that("stacked_multi_omic supports multiclass probability stacking", {
     p / rowSums(p)
   }
   preds <- list(omic_a = make_probs(0.05), omic_b = make_probs(0.25))
+  names(y) <- ids
 
   res <- stacked_multi_omic(preds, y, task_type = "multiclass",
                             n_iter = 200L, random_state = 9L)
@@ -376,6 +377,7 @@ test_that("stacked_multi_omic supports multiclass probability stacking", {
 test_that("stacked_multi_omic errors when multiclass labels are absent from probability columns", {
   y <- factor(c("A", "B", "C"))
   ids <- paste0("s", seq_along(y))
+  names(y) <- ids
   preds <- list(
     omic_a = matrix(
       c(0.9, 0.1,

@@ -98,7 +98,7 @@
 
   if (any(fold_id == 0L)) stop("Internal error: incomplete OOF coverage.", call. = FALSE)
   stacked <- stacked_multi_omic(
-    predictions = oof, y = unname(y_downstream), task_type = task_type,
+    predictions = oof, y = y_downstream, task_type = task_type,
     n_iter = n_iter_lf,
     random_state = .derive_nested_seed(random_state, 1L, 47001L)
   )

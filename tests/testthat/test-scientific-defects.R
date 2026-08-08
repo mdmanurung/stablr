@@ -112,3 +112,97 @@ test_that("SCI-01 imbalanced binomial fitting is deterministic and feasible", {
   expect_s3_class(first, "stabl_fit")
   expect_identical(first$stabl_scores_, second$stabl_scores_)
 })
+
+test_that("SCI-02 named stacking aligns outcomes to prediction rows", {
+  ids <- paste0("s", seq_len(8L))
+  y_ordered <- rep(c(0, 1), 4L)
+  predictions <- matrix(
+    c(y_ordered + 0.1, rev(y_ordered) + 0.2),
+    nrow = length(ids),
+    dimnames = list(ids, c("omic_a", "omic_b"))
+  )
+  y_named <- stats::setNames(y_ordered, ids)
+  shuffled <- y_named[c(5L, 2L, 8L, 1L, 7L, 4L, 6L, 3L)]
+
+  expected <- stacked_multi_omic(
+    predictions,
+    y_named,
+    task_type = "binary",
+    n_iter = 100L,
+    random_state = 802L
+  )
+  actual <- stacked_multi_omic(
+    predictions,
+    shuffled,
+    task_type = "binary",
+    n_iter = 100L,
+    random_state = 802L
+  )
+
+  expect_identical(actual, expected)
+  expect_identical(rownames(actual$predictions), ids)
+})
+
+test_that("SCI-02 multiclass stacking aligns every named prediction matrix", {
+  ids <- paste0("s", seq_len(6L))
+  y <- factor(rep(c("A", "B", "C"), each = 2L))
+  names(y) <- ids
+  probabilities <- matrix(
+    0.05,
+    nrow = length(ids),
+    ncol = 3L,
+    dimnames = list(ids, levels(y))
+  )
+  probabilities[cbind(seq_along(y), as.integer(y))] <- 0.9
+  reversed <- probabilities[rev(ids), , drop = FALSE]
+
+  aligned <- stacked_multi_omic(
+    list(omic_a = probabilities, omic_b = reversed),
+    y[rev(ids)],
+    task_type = "multiclass",
+    n_iter = 30L,
+    random_state = 803L
+  )
+
+  expect_identical(rownames(aligned$predictions), ids)
+  expect_identical(aligned$predictions$predicted_class, as.character(y))
+})
+
+test_that("SCI-02 stacking rejects mixed, duplicate, and mismatched IDs", {
+  ids <- paste0("s", seq_len(4L))
+  predictions <- matrix(
+    seq_len(8L) / 10,
+    nrow = 4L,
+    dimnames = list(ids, c("a", "b"))
+  )
+  y <- stats::setNames(c(0, 1, 0, 1), ids)
+
+  expect_error(
+    stacked_multi_omic(predictions, unname(y), n_iter = 2L),
+    "present on both"
+  )
+  expect_error(
+    stacked_multi_omic(unname(predictions), y, n_iter = 2L),
+    "present on both"
+  )
+
+  duplicate_predictions <- predictions
+  rownames(duplicate_predictions)[[4L]] <- ids[[3L]]
+  expect_error(
+    stacked_multi_omic(duplicate_predictions, y, n_iter = 2L),
+    "unique sample IDs"
+  )
+  duplicate_y <- y
+  names(duplicate_y)[[4L]] <- ids[[3L]]
+  expect_error(
+    stacked_multi_omic(predictions, duplicate_y, n_iter = 2L),
+    "unique sample IDs"
+  )
+
+  mismatched_y <- y
+  names(mismatched_y)[[4L]] <- "foreign"
+  expect_error(
+    stacked_multi_omic(predictions, mismatched_y, n_iter = 2L),
+    "same sample IDs"
+  )
+})

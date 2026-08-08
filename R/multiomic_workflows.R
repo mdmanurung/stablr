@@ -617,7 +617,7 @@ stabl_multiomic_cv <- function(
 
   stacked <- stacked_multi_omic(
     predictions  = train_preds,
-    y            = unname(y_train),
+    y            = y_train,
     task_type    = "multiclass",
     n_iter       = n_iter_lf,
     random_state = random_state
@@ -679,7 +679,7 @@ stabl_multiomic_cv <- function(
 
   stacked <- stacked_multi_omic(
     predictions  = train_preds,
-    y            = unname(y_train),
+    y            = y_train,
     task_type    = task_type,
     n_iter       = n_iter_lf,
     random_state = random_state
@@ -1438,8 +1438,11 @@ stabl_multiomic_cv <- function(
 #'   sample. For `task_type = "multiclass"`, a named list of class-probability
 #'   matrices/data frames, one per omic, with samples in rows and classes in
 #'   columns.
-#' @param y Named numeric outcome vector aligned with rows of `predictions`.
-#'   For `task_type = "binary"` values must be `0`/`1`; for
+#' @param y Numeric outcome vector. When `y` is named, prediction rows must have
+#'   unique sample IDs with the same set of names and `y` is aligned to their
+#'   order. Positional alignment is used only when both sides are unnamed.
+#'   Mixed, duplicated, or mismatched identity states are errors. For
+#'   `task_type = "binary"` values must be `0`/`1`; for
 #'   `task_type = "multiclass"`, values are coerced to a factor with levels
 #'   matching the probability columns, and every label must be present in those
 #'   columns.
@@ -1480,7 +1483,9 @@ stacked_multi_omic <- function(
     ))
   }
 
+  prediction_ids <- .stacking_row_ids(predictions)
   predictions <- as.matrix(predictions)
+  rownames(predictions) <- prediction_ids
   n_omics   <- ncol(predictions)
   n_samples <- nrow(predictions)
 
@@ -1490,7 +1495,8 @@ stacked_multi_omic <- function(
   if (!is.numeric(predictions)) {
     stop("`predictions` must be numeric.", call. = FALSE)
   }
-  if (length(y) != n_samples || !is.numeric(y) || anyNA(y) ||
+  y <- .align_stacking_outcome(y, prediction_ids, n_samples)
+  if (!is.numeric(y) || anyNA(y) ||
       any(!is.finite(y))) {
     stop("`y` must be a complete finite numeric vector with one value per prediction row.",
          call. = FALSE)
@@ -1575,9 +1581,7 @@ stacked_multi_omic <- function(
   classes <- dimnames(arr)[[2L]]
   omic_names <- dimnames(arr)[[3L]]
 
-  if (length(y) != n_samples) {
-    stop("`y` must have one value per prediction row.", call. = FALSE)
-  }
+  y <- .align_stacking_outcome(y, dimnames(arr)[[1L]], n_samples)
   y <- factor(y, levels = classes)
   if (anyNA(y)) {
     stop(
@@ -1630,7 +1634,9 @@ stacked_multi_omic <- function(
     stop("Multiclass `predictions` must be a named non-empty list.", call. = FALSE)
   }
   mats <- lapply(predictions, function(x) {
+    row_ids <- .stacking_row_ids(x)
     x <- as.matrix(x)
+    rownames(x) <- row_ids
     storage.mode(x) <- "double"
     if (anyNA(x) || any(!is.finite(x))) {
       stop("Multiclass probability vectors must be complete and finite.",
@@ -1654,11 +1660,28 @@ stacked_multi_omic <- function(
     stop("Multiclass prediction matrices must have class column names.", call. = FALSE)
   }
   for (nm in names(mats)) {
+    current_rows <- rownames(mats[[nm]])
+    if (is.null(first_rows) != is.null(current_rows)) {
+      stop(
+        "Multiclass prediction matrices must all use sample IDs or all be unnamed.",
+        call. = FALSE
+      )
+    }
     if (!identical(dim(mats[[nm]]), first_dim) ||
-        !identical(rownames(mats[[nm]]), first_rows) ||
         !identical(colnames(mats[[nm]]), first_cols)) {
-      stop("All multiclass prediction matrices must have identical rows and class columns.",
+      stop("All multiclass prediction matrices must have identical dimensions and class columns.",
            call. = FALSE)
+    }
+    if (!is.null(first_rows)) {
+      .validate_stacking_ids(first_rows, "multiclass prediction row names")
+      .validate_stacking_ids(current_rows, "multiclass prediction row names")
+      if (!setequal(current_rows, first_rows)) {
+        stop(
+          "All multiclass prediction matrices must have the same sample IDs.",
+          call. = FALSE
+        )
+      }
+      mats[[nm]] <- mats[[nm]][match(first_rows, current_rows), , drop = FALSE]
     }
   }
   arr <- array(
@@ -1670,6 +1693,48 @@ stacked_multi_omic <- function(
     arr[, , i] <- mats[[i]]
   }
   arr
+}
+
+.stacking_row_ids <- function(predictions) {
+  if (is.data.frame(predictions) &&
+      .row_names_info(predictions, type = 1L) < 0L) {
+    return(NULL)
+  }
+  rownames(predictions)
+}
+
+.validate_stacking_ids <- function(ids, label) {
+  if (anyNA(ids) || any(!nzchar(ids))) {
+    stop("`", label, "` must be complete, non-empty sample IDs.", call. = FALSE)
+  }
+  if (anyDuplicated(ids)) {
+    stop("`", label, "` must contain unique sample IDs.", call. = FALSE)
+  }
+  invisible(ids)
+}
+
+.align_stacking_outcome <- function(y, prediction_ids, n_samples) {
+  if (length(y) != n_samples) {
+    stop("`y` must have one value per prediction row.", call. = FALSE)
+  }
+  outcome_ids <- names(y)
+  if (is.null(outcome_ids) && is.null(prediction_ids)) {
+    return(y)
+  }
+  if (is.null(outcome_ids) != is.null(prediction_ids)) {
+    stop(
+      "Stacking sample identity must be present on both `y` and prediction rows, or absent from both.",
+      call. = FALSE
+    )
+  }
+
+  .validate_stacking_ids(outcome_ids, "names(y)")
+  .validate_stacking_ids(prediction_ids, "prediction row names")
+  if (!setequal(outcome_ids, prediction_ids)) {
+    stop("`y` names and prediction row names must contain the same sample IDs.",
+         call. = FALSE)
+  }
+  y[match(prediction_ids, outcome_ids)]
 }
 
 # NA-aware weighted row-mean of a samples × omics numeric matrix.
