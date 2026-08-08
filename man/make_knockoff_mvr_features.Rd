@@ -16,10 +16,9 @@ coordinate-shuffle RNG.}
 }
 \value{
 Named list with elements \code{x_augmented}, \code{noise_col_indices}, and
-\code{artificial_provenance}; see \code{\link[=make_rp_features]{make_rp_features()}} for details. For MVR,
-\code{artificial_provenance$mvr_chunking} records whether the approximate
-high-dimensional chunking path was applied and explicitly reports that
-global exchangeability across chunks has not been established.
+\code{artificial_provenance}; see \code{\link[=make_rp_features]{make_rp_features()}} for details. The retained
+\code{artificial_provenance$mvr_chunking} compatibility field always records
+that chunking was not applied.
 }
 \description{
 Generates \strong{model-X MVR (minimum-variance-reconstructability)} knockoff
@@ -27,9 +26,9 @@ features.  The S-matrix is solved via \code{solve_mvr()} (an R-native coordinate
 descent port of \code{knockpy.mrc._solve_mvr_ungrouped}), then the knockoff
 sample is drawn with \code{knockoff::create.gaussian(..., diag_s = S)}.
 This is a novel feature exclusive to \code{stablr} — the Python STABL library
-does not implement MVR knockoffs. High-dimensional chunking is approximate:
-global exchangeability across chunks has not been established. Chunking and
-fallback behaviour mirror \code{\link[=make_knockoff_equi_features]{make_knockoff_equi_features()}}: MVR-solver failure falls back to equi;
-\code{create.gaussian} failure falls back to random permutation.
+does not implement MVR knockoffs. Inputs above 3 000 predictors fail closed
+because global exchangeability for a chunked construction has not been
+established. For supported dimensions, MVR-solver failure falls back to
+equi; \code{create.gaussian} failure falls back to random permutation.
 }
 \keyword{internal}

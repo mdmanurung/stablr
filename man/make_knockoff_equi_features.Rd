@@ -22,8 +22,8 @@ Generates \strong{model-X equicorrelated} knockoff features via
 \code{knockoff::create.gaussian(..., method = "equi")}.  This matches the
 \code{GaussianSampler(X, method='equicorrelated')} call used by the Python STABL
 library, making it the parity-correct knockoff type for cross-language
-comparisons.  Column-chunking for datasets that exceed 3 000 features is
-applied (same as \code{\link[=make_knockoff_features]{make_knockoff_features()}}).  Falls back to random-permutation
-features when the knockoff constructor fails.
+comparisons. Inputs above 3 000 predictors fail closed because a globally
+valid chunked construction has not been established. Supported-dimensional
+constructor failures fall back to random-permutation features.
 }
 \keyword{internal}

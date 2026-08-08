@@ -18,7 +18,8 @@ Named list:
 \item{noise_col_indices}{Integer vector (1-based) of original column
 indices selected as sources for the artificial block.}
 \item{artificial_provenance}{List describing the requested generator,
-actual generator modes, and any fallback chunks.}
+\code{actual_type} used by the selected artificial columns, all
+\code{actual_types}, and the complete ordered \code{fallback_history}.}
 }
 }
 \description{

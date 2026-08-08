@@ -149,8 +149,9 @@ actually used.}
 \item{\code{hard_threshold}}{As supplied.}
 \item{\code{artificial_type}}{As supplied.}
 \item{\code{artificial_provenance}}{List returned by
-\code{\link[=make_artificial_features]{make_artificial_features()}} recording actual artificial-feature
-generation modes and fallback counts/reasons, or \code{NULL} when
+\code{\link[=make_artificial_features]{make_artificial_features()}} recording \code{actual_type}, all selected
+generator modes, and the complete ordered fallback history. This is
+the scientific source of truth for the generator used; or \code{NULL} when
 \code{artificial_type = NULL}.}
 \item{\code{artificial_proportion}}{As supplied.}
 \item{\code{explore}}{As supplied.}

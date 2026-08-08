@@ -19,9 +19,9 @@ Named list with elements \code{x_augmented}, \code{noise_col_indices}, and
 }
 \description{
 Generates \strong{fixed-X} knockoff features via \code{knockoff::create.fixed()}, with
-column-chunking for datasets that exceed 3 000 features (mirroring the
-Python STABL implementation that chunks calls to \code{GaussianSampler}).
-Falls back to random-permutation features when the knockoff constructor
-fails (e.g., rank-deficient input).
+up to 3 000 predictors. Larger inputs fail closed because the former
+chunked construction did not establish a valid global knockoff design.
+Falls back to random-permutation features when the supported-dimensional
+knockoff constructor fails (e.g., rank-deficient input).
 }
 \keyword{internal}

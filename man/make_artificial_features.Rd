@@ -12,7 +12,9 @@ Must have more columns than \code{n_injected} for random permutation; for
 knockoffs, a fallback to random permutation is attempted when the
 knockoff constructor fails (e.g., rank-deficient input). Fixed-X
 knockoffs that require row augmentation also fall back because augmented
-knockoff rows cannot be aligned with the original outcome.}
+knockoff rows cannot be aligned with the original outcome. All knockoff
+modes fail closed above 3 000 predictors; random permutation has no such
+dimensional limit.}
 
 \item{n_injected}{Positive integer; number of artificial columns to append.
 Typically \code{round(ncol(x) * artificial_proportion)} as computed in
@@ -39,8 +41,10 @@ were used to build each artificial column.  Used by \code{\link[=stabl_fit]{stab
 to look up sparse-group-lasso group memberships for the artificial
 block via \code{.append_noise_groups}.}
 \item{\code{artificial_provenance}}{Additive metadata describing the
-requested artificial-feature type, actual generator modes used for the
-selected artificial columns, and per-chunk fallback counts/reasons.}
+requested artificial-feature type, \code{actual_type} used for scientific
+classification, all generator modes used by the selected artificial
+columns, and the ordered structured \code{fallback_history}. Per-chunk
+counts and reasons remain available for 0.1.x compatibility.}
 }
 }
 \description{
