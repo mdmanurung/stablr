@@ -1,0 +1,10 @@
+REAGENT or RESOURCE	SOURCE	IDENTIFIER
+stablr v0.1.0	This study	https://github.com/mdmanurung/stablr/releases/tag/v0.1.0
+stablr documentation	This study	https://mdmanurung.github.io/stablr/
+Companion publication artifacts	This study	papers/application-note/artifacts/
+R	R Core Team	https://www.r-project.org/
+glmnet	Friedman et al., 2010	https://cran.r-project.org/package=glmnet
+knockoff	Barber and Candes, 2015	https://cran.r-project.org/package=knockoff
+multiview	Ding et al., 2022	https://cran.r-project.org/package=multiview
+Onset of Labor tutorial data	Hedou et al., 2024	Repository tutorial data used for parity validation
+Python STABL	Hedou et al., 2024	Reference implementation for selection-level parity
