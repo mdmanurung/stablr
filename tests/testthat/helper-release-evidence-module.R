@@ -29,6 +29,9 @@
 }
 
 .release_module_env <- function() {
+  if (identical(.Platform$OS.type, "windows")) {
+    testthat::skip("release-evidence v1 supports Linux/POSIX runtimes only")
+  }
   env <- new.env(parent = globalenv())
   sys.source(.release_evidence_source_path(), envir = env)
   env

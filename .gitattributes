@@ -1,1 +1,2 @@
 tests/testthat/fixtures/python_parity/* text eol=lf
+tests/testthat/fixtures/release_evidence_baseline/v1/* text eol=lf
