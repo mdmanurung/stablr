@@ -301,8 +301,9 @@ make_knockoff_features <- function(x, n_injected, random_state = NULL) {
 
 # ── Shared helpers for model-X generators ─────────────────────────────────────
 
-# Estimate a positive-definite covariance matrix from x.
-# Falls back to corpcor shrinkage when cov(x) is not PD.
+# Estimate a positive-definite covariance matrix for the MVR generator.
+# This historical helper is intentionally retained unchanged: v0.1.1 changes
+# only the covariance semantics of knockoff_equi.
 .estimate_pd_sigma <- function(x) {
   Sigma <- cov(x)
   min_eig <- min(eigen(Sigma, symmetric = TRUE, only.values = TRUE)$values)
@@ -318,13 +319,155 @@ make_knockoff_features <- function(x, n_injected, random_state = NULL) {
   Sigma
 }
 
+# Reproduce sklearn.covariance.LedoitWolf 1.7.1 with assume_centered = FALSE.
+# In particular, sklearn uses the maximum-likelihood (1 / n) empirical
+# covariance convention rather than stats::cov()'s (1 / (n - 1)) convention.
+.estimate_ledoit_wolf_sigma <- function(x) {
+  if (!is.matrix(x) || !is.numeric(x) || nrow(x) < 1L || ncol(x) < 1L ||
+      anyNA(x) || any(!is.finite(x))) {
+    stop("`x` must be a non-empty finite numeric matrix.", call. = FALSE)
+  }
+
+  n_samples <- nrow(x)
+  n_features <- ncol(x)
+  centered <- sweep(x, 2L, colMeans(x), "-")
+  empirical_covariance <- crossprod(centered) / n_samples
+
+  if (n_features == 1L) {
+    shrinkage <- 0
+  } else {
+    squared <- centered^2
+    empirical_trace <- colSums(squared) / n_samples
+    mu <- sum(empirical_trace) / n_features
+    delta_raw <- sum(crossprod(centered)^2) / n_samples^2
+    beta_raw <- sum(crossprod(squared))
+    beta <- (beta_raw / n_samples - delta_raw) /
+      (n_features * n_samples)
+    delta <- (
+      delta_raw - 2 * mu * sum(empirical_trace) + n_features * mu^2
+    ) / n_features
+    beta <- min(beta, delta)
+    shrinkage <- if (beta == 0) 0 else beta / delta
+  }
+
+  mu <- sum(diag(empirical_covariance)) / n_features
+  Sigma <- (1 - shrinkage) * empirical_covariance
+  diag(Sigma) <- diag(Sigma) + shrinkage * mu
+  Sigma <- (Sigma + t(Sigma)) / 2
+
+  eigenvalues <- eigen(Sigma, symmetric = TRUE, only.values = TRUE)$values
+  if (any(!is.finite(Sigma)) || any(!is.finite(eigenvalues)) ||
+      min(eigenvalues) <= 0) {
+    .abort_numerical_infeasibility(
+      "stablr_knockoff_infeasible",
+      paste0(
+        "Ledoit-Wolf covariance estimation did not produce a finite ",
+        "positive-definite matrix."
+      ),
+      source = "sklearn-compatible Ledoit-Wolf covariance",
+      n_samples = n_samples,
+      n_features = n_features,
+      minimum_eigenvalue = min(eigenvalues)
+    )
+  }
+
+  list(
+    covariance = Sigma,
+    shrinkage = unname(shrinkage),
+    location = unname(colMeans(x)),
+    minimum_eigenvalue = unname(min(eigenvalues))
+  )
+}
+
+# Match knockpy 1.3.5's ungrouped equicorrelated S-matrix construction. It
+# solves on the correlation scale, applies the package's conservative
+# ten-iteration PSD search at tolerance 1e-5, then rescales to covariance.
+.knockpy_equicorrelated_s <- function(Sigma, tol = 1e-5, num_iter = 10L) {
+  if (!is.matrix(Sigma) || !is.numeric(Sigma) || nrow(Sigma) != ncol(Sigma) ||
+      !nrow(Sigma) || anyNA(Sigma) || any(!is.finite(Sigma))) {
+    stop("`Sigma` must be a finite numeric square matrix.", call. = FALSE)
+  }
+  if (!is.numeric(tol) || length(tol) != 1L || !is.finite(tol) || tol <= 0) {
+    stop("`tol` must be one finite positive number.", call. = FALSE)
+  }
+  num_iter <- .validate_scalar_integer_like(num_iter, "num_iter", min = 1L)
+
+  variances <- diag(Sigma)
+  if (any(variances <= 0)) {
+    .abort_numerical_infeasibility(
+      "stablr_knockoff_infeasible",
+      "Equicorrelated knockoffs require strictly positive variances.",
+      source = "knockpy-compatible equicorrelated S-matrix"
+    )
+  }
+  scales <- sqrt(variances)
+  correlation <- Sigma / outer(scales, scales)
+  correlation <- (correlation + t(correlation)) / 2
+  minimum_eigenvalue <- min(
+    eigen(correlation, symmetric = TRUE, only.values = TRUE)$values
+  )
+  initial_gamma <- min(2 * minimum_eigenvalue, 1)
+  if (!is.finite(initial_gamma) || initial_gamma <= 0) {
+    .abort_numerical_infeasibility(
+      "stablr_knockoff_infeasible",
+      "The equicorrelated S-matrix is not positive definite.",
+      source = "knockpy-compatible equicorrelated S-matrix",
+      minimum_correlation_eigenvalue = minimum_eigenvalue
+    )
+  }
+
+  initial_s <- diag(initial_gamma, nrow(Sigma))
+  lower <- 0
+  upper <- 1
+  identity <- diag(nrow(Sigma))
+  for (iteration in seq_len(num_iter)) {
+    scale <- (lower + upper) / 2
+    feasible <- tryCatch(
+      {
+        chol(2 * correlation - scale * initial_s - tol * identity)
+        TRUE
+      },
+      error = function(...) FALSE
+    )
+    if (feasible) lower <- scale else upper <- scale
+  }
+
+  diag_s <- lower * initial_gamma * variances
+  conditional_minimum_eigenvalue <- min(eigen(
+    2 * Sigma - diag(diag_s, nrow(Sigma)),
+    symmetric = TRUE,
+    only.values = TRUE
+  )$values)
+  if (any(!is.finite(diag_s)) || any(diag_s <= 0) ||
+      !is.finite(conditional_minimum_eigenvalue) ||
+      conditional_minimum_eigenvalue < tol) {
+    .abort_numerical_infeasibility(
+      "stablr_knockoff_infeasible",
+      "The equicorrelated S-matrix failed numerical validation.",
+      source = "knockpy-compatible equicorrelated S-matrix",
+      minimum_eigenvalue = conditional_minimum_eigenvalue
+    )
+  }
+
+  list(
+    diag_s = unname(diag_s),
+    initial_gamma = unname(initial_gamma),
+    psd_scale = unname(lower),
+    minimum_correlation_eigenvalue = unname(minimum_eigenvalue),
+    conditional_minimum_eigenvalue = unname(conditional_minimum_eigenvalue),
+    tolerance = unname(tol),
+    iterations = as.integer(num_iter)
+  )
+}
+
 #' Make Model-X Equicorrelated Knockoff Artificial Features
 #'
-#' Generates **model-X equicorrelated** knockoff features via
-#' `knockoff::create.gaussian(..., method = "equi")`.  This matches the
-#' `GaussianSampler(X, method='equicorrelated')` call used by the Python STABL
-#' library, making it the parity-correct knockoff type for cross-language
-#' comparisons. Inputs above 3 000 predictors fail closed because a globally
+#' Generates **model-X equicorrelated** knockoff features using a
+#' scikit-learn 1.7.1-compatible Ledoit-Wolf covariance estimate and a knockpy
+#' 1.3.5-compatible equicorrelated S-matrix. Sampling uses
+#' `knockoff::create.gaussian(..., diag_s = S)`. This matches the
+#' `GaussianSampler(X, method='equicorrelated')` call used by Python STABL.
+#' Inputs above 3 000 predictors fail closed because a globally
 #' valid chunked construction has not been established. Supported-dimensional
 #' constructor failures fall back to random-permutation features.
 #'
@@ -342,23 +485,56 @@ make_knockoff_equi_features <- function(x, n_injected, random_state = NULL) {
   n_features <- ncol(x)
 
   .make_equi_chunk <- function(x_chunk) {
+    covariance_details <- list(
+      name = "sklearn.covariance.LedoitWolf",
+      compatibility_version = "1.7.1",
+      assume_centered = FALSE,
+      empirical_covariance_divisor = "n_samples",
+      shrinkage = NA_real_
+    )
+    s_matrix_details <- list(
+      name = "knockpy.smatrix.equicorrelated",
+      compatibility_version = "1.3.5",
+      tolerance = 1e-5,
+      iterations = 10L
+    )
     tryCatch(
       {
         mu    <- colMeans(x_chunk)
-        Sigma <- .with_linear_algebra_numerical_infeasibility(
-          .estimate_pd_sigma(x_chunk),
-          source = "equicorrelated covariance estimation",
+        covariance_fit <- .with_linear_algebra_numerical_infeasibility(
+          .estimate_ledoit_wolf_sigma(x_chunk),
+          source = "sklearn-compatible Ledoit-Wolf covariance estimation",
           subclass = "stablr_knockoff_infeasible"
         )
+        Sigma <- covariance_fit$covariance
+        covariance_details$shrinkage <- covariance_fit$shrinkage
+        s_fit <- .with_linear_algebra_numerical_infeasibility(
+          .knockpy_equicorrelated_s(Sigma),
+          source = "knockpy-compatible equicorrelated S-matrix",
+          subclass = "stablr_knockoff_infeasible"
+        )
+        s_matrix_details$initial_gamma <- s_fit$initial_gamma
+        s_matrix_details$psd_scale <- s_fit$psd_scale
+        s_matrix_details$minimum_correlation_eigenvalue <-
+          s_fit$minimum_correlation_eigenvalue
+        s_matrix_details$conditional_minimum_eigenvalue <-
+          s_fit$conditional_minimum_eigenvalue
         list(
           x_art = .with_linear_algebra_numerical_infeasibility(
-            knockoff::create.gaussian(x_chunk, mu, Sigma, method = "equi"),
+            knockoff::create.gaussian(
+              x_chunk,
+              mu,
+              Sigma,
+              diag_s = s_fit$diag_s
+            ),
             source = "knockoff::create.gaussian(equi)",
             subclass = "stablr_knockoff_infeasible"
           ),
           actual_type = "knockoff_equi",
           fallback_reason = NA_character_,
-          fallback_history = .empty_artificial_fallback_history()
+          fallback_history = .empty_artificial_fallback_history(),
+          covariance_estimator = covariance_details,
+          equicorrelated_s_matrix = s_matrix_details
         )
       },
       stablr_numerical_infeasibility = function(e) {
@@ -378,7 +554,9 @@ make_knockoff_equi_features <- function(x, n_injected, random_state = NULL) {
             "knockoff_equi",
             "random_permutation",
             e
-          )
+          ),
+          covariance_estimator = covariance_details,
+          equicorrelated_s_matrix = s_matrix_details
         )
       }
     )
@@ -401,15 +579,19 @@ make_knockoff_equi_features <- function(x, n_injected, random_state = NULL) {
   x_art   <- x_art_full[, sel_idx, drop = FALSE]
   selected_types <- type_map[sel_idx]
 
+  provenance <- .make_artificial_provenance(
+    requested_type = "knockoff_equi",
+    selected_types = selected_types,
+    chunks = chunks,
+    fallback_histories = fallback_histories
+  )
+  provenance$covariance_estimator <- chunk_result$covariance_estimator
+  provenance$equicorrelated_s_matrix <- chunk_result$equicorrelated_s_matrix
+
   list(
     x_augmented      = cbind(x, x_art),
     noise_col_indices = orig_map[sel_idx],
-    artificial_provenance = .make_artificial_provenance(
-      requested_type = "knockoff_equi",
-      selected_types = selected_types,
-      chunks = chunks,
-      fallback_histories = fallback_histories
-    )
+    artificial_provenance = provenance
   )
 }
 
@@ -602,7 +784,9 @@ make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
 #'     the original features under the fixed-design assumption.  Kept for
 #'     backward compatibility.}
 #'   \item{`"knockoff_equi"`}{Generates **model-X equicorrelated** knockoffs
-#'     via `knockoff::create.gaussian(..., method = "equi")`.  This matches the
+#'     using a scikit-learn 1.7.1-compatible Ledoit-Wolf covariance estimate
+#'     and knockpy 1.3.5-compatible equicorrelated S-matrix. Sampling uses
+#'     `knockoff::create.gaussian(..., diag_s = S)`. This matches the
 #'     `GaussianSampler(method='equicorrelated')` call in Python STABL and is
 #'     the parity-correct knockoff type for cross-language comparisons.}
 #'   \item{`"knockoff_mvr"`}{Generates **model-X MVR** (minimum-variance-
@@ -625,10 +809,10 @@ make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
 #'   [stabl_fit()].
 #' @param type Character string; one of `"random_permutation"`, `"knockoff"`,
 #'   `"knockoff_equi"`, or `"knockoff_mvr"`.
-#' @param random_state Optional integer; passed to [set.seed()] before any
-#'   random operations for reproducibility.  `NULL` leaves the RNG unchanged.
-#'   Seeding happens exactly once in this dispatcher; downstream generators
-#'   inherit the seeded RNG state and do not re-seed (audit M-5).
+#' @param random_state Optional integer used as a locally scoped seed for
+#'   reproducibility. The caller's RNG state is restored on exit. `NULL`
+#'   leaves generation on the caller's current RNG stream. Seeding happens
+#'   exactly once in this dispatcher; downstream generators do not re-seed.
 #'
 #' @return Named list with three elements:
 #'   \describe{
@@ -693,15 +877,35 @@ make_artificial_features <- function(x, n_injected, type, random_state = NULL) {
   if (startsWith(type, "knockoff")) {
     .assert_supported_knockoff_dimension(x, type)
   }
-  if (!is.null(random_state)) set.seed(random_state)
-  switch(
-    type,
-    random_permutation = make_rp_features(x, n_injected),
-    knockoff           = make_knockoff_features(x, n_injected,
-                                                random_state = random_state),
-    knockoff_equi      = make_knockoff_equi_features(x, n_injected,
-                                                     random_state = random_state),
-    knockoff_mvr       = make_knockoff_mvr_features(x, n_injected,
-                                                    random_state = random_state)
-  )
+  generate <- function() {
+    switch(
+      type,
+      random_permutation = make_rp_features(x, n_injected),
+      knockoff           = make_knockoff_features(x, n_injected,
+                                                  random_state = random_state),
+      knockoff_equi      = make_knockoff_equi_features(
+        x,
+        n_injected,
+        random_state = random_state
+      ),
+      knockoff_mvr       = make_knockoff_mvr_features(
+        x,
+        n_injected,
+        random_state = random_state
+      )
+    )
+  }
+  if (is.null(random_state)) return(generate())
+
+  had_seed <- exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+  if (had_seed) old_seed <- get(".Random.seed", envir = .GlobalEnv)
+  on.exit({
+    if (had_seed) {
+      assign(".Random.seed", old_seed, envir = .GlobalEnv)
+    } else if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
+      rm(".Random.seed", envir = .GlobalEnv)
+    }
+  }, add = TRUE)
+  set.seed(random_state)
+  generate()
 }

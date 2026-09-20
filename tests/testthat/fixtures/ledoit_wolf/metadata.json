@@ -1,0 +1,18 @@
+{
+  "schema_version": "stablr.ledoit-wolf-fixture/v1",
+  "python": "3.13.3",
+  "numpy": "2.2.4",
+  "scikit_learn": "1.7.1",
+  "knockpy": "1.3.5",
+  "ledoit_wolf": {
+    "assume_centered": false,
+    "block_size": 1000,
+    "shrinkage": 0.22705143338107778,
+    "minimum_covariance_eigenvalue": 0.581569405984889
+  },
+  "equicorrelated_s": {
+    "tolerance": 0.00001,
+    "iterations": 10,
+    "minimum_conditional_eigenvalue": 0.0011403692625794582
+  }
+}

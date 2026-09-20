@@ -58,12 +58,16 @@ runner applies the same invariant.
 
 Release gates are evaluated separately for every
 family/scenario/artificial-strategy cell. Missing, incomplete, skipped, or
-errored cells fail. For each global-null cell, the one-sided 95% Wilson upper
-bounds for selecting anything and for the replicate-level mean selected
-fraction must both be at most 0.10, and no replicate may select at least 90% of
-features. For each strong-signal cell, the one-sided 95% upper bound for mean
-empirical FDP must be at most 0.12 and the corresponding lower bound for mean
-TPR must be at least 0.50.
+errored cells fail. The accepted `null_select_any` gate uses its one-sided
+Wilson bound. The distinct `null_selected_fraction` gate is SCI-04: its
+historical Wilson calculation was invalid for a continuous replicate-level
+fraction, and its proposed replacement remains independently unaccepted. It
+therefore fails every promotable packet until a reviewed, versioned decision
+defines a jointly feasible bound, multiplicity policy, threshold, and
+replicate count. No replicate may select at least 90% of features. For each
+strong-signal cell, the one-sided 95% upper bound for mean empirical FDP must
+be at most 0.12 and the corresponding lower bound for mean TPR must be at least
+0.50.
 
 ## Artifacts
 

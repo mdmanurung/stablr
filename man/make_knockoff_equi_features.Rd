@@ -18,11 +18,12 @@ Named list with elements \code{x_augmented}, \code{noise_col_indices}, and
 \code{artificial_provenance}; see \code{\link[=make_rp_features]{make_rp_features()}} for details.
 }
 \description{
-Generates \strong{model-X equicorrelated} knockoff features via
-\code{knockoff::create.gaussian(..., method = "equi")}.  This matches the
-\code{GaussianSampler(X, method='equicorrelated')} call used by the Python STABL
-library, making it the parity-correct knockoff type for cross-language
-comparisons. Inputs above 3 000 predictors fail closed because a globally
+Generates \strong{model-X equicorrelated} knockoff features using a
+scikit-learn 1.7.1-compatible Ledoit-Wolf covariance estimate and a knockpy
+1.3.5-compatible equicorrelated S-matrix. Sampling uses
+\code{knockoff::create.gaussian(..., diag_s = S)}. This matches the
+\code{GaussianSampler(X, method='equicorrelated')} call used by Python STABL.
+Inputs above 3 000 predictors fail closed because a globally
 valid chunked construction has not been established. Supported-dimensional
 constructor failures fall back to random-permutation features.
 }

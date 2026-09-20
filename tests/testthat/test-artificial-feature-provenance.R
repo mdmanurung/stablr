@@ -109,7 +109,7 @@ test_that("artificial-feature programming errors are not scientific fallbacks", 
     dimnames = list(paste0("s", seq_len(80L)), paste0("f", seq_len(5L)))
   )
   testthat::local_mocked_bindings(
-    .estimate_pd_sigma = function(...) {
+    .estimate_ledoit_wolf_sigma = function(...) {
       stop("deliberate covariance programming defect")
     },
     .package = "stablr"

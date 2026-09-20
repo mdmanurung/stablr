@@ -23,10 +23,10 @@ Typically \code{round(ncol(x) * artificial_proportion)} as computed in
 \item{type}{Character string; one of \code{"random_permutation"}, \code{"knockoff"},
 \code{"knockoff_equi"}, or \code{"knockoff_mvr"}.}
 
-\item{random_state}{Optional integer; passed to \code{\link[=set.seed]{set.seed()}} before any
-random operations for reproducibility.  \code{NULL} leaves the RNG unchanged.
-Seeding happens exactly once in this dispatcher; downstream generators
-inherit the seeded RNG state and do not re-seed (audit M-5).}
+\item{random_state}{Optional integer used as a locally scoped seed for
+reproducibility. The caller's RNG state is restored on exit. \code{NULL}
+leaves generation on the caller's current RNG stream. Seeding happens
+exactly once in this dispatcher; downstream generators do not re-seed.}
 }
 \value{
 Named list with three elements:
@@ -70,7 +70,9 @@ preserving marginal distributions.  Fast and broadly applicable.}
 the original features under the fixed-design assumption.  Kept for
 backward compatibility.}
 \item{\code{"knockoff_equi"}}{Generates \strong{model-X equicorrelated} knockoffs
-via \code{knockoff::create.gaussian(..., method = "equi")}.  This matches the
+using a scikit-learn 1.7.1-compatible Ledoit-Wolf covariance estimate
+and knockpy 1.3.5-compatible equicorrelated S-matrix. Sampling uses
+\code{knockoff::create.gaussian(..., diag_s = S)}. This matches the
 \code{GaussianSampler(method='equicorrelated')} call in Python STABL and is
 the parity-correct knockoff type for cross-language comparisons.}
 \item{\code{"knockoff_mvr"}}{Generates \strong{model-X MVR} (minimum-variance-
