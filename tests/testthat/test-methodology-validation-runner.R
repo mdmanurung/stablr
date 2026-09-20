@@ -157,6 +157,232 @@ test_that("locked release methodology profile covers the advertised matrix", {
   expect_true(any(scenarios$profile == "high_dim" & scenarios$regime == "signal"))
 })
 
+test_that("SCI-04 v3 profile fixes the feasible replicate count and applicability", {
+  env <- new.env(parent = globalenv())
+  sys.source(.methodology_runner_path(), envir = env)
+
+  settings <- env$.release_profile_settings("v2")
+  expect_identical(settings$replicates, 600L)
+
+  applicability <- env$.methodology_applicability_matrix()
+  expect_identical(nrow(applicability), 96L)
+  expect_identical(sum(applicability$applicable), 88L)
+  expect_identical(sum(!applicability$applicable), 8L)
+  null_scenarios <- env$.default_scenarios()$scenario[
+    env$.default_scenarios()$regime == "null"
+  ]
+  expect_identical(
+    sum(applicability$applicable & applicability$scenario %in% null_scenarios),
+    44L
+  )
+  excluded <- applicability[!applicability$applicable, , drop = FALSE]
+  expect_true(all(excluded$artificial_type == "knockoff"))
+  expect_true(all(excluded$profile == "high_dim"))
+  expect_true(all(
+    excluded$reason_code == "fixed_x_requires_n_greater_than_p"
+  ))
+
+  matrix_path <- testthat::test_path(
+    "..", "..", "inst", "analysis", "contracts",
+    "SCI-04-applicability-v1.csv"
+  )
+  if (!file.exists(matrix_path)) {
+    matrix_path <- system.file(
+      "analysis", "contracts", "SCI-04-applicability-v1.csv",
+      package = "stablr"
+    )
+  }
+  declared <- utils::read.csv(matrix_path, stringsAsFactors = FALSE)
+  expected <- applicability[c(
+    "family", "scenario", "profile", "artificial_type", "applicable",
+    "reason_code"
+  )]
+  expected <- expected[order(
+    match(expected$family, env$.advertised_families),
+    match(expected$scenario, env$.default_scenarios()$scenario),
+    match(expected$artificial_type, env$.advertised_artificial_types)
+  ), , drop = FALSE]
+  rownames(expected) <- NULL
+  expect_identical(declared, expected)
+})
+
+test_that("SCI-04 Hoeffding reference values and equality are deterministic", {
+  env <- new.env(parent = globalenv())
+  sys.source(.methodology_runner_path(), envir = env)
+
+  n <- 600L
+  radius <- sqrt(log(1 / 0.05) / (2 * n))
+  expect_equal(radius, 0.049964422955689106, tolerance = 1e-16)
+  expect_equal(
+    env$.hoeffding_upper_bound(rep(0, n), expected_replicates = n),
+    radius,
+    tolerance = 1e-16
+  )
+  boundary <- 0.10 - radius
+  at_boundary <- env$.hoeffding_upper_bound(
+    rep(boundary, n),
+    expected_replicates = n
+  )
+  expect_equal(at_boundary, 0.10, tolerance = 1e-15)
+  expect_true(at_boundary <= 0.10)
+  expect_gt(
+    env$.hoeffding_upper_bound(
+      rep(boundary + 1e-10, n),
+      expected_replicates = n
+    ),
+    0.10
+  )
+  expect_identical(
+    env$.hoeffding_upper_bound(rep(1, n), expected_replicates = n),
+    1
+  )
+
+  contract_dir <- testthat::test_path(
+    "..", "..", "inst", "analysis", "contracts"
+  )
+  reference_path <- file.path(
+    contract_dir,
+    "SCI-04-reference-cases-v1.json"
+  )
+  if (!file.exists(reference_path)) {
+    reference_path <- system.file(
+      "analysis", "contracts", "SCI-04-reference-cases-v1.json",
+      package = "stablr"
+    )
+  }
+  reference <- jsonlite::read_json(reference_path, simplifyVector = FALSE)
+  for (case in reference$cases) {
+    x <- rep(case$input$value, case$input$count)
+    observed <- env$.hoeffding_upper_bound(
+      x,
+      alpha = reference$alpha,
+      expected_replicates = reference$expected_replicates
+    )
+    tolerance <- if (is.null(case$comparison_tolerance)) {
+      1e-14
+    } else {
+      case$comparison_tolerance
+    }
+    expect_lte(abs(observed - case$expected_upper_bound), tolerance)
+    expect_identical(observed <= reference$release_threshold,
+                     case$expected_pass)
+  }
+})
+
+test_that("SCI-04 Hoeffding validation fails closed", {
+  env <- new.env(parent = globalenv())
+  sys.source(.methodology_runner_path(), envir = env)
+  valid <- rep(0, 600L)
+
+  expect_error(env$.hoeffding_upper_bound(replace(valid, 1L, NA_real_)),
+               "finite selected fractions")
+  expect_error(env$.hoeffding_upper_bound(replace(valid, 1L, Inf)),
+               "finite selected fractions")
+  expect_error(env$.hoeffding_upper_bound(replace(valid, 1L, -0.01)),
+               "finite selected fractions")
+  expect_error(env$.hoeffding_upper_bound(replace(valid, 1L, 1.01)),
+               "finite selected fractions")
+  expect_error(env$.hoeffding_upper_bound(valid[-1L], expected_replicates = 600L),
+               "exactly `expected_replicates`")
+  expect_error(env$.hoeffding_upper_bound(c(valid, 0), expected_replicates = 600L),
+               "exactly `expected_replicates`")
+  expect_error(env$.hoeffding_upper_bound(valid, alpha = 1),
+               "strictly between 0 and 1")
+})
+
+test_that("SCI-04 v3 excludes declared N/A cells without counting them as passes", {
+  env <- new.env(parent = globalenv())
+  sys.source(.methodology_runner_path(), envir = env)
+  scenarios <- env$.default_scenarios()[
+    env$.default_scenarios()$scenario %in%
+      c("null_independent", "null_high_dim"),
+    , drop = FALSE
+  ]
+  rows <- data.frame(
+    family = "gaussian",
+    scenario = "null_independent",
+    regime = "null",
+    profile = "low_dim",
+    correlation = 0,
+    replicate = seq_len(600L),
+    artificial_type = "knockoff",
+    actual_artificial_type = "knockoff",
+    status = "ok",
+    p = 20L,
+    n_selected = 1L,
+    empirical_fdp = 0,
+    tpr = NA_real_,
+    stringsAsFactors = FALSE
+  )
+  applicability <- env$.methodology_applicability_matrix(
+    families = "gaussian",
+    scenarios = scenarios,
+    artificial_types = "knockoff"
+  )
+  gates <- env$.release_gate_table(
+    rows,
+    scenarios = scenarios,
+    families = "gaussian",
+    artificial_types = "knockoff",
+    expected_replicates = 600L,
+    applicability = applicability,
+    selected_fraction_decision = "owner_authorized_v3"
+  )
+
+  expect_true(all(gates$applicable[gates$scenario == "null_independent"]))
+  expect_true(all(!gates$applicable[gates$scenario == "null_high_dim"]))
+  expect_true(all(
+    gates$cell_status[gates$scenario == "null_high_dim"] == "not_applicable"
+  ))
+  expect_false(any(gates$pass[gates$scenario == "null_high_dim"]))
+  expect_true(gates$pass[
+    gates$scenario == "null_independent" &
+      gates$gate == "null_selected_fraction"
+  ])
+
+  common <- env$.methodology_common_gate_table(
+    gates,
+    data.frame(status = "ok", abs_error = 0)
+  )
+  expect_true(common$pass[common$gate_id == "cell_completeness"])
+  expect_true(common$pass[common$gate_id == "null_selected_fraction"])
+  expect_match(
+    common$reason[common$gate_id == "null_selected_fraction"],
+    "independent signature pending",
+    fixed = TRUE
+  )
+
+  contaminated <- rbind(
+    rows,
+    transform(
+      rows[1L, , drop = FALSE],
+      scenario = "null_high_dim",
+      profile = "high_dim"
+    )
+  )
+  contaminated_gates <- env$.release_gate_table(
+    contaminated,
+    scenarios = scenarios,
+    families = "gaussian",
+    artificial_types = "knockoff",
+    expected_replicates = 600L,
+    applicability = applicability,
+    selected_fraction_decision = "owner_authorized_v3"
+  )
+  expect_true(all(
+    contaminated_gates$cell_status[
+      contaminated_gates$scenario == "null_high_dim"
+    ] == "unexpected_not_applicable_observations"
+  ))
+  contaminated_common <- env$.methodology_common_gate_table(
+    contaminated_gates,
+    data.frame(status = "ok", abs_error = 0)
+  )
+  expect_false(contaminated_common$pass[
+    contaminated_common$gate_id == "cell_completeness"
+  ])
+})
+
 test_that("methodology adapter emits the complete common gate contract", {
   env <- new.env(parent = globalenv())
   sys.source(.methodology_runner_path(), envir = env)
@@ -500,6 +726,43 @@ test_that("missing and errored release cells fail explicitly", {
   expect_true(all(gates$cell_status[gates$family == "gaussian"] == "fit_not_ok"))
   expect_true(all(gates$cell_status[gates$family == "binomial"] == "missing_cell"))
   expect_false(any(gates$pass))
+})
+
+test_that("SCI-04 replicate counts reject malformed selected fractions", {
+  env <- new.env(parent = globalenv())
+  sys.source(.methodology_runner_path(), envir = env)
+  cell <- data.frame(
+    replicate = seq_len(600L),
+    status = "ok",
+    p = 20L,
+    n_selected = 0L
+  )
+  expect_identical(env$.gate_cell_status(cell, 600L), "complete")
+
+  duplicated <- cell
+  duplicated$replicate[[600L]] <- 599L
+  expect_identical(
+    env$.gate_cell_status(duplicated, 600L),
+    "incomplete_replicates"
+  )
+  non_integer <- cell
+  non_integer$n_selected[[1L]] <- 0.5
+  expect_identical(
+    env$.gate_cell_status(non_integer, 600L),
+    "invalid_selected_fraction"
+  )
+  exceeds_p <- cell
+  exceeds_p$n_selected[[1L]] <- 21L
+  expect_identical(
+    env$.gate_cell_status(exceeds_p, 600L),
+    "invalid_selected_fraction"
+  )
+  non_finite <- cell
+  non_finite$p[[1L]] <- Inf
+  expect_identical(
+    env$.gate_cell_status(non_finite, 600L),
+    "invalid_selected_fraction"
+  )
 })
 
 test_that("methodology validation rejects duplicate strategy entries", {

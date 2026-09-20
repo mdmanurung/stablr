@@ -76,10 +76,13 @@
   both start and end provenance, and reject evidence if the tracked tree moves
   during computation.
 - **Release stop condition:** SCI-04 remains independently unaccepted. The
-  review packet identifies that the draft 100-replicate Hoeffding bound cannot
-  satisfy its proposed 0.10 threshold even when no features are selected. The
-  package contract therefore remains non-promotable pending a reviewed,
-  jointly feasible statistical decision.
+  package owner authorized implementation of an executable v3 proposal using
+  a 600-replicate, one-sided per-cell Hoeffding bound and an
+  intersection-union release decision over 44 applicable null cells. The
+  proposal includes an immutable 96-cell applicability matrix, deterministic
+  reference cases, and fail-closed malformed-data rules. Owner authorization
+  is not independent acceptance: the active package contract remains
+  non-promotable until an external reviewer signs the complete decision.
 - **Pre-review release controls:** added versioned SCI-04 and OOL v3 review
   bundles, detached-signature reviewer authentication, exact 1,317-feature OOL
   score alignment, independent packet verification, artifact-bound candidate

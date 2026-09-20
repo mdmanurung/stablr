@@ -84,6 +84,56 @@ test_that("SCI review packet preserves v1 and declares the corrected matrix", {
   expect_match(v2, "No formula, replicate count", fixed = TRUE)
 })
 
+test_that("SCI-04 v3 assets encode the owner-authorized design without accepting it", {
+  root <- release_source_root()
+  contracts <- file.path(root, "inst", "analysis", "contracts")
+  packet <- paste(readLines(
+    file.path(contracts, "SCI-04-independent-review-packet-v3.md"),
+    warn = FALSE
+  ), collapse = "\n")
+  specification <- jsonlite::read_json(
+    file.path(contracts, "SCI-04-statistical-specification-v3.json"),
+    simplifyVector = TRUE
+  )
+  applicability_path <- file.path(
+    contracts,
+    "SCI-04-applicability-v1.csv"
+  )
+  reference_path <- file.path(
+    contracts,
+    "SCI-04-reference-cases-v1.json"
+  )
+  sha256 <- function(path) {
+    output <- system2("sha256sum", path, stdout = TRUE)
+    strsplit(output[[1L]], "[[:space:]]+")[[1L]][[1L]]
+  }
+
+  expect_match(packet, "Implementation authority: `mdm123`", fixed = TRUE)
+  expect_match(packet, "independent decision pending", fixed = TRUE)
+  expect_identical(specification$implementation_authority, "mdm123")
+  expect_false(specification$independent_acceptance)
+  expect_identical(specification$replicates_per_applicable_cell, 600L)
+  expect_equal(specification$bound$alpha, 0.05)
+  expect_equal(specification$release_threshold, 0.10)
+  expect_identical(
+    specification$decision_structure,
+    "intersection_union_all_applicable_cells"
+  )
+  expect_identical(specification$release_multiplicity_adjustment, "none")
+  expect_identical(specification$applicability_matrix$sha256,
+                   sha256(applicability_path))
+  expect_identical(specification$reference_cases$sha256,
+                   sha256(reference_path))
+
+  applicability <- utils::read.csv(
+    applicability_path,
+    stringsAsFactors = FALSE
+  )
+  expect_identical(nrow(applicability), 96L)
+  expect_identical(sum(applicability$applicable), 88L)
+  expect_identical(sum(!applicability$applicable), 8L)
+})
+
 test_that("repository license contains the complete GPL version 2 text", {
   lines <- release_source_lines("LICENSE.md")
   text <- paste(lines, collapse = "\n")

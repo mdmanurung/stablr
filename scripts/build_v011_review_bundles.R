@@ -66,6 +66,21 @@ main <- function() {
     ),
     out_root
   )
+  sci_v3 <- copy_bundle(
+    "SCI-04-review-bundle-v3",
+    c(
+      "SCI-04-independent-review-packet-v3.md" = file.path(sci_root, "SCI-04-independent-review-packet-v3.md"),
+      "SCI-04-statistical-specification-v3.json" = file.path(sci_root, "SCI-04-statistical-specification-v3.json"),
+      "SCI-04-applicability-v1.csv" = file.path(sci_root, "SCI-04-applicability-v1.csv"),
+      "SCI-04-reference-cases-v1.json" = file.path(sci_root, "SCI-04-reference-cases-v1.json"),
+      "sci-decision-v2.schema.json" = file.path(sci_root, "sci-decision-v2.schema.json"),
+      "reviewer-trust-root.schema.json" = file.path(sci_root, "reviewer-trust-root.schema.json"),
+      "run_methodology_validation.R" = file.path(package_root, "inst", "analysis", "run_methodology_validation.R"),
+      "test-methodology-validation-runner.R" = file.path(package_root, "tests", "testthat", "test-methodology-validation-runner.R"),
+      "release-contract-v1.json" = file.path(package_root, "inst", "release", "release-contract.json")
+    ),
+    out_root
+  )
 
   ool_root <- file.path(experiments_root, "analysis")
   ool <- copy_bundle(
@@ -84,7 +99,15 @@ main <- function() {
     out_root
   )
   Sys.chmod(out_root, "0555")
-  cat(sprintf("SCI %s %s\nOOL %s %s\n", sci$path, sci$manifest_sha256, ool$path, ool$manifest_sha256))
+  cat(sprintf(
+    "SCI_V2 %s %s\nSCI_V3 %s %s\nOOL %s %s\n",
+    sci$path,
+    sci$manifest_sha256,
+    sci_v3$path,
+    sci_v3$manifest_sha256,
+    ool$path,
+    ool$manifest_sha256
+  ))
 }
 
 if (sys.nframe() == 0L) main()

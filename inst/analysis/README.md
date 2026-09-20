@@ -61,10 +61,13 @@ family/scenario/artificial-strategy cell. Missing, incomplete, skipped, or
 errored cells fail. The accepted `null_select_any` gate uses its one-sided
 Wilson bound. The distinct `null_selected_fraction` gate is SCI-04: its
 historical Wilson calculation was invalid for a continuous replicate-level
-fraction, and its proposed replacement remains independently unaccepted. It
-therefore fails every promotable packet until a reviewed, versioned decision
-defines a jointly feasible bound, multiplicity policy, threshold, and
-replicate count. No replicate may select at least 90% of features. For each
+fraction. The owner-authorized `release_v2` implementation uses 600 replicates,
+a one-sided per-cell Hoeffding upper bound at alpha 0.05, a threshold of 0.10,
+and an intersection-union decision over all applicable null cells. Eight
+fixed-X/high-dimensional cells are declared not applicable. The implementation
+remains pending an independent authenticated signature and is not wired into
+the active release contract; the active v1 gate therefore still fails every
+promotable packet. No replicate may select at least 90% of features. For each
 strong-signal cell, the one-sided 95% upper bound for mean empirical FDP must
 be at most 0.12 and the corresponding lower bound for mean TPR must be at least
 0.50.

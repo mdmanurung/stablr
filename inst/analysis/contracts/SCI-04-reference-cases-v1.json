@@ -1,0 +1,89 @@
+{
+  "schema_version": "stablr.sci04-reference-cases/v1",
+  "formula": "min(1, mean(x) + sqrt(log(1 / alpha) / (2 * n)))",
+  "alpha": 0.05,
+  "expected_replicates": 600,
+  "release_threshold": 0.1,
+  "cases": [
+    {
+      "id": "all_zero",
+      "input": {
+        "kind": "constant",
+        "count": 600,
+        "value": 0
+      },
+      "expected_upper_bound": 0.0499644229556891,
+      "expected_pass": true
+    },
+    {
+      "id": "boundary_equality",
+      "input": {
+        "kind": "constant",
+        "count": 600,
+        "value": 0.0500355770443109
+      },
+      "expected_upper_bound": 0.1,
+      "expected_pass": true,
+      "comparison_tolerance": 1e-15
+    },
+    {
+      "id": "above_boundary",
+      "input": {
+        "kind": "constant",
+        "count": 600,
+        "value": 0.0500355771443109
+      },
+      "expected_upper_bound": 0.1000000001,
+      "expected_pass": false,
+      "comparison_tolerance": 1e-15
+    },
+    {
+      "id": "upper_clamp",
+      "input": {
+        "kind": "constant",
+        "count": 600,
+        "value": 1
+      },
+      "expected_upper_bound": 1,
+      "expected_pass": false
+    }
+  ],
+  "fail_closed_cases": [
+    {
+      "id": "missing_value",
+      "mutation": "one x value is NA"
+    },
+    {
+      "id": "non_finite_value",
+      "mutation": "one x value is Inf"
+    },
+    {
+      "id": "below_range",
+      "mutation": "one x value is below zero"
+    },
+    {
+      "id": "above_range",
+      "mutation": "one x value exceeds one"
+    },
+    {
+      "id": "incomplete_count",
+      "mutation": "599 values supplied"
+    },
+    {
+      "id": "excess_count",
+      "mutation": "601 values supplied"
+    },
+    {
+      "id": "duplicate_replicate",
+      "mutation": "replicate id duplicated"
+    },
+    {
+      "id": "non_integer_count",
+      "mutation": "n_selected is non-integer"
+    },
+    {
+      "id": "selected_exceeds_p",
+      "mutation": "n_selected exceeds p"
+    }
+  ]
+}

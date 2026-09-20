@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stablr.example/schemas/sci-decision-v2.json",
+  "title": "stablr SCI-04 complete independent decision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "decision_id",
+    "decision_type",
+    "review_bundle_manifest_sha256",
+    "decision",
+    "reviewer_id",
+    "reviewed_at",
+    "target",
+    "statistical_decision"
+  ],
+  "properties": {
+    "schema_version": {"const": "stablr.sci-decision/v2"},
+    "decision_id": {"type": "string", "minLength": 1},
+    "decision_type": {"const": "sci"},
+    "review_bundle_manifest_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "decision": {"enum": ["accepted", "rejected"]},
+    "reviewer_id": {"type": "string", "minLength": 1},
+    "reviewed_at": {"type": "string", "format": "date-time"},
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "sha256"],
+      "properties": {
+        "id": {"const": "SCI-04-independent-review-packet-v3"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "statistical_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "estimand",
+        "experimental_unit",
+        "bound",
+        "decision_structure",
+        "release_multiplicity_adjustment",
+        "simultaneous_reporting_policy",
+        "replicates_per_applicable_cell",
+        "release_threshold",
+        "applicability_matrix_sha256",
+        "reference_cases_sha256",
+        "malformed_data_policy"
+      ],
+      "properties": {
+        "estimand": {"const": "mean_replicate_selected_feature_fraction"},
+        "experimental_unit": {"const": "independently_seeded_monte_carlo_replicate"},
+        "bound": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["method", "side", "alpha"],
+          "properties": {
+            "method": {"const": "fixed_n_hoeffding"},
+            "side": {"const": "upper"},
+            "alpha": {"const": 0.05}
+          }
+        },
+        "decision_structure": {"const": "intersection_union_all_applicable_cells"},
+        "release_multiplicity_adjustment": {"const": "none"},
+        "simultaneous_reporting_policy": {
+          "enum": ["not_claimed", "bonferroni_over_44_null_cells"]
+        },
+        "replicates_per_applicable_cell": {"const": 600},
+        "release_threshold": {"const": 0.10},
+        "applicability_matrix_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "reference_cases_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "malformed_data_policy": {"const": "fail_closed"}
+      }
+    }
+  }
+}

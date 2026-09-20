@@ -1,0 +1,33 @@
+{
+  "schema_version": "stablr.sci04-statistical-specification/v3",
+  "specification_id": "SCI-04-null-selected-fraction-hoeffding-iut-v3",
+  "status": "implementation_authorized_pending_independent_signature",
+  "implementation_authority": "mdm123",
+  "independent_acceptance": false,
+  "estimand": "mean_replicate_selected_feature_fraction",
+  "experimental_unit": "independently_seeded_monte_carlo_replicate",
+  "bound": {
+    "method": "fixed_n_hoeffding",
+    "side": "upper",
+    "alpha": 0.05
+  },
+  "decision_structure": "intersection_union_all_applicable_cells",
+  "release_multiplicity_adjustment": "none",
+  "simultaneous_reporting_policy": "not_claimed",
+  "replicates_per_applicable_cell": 600,
+  "release_threshold": 0.1,
+  "boundary_equality_passes": true,
+  "declared_cells": 96,
+  "applicable_cells": 88,
+  "not_applicable_cells": 8,
+  "applicable_null_cells": 44,
+  "malformed_data_policy": "fail_closed",
+  "applicability_matrix": {
+    "path": "SCI-04-applicability-v1.csv",
+    "sha256": "594a1c870116dc0614adc9f30091c3114f1b7fd16e83dfe60e7e252925851009"
+  },
+  "reference_cases": {
+    "path": "SCI-04-reference-cases-v1.json",
+    "sha256": "60091c815feb184752590940931fa9f3315e85c24c1483d597c3a0a2479022f5"
+  }
+}

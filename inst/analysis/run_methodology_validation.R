@@ -31,7 +31,7 @@
     "  run_methodology_validation.R --out /tmp/output-dir [options]",
     "",
     "Options:",
-    "  --profile NAME             bounded (default) or locked release profile",
+    "  --profile NAME             bounded, release, or owner-authorized release_v2",
     "  --replicates N              Monte Carlo replicates per family/scenario/type. Default: 3",
     "  --n-bootstraps N            STABL bootstraps per fit. Default: 12",
     "  --n-lambda N                Auto lambda-grid size. Default: 6",
@@ -58,9 +58,10 @@
   "random_permutation", "knockoff", "knockoff_equi", "knockoff_mvr"
 )
 
-.release_profile_settings <- function() {
+.release_profile_settings <- function(version = c("v1", "v2")) {
+  version <- match.arg(version)
   list(
-    replicates = 100L,
+    replicates = if (identical(version, "v2")) 600L else 100L,
     n_bootstraps = 1000L,
     n_lambda = 30L,
     families = .advertised_families,
@@ -112,6 +113,30 @@
     signal_strength = c(0, 0, 2, 2, 0, 2),
     stringsAsFactors = FALSE
   )
+}
+
+.methodology_applicability_matrix <- function(
+    families = .advertised_families,
+    scenarios = .default_scenarios(),
+    artificial_types = .advertised_artificial_types) {
+  matrix <- expand.grid(
+    family = families,
+    scenario = scenarios$scenario,
+    artificial_type = artificial_types,
+    stringsAsFactors = FALSE,
+    KEEP.OUT.ATTRS = FALSE
+  )
+  scenario_profile <- stats::setNames(scenarios$profile, scenarios$scenario)
+  matrix$profile <- unname(scenario_profile[matrix$scenario])
+  fixed_x_high_dim <- matrix$artificial_type == "knockoff" &
+    matrix$profile == "high_dim"
+  matrix$applicable <- !fixed_x_high_dim
+  matrix$reason_code <- ifelse(
+    fixed_x_high_dim,
+    "fixed_x_requires_n_greater_than_p",
+    "applicable"
+  )
+  matrix
 }
 
 .select_scenarios <- function(ids) {
@@ -938,9 +963,53 @@
   if (side == "upper") min(1, mean(x) + half) else max(0, mean(x) - half)
 }
 
+.hoeffding_upper_bound <- function(x, alpha = 0.05,
+                                   expected_replicates = length(x)) {
+  if (!is.numeric(x) || !length(x) || anyNA(x) || any(!is.finite(x)) ||
+      any(x < 0 | x > 1)) {
+    stop("`x` must contain finite selected fractions in [0, 1].",
+         call. = FALSE)
+  }
+  if (!is.numeric(alpha) || length(alpha) != 1L || !is.finite(alpha) ||
+      alpha <= 0 || alpha >= 1) {
+    stop("`alpha` must be one finite number strictly between 0 and 1.",
+         call. = FALSE)
+  }
+  expected_replicates <- suppressWarnings(as.integer(expected_replicates))
+  if (length(expected_replicates) != 1L || is.na(expected_replicates) ||
+      expected_replicates < 1L || length(x) != expected_replicates) {
+    stop("`x` must contain exactly `expected_replicates` observations.",
+         call. = FALSE)
+  }
+  min(
+    1,
+    mean(x) + sqrt(log(1 / alpha) / (2 * expected_replicates))
+  )
+}
+
+.selected_fraction_gate_identity <- function(
+    decision = c("draft_v2", "owner_authorized_v3")) {
+  decision <- match.arg(decision)
+  if (identical(decision, "owner_authorized_v3")) {
+    return(list(
+      version = "SCI-04-null-selected-fraction-hoeffding-iut-v3",
+      status = "implementation_authorized_pending_independent_signature",
+      criterion = "one-sided per-cell Hoeffding upper bound <= 0.10"
+    ))
+  }
+  list(
+    version = "SCI-04-null-selected-fraction-v2-draft",
+    status = "proposed_unaccepted",
+    criterion = "<= 0.10 after independent acceptance"
+  )
+}
+
+# Retained for the active v1 adapter and historical tests. The
+# owner-authorized implementation is available only through `release_v2`.
 .selected_fraction_gate_version <-
-  "SCI-04-null-selected-fraction-v2-draft"
-.selected_fraction_gate_status <- "proposed_unaccepted"
+  .selected_fraction_gate_identity("draft_v2")$version
+.selected_fraction_gate_status <-
+  .selected_fraction_gate_identity("draft_v2")$status
 
 .gate_cell_status <- function(cell, expected_replicates) {
   expected_ids <- seq_len(expected_replicates)
@@ -950,12 +1019,28 @@
     return("incomplete_replicates")
   }
   if (any(cell$status != "ok")) return("fit_not_ok")
+  if (!all(c("p", "n_selected") %in% names(cell)) ||
+      anyNA(cell$p) || anyNA(cell$n_selected) ||
+      any(!is.finite(cell$p)) || any(!is.finite(cell$n_selected)) ||
+      any(cell$p <= 0 | cell$p != floor(cell$p)) ||
+      any(cell$n_selected < 0 | cell$n_selected != floor(cell$n_selected)) ||
+      any(cell$n_selected > cell$p)) {
+    return("invalid_selected_fraction")
+  }
   "complete"
 }
 
 .release_gate_table <- function(rows, scenarios = NULL, families = NULL,
                                 artificial_types = NULL,
-                                expected_replicates = NULL) {
+                                expected_replicates = NULL,
+                                applicability = NULL,
+                                selected_fraction_decision = c(
+                                  "draft_v2", "owner_authorized_v3"
+                                )) {
+  selected_fraction_decision <- match.arg(selected_fraction_decision)
+  selected_fraction_gate <- .selected_fraction_gate_identity(
+    selected_fraction_decision
+  )
   if (!"actual_artificial_type" %in% names(rows)) {
     rows$actual_artificial_type <- rows$artificial_type
   }
@@ -971,6 +1056,31 @@
   if (is.null(expected_replicates)) {
     expected_replicates <- if (nrow(rows)) max(rows$replicate) else 0L
   }
+  if (is.null(applicability)) {
+    applicability <- .methodology_applicability_matrix(
+      families = families,
+      scenarios = scenarios,
+      artificial_types = artificial_types
+    )
+    applicability$applicable <- TRUE
+    applicability$reason_code <- "applicable"
+  }
+  required_applicability <- c(
+    "family", "scenario", "artificial_type", "applicable", "reason_code"
+  )
+  if (!is.data.frame(applicability) ||
+      !all(required_applicability %in% names(applicability)) ||
+      nrow(applicability) != length(families) * nrow(scenarios) *
+        length(artificial_types) ||
+      anyDuplicated(applicability[c("family", "scenario", "artificial_type")]) ||
+      anyNA(applicability$applicable) ||
+      !is.logical(applicability$applicable) ||
+      !is.character(applicability$reason_code) ||
+      anyNA(applicability$reason_code) ||
+      any(!nzchar(applicability$reason_code))) {
+    stop("`applicability` must declare every methodology cell exactly once.",
+         call. = FALSE)
+  }
 
   gate_rows <- list()
   k <- 0L
@@ -978,13 +1088,30 @@
     for (scenario_i in seq_len(nrow(scenarios))) {
       scenario <- scenarios[scenario_i, , drop = FALSE]
       for (artificial_type in artificial_types) {
+        applicability_row <- applicability[
+          applicability$family == family &
+            applicability$scenario == scenario$scenario &
+            applicability$artificial_type == artificial_type,
+          , drop = FALSE
+        ]
+        if (nrow(applicability_row) != 1L) {
+          stop("Methodology applicability identity is incomplete.", call. = FALSE)
+        }
+        applicable <- isTRUE(applicability_row$applicable[[1L]])
+        applicability_reason <- applicability_row$reason_code[[1L]]
         cell <- rows[
           rows$family == family &
             rows$scenario == scenario$scenario &
             rows$artificial_type == artificial_type,
           , drop = FALSE
         ]
-        cell_status <- .gate_cell_status(cell, expected_replicates)
+        cell_status <- if (applicable) {
+          .gate_cell_status(cell, expected_replicates)
+        } else if (nrow(cell)) {
+          "unexpected_not_applicable_observations"
+        } else {
+          "not_applicable"
+        }
         actual_generators <- sort(unique(cell$actual_artificial_type[
           cell$status == "ok"
         ]))
@@ -993,7 +1120,8 @@
         ]
         generator_matches <- length(actual_generators) == 1L &&
           identical(actual_generators, artificial_type)
-        if (identical(cell_status, "complete") && !generator_matches) {
+        if (applicable && identical(cell_status, "complete") &&
+            !generator_matches) {
           cell_status <- "generator_mismatch"
         }
         complete <- identical(cell_status, "complete")
@@ -1003,10 +1131,22 @@
             .wilson_bound(sum(cell$n_selected > 0L), expected_replicates, "upper")
           } else NA_real_
           # SCI-04: replicate-level selected fractions are continuous bounded
-          # observations, not binomial successes. The proposed v2 decision
-          # record is deliberately unaccepted, so this release gate stays
-          # unavailable and fails closed until independent review is recorded.
-          selected_fraction <- NA_real_
+          # observations, not binomial successes. The historical v2 decision
+          # stays unavailable. The owner-authorized v3 calculation is
+          # executable for review but is not active in release-contract v1.
+          selected_fraction <- if (
+            complete && identical(
+              selected_fraction_decision, "owner_authorized_v3"
+            )
+          ) {
+            .hoeffding_upper_bound(
+              cell$n_selected / cell$p,
+              alpha = 0.05,
+              expected_replicates = expected_replicates
+            )
+          } else {
+            NA_real_
+          }
           collapses <- if (complete) {
             sum(cell$n_selected >= 0.9 * cell$p)
           } else NA_real_
@@ -1016,22 +1156,22 @@
             bound = c(select_any, selected_fraction, collapses),
             criterion = c(
               "<= 0.10",
-              "<= 0.10 after independent acceptance",
+              selected_fraction_gate$criterion,
               "== 0"
             ),
             gate_version = c(
               "null-select-any-wilson-v1",
-              .selected_fraction_gate_version,
+              selected_fraction_gate$version,
               "null-90pct-collapse-count-v1"
             ),
             decision_status = c(
               "active",
-              .selected_fraction_gate_status,
+              selected_fraction_gate$status,
               "active"
             ),
             pass = complete & c(
               is.finite(select_any) && select_any <= 0.10,
-              FALSE,
+              is.finite(selected_fraction) && selected_fraction <= 0.10,
               is.finite(collapses) && collapses == 0L
             ),
             stringsAsFactors = FALSE
@@ -1060,9 +1200,15 @@
           )
         }
 
+        if (!applicable) {
+          gates$bound <- NA_real_
+          gates$criterion <- paste0("not applicable: ", applicability_reason)
+          gates$decision_status <- "not_applicable"
+          gates$pass <- FALSE
+        }
+
         k <- k + 1L
-        gate_rows[[k]] <- cbind(
-          data.frame(
+        identity <- data.frame(
             family = family,
             scenario = scenario$scenario,
             regime = scenario$regime,
@@ -1077,9 +1223,12 @@
             ok_replicates = sum(cell$status == "ok"),
             cell_status = cell_status,
             stringsAsFactors = FALSE
-          ),
-          gates
         )
+        if (identical(selected_fraction_decision, "owner_authorized_v3")) {
+          identity$applicable <- applicable
+          identity$applicability_reason <- applicability_reason
+        }
+        gate_rows[[k]] <- cbind(identity, gates)
       }
     }
   }
@@ -1097,14 +1246,38 @@
     stop("Methodology adapter artifacts do not match their gate schema.",
          call. = FALSE)
   }
+  if (!"applicable" %in% names(details)) details$applicable <- TRUE
+  if (!"gate_version" %in% names(details)) {
+    details$gate_version <- ifelse(
+      details$gate == "null_selected_fraction",
+      .selected_fraction_gate_version,
+      "fixture-gate-version"
+    )
+  }
+  if (!"decision_status" %in% names(details)) {
+    details$decision_status <- ifelse(
+      details$gate == "null_selected_fraction",
+      .selected_fraction_gate_status,
+      "active"
+    )
+  }
+  if (!is.logical(details$applicable) || anyNA(details$applicable)) {
+    stop("Methodology applicability values must be non-missing logicals.",
+         call. = FALSE)
+  }
   cells <- unique(details[c(
-    "family", "scenario", "artificial_type", "cell_status"
+    "family", "scenario", "artificial_type", "cell_status", "applicable"
   )])
-  cell_pass <- nrow(cells) > 0L && all(cells$cell_status == "complete")
+  cell_pass <- nrow(cells) > 0L &&
+    all(cells$cell_status[cells$applicable] == "complete") &&
+    all(cells$cell_status[!cells$applicable] == "not_applicable")
   parity_pass <- nrow(parity) > 0L && all(parity$status == "ok")
 
   summarize_detail <- function(gate) {
-    rows <- details[details$gate == gate, , drop = FALSE]
+    rows <- details[
+      details$gate == gate & details$applicable,
+      , drop = FALSE
+    ]
     finite <- rows$bound[is.finite(rows$bound)]
     list(
       pass = nrow(rows) > 0L && all(!is.na(rows$pass) & rows$pass),
@@ -1133,6 +1306,21 @@
   signal_fdp <- summarize_detail("signal_mean_fdp")
   signal_tpr <- summarize_detail("signal_tpr")
   parity_error <- parity$abs_error[is.finite(parity$abs_error)]
+  selected_fraction_rows <- details[
+    details$gate == "null_selected_fraction" & details$applicable,
+    , drop = FALSE
+  ]
+  selected_fraction_version <- unique(selected_fraction_rows$gate_version)
+  selected_fraction_status <- unique(selected_fraction_rows$decision_status)
+  if (length(selected_fraction_version) != 1L ||
+      length(selected_fraction_status) != 1L) {
+    stop("SCI-04 detailed rows do not identify one decision version/status.",
+         call. = FALSE)
+  }
+  selected_fraction_active <- identical(
+    selected_fraction_status,
+    "implementation_authorized_pending_independent_signature"
+  )
 
   data.frame(
     gate_id = c(
@@ -1144,15 +1332,16 @@
       "methodology-cell-completeness/v1",
       "python-metrics-parity/v1",
       "null-select-any-wilson-v1",
-      .selected_fraction_gate_version,
+      selected_fraction_version,
       "null-90pct-collapse-count-v1",
       "signal-mean-fdp-t-v1",
       "signal-tpr-t-v1"
     ),
     scope = c(
       "all methodology cells", "all pinned Python parity observations",
-      "all null cells", "all null cells", "all null cells",
-      "all signal cells", "all signal cells"
+      "all applicable null cells", "all applicable null cells",
+      "all applicable null cells",
+      "all applicable signal cells", "all applicable signal cells"
     ),
     observed = c(
       paste0(sum(cells$cell_status == "complete"), "/", nrow(cells),
@@ -1176,7 +1365,14 @@
       "every declared cell is complete and uses the requested generator",
       "every pinned parity observation has status ok",
       "every null select-any upper bound is <= 0.10",
-      "requires an independently accepted one-sided continuous-fraction bound",
+      if (selected_fraction_active) {
+        paste0(
+          "every applicable null-cell one-sided per-cell Hoeffding upper ",
+          "bound is <= 0.10"
+        )
+      } else {
+        "requires an independently accepted one-sided continuous-fraction bound"
+      },
       "every null cell has zero >=90% selection collapses",
       "every signal mean-FDP upper bound is <= 0.12",
       "every signal TPR lower bound is >= 0.50"
@@ -1185,7 +1381,7 @@
       cell_pass,
       parity_pass,
       null_any$pass,
-      FALSE,
+      selected_fraction_active && null_fraction$pass,
       null_collapse$pass,
       signal_fdp$pass,
       signal_tpr$pass
@@ -1196,7 +1392,14 @@
       if (parity_pass) "all pinned parity observations matched" else
         "one or more pinned parity observations are missing or mismatched",
       null_any$reason,
-      "SCI-04 v2 remains proposed and unaccepted",
+      if (selected_fraction_active) {
+        paste0(
+          null_fraction$reason,
+          "; implementation authorized but independent signature pending"
+        )
+      } else {
+        "SCI-04 v2 remains proposed and unaccepted"
+      },
       null_collapse$reason,
       signal_fdp$reason,
       signal_tpr$reason
@@ -1206,7 +1409,7 @@
 }
 
 run_methodology_validation <- function(out,
-                                       profile = c("bounded", "release"),
+                                       profile = c("bounded", "release", "release_v2"),
                                        replicates = 3L,
                                        n_bootstraps = 12L,
                                        n_lambda = 6L,
@@ -1223,11 +1426,12 @@ run_methodology_validation <- function(out,
       is.na(candidate_only)) {
     stop("`candidate_only` must be TRUE or FALSE.", call. = FALSE)
   }
-  if (isTRUE(candidate_only) && !identical(profile, "release")) {
-    stop("Candidate-only methodology validation requires the release profile.",
+  release_profile <- profile %in% c("release", "release_v2")
+  if (isTRUE(candidate_only) && !release_profile) {
+    stop("Candidate-only methodology validation requires a release profile.",
          call. = FALSE)
   }
-  if (identical(profile, "release") && !isTRUE(candidate_only)) {
+  if (release_profile && !isTRUE(candidate_only)) {
     stop(
       "The release profile must run through the candidate-bound release adapter.",
       call. = FALSE
@@ -1251,8 +1455,10 @@ run_methodology_validation <- function(out,
   } else {
     .git_provenance(package_root)
   }
-  if (identical(profile, "release")) {
-    locked <- .release_profile_settings()
+  if (release_profile) {
+    locked <- .release_profile_settings(
+      if (identical(profile, "release_v2")) "v2" else "v1"
+    )
     replicates <- locked$replicates
     n_bootstraps <- locked$n_bootstraps
     n_lambda <- locked$n_lambda
@@ -1318,6 +1524,15 @@ run_methodology_validation <- function(out,
   }
 
   scenarios <- .select_scenarios(scenario_ids)
+  applicability <- .methodology_applicability_matrix(
+    families = families,
+    scenarios = scenarios,
+    artificial_types = artificial_types
+  )
+  if (!identical(profile, "release_v2")) {
+    applicability$applicable <- TRUE
+    applicability$reason_code <- "applicable"
+  }
   dir.create(out, recursive = TRUE, showWarnings = FALSE)
   out <- normalizePath(out, mustWork = TRUE)
 
@@ -1334,11 +1549,19 @@ run_methodology_validation <- function(out,
     replicate <- task$replicate[[1L]]
     family <- families[[family_i]]
     scenario <- scenarios[scenario_i, , drop = FALSE]
+    task_applicability <- applicability[
+      applicability$family == family &
+        applicability$scenario == scenario$scenario &
+        applicability$applicable,
+      , drop = FALSE
+    ]
     data_seed <- seed + family_i * 1000000L +
       scenario_i * 100000L + replicate * 1000L
     fit_seed <- data_seed + 1L
     data <- .simulate_scenario(scenario, family = family, seed = data_seed)
-    conditions <- lapply(artificial_types, function(artificial_type) {
+    conditions <- lapply(
+      task_applicability$artificial_type,
+      function(artificial_type) {
       .run_one_condition(
         scenario = scenario, family = family, replicate = replicate,
         artificial_type = artificial_type, data = data,
@@ -1401,7 +1624,13 @@ run_methodology_validation <- function(out,
     scenarios = scenarios,
     families = families,
     artificial_types = artificial_types,
-    expected_replicates = replicates
+    expected_replicates = replicates,
+    applicability = applicability,
+    selected_fraction_decision = if (identical(profile, "release_v2")) {
+      "owner_authorized_v3"
+    } else {
+      "draft_v2"
+    }
   )
   utils::write.csv(gates_df, artifacts$gates, row.names = FALSE)
   if (!isTRUE(candidate_only)) {
@@ -1444,8 +1673,12 @@ run_methodology_validation <- function(out,
   }
 
   profile <- if (is.null(parsed$profile)) "bounded" else parsed$profile
-  defaults <- if (identical(profile, "release")) {
-    list(replicates = 100L, n_bootstraps = 1000L, n_lambda = 30L)
+  defaults <- if (profile %in% c("release", "release_v2")) {
+    list(
+      replicates = if (identical(profile, "release_v2")) 600L else 100L,
+      n_bootstraps = 1000L,
+      n_lambda = 30L
+    )
   } else {
     list(replicates = 3L, n_bootstraps = 12L, n_lambda = 6L)
   }
@@ -1468,7 +1701,7 @@ run_methodology_validation <- function(out,
   for (name in names(artifacts)) {
     message("  ", name, ": ", artifacts[[name]])
   }
-  if (identical(profile, "release")) {
+  if (profile %in% c("release", "release_v2")) {
     gates <- utils::read.csv(artifacts$gates, stringsAsFactors = FALSE)
     if (!all(gates$pass)) {
       stop("Locked release methodology gates failed; release must stop.",
