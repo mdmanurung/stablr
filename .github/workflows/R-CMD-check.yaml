@@ -46,6 +46,16 @@ jobs:
           r-version: ${{ matrix.config.r }}
           use-public-rspm: true
 
+      - name: Install knitr from source on macOS
+        if: runner.os == 'macOS'
+        shell: Rscript {0}
+        run: |
+          install.packages(
+            "knitr",
+            repos = "https://cloud.r-project.org",
+            type = "source"
+          )
+
       - name: Install full check dependencies
         if: matrix.config.minimal != true
         uses: r-lib/actions/setup-r-dependencies@v2
