@@ -841,6 +841,10 @@ stabl_fit <- function(
     requireNamespace("furrr",  quietly = TRUE) &&
     requireNamespace("future", quietly = TRUE)
 
+  if (use_furrr) {
+    batch_adapter <- .make_parallel_safe_batch_adapter(batch_adapter)
+  }
+
   real_rows <- seq_len(n_features)
 
   if (use_furrr) {
@@ -867,6 +871,45 @@ stabl_fit <- function(
   if (!is.null(art_)) art_ <- art_ / n_bootstraps
 
   list(stabl_scores_ = scores_, stabl_scores_art = art_)
+}
+
+# Internal: make a factory-created learner closure self-contained before it is
+# serialized by future/furrr. Automatic global discovery sees `batch_adapter`
+# but does not recursively export the package-private helpers referenced inside
+# that nested closure. Binding the exact transitive helpers avoids lookup in an
+# installed (and potentially different) stablr namespace on worker processes.
+.make_parallel_safe_batch_adapter <- function(batch_adapter) {
+  factory_env <- environment(batch_adapter)
+  captured_names <- ls(factory_env, all.names = TRUE)
+  captured <- if (length(captured_names)) {
+    mget(captured_names, envir = factory_env, inherits = FALSE)
+  } else {
+    list()
+  }
+  worker_env <- list2env(captured, parent = baseenv())
+  helpers <- list(
+    .with_glmnet_numerical_infeasibility = .with_glmnet_numerical_infeasibility,
+    .with_typed_numerical_infeasibility = .with_typed_numerical_infeasibility,
+    .is_glmnet_numerical_error = .is_glmnet_numerical_error,
+    .abort_numerical_infeasibility = .abort_numerical_infeasibility,
+    .abort_stablr = .abort_stablr,
+    .new_stablr_error = .new_stablr_error,
+    .feature_abs_coefs_batch = .feature_abs_coefs_batch,
+    .feature_abs_coefs = .feature_abs_coefs,
+    .feature_abs_coefs_sparsegl_batch = .feature_abs_coefs_sparsegl_batch,
+    .feature_abs_coefs_sparsegl = .feature_abs_coefs_sparsegl,
+    .near_lambda_match = .near_lambda_match,
+    rowMaxs = matrixStats::rowMaxs
+  )
+  for (name in names(helpers)) {
+    helper <- helpers[[name]]
+    if (is.function(helper) && !identical(environment(helper), baseenv())) {
+      environment(helper) <- worker_env
+    }
+    assign(name, helper, envir = worker_env)
+  }
+  environment(batch_adapter) <- worker_env
+  batch_adapter
 }
 
 # Internal: scoped seed helper.  Saves & restores `.Random.seed` so that the
