@@ -20,7 +20,8 @@ Rplots\.pdf$
 ^src/.*[.](o|so|dll)$
 # CI configuration and CRAN submission notes — not part of the package source tarball
 ^\.github$
-^\.claude$
+(^|/)[.]claude($|/)
+(^|/)[.]agents($|/)
 ^cran-comments\.md$
 ^_pkgdown\.yml$
 ^LICENSE\.md$

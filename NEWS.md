@@ -18,6 +18,13 @@
 
 ## Architecture, profiling, and calibration hardening
 
+- **Model-X equicorrelated knockoffs:** `artificial_type = "knockoff_equi"`
+  now uses a scikit-learn 1.7.1-compatible Ledoit-Wolf covariance estimator
+  and knockpy 1.3.5-compatible equicorrelated S-matrix. Provenance records the
+  estimator, compatibility versions, shrinkage, and S-matrix settings. Results
+  from this generator can change relative to earlier 0.1.1 candidates.
+  `"knockoff"` retains fixed-X semantics, while `"knockoff_mvr"` retains its
+  existing covariance and solver semantics.
 - **Fixed-X knockoff correctness:** fixed-X construction now rejects row-
   augmented knockoffs and uses the documented random-permutation fallback.
   Truncating only the knockoff matrix to the original row count violated the
@@ -68,6 +75,16 @@
   Locked long-running validators now require a clean Git source tree, record
   both start and end provenance, and reject evidence if the tracked tree moves
   during computation.
+- **Release stop condition:** SCI-04 remains independently unaccepted. The
+  review packet identifies that the draft 100-replicate Hoeffding bound cannot
+  satisfy its proposed 0.10 threshold even when no features are selected. The
+  package contract therefore remains non-promotable pending a reviewed,
+  jointly feasible statistical decision.
+- **Pre-review release controls:** added versioned SCI-04 and OOL v3 review
+  bundles, detached-signature reviewer authentication, exact 1,317-feature OOL
+  score alignment, independent packet verification, artifact-bound candidate
+  platform receipts, and an external evidence-only promotion validator. These
+  controls do not accept either scientific decision or make v0.1.1 releasable.
 
 # stablr 0.1.0
 

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stablr.example/schemas/reviewer-trust-root-v1.json",
+  "title": "Externally supplied stablr reviewer trust root",
+  "description": "Schema only. Reviewer identity and key material are external and must not be shipped in the package.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "reviewer_id", "public_key_path", "public_key_sha256", "allowed_decision_types"],
+  "properties": {
+    "schema_version": {"const": "stablr.reviewer-trust-root/v1"},
+    "reviewer_id": {"type": "string", "minLength": 1},
+    "public_key_path": {"type": "string", "pattern": "^/"},
+    "public_key_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "allowed_decision_types": {"type": "array", "uniqueItems": true, "minItems": 1, "items": {"enum": ["sci", "ool"]}}
+  }
+}

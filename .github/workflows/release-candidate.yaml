@@ -1,0 +1,308 @@
+name: Build release candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_sha:
+        description: Full Git SHA to build; it must equal the current main tip
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      candidate_sha256: ${{ steps.candidate.outputs.candidate_sha256 }}
+
+    steps:
+      - name: Validate full candidate SHA
+        shell: bash
+        run: |
+          if [[ ! "${{ inputs.candidate_sha }}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "candidate_sha must be a full lowercase 40-character Git SHA" >&2
+            exit 1
+          fi
+
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.candidate_sha }}
+          fetch-depth: 0
+
+      - name: Require the current main tip
+        shell: bash
+        run: |
+          git fetch --no-tags origin main
+          actual_sha=$(git rev-parse HEAD)
+          main_sha=$(git rev-parse origin/main)
+          if [[ "$actual_sha" != "${{ inputs.candidate_sha }}" ]]; then
+            echo "Checkout SHA $actual_sha does not match the requested candidate" >&2
+            exit 1
+          fi
+          if [[ "$actual_sha" != "$main_sha" ]]; then
+            echo "Candidate $actual_sha is not the current main tip $main_sha" >&2
+            exit 1
+          fi
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: |
+            any::knitr
+            any::rmarkdown
+          needs: check
+
+      - name: Build source tarball
+        shell: bash
+        run: |
+          set -o pipefail
+          R CMD build . 2>&1 | tee release-candidate-build.log
+
+      - name: Verify and describe candidate
+        id: candidate
+        shell: bash
+        run: |
+          shopt -s nullglob
+          candidates=(stablr_*.tar.gz)
+          if [[ ${#candidates[@]} -ne 1 ]]; then
+            echo "Expected exactly one stablr source tarball" >&2
+            exit 1
+          fi
+          candidate=${candidates[0]}
+          if [[ "$candidate" != "stablr_0.1.1.tar.gz" ]]; then
+            echo "Expected stablr_0.1.1.tar.gz, found $candidate" >&2
+            exit 1
+          fi
+          sha256sum "$candidate" > "$candidate.sha256"
+          echo "candidate_sha256=$(cut -d' ' -f1 "$candidate.sha256")" >> "$GITHUB_OUTPUT"
+          tar -tzf "$candidate" > "$candidate.contents.txt"
+          if grep -Eq '^stablr/(\.git|\.github|\.claude|docs|papers|scripts)(/|$)' "$candidate.contents.txt"; then
+            echo "Repository-only files leaked into the source tarball" >&2
+            exit 1
+          fi
+          if ! grep -Fxq 'stablr/inst/release/release-contract.json' "$candidate.contents.txt"; then
+            echo "Release contract is absent from the source tarball" >&2
+            exit 1
+          fi
+          if ! grep -Fxq 'stablr/inst/analysis/contracts/SCI-04-independent-review-packet-v1.md' "$candidate.contents.txt"; then
+            echo "SCI-04 review packet is absent from the source tarball" >&2
+            exit 1
+          fi
+          if ! grep -Fxq 'stablr/inst/analysis/contracts/SCI-04-independent-review-packet-v2.md' "$candidate.contents.txt"; then
+            echo "SCI-04 v2 review packet is absent from the source tarball" >&2
+            exit 1
+          fi
+          r_version=$(Rscript --vanilla -e 'cat(as.character(getRversion()))')
+          candidate_git_sha=$(git rev-parse HEAD)
+          build_log_sha=$(sha256sum release-candidate-build.log | cut -d' ' -f1)
+          contents_sha=$(sha256sum "$candidate.contents.txt" | cut -d' ' -f1)
+          printf '{\n  "schema_version": "stablr.release-candidate-build/v1",\n  "candidate": "%s",\n  "candidate_sha256": "%s",\n  "git_sha": "%s",\n  "github_run_id": "%s",\n  "github_run_attempt": "%s",\n  "r_version": "%s",\n  "contents_sha256": "%s",\n  "build_log_sha256": "%s"\n}\n' \
+            "$candidate" \
+            "$(cut -d' ' -f1 "$candidate.sha256")" \
+            "$candidate_git_sha" \
+            "$GITHUB_RUN_ID" \
+            "$GITHUB_RUN_ATTEMPT" \
+            "$r_version" \
+            "$contents_sha" \
+            "$build_log_sha" \
+            > release-candidate-build.json
+          printf '%s  %s\n' "$build_log_sha" release-candidate-build.log \
+            > release-candidate-build.log.sha256
+          cat release-candidate-build.json
+
+      - name: Upload immutable candidate inputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: stablr-0.1.1-${{ inputs.candidate_sha }}
+          path: |
+            stablr_0.1.1.tar.gz
+            stablr_0.1.1.tar.gz.sha256
+            stablr_0.1.1.tar.gz.contents.txt
+            release-candidate-build.log
+            release-candidate-build.log.sha256
+            release-candidate-build.json
+          if-no-files-found: error
+          retention-days: 90
+
+  exact-platform-checks:
+    needs: build-candidate
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - job_id: linux-release
+            os: ubuntu-latest
+            r: release
+          - job_id: linux-devel
+            os: ubuntu-latest
+            r: devel
+          - job_id: linux-oldrel
+            os: ubuntu-latest
+            r: oldrel-1
+          - job_id: macos-release
+            os: macos-latest
+            r: release
+          - job_id: windows-release
+            os: windows-latest
+            r: release
+          - job_id: r-4.1
+            os: ubuntu-latest
+            r: '4.1'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.candidate_sha }}
+
+      - uses: actions/download-artifact@v5
+        with:
+          name: stablr-0.1.1-${{ inputs.candidate_sha }}
+          path: candidate
+
+      - name: Verify downloaded candidate SHA-256
+        shell: bash
+        working-directory: candidate
+        run: |
+          sha256sum -c stablr_0.1.1.tar.gz.sha256
+          observed=$(cut -d' ' -f1 stablr_0.1.1.tar.gz.sha256)
+          if [[ "$observed" != "${{ needs.build-candidate.outputs.candidate_sha256 }}" ]]; then
+            echo "Downloaded candidate differs from the build job output" >&2
+            exit 1
+          fi
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ matrix.r }}
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: |
+            any::rcmdcheck
+            any::knockoff
+          needs: check
+
+      - name: Check the downloaded source artifact
+        id: exact_check
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          R CMD check --as-cran candidate/stablr_0.1.1.tar.gz 2>&1 | tee exact-candidate.log
+
+      - name: Write exact-candidate receipt
+        if: always()
+        shell: bash
+        run: |
+          candidate_sha=$(cut -d' ' -f1 candidate/stablr_0.1.1.tar.gz.sha256)
+          log_sha=$(sha256sum exact-candidate.log | cut -d' ' -f1)
+          r_version=$(Rscript --vanilla -e 'cat(as.character(getRversion()))')
+          printf '{\n  "schema_version": "stablr.exact-candidate-receipt/v1",\n  "job_id": "%s",\n  "candidate_sha256": "%s",\n  "git_sha": "%s",\n  "run_id": "%s",\n  "run_attempt": "%s",\n  "os": "%s",\n  "r_version": "%s",\n  "result": "%s",\n  "log_sha256": "%s"\n}\n' \
+            "${{ matrix.job_id }}" "$candidate_sha" "${{ inputs.candidate_sha }}" \
+            "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "${{ runner.os }}" \
+            "$r_version" "${{ steps.exact_check.outcome }}" "$log_sha" \
+            > "exact-candidate-${{ matrix.job_id }}.json"
+
+      - name: Upload check receipt and log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: exact-candidate-${{ matrix.job_id }}-${{ inputs.candidate_sha }}
+          path: |
+            exact-candidate-${{ matrix.job_id }}.json
+            exact-candidate.log
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Enforce exact-candidate check result
+        if: always()
+        shell: bash
+        run: |
+          if [[ "${{ steps.exact_check.outcome }}" != "success" ]]; then
+            exit 1
+          fi
+
+  clean-install-smoke:
+    needs: build-candidate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.candidate_sha }}
+
+      - uses: actions/download-artifact@v5
+        with:
+          name: stablr-0.1.1-${{ inputs.candidate_sha }}
+          path: candidate
+
+      - name: Verify downloaded candidate SHA-256
+        shell: bash
+        working-directory: candidate
+        run: sha256sum -c stablr_0.1.1.tar.gz.sha256
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::knockoff
+          needs: check
+
+      - name: Install and load only the downloaded candidate
+        id: install_smoke
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir candidate-library
+          R CMD INSTALL --install-tests -l candidate-library candidate/stablr_0.1.1.tar.gz 2>&1 | tee clean-install.log
+          Rscript --vanilla -e '.libPaths("candidate-library"); library(stablr); stopifnot(as.character(packageVersion("stablr")) == "0.1.1")' 2>&1 | tee -a clean-install.log
+
+      - name: Write clean-install receipt
+        if: always()
+        shell: bash
+        run: |
+          candidate_sha=$(cut -d' ' -f1 candidate/stablr_0.1.1.tar.gz.sha256)
+          log_sha=$(sha256sum clean-install.log | cut -d' ' -f1)
+          r_version=$(Rscript --vanilla -e 'cat(as.character(getRversion()))')
+          printf '{\n  "schema_version": "stablr.exact-candidate-receipt/v1",\n  "job_id": "clean-install",\n  "candidate_sha256": "%s",\n  "git_sha": "%s",\n  "run_id": "%s",\n  "run_attempt": "%s",\n  "os": "%s",\n  "r_version": "%s",\n  "result": "%s",\n  "log_sha256": "%s"\n}\n' \
+            "$candidate_sha" "${{ inputs.candidate_sha }}" "$GITHUB_RUN_ID" \
+            "$GITHUB_RUN_ATTEMPT" "${{ runner.os }}" "$r_version" \
+            "${{ steps.install_smoke.outcome }}" "$log_sha" \
+            > exact-candidate-clean-install.json
+
+      - name: Upload install receipt and log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: exact-candidate-clean-install-${{ inputs.candidate_sha }}
+          path: |
+            exact-candidate-clean-install.json
+            clean-install.log
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Enforce clean-install result
+        if: always()
+        shell: bash
+        run: |
+          if [[ "${{ steps.install_smoke.outcome }}" != "success" ]]; then
+            exit 1
+          fi

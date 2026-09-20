@@ -148,6 +148,15 @@ Artificial features and FDP+:
 - `make_artificial_features()` with `"random_permutation"`, `"knockoff"`,
   `"knockoff_equi"`, or `"knockoff_mvr"`; `compute_fdp_plus()`
 
+`"knockoff"` is the backward-compatible fixed-X construction and requires a
+supported fixed design. `"knockoff_equi"` is the model-X construction used for
+Python STABL semantic parity; it estimates covariance with Ledoit-Wolf using
+scikit-learn 1.7.1 conventions and records that estimator in provenance.
+`"knockoff_mvr"` remains a separate model-X generator with its existing
+covariance and MVR-solver semantics. Because the `"knockoff_equi"` covariance
+changed for v0.1.1, its seeded artificial features and downstream fits can
+differ from earlier prerelease candidates.
+
 Accessors:
 
 - `get_support()`, `get_feature_names_out()`, `transform_stabl()`,
@@ -228,29 +237,33 @@ The site reference index is configured in `_pkgdown.yml`.
 ## Application workflow status
 
 The bundled OOL vignette is a workflow tutorial. It is not application-note
-evidence. Release claims require a separate run from an exact, hashed candidate
-source tarball and the predeclared full OOL inputs and gates; mutable-checkout
-execution does not qualify.
+evidence. Package Release Evidence is necessary but insufficient for release:
+a separate OOL v3 packet and external promotion record must bind the same exact
+candidate and runtime. Mutable-checkout execution does not qualify.
 
 ```bash
 # From stablr-experiments/ after building the candidate tarball. The output
 # directory must not exist.
 RUNTIME=/exports/archive/hg-funcgenom-research/mdmanurung/conda/envs/R4_51/lib/R/bin/Rscript
-"$RUNTIME" --vanilla analysis/generate_publication_parity_table.R \
+"$RUNTIME" --vanilla analysis/generate_ool_parity_v3.R \
   --candidate-tarball /absolute/path/to/stablr_0.1.1.tar.gz \
   --runtime "$RUNTIME" \
-  --outdir /absolute/new/path/ool-candidate-evidence \
-  --profile full
+  --outdir /absolute/new/path/ool-v3-candidate-evidence \
+  --profile full \
+  --protocol-decision-record /absolute/path/to/decision.json \
+  --protocol-decision-signature /absolute/path/to/decision.sig \
+  --reviewer-trust-root /absolute/path/to/trust-root.json \
+  --review-bundle-manifest /absolute/path/to/manifest.sha256 \
+  --experiments-bundle /absolute/path/to/stablr-experiments.bundle
 ```
 
-The frozen full-candidate protocol currently produces a negative result:
-support Jaccard 0.778 (required 0.80), score Spearman 0.785 (required 0.90),
-and FDP-threshold delta 0.08 (maximum 0.05). The lambda and training-only
-preprocessing gates pass. The requested fixed knockoff construction is
-infeasible for the 150-by-1,317 matrix (`n > p` is required), so the typed,
-recorded fallback is `random_permutation` and the actual-generator gate also
-fails. The sealed negative artifact is retained; `stablr` 0.1.1 is therefore
-not ready for release review.
+The historical v2 packet remains sealed negative evidence: support Jaccard
+0.778, score Spearman 0.785, FDP-threshold delta 0.08, and a recorded fixed-X
+fallback. It did not evaluate the final v3 candidate and is never promotable.
+The corrected v3 protocol requests `knockoff_equi`, requires an exact complete
+1,317-score profile, and awaits an authenticated independent decision. No full
+v3 packet or outer promotion record currently exists. Release-contract v1
+remains strict, historical, and non-promotable.
 
 ## Citation
 

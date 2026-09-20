@@ -33,6 +33,55 @@ test_that(".Rbuildignore explicitly excludes local release-check byproducts", {
   expect_true(any(grepl("src/.*[.](o|so|dll)$", lines, fixed = TRUE)))
   expect_true(any(grepl("test-release-hygiene[.]R", lines, fixed = TRUE)))
   expect_true(any(grepl("test-vignette-readiness[.]R", lines, fixed = TRUE)))
+  expect_true(any(vapply(
+    lines,
+    function(pattern) isTRUE(grepl(pattern, ".claude/reviews/evidence")),
+    logical(1)
+  )))
+})
+
+test_that("manual release-candidate workflow binds the artifact to main", {
+  text <- paste(
+    release_source_lines(".github/workflows/release-candidate.yaml"),
+    collapse = "\n"
+  )
+
+  expect_match(text, "workflow_dispatch:", fixed = TRUE)
+  expect_match(text, "candidate_sha:", fixed = TRUE)
+  expect_match(text, "git rev-parse origin/main", fixed = TRUE)
+  expect_match(text, "stablr_0.1.1.tar.gz.sha256", fixed = TRUE)
+  expect_match(text, "release-candidate-build.json", fixed = TRUE)
+  expect_match(text, "actions/upload-artifact@v4", fixed = TRUE)
+  expect_match(text, "actions/download-artifact@v5", fixed = TRUE)
+  expect_match(text, "sha256sum -c stablr_0.1.1.tar.gz.sha256", fixed = TRUE)
+  expect_match(text, "stablr.exact-candidate-receipt/v1", fixed = TRUE)
+  for (job_id in c(
+    "linux-release", "linux-devel", "linux-oldrel", "macos-release",
+    "windows-release", "r-4.1", "clean-install"
+  )) {
+    expect_match(text, job_id, fixed = TRUE)
+  }
+  build_calls <- gregexpr("R CMD build", text, fixed = TRUE)[[1L]]
+  expect_length(build_calls[build_calls > 0L], 1L)
+  expect_match(text, "needs: build-candidate", fixed = TRUE)
+  expect_match(text, "steps.exact_check.outcome", fixed = TRUE)
+  expect_match(text, "steps.install_smoke.outcome", fixed = TRUE)
+})
+
+test_that("SCI review packet preserves v1 and declares the corrected matrix", {
+  v1 <- release_source_lines(
+    "inst/analysis/contracts/SCI-04-independent-review-packet-v1.md"
+  )
+  v2 <- paste(release_source_lines(
+    "inst/analysis/contracts/SCI-04-independent-review-packet-v2.md"
+  ), collapse = "\n")
+  expect_true(any(grepl("Packet ID: `SCI-04-independent-review-packet-v1`", v1,
+                        fixed = TRUE)))
+  expect_match(v2, "96 declared cells", fixed = TRUE)
+  expect_match(v2, "Eight fixed-X/high-dimensional cells", fixed = TRUE)
+  expect_match(v2, "88 applicable cells", fixed = TRUE)
+  expect_match(v2, "44 are global-null cells", fixed = TRUE)
+  expect_match(v2, "No formula, replicate count", fixed = TRUE)
 })
 
 test_that("repository license contains the complete GPL version 2 text", {
