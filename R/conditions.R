@@ -26,9 +26,21 @@
 .is_glmnet_numerical_error <- function(condition) {
   message <- conditionMessage(condition)
   patterns <- c(
-    "^from glmnet C\\+\\+ code \\(error code -[0-9]+\\); Numerical error",
-    "^from glmnet C\\+\\+ code \\(error code -[0-9]+\\); Convergence for",
-    "^one multinomial or binomial class has (1 or 0|fewer than 2) observations"
+    # glmnet signals a negative C++ error code as a non-fatal warning and a
+    # positive code as a fatal error, so the sign must not constrain the
+    # pattern. R prepends "(converted from warning) " when options(warn = 2)
+    # promotes a warning, which defeats a leading anchor.
+    "^(?:\\(converted from warning\\) )?from glmnet C\\+\\+ code \\(error code -?[0-9]+\\); (?:Numerical error|Convergence for)",
+    # Reachable fatal codes that no other pattern covers. Cohort-level codes
+    # (20000 initialization, 8888 all-censored, 9999 no positive weights) are
+    # deliberately excluded: they describe the data, not numerical
+    # conditioning, so a knockoff fallback must not absorb them.
+    "^(?:\\(converted from warning\\) )?from glmnet C\\+\\+ code \\(error code -?[0-9]+\\); (?:Memory allocation error|All used predictors have zero variance|All penalty factors are <= 0)",
+    # glmnet 5.0 emits the literal "1 or 0" for both arities. The live sparse
+    # class message is "fewer than 8  observations" with a repeated space, so
+    # match any count and tolerate the whitespace.
+    "^one multinomial or binomial class has (?:1 or 0|fewer than [0-9]+ +) observations",
+    "^an empty model has been returned"
   )
   any(vapply(patterns, grepl, logical(1L), x = message, perl = TRUE))
 }
@@ -42,7 +54,14 @@
     "not positive semidefinite",
     "computationally singular",
     "system is exactly singular",
-    "leading minor.*not positive"
+    "leading minor.*not positive",
+    # base::forwardsolve, base::backsolve and base::qr.solve wording, which
+    # differs from solve()'s LAPACK message.
+    "singular matrix.*(?:forwardsolve|backsolve|solve)",
+    # base::eigen and base::svd reject non-finite input up front rather than
+    # reporting a failed decomposition.
+    "infinite or missing values in 'x'",
+    "NA/NaN/Inf in foreign function call"
   )
   any(vapply(
     patterns,
