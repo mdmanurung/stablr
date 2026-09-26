@@ -173,6 +173,34 @@ make_rp_features <- function(x, n_injected) {
   invisible(x)
 }
 
+# The documented cap above bounds what the *knockoff construction* can support.
+# The MVR S-matrix solver is a different cost model: it is O(p^3) in
+# interpreted R for each of up to 50 coordinate-descent sweeps, which measures
+# at roughly 0.5 s at p = 50, 8 s at p = 200 and 31 s at p = 300 on the
+# reference machine. Above this ceiling the solve is still correct but is not
+# usable interactively or inside a bootstrap, so it warns rather than fails —
+# the 3000-feature cap continues to be the only hard limit.
+.mvr_practical_feature_ceiling <- 300L
+
+.mvr_solver_budget <- function(n_features) {
+  within_ceiling <- n_features <= .mvr_practical_feature_ceiling
+  if (!within_ceiling) {
+    warning(
+      "knockoff_mvr: ", n_features, " predictors exceed the MVR solver cost ",
+      "ceiling of ", .mvr_practical_feature_ceiling, " (~31 s per solve at ",
+      "that size on the reference machine). The solve is correct but slow; ",
+      "prefer `knockoff_equi` above this width.",
+      call. = FALSE
+    )
+  }
+  list(
+    n_features = as.integer(n_features),
+    practical_feature_ceiling = as.integer(.mvr_practical_feature_ceiling),
+    within_practical_ceiling = within_ceiling,
+    maximum_supported_features = .maximum_supported_knockoff_features
+  )
+}
+
 #' Make Knockoff Artificial Features
 #'
 #' Generates **fixed-X** knockoff features via `knockoff::create.fixed()`, with
@@ -304,19 +332,65 @@ make_knockoff_features <- function(x, n_injected, random_state = NULL) {
 # Estimate a positive-definite covariance matrix for the MVR generator.
 # This historical helper is intentionally retained unchanged: v0.1.1 changes
 # only the covariance semantics of knockoff_equi.
-.estimate_pd_sigma <- function(x) {
-  Sigma <- cov(x)
-  min_eig <- min(eigen(Sigma, symmetric = TRUE, only.values = TRUE)$values)
-  if (min_eig > 0) return(Sigma)
-  # Rank-deficient (p > n) or near-singular: use Ledoit-Wolf shrinkage if available
+#
+# `corpcor` is only a Suggests dependency, so the numeric result must not depend
+# on whether it happens to be installed. The branch is therefore an explicit
+# argument, and .estimate_pd_sigma_details() reports which one ran.
+.mvr_covariance_repair_methods <- c("corpcor", "eigenvalue_shift")
+
+.mvr_available_covariance_repair <- function() {
   if (requireNamespace("corpcor", quietly = TRUE)) {
-    Sigma <- suppressMessages(
+    "corpcor"
+  } else {
+    "eigenvalue_shift"
+  }
+}
+
+.mvr_covariance_repair <- function(Sigma, min_eig, method) {
+  if (identical(method, "corpcor")) {
+    suppressMessages(
       corpcor::make.positive.definite(Sigma, tol = 1e-3)
     )
-  } else {
+  } else if (identical(method, "eigenvalue_shift")) {
     diag(Sigma) <- diag(Sigma) + (1e-5 - min_eig)
+    Sigma
+  } else {
+    stop(
+      "`method` must be one of ",
+      paste0("\"", .mvr_covariance_repair_methods, "\"", collapse = ", "),
+      "; got: ", method,
+      call. = FALSE
+    )
   }
-  Sigma
+}
+
+.estimate_pd_sigma_details <- function(
+  x,
+  repair = .mvr_available_covariance_repair()
+) {
+  Sigma <- cov(x)
+  min_eig <- min(eigen(Sigma, symmetric = TRUE, only.values = TRUE)$values)
+  if (min_eig > 0) {
+    return(list(
+      covariance = Sigma,
+      repair = "none",
+      repair_applied = FALSE,
+      minimum_eigenvalue = min_eig
+    ))
+  }
+  Sigma <- .mvr_covariance_repair(Sigma, min_eig, repair)
+  list(
+    covariance = Sigma,
+    repair = repair,
+    repair_applied = TRUE,
+    minimum_eigenvalue = min(
+      eigen(Sigma, symmetric = TRUE, only.values = TRUE)$values
+    )
+  )
+}
+
+.estimate_pd_sigma <- function(x, repair = .mvr_available_covariance_repair()) {
+  .estimate_pd_sigma_details(x, repair = repair)$covariance
 }
 
 # Reproduce sklearn.covariance.LedoitWolf 1.7.1 with assume_centered = FALSE.
@@ -330,8 +404,39 @@ make_knockoff_features <- function(x, n_injected, random_state = NULL) {
 
   n_samples <- nrow(x)
   n_features <- ncol(x)
+  # Every entry of the crossproduct is a sum of n_samples products, and
+  # centring can double the magnitude, so this bound is the largest scale for
+  # which the accumulator is still representable. The alternative is an Inf
+  # crossproduct that no downstream decomposition can interpret.
+  maximum_absolute_entry <- sqrt(.Machine$double.xmax) / (2 * sqrt(n_samples))
+  largest_entry <- max(abs(x))
+  if (largest_entry > maximum_absolute_entry) {
+    .abort_numerical_infeasibility(
+      "stablr_knockoff_infeasible",
+      paste0(
+        "Predictor magnitudes up to ", format(largest_entry), " overflow the ",
+        n_samples, "-sample covariance accumulator; centre and rescale the ",
+        "predictors before estimating a model-X covariance."
+      ),
+      source = "sklearn-compatible Ledoit-Wolf covariance",
+      n_samples = n_samples,
+      n_features = n_features,
+      maximum_absolute_entry = largest_entry,
+      maximum_representable_entry = maximum_absolute_entry
+    )
+  }
+
   centered <- sweep(x, 2L, colMeans(x), "-")
   empirical_covariance <- crossprod(centered) / n_samples
+  if (any(!is.finite(empirical_covariance))) {
+    .abort_numerical_infeasibility(
+      "stablr_knockoff_infeasible",
+      "The empirical covariance overflowed to a non-finite value.",
+      source = "sklearn-compatible Ledoit-Wolf covariance",
+      n_samples = n_samples,
+      n_features = n_features
+    )
+  }
 
   if (n_features == 1L) {
     shrinkage <- 0
@@ -607,6 +712,17 @@ make_knockoff_equi_features <- function(x, n_injected, random_state = NULL) {
 #' established. For supported dimensions, MVR-solver failure falls back to
 #' equi; `create.gaussian` failure falls back to random permutation.
 #'
+#' The 3 000-predictor cap bounds what the knockoff construction supports; it
+#' is not the MVR solver's practical reach. `solve_mvr()` is \eqn{O(p^3)} in
+#' interpreted R for each of up to 50 coordinate-descent sweeps, which measures
+#' at roughly 8 s at 200 predictors and 31 s at 300. Above 300 predictors
+#' `make_knockoff_mvr_features()` warns (it does not fail) and records
+#' `artificial_provenance$mvr_solver_budget`; prefer `"knockoff_equi"` above
+#' that width. The covariance repair branch is recorded in
+#' `artificial_provenance$covariance_repair`, because the two branches are
+#' numerically different and one of them depends on the optional `corpcor`
+#' package.
+#'
 #' @param x Numeric matrix of predictors (samples \eqn{\times} features).
 #' @param n_injected Integer; number of knockoff columns to select.
 #' @param random_state Optional integer seed; passed to `solve_mvr()` for the
@@ -622,17 +738,28 @@ make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
   .require_pkg("knockoff", "for artificial_type = \"knockoff_mvr\"")
 
   n_features <- ncol(x)
+  solver_budget <- .mvr_solver_budget(n_features)
 
   .make_mvr_chunk <- function(x_chunk) {
     fallback_history <- .empty_artificial_fallback_history()
+    covariance_details <- list(
+      method = .mvr_available_covariance_repair(),
+      repair_applied = NA,
+      minimum_eigenvalue = NA_real_
+    )
     tryCatch(
       {
         mu    <- colMeans(x_chunk)
-        Sigma <- .with_linear_algebra_numerical_infeasibility(
-          .estimate_pd_sigma(x_chunk),
+        sigma_details <- .with_linear_algebra_numerical_infeasibility(
+          .estimate_pd_sigma_details(x_chunk),
           source = "MVR covariance estimation",
           subclass = "stablr_mvr_infeasible"
         )
+        Sigma <- sigma_details$covariance
+        covariance_details$method <- sigma_details$repair
+        covariance_details$repair_applied <- sigma_details$repair_applied
+        covariance_details$minimum_eigenvalue <-
+          sigma_details$minimum_eigenvalue
         equi_fallback_reason <- NA_character_
 
         # Attempt MVR S-solve; fall back to equi on solver failure
@@ -672,7 +799,8 @@ make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
             ),
             actual_type = "knockoff_equi",
             fallback_reason = equi_fallback_reason,
-            fallback_history = fallback_history
+            fallback_history = fallback_history,
+            covariance_repair = covariance_details
           )
         } else {
           list(
@@ -688,7 +816,8 @@ make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
             ),
             actual_type = "knockoff_mvr",
             fallback_reason = NA_character_,
-            fallback_history = fallback_history
+            fallback_history = fallback_history,
+            covariance_repair = covariance_details
           )
         }
       },
@@ -718,7 +847,8 @@ make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
           ],
           actual_type = "random_permutation",
           fallback_reason = reason,
-          fallback_history = fallback_history
+          fallback_history = fallback_history,
+          covariance_repair = covariance_details
         )
       }
     )
@@ -752,6 +882,14 @@ make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
     chunk_size = .maximum_supported_knockoff_features,
     approximate = FALSE,
     global_exchangeability_established = NA
+  )
+  provenance$mvr_solver_budget <- solver_budget
+  provenance$covariance_repair <- c(
+    list(
+      available_methods = .mvr_covariance_repair_methods,
+      selected_method = .mvr_available_covariance_repair()
+    ),
+    chunk_result$covariance_repair
   )
 
   list(
@@ -897,15 +1035,5 @@ make_artificial_features <- function(x, n_injected, type, random_state = NULL) {
   }
   if (is.null(random_state)) return(generate())
 
-  had_seed <- exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
-  if (had_seed) old_seed <- get(".Random.seed", envir = .GlobalEnv)
-  on.exit({
-    if (had_seed) {
-      assign(".Random.seed", old_seed, envir = .GlobalEnv)
-    } else if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
-      rm(".Random.seed", envir = .GlobalEnv)
-    }
-  }, add = TRUE)
-  set.seed(random_state)
-  generate()
+  .with_local_seed(random_state, generate())
 }

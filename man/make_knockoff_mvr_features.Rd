@@ -31,4 +31,16 @@ because global exchangeability for a chunked construction has not been
 established. For supported dimensions, MVR-solver failure falls back to
 equi; \code{create.gaussian} failure falls back to random permutation.
 }
+\details{
+The 3 000-predictor cap bounds what the knockoff construction supports; it
+is not the MVR solver's practical reach. \code{solve_mvr()} is \eqn{O(p^3)} in
+interpreted R for each of up to 50 coordinate-descent sweeps, which measures
+at roughly 8 s at 200 predictors and 31 s at 300. Above 300 predictors
+\code{make_knockoff_mvr_features()} warns (it does not fail) and records
+\code{artificial_provenance$mvr_solver_budget}; prefer \code{"knockoff_equi"} above
+that width. The covariance repair branch is recorded in
+\code{artificial_provenance$covariance_repair}, because the two branches are
+numerically different and one of them depends on the optional \code{corpcor}
+package.
+}
 \keyword{internal}

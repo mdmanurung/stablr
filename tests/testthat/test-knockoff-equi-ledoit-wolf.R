@@ -160,3 +160,83 @@ test_that("valid p-greater-than-n equicorrelated generation has no fallback", {
     "knockpy.smatrix.equicorrelated"
   )
 })
+
+# ── A11: overflow-scale designs must be rejected, not overflowed ─────────────
+
+test_that("overflow-scale predictors are rejected before the crossproduct", {
+  condition <- expect_error(
+    stablr:::.estimate_ledoit_wolf_sigma(matrix(1e200, 8L, 5L)),
+    class = "stablr_knockoff_infeasible"
+  )
+  expect_s3_class(condition, "stablr_numerical_infeasibility")
+  expect_match(conditionMessage(condition), "overflow")
+  expect_false(grepl("positive-definite", conditionMessage(condition),
+                     fixed = TRUE))
+})
+
+test_that("overflow-scale rejection does not depend on error classification", {
+  # The guard must be self-sufficient: with base::eigen's message no longer
+  # classified, the overflow-scale input must still fail typed.
+  testthat::local_mocked_bindings(
+    .is_linear_algebra_numerical_error = function(condition) FALSE,
+    .package = "stablr"
+  )
+  expect_error(
+    stablr:::.estimate_ledoit_wolf_sigma(matrix(1e200, 8L, 5L)),
+    class = "stablr_knockoff_infeasible"
+  )
+  expect_error(
+    stablr:::.estimate_ledoit_wolf_sigma(matrix(1e300, 8L, 5L)),
+    class = "stablr_knockoff_infeasible"
+  )
+})
+
+test_that("ordinary-scale predictors are unaffected by the overflow guard", {
+  set.seed(1104L)
+  # A single predictor has zero Ledoit-Wolf shrinkage, so the estimate is the
+  # raw maximum-likelihood covariance and the guard's inertness is observable.
+  x <- matrix(rnorm(24L), ncol = 1L)
+  observed <- stablr:::.estimate_ledoit_wolf_sigma(x)
+  expect_identical(observed$shrinkage, 0)
+  expect_equal(
+    observed$covariance,
+    matrix(sum((x - mean(x))^2) / nrow(x), 1L, 1L),
+    tolerance = 1e-15
+  )
+
+  multi <- matrix(rnorm(24L * 6L), nrow = 24L)
+  multi_fit <- stablr:::.estimate_ledoit_wolf_sigma(multi)
+  expect_true(all(is.finite(multi_fit$covariance)))
+  expect_equal(multi_fit$covariance, t(multi_fit$covariance), tolerance = 0)
+  expect_gte(multi_fit$shrinkage, 0)
+  expect_lte(multi_fit$shrinkage, 1)
+  expect_gt(
+    min(eigen(multi_fit$covariance, symmetric = TRUE, only.values = TRUE)$values),
+    0
+  )
+})
+
+test_that("overflow-scale equicorrelated design falls back with a reason", {
+  skip_if_not_installed("knockoff")
+  set.seed(1105L)
+  x <- matrix(
+    rnorm(20L * 4L) * 1e200,
+    nrow = 20L,
+    dimnames = list(paste0("s", seq_len(20L)), paste0("f", seq_len(4L)))
+  )
+
+  expect_warning(
+    result <- make_artificial_features(
+      x, n_injected = 2L, type = "knockoff_equi", random_state = 1105L
+    ),
+    "falling back to random permutation"
+  )
+  expect_identical(
+    result$artificial_provenance$actual_type,
+    "random_permutation"
+  )
+  expect_match(
+    result$artificial_provenance$chunks$fallback_reason,
+    "overflow"
+  )
+})

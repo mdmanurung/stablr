@@ -217,3 +217,109 @@ test_that("artificial fallback history retains nested event order", {
     fixed = TRUE
   )
 })
+
+# ── A5: the MVR covariance repair must not fork silently on a Suggests package
+
+test_that("both positive-definite repair branches are available and distinct", {
+  skip_if_not_installed("corpcor")
+  set.seed(1005L)
+  x <- matrix(rnorm(6L * 20L), nrow = 6L)
+  Sigma <- cov(x)
+  min_eig <- min(eigen(Sigma, symmetric = TRUE, only.values = TRUE)$values)
+  expect_lte(min_eig, 0)
+
+  corpcor_repair <- stablr:::.mvr_covariance_repair(Sigma, min_eig, "corpcor")
+  shifted <- stablr:::.mvr_covariance_repair(Sigma, min_eig, "eigenvalue_shift")
+
+  for (repaired in list(corpcor_repair, shifted)) {
+    expect_equal(dim(repaired), c(20L, 20L))
+    expect_true(all(is.finite(repaired)))
+    expect_gt(
+      min(eigen(repaired, symmetric = TRUE, only.values = TRUE)$values),
+      0
+    )
+  }
+  # The two branches are numerically different, so the choice is a real
+  # decision and has to be recorded.
+  expect_gt(max(abs(corpcor_repair - shifted)), 1e-6)
+
+  expect_error(
+    stablr:::.mvr_covariance_repair(Sigma, min_eig, "identity"),
+    "identity"
+  )
+})
+
+test_that("the covariance repair branch is explicit and returned", {
+  skip_if_not_installed("corpcor")
+  set.seed(1006L)
+  x <- matrix(rnorm(6L * 20L), nrow = 6L)
+
+  for (repair in c("corpcor", "eigenvalue_shift")) {
+    details <- stablr:::.estimate_pd_sigma_details(x, repair = repair)
+    expect_identical(details$repair, repair)
+    expect_identical(details$minimum_eigenvalue > 0, TRUE)
+    expect_equal(
+      stablr:::.estimate_pd_sigma(x, repair = repair),
+      details$covariance,
+      tolerance = 0
+    )
+  }
+
+  positive_definite <- stablr:::.estimate_pd_sigma_details(
+    matrix(rnorm(20L * 4L), nrow = 20L, ncol = 4L),
+    repair = "eigenvalue_shift"
+  )
+  expect_identical(positive_definite$repair, "none")
+})
+
+test_that("MVR provenance records which covariance repair branch ran", {
+  skip_if_not_installed("knockoff")
+  skip_if_not_installed("corpcor")
+  set.seed(1007L)
+  x <- matrix(
+    rnorm(6L * 20L),
+    nrow = 6L,
+    dimnames = list(paste0("s", seq_len(6L)), paste0("f", seq_len(20L)))
+  )
+
+  testthat::local_mocked_bindings(
+    .mvr_available_covariance_repair = function() "eigenvalue_shift",
+    .package = "stablr"
+  )
+  result <- make_artificial_features(
+    x = x,
+    n_injected = 5L,
+    type = "knockoff_mvr",
+    random_state = 1007L
+  )
+  repair <- result$artificial_provenance$covariance_repair
+
+  expect_identical(repair$method, "eigenvalue_shift")
+  expect_true(repair$repair_applied)
+  expect_gt(repair$minimum_eigenvalue, 0)
+  expect_identical(repair$selected_method, "eigenvalue_shift")
+  expect_true(all(
+    c("corpcor", "eigenvalue_shift") %in% repair$available_methods
+  ))
+})
+
+test_that("MVR provenance records the no-repair branch for a PD covariance", {
+  skip_if_not_installed("knockoff")
+  set.seed(1008L)
+  x <- matrix(
+    rnorm(20L * 4L),
+    nrow = 20L,
+    dimnames = list(paste0("s", seq_len(20L)), paste0("f", seq_len(4L)))
+  )
+
+  result <- make_artificial_features(
+    x = x,
+    n_injected = 2L,
+    type = "knockoff_mvr",
+    random_state = 1008L
+  )
+  repair <- result$artificial_provenance$covariance_repair
+
+  expect_identical(repair$method, "none")
+  expect_false(repair$repair_applied)
+})
