@@ -446,15 +446,34 @@ test_that("G6 classic_bootstrap_indices class weighting is live, and group sampl
 
 # ---- G7: the group-sampler docs must not promise a holdout -------------------
 
+# The prose under test is the roxygen block of `R/bootstrap_helpers.R`, which
+# roxygen ships as `man/group_bootstrap_indices.Rd`.  `R CMD check` runs the
+# tests against the *installed* package, where the R sources are absent, so an
+# assertion that reads only the source tree fails there for a reason that has
+# nothing to do with the sampler.  Read whichever artifact is present, as
+# `test-release-evidence-cli.R` does for the CLI.
+#
+# Whitespace is collapsed first because the two artifacts wrap differently: the
+# Rd is rendered at a fixed width, and an un-normalized match on a phrase that
+# happens to straddle a line break would pass or fail by accident.
+.group_sampler_doc_text <- function() {
+  flatten <- function(x) gsub("[[:space:]]+", " ", paste(x, collapse = "\n"))
+
+  source <- testthat::test_path("..", "..", "R", "bootstrap_helpers.R")
+  if (file.exists(source)) return(flatten(readLines(source, warn = FALSE)))
+
+  rd <- tools::Rd_db("stablr")[["group_bootstrap_indices.Rd"]]
+  if (is.null(rd)) {
+    stop(
+      "Could not locate the group_bootstrap_indices documentation.",
+      call. = FALSE
+    )
+  }
+  flatten(capture.output(tools::Rd2txt(rd)))
+}
+
 test_that("G7 group_bootstrap_indices documents no holdout and no FDP+ premise", {
-  source_lines <- readLines(
-    testthat::test_path("..", "..", "R", "bootstrap_helpers.R"),
-    warn = FALSE
-  )
-  definition <- which(grepl("^group_bootstrap_indices <- function", source_lines))
-  expect_length(definition, 1L)
-  doc_block <- source_lines[seq(definition - 70L, definition - 1L)]
-  text <- paste(doc_block, collapse = "\n")
+  text <- .group_sampler_doc_text()
 
   expect_match(text, "Why group-level sampling", fixed = TRUE)
   expect_match(text, "STABL has no holdout", fixed = TRUE)
