@@ -20,8 +20,8 @@ down-penalise features with large ridge coefficients.  Larger values
 make the penalty more selective.  Default \code{1.0} matches the Python
 reference implementation.}
 
-\item{epsilon}{Positive numeric scalar; added to the denominator of the
-weight to avoid division by zero.  Default \code{1e-6}.}
+\item{epsilon}{Positive numeric scalar; scales the denominator floor by the
+median absolute initial score.  Default \code{1e-6}.}
 
 \item{bootstrap_threshold}{Positive numeric; absolute-coefficient cutoff
 used to decide that a feature is selected in a given bootstrap.  Features
@@ -40,19 +40,31 @@ with those \code{penalty.factor} values to obtain the selected-feature mask.
 Adaptive lasso improves on standard lasso by assigning stronger penalties
 to features with small initial coefficients (likely noise) and weaker
 penalties to features with large initial coefficients (likely signal).
-This asymmetric penalisation achieves the oracle property under regularity
-conditions, selecting the true support more reliably than plain lasso when
-signal features have moderate to large effect sizes.
+This asymmetric penalisation is what the \emph{oracle property} claim means: under
+regularity conditions it recovers the true support more reliably than plain
+lasso.  That claim is \strong{conditional on the response scale}.  The weights are
+computed on the scale of \code{y}, so with an absolute denominator floor a
+small-scale \code{y} pushes every score below the floor, all penalty factors
+become equal, and the weights collapse to a constant -- silently reducing
+this adapter to plain lasso.  The floor used here is therefore relative to
+the observed score scale, as given below.
 
 Weights are defined as:
-\deqn{w_j = 1 / (|\hat\beta_j^{\mathrm{init}}| + \epsilon)^\gamma}
+\deqn{w_j = 1 / \bigl(|\hat\beta_j^{\mathrm{init}}| + \epsilon\,s\bigr)^\gamma}
 where \eqn{\hat\beta_j^{\mathrm{init}}} comes from a ridge regression on
-the same bootstrap subsample.  The \code{epsilon} floor avoids division by zero
-for features with near-zero ridge coefficients.
+the same bootstrap subsample and \eqn{s} is the median absolute initial
+score.  The \code{epsilon * s} floor avoids division by zero for features with
+near-zero ridge coefficients while staying on the scale of \code{y}; when the
+median score is not positive and finite it falls back to \code{s = 1}, which
+reproduces the historical absolute floor.
 
 This adapter factory is primarily an internal backend used by \code{\link[=stabl_fit]{stabl_fit()}}.
 For end-to-end feature selection workflows, prefer
 \code{base_learner = "adaptive_lasso"} in \code{\link[=stabl_fit]{stabl_fit()}}.
+
+\code{gamma} and \code{epsilon} are validated by the underlying batch factory, so the
+same guards apply whether the adapter is reached through this public factory
+or through \code{\link[=stabl_fit]{stabl_fit()}}'s batch path.
 }
 \examples{
 if (requireNamespace("glmnet", quietly = TRUE)) {

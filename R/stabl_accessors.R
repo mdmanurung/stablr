@@ -21,11 +21,18 @@
 #' feature's score exceeds the threshold, the function returns the top
 #' `n_explore` features instead of an all-`FALSE` vector.  This is useful in
 #' exploratory analyses where you want at least some candidates even when the
-#' signal is weak.
+#' signal is weak.  The fallback candidate set is resolved once at fit time and
+#' stored in `object$explore_features_`; it does not depend on the threshold, so
+#' every accessor reports the same fallback.  Whether it actually fired for the
+#' threshold that drove the fit is recorded in `object$explore_applied_`, and
+#' the resulting mask for that threshold is in `object$support_`, so this
+#' accessor and [get_importances()] cannot disagree about which features the
+#' fit considered selected.
 #'
 #' @param object A fitted `"stabl_fit"` object returned by [stabl_fit()].
 #' @param new_hard_threshold Numeric in `(0, 1]` or `NULL`.  When supplied,
-#'   overrides the threshold stored in `object` for this call only.
+#'   overrides the threshold stored in `object` for this call only.  `NA`,
+#'   non-finite, negative and greater-than-one values are rejected.
 #'
 #' @return Named logical vector of length `object$n_features_in_`.  Names are
 #'   the original feature names from the training matrix.
@@ -58,14 +65,19 @@ get_support.stabl_fit <- function(object, new_hard_threshold = NULL) {
   max_scores <- get_importances(object)
   mask       <- max_scores > threshold
 
-  # explore fallback: top n_explore features if nothing passes threshold.
-  # Use direct index selection to avoid over-selecting on tied scores
-  # (the old `sort()[n_exp] - 0.01` approach selected ALL features tied at
-  # the n_exp-th score, e.g. all-zero scores produced mask = all TRUE).
+  # explore fallback: the fit-time top-n_explore features, when the threshold
+  # admitted nothing.  `explore_features_` is threshold-independent, so an
+  # overridden threshold reports the same fallback as the fitted one; objects
+  # fitted before the field existed fall back to computing it here.
   if (!any(mask) && isTRUE(object$explore)) {
-    n_exp       <- min(object$n_explore, length(max_scores))
-    top_idx     <- order(max_scores, decreasing = TRUE)[seq_len(n_exp)]
-    mask[top_idx] <- TRUE
+    fallback <- object$explore_features_
+    if (is.null(fallback)) {
+      n_exp   <- min(object$n_explore, length(max_scores))
+      top_idx <- order(max_scores, decreasing = TRUE)[seq_len(n_exp)]
+      mask[top_idx] <- TRUE
+    } else {
+      mask[fallback] <- TRUE
+    }
   }
 
   mask
@@ -423,6 +435,10 @@ print.stabl_fit <- function(x, ...) {
     {
       mask <- get_support(x)
       cat("  Features selected:", sum(mask), "\n")
+      if (isTRUE(x$explore_applied_)) {
+        cat("  Explore fallback: ", sum(mask), "of ", x$n_features_in_,
+            " via explore = TRUE (no feature passed the threshold)\n", sep = "")
+      }
     },
     error = function(e) {
       cat("  Features selected: [threshold not yet resolved]\n")
@@ -431,6 +447,8 @@ print.stabl_fit <- function(x, ...) {
   if (!is.null(x$min_fdr_)) {
     cat("  Min FDP+:        ", round(x$min_fdr_, 4L), "\n")
     cat("  FDP+ threshold:  ", round(x$fdr_min_threshold_, 4L), "\n")
+  } else if (isTRUE(x$fdp_threshold_suppressed)) {
+    cat("  FDP+:            not computed (suppressed by hard_threshold)\n")
   }
   if (!is.null(x$hard_threshold)) {
     cat("  Hard threshold:  ", x$hard_threshold, "\n")
@@ -497,6 +515,15 @@ print.stabl_multiomic_cv <- function(x, ...) {
 
 # Resolve the effective threshold for a fitted stabl_fit object.
 # Precedence: new_hard_threshold > object$hard_threshold > object$fdr_min_threshold_.
+#
+# `new_hard_threshold` is validated here rather than only where it is read, so
+# every path that accepts a caller-supplied threshold (get_support(),
+# get_feature_names_out(), transform_stabl(), plot_stabl_path(), and the
+# multi-omic threshold helpers) rejects the same invalid values.  Unvalidated,
+# NA silently produced an all-NA mask, and a value above 1 an all-TRUE mask --
+# both of which look like legitimate "select nothing" / "select everything"
+# answers instead of a bad argument.
+#
 # on_missing controls what happens when all three are NULL:
 #   "error"  — stop() with the canonical accessor error message (default)
 #   "null"   — return NULL silently (used when threshold is optional, e.g. plot annotations)
@@ -504,6 +531,11 @@ print.stabl_multiomic_cv <- function(x, ...) {
 .resolve_stabl_threshold <- function(object, new_hard_threshold = NULL,
                                      on_missing = c("error", "null", "na")) {
   on_missing <- match.arg(on_missing)
+  if (!is.null(new_hard_threshold)) {
+    new_hard_threshold <- .validate_proportion(
+      new_hard_threshold, "new_hard_threshold"
+    )
+  }
   threshold  <- if (!is.null(new_hard_threshold)) {
     new_hard_threshold
   } else if (!is.null(object$hard_threshold)) {

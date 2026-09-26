@@ -101,3 +101,35 @@ test_that("group_bootstrap_indices does not split groups when target falls insid
     expect_gte(length(idx), 6L)
   }
 })
+
+# ---- G4: under-delivery is impossible for any group-label storage type -------
+
+test_that("group_bootstrap_indices always delivers at least the requested rows", {
+  # Undersampling is storage-type agnostic: it depends only on the group pool
+  # draining before the row target, so every label type is hammered here.
+  for (spec in group_specs) {
+    groups <- spec$make()
+    y <- rep(c(0L, 1L), length.out = length(groups))
+    target <- 17L
+
+    for (s in c(3L, 11L, 29L, 44L)) {
+      idx <- group_bootstrap_indices(y = y, groups = groups,
+                                     n_subsamples = target,
+                                     replace = FALSE, seed = s)
+      expect_gte(length(idx), target)
+      expect_true(all(idx >= 1L & idx <= length(y)))
+      .assert_whole_groups_only(idx, groups, paste(spec$name, "seed", s))
+    }
+  }
+})
+
+test_that("group_bootstrap_indices delivers at least the requested rows under replacement", {
+  groups <- rep(c("a", "bb", "ccc"), times = c(2L, 3L, 4L))
+  y <- rep(c(0L, 1L), length.out = length(groups))
+
+  for (s in c(1L, 8L, 17L)) {
+    idx <- group_bootstrap_indices(y = y, groups = groups, n_subsamples = 9L,
+                                   replace = TRUE, seed = s)
+    expect_gte(length(idx), 9L)
+  }
+})

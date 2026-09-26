@@ -31,8 +31,13 @@
 #'   bootstrap.  Default: `0.5`.
 #' @param replace Logical; sample with replacement?  Default: `FALSE`.
 #' @param hard_threshold Numeric in `(0, 1]` or `NULL`.  When supplied, FDP+
-#'   control is bypassed and this value is the stability-score cut-off.
-#'   Default: `NULL`.
+#'   threshold control is **suppressed** and this value is the stability-score
+#'   cut-off.  Supplying it together with `artificial_type` is allowed -- the
+#'   artificial features are still generated and their stability scores are
+#'   still returned -- but the FDP+ curve is *not* computed, so `FDRs_`,
+#'   `min_fdr_`, `fdr_min_threshold_` and `fdrs_table_` are all `NULL` and
+#'   [plot_fdr_graph()] raises an error.  The suppression is recorded in
+#'   `fdp_threshold_suppressed`; see Details.  Default: `NULL`.
 #' @param fdr_threshold_range Numeric vector swept when computing FDP+.
 #'   Default: `seq(0, 0.99, by = 0.01)`, matching Python STABL's
 #'   `np.arange(0., 1., .01)`.
@@ -69,11 +74,79 @@
 #'   `base_learner = "adaptive_lasso"`.
 #' @param feature_groups Optional feature-group definition for
 #'   `base_learner = "sparse_group_lasso"`. Provide a vector/factor of length
-#'   `ncol(x)` assigning each original feature to a group.
+#'   `ncol(x)` assigning each original feature to a group.  Artificial decoys
+#'   are *not* placed in their source feature's group for permutation decoys
+#'   (see the "Sparse-group artificial features" section).
 #' @param corr_group_threshold Optional numeric percentile in `(0, 100]` used
 #'   to derive sparse-group feature groups from pairwise correlations of
 #'   original features. Used only when
 #'   `base_learner = "sparse_group_lasso"`.
+#'
+#' @section Sparse-group artificial features:
+#' FDP+ compares the stability of the real block against the stability of the
+#' artificial block, which is only a like-for-like comparison if both blocks
+#' face the same group-lasso penalty.  When `artificial_type` generates
+#' *permutation* decoys, each decoy therefore receives its own fresh group
+#' rather than joining the group of the original feature it was permuted from;
+#' otherwise the decoy's selection is coupled to the real block's group
+#' structure and its stability score partly measures the real block instead of
+#' the decoy's own noise.  For `knockoff*` decoys the decoy is exchangeable
+#' with its source by construction, so co-grouping is the honest
+#' representation and inheritance stays on.  The resolved choice is recorded in
+#' `sgl_group_provenance$noise_group_inheritance`, and the group vector actually
+#' used is in `sgl_feature_groups_`.
+#'
+#' @section RNG and reproducibility:
+#' When `random_state` is an integer, `stabl_fit()` does not mutate the
+#' caller's `.Random.seed`: it derives three independent sub-seeds (one for
+#' artificial-feature generation, one for the bootstrap index draws, one as the
+#' base of the per-iteration seeds) and seeds each bootstrap iteration
+#' individually, every one of them inside a `.with_local_seed()` scope.  Results
+#' are then identical for `workers = 1L` and for a `furrr` parallel run.  That
+#' guarantee is conditional on `random_state`; `workers > 1L` with
+#' `random_state = NULL` warns, because there is no per-iteration seed to make
+#' the parallel run reproducible.
+#'
+#' With `random_state = NULL` the bootstrap draws come from ambient RNG state
+#' and therefore do advance the caller's stream, exactly as any unseeded
+#' stochastic routine does.  Seed the fit if you need the caller protected.
+#'
+#' Reproducibility is also conditional on `RNGkind()` and on
+#' `sample.kind`.  `stabl_fit()` does not set either, so changing them between
+#' runs changes the sampled indices.  `RNGkind()` in force at fit time is
+#' recorded in the returned `rng_kind_` field.
+#'
+#' @section Threshold resolution and `hard_threshold`:
+#' Exactly one of `hard_threshold` and `artificial_type` drives selection.
+#' When both are supplied, `hard_threshold` wins (as the accessor
+#' documentation has always specified) and the FDP+ threshold search is skipped
+#' rather than computed and discarded.  Nothing is lost except the FDP+
+#' curve: `stabl_scores_artificial_` and `artificial_provenance` are still
+#' returned.  The outcome is recorded in `fdp_threshold_suppressed`, so a
+#' consumer can tell "no artificial features" from "artificial features
+#' present, FDP+ not used".
+#'
+#' @section Bootstrap subsample size:
+#' `sample_fraction` sets a *lower bound* on the rows in a bootstrap replicate,
+#' not an exact count, and the realised size is recorded in the result so the
+#' difference is visible.  Two mechanisms legitimately raise it.  Grouped
+#' sampling never trims a partially drawn group, so the realised count is the
+#' smallest group-aligned value at or above the target.  For `family =
+#' "binomial"`/`"multinomial"` with class-pure groups, guaranteeing the minimum
+#' number of observations per modeled class requires raising the row target to
+#' `n_classes * minimum_per_class` and redrawing stratified; the raised target
+#' is reported in `bootstrap_stratified_repair_`.  A replicate that ends up
+#' *shorter* than the target is an error, because a fit on fewer rows than
+#' requested must not be reported against the requested `sample_fraction`.
+#'
+#' @details
+#' **Cost of the bootstrap loop.** Each bootstrap fits the full lambda path in
+#' a single solver call for `base_learner = "lasso"`, `"adaptive_lasso"`, and
+#' for `"elastic_net"`/`"sparse_group_lasso"` when a single `alpha` (resp.
+#' `asparse`) value is in play.  A grid with \eqn{k} distinct `alpha` values
+#' costs \eqn{k} path calls per bootstrap, and `"sparse_group_lasso"` pays
+#' `n_lambda` `coef()` extractions per path call because the sparse
+#' coefficient helper has no on-grid fast path.
 #'
 #' @return An S3 object of class `"stabl_fit"` containing:
 #'   \describe{
@@ -87,6 +160,11 @@
 #'     \item{`FDRs_`}{Numeric vector of FDP+ estimates per threshold, or `NULL`.}
 #'     \item{`min_fdr_`}{Minimum FDP+ achieved, or `NULL`.}
 #'     \item{`fdrs_table_`}{Per-lambda FDP+ matrix, or `NULL`.}
+#'     \item{`fdp_threshold_suppressed`}{Logical; `TRUE` when
+#'       `hard_threshold` was supplied and therefore the FDP+ threshold search
+#'       was skipped, `FALSE` when FDP+ drove selection, and `NA` when no
+#'       artificial features were generated.  See the "Threshold resolution"
+#'       section above.}
 #'     \item{`hard_threshold`}{As supplied.}
 #'     \item{`artificial_type`}{As supplied.}
 #'     \item{`artificial_provenance`}{List returned by
@@ -97,6 +175,50 @@
 #'     \item{`artificial_proportion`}{As supplied.}
 #'     \item{`explore`}{As supplied.}
 #'     \item{`n_explore`}{As supplied.}
+#'     \item{`explore_features_`}{Character vector of the `n_explore` highest
+#'       importance features resolved at fit time, or `NULL` when
+#'       `explore = FALSE`.  This is the fixed set the `explore` fallback
+#'       selects for *any* threshold, so every accessor reports the same
+#'       fallback rather than recomputing it per call.}
+#'     \item{`explore_applied_`}{Logical; `TRUE` when the resolved threshold
+#'       admitted no feature and the `explore` fallback therefore determined
+#'       the returned support.}
+#'     \item{`stratify_bootstrap`}{Logical; `TRUE` when stratified bootstrap
+#'       sampling was requested, i.e. when `stratify_bootstrap = TRUE` **or**
+#'       `bootstrap_strata` was supplied.  See
+#'       `stratify_bootstrap_requested` and `bootstrap_strata_source` for the
+#'       literal argument and the origin of the design.}
+#'     \item{`stratify_bootstrap_requested`}{The literal `stratify_bootstrap`
+#'       argument as supplied.}
+#'     \item{`bootstrap_strata_source`}{`"bootstrap_strata"` when an explicit
+#'       design was supplied, `"stratify_bootstrap"` when the design was
+#'       derived from `y`, or `NULL` when no stratification was requested.}
+#'     \item{`bootstrap_strata_applied`}{Logical; `TRUE` when a resolved
+#'       stratification design actually reached the bootstrap sampler.}
+#'     \item{`bootstrap_subsample_target_`}{Integer; the requested
+#'       `floor(sample_fraction * nrow(x))` subsample size.  This is a *lower
+#'       bound* on the realised draw, not an exact count: whole groups are never
+#'       trimmed by grouped sampling, and the classification feasibility repair
+#'       below can raise the target further.}
+#'     \item{`bootstrap_subsample_sizes_`}{Integer vector of the realised
+#'       subsample size of every bootstrap replicate, so any overshoot against
+#'       `bootstrap_subsample_target_` is readable from the result.  A replicate
+#'       shorter than the target is an error, not a silently smaller fit.}
+#'     \item{`bootstrap_stratified_repair_`}{`NULL` unless the grouped
+#'       classification sampler had to raise its row target to guarantee
+#'       `minimum_per_class` observations of every modeled class; otherwise a
+#'       list with `target_raised`, `requested_target`, `repair_target`,
+#'       `n_classes`, `minimum_per_class` and `n_repairs`.}
+#'     \item{`sgl_feature_groups_`}{Integer sparse-group assignment actually
+#'       used, of length `ncol(x)` plus `n_injected`, or `NULL` when
+#'       `base_learner != "sparse_group_lasso"`.}
+#'     \item{`sgl_group_provenance`}{For `base_learner = "sparse_group_lasso"`,
+#'       a list recording `group_source` (`"feature_groups"` or
+#'       `"corr_group_threshold"`), `noise_group_inheritance` (`"on"`, `"off"`,
+#'       or `NA` when there are no artificial features), `n_groups`, and
+#'       `n_noise_features`; otherwise `NULL`.}
+#'     \item{`rng_kind_`}{The `RNGkind()` in force when the fit ran.  Results
+#'       are reproducible only for the same `RNGkind()` and `sample.kind`.}
 #'     \item{`feature_names`}{Character vector of original feature names.}
 #'     \item{`n_features_in_`}{Integer number of original features.}
 #'   }
@@ -203,25 +325,27 @@ stabl_fit <- function(
   if (!is.matrix(x) || !is.numeric(x)) {
     stop("`x` must be a numeric matrix or data.frame.", call. = FALSE)
   }
+  # The validation-side omics are held to a finiteness contract by
+  # `.validate_multiomic_validation_inputs()`; the training side needs the same
+  # rule here.  It used to be enforced only as a side effect of
+  # `make_artificial_features()`, so with `artificial_type = NULL` a `NaN`
+  # surfaced as an opaque `glmnet` "x has missing values" message and an `Inf`
+  # reached the solver unchallenged.
+  if (anyNA(x) || any(!is.finite(x))) {
+    stop("`x` must contain only finite, non-missing values.", call. = FALSE)
+  }
+  # Guard the degenerate shapes here: with ncol(x) == 0 the artificial block
+  # would be empty, `n_injected` would be 0, and
+  # `effective_artificial_proportion` would be 0/0 = NaN, surfacing much later
+  # as a confusing `.validate_proportion` failure inside compute_fdp_plus().
+  if (nrow(x) == 0L) {
+    stop("`x` must contain at least one sample row.", call. = FALSE)
+  }
+  if (ncol(x) == 0L) {
+    stop("`x` must contain at least one feature column.", call. = FALSE)
+  }
 
   validate_sample_alignment(x, y, groups)
-
-  # Align y (and groups) to row order of x
-  y <- .subset_outcome_by_ids(y, rownames(x))
-  if (!is.null(groups)) groups <- groups[rownames(x)]
-  if (!is.null(bootstrap_strata)) {
-    bootstrap_strata <- .subset_bootstrap_strata_by_ids(
-      bootstrap_strata,
-      sample_ids = rownames(x)
-    )
-  } else if (isTRUE(stratify_bootstrap)) {
-    bootstrap_strata <- y
-  }
-  bootstrap_strata_ids <- .bootstrap_strata_ids(
-    strata = bootstrap_strata,
-    n = nrow(x),
-    arg = "bootstrap_strata"
-  )
 
   # ---- Validate scalar params -----------------------------------------------
   .validate_stabl_params(n_bootstraps, sample_fraction, replace,
@@ -242,6 +366,52 @@ stabl_fit <- function(
   if (!is.null(random_state)) {
     random_state <- .validate_scalar_integer_like(random_state, "random_state")
   }
+  family <- .validate_stabl_family(family)
+  l1_ratio <- .validate_l1_ratio(l1_ratio)
+  fdr_threshold_range <- .validate_fdr_threshold_range(fdr_threshold_range)
+
+  stratify_requested <- isTRUE(stratify_bootstrap)
+  stratify_design <- if (!is.null(bootstrap_strata)) {
+    "bootstrap_strata"
+  } else if (stratify_requested) {
+    "stratify_bootstrap"
+  } else {
+    NULL
+  }
+
+  # Align y (and groups) to row order of x
+  y <- .subset_outcome_by_ids(y, rownames(x))
+  if (!is.null(groups)) {
+    groups <- groups[rownames(x)]
+    .validate_group_ids(groups)
+  }
+  if (!is.null(bootstrap_strata)) {
+    bootstrap_strata <- .subset_bootstrap_strata_by_ids(
+      bootstrap_strata,
+      sample_ids = rownames(x)
+    )
+  } else if (stratify_requested) {
+    if (identical(family, "cox") || (is.matrix(y) && ncol(y) > 1L)) {
+      .abort_stablr(
+        "stablr_bootstrap_stratification_infeasible",
+        paste0(
+          "`stratify_bootstrap = TRUE` derives the stratification design from ",
+          "`y`, but for `family = \"cox\"` `y` is a two-column `Surv` object. ",
+          "Its `interaction(time, status)` strata are effectively singletons, so ",
+          "the stratified sampler cannot allocate a subsample. Supply an ",
+          "explicit `bootstrap_strata` design (one categorical value per ",
+          "sample) or set `stratify_bootstrap = FALSE`."
+        ),
+        family = family
+      )
+    }
+    bootstrap_strata <- y
+  }
+  bootstrap_strata_ids <- .bootstrap_strata_ids(
+    strata = bootstrap_strata,
+    n = nrow(x),
+    arg = "bootstrap_strata"
+  )
 
   n_samples   <- nrow(x)
   n_features  <- ncol(x)
@@ -249,23 +419,18 @@ stabl_fit <- function(
   if (is.null(feat_names)) feat_names <- paste0("x.", seq_len(n_features))
 
   # ---- Lambda grid ----------------------------------------------------------
-  if (identical(lambda_grid, "auto")) {
-    if (verbose) message("Computing auto lambda grid...")
-    lambda_grid <- auto_lambda_grid(
-      x,
-      y,
-      family = family,
-      n_lambda = n_lambda,
-      l1_ratio = l1_ratio
-    )
+  if (identical(lambda_grid, "auto") && verbose) {
+    message("Computing auto lambda grid...")
   }
-  if (!is.data.frame(lambda_grid)) {
-    stop("`lambda_grid` must be a data.frame or \"auto\".", call. = FALSE)
-  }
-  if (!"lambda" %in% names(lambda_grid)) {
-    stop("`lambda_grid` must contain a `lambda` column.", call. = FALSE)
-  }
-  n_lambdas <- nrow(lambda_grid)
+  resolved_grid <- .resolve_lambda_grid(
+    lambda_grid,
+    keys = character(0),
+    x = x, y = y,
+    family = family,
+    n_lambda = n_lambda,
+    l1_ratio = l1_ratio
+  )
+  lambda_grid <- resolved_grid$grid
 
   # ---- Derived RNG streams (audit M-5, V-7) ---------------------------------
   # When `random_state` is set we draw three independent integer seeds from a
@@ -275,12 +440,39 @@ stabl_fit <- function(
   # independent (artificial features cannot consume RNG that boot indices
   # need) and makes the parallel and sequential loops bit-identical because
   # each iteration seeds its own RNG before calling the learner adapter.
+  # That parallel equivalence is conditional on `random_state`: without it
+  # there are no per-iteration seeds, so a parallel run cannot reproduce a
+  # sequential one.  Every seeding here goes through `.with_local_seed`, so
+  # the caller's `.Random.seed` survives the call.
+  rng_kind <- RNGkind()
+  if (is.null(random_state) && workers > 1L) {
+    warning(
+      "`workers > 1` with `random_state = NULL` cannot be reproduced: there ",
+      "is no per-iteration seed, so the parallel bootstrap draws depend on ",
+      "ambient RNG state. Set `random_state` to make the run reproducible.",
+      call. = FALSE
+    )
+  }
+  parallel_backend_available <- (workers > 1L) &&
+    requireNamespace("furrr", quietly = TRUE) &&
+    requireNamespace("future", quietly = TRUE)
+  if (workers > 1L && !parallel_backend_available) {
+    warning(
+      "`workers > 1` was requested but the `furrr` and `future` packages are ",
+      "not both available; the bootstrap loop runs sequentially instead. ",
+      "Install them (or pre-load `library(future)`) for real parallelism.",
+      call. = FALSE
+    )
+  }
+
   art_seed  <- NULL
   boot_seed <- NULL
   iter_seed_base <- NULL
   if (!is.null(random_state)) {
-    set.seed(random_state)
-    rng_seeds      <- sample.int(.Machine$integer.max, size = 3L)
+    rng_seeds <- .with_local_seed(
+      random_state,
+      sample.int(.Machine$integer.max, size = 3L)
+    )
     art_seed       <- rng_seeds[[1L]]
     boot_seed      <- rng_seeds[[2L]]
     iter_seed_base <- rng_seeds[[3L]]
@@ -312,28 +504,31 @@ stabl_fit <- function(
   }
 
   # ---- Sparse-group feature groups -----------------------------------------
-  sgl_feature_groups <- .resolve_sgl_feature_groups(
+  sgl_groups <- .resolve_sgl_feature_groups(
     base_learner         = base_learner,
     x_original           = x,
     x_augmented          = x_fit,
     feature_groups       = feature_groups,
     corr_group_threshold = corr_group_threshold,
-    noise_col_indices    = noise_col_indices
+    noise_col_indices    = noise_col_indices,
+    artificial_type      = artificial_type,
+    actual_type          = artificial_provenance$actual_type
   )
 
-  # ---- Learner adapter (batch: one model path call per bootstrap) -----------
+  # ---- Learner adapter ------------------------------------------------------
   # Each batch adapter accepts the full lambda_grid and returns a logical
-  # matrix (n_total_features × n_lambdas), reducing n_bootstraps × n_lambdas
-  # glmnet calls to just n_bootstraps calls.
+  # matrix (n_features × n_lambdas).  For a single alpha this is one solver
+  # path call per bootstrap; a grid with k distinct alpha values costs k
+  # calls, and sparse_group_lasso additionally pays n_lambda coef() calls per
+  # path call (see the "Cost of the bootstrap loop" section in the docs).
   batch_adapter <- .select_batch_adapter(
     base_learner       = base_learner,
     family             = family,
     adaptive_gamma     = adaptive_gamma,
     adaptive_epsilon   = adaptive_epsilon,
-    sgl_feature_groups = sgl_feature_groups
+    sgl_feature_groups = sgl_groups$groups
   )
 
-  n_total_features <- ncol(x_fit)
   n_subsamples     <- as.integer(floor(sample_fraction * n_samples))
   modeled_classes <- .modeled_class_levels(y, family)
 
@@ -348,8 +543,13 @@ stabl_fit <- function(
   }
 
   # ---- Bootstrap index lists ------------------------------------------------
-  if (!is.null(boot_seed)) set.seed(boot_seed)
-
+  # The three samplers below are deliberately not the exported ones for the
+  # classification branch; see `.classification_bootstrap_sampler()` for why the
+  # feasibility contract differs.  All of them ultimately call the same draw
+  # primitives (`.stratified_bootstrap_indices()`,
+  # `.unstratified_group_bootstrap_indices()`, `.sample_groups_until()`), so the
+  # RNG consumption of a given configuration is identical either way.
+  stratified_repair <- new.env(parent = emptyenv())
   boot_sampler <- if (!is.null(modeled_classes)) {
     .classification_bootstrap_sampler(
       y = y,
@@ -358,7 +558,8 @@ stabl_fit <- function(
       replace = replace,
       strata_ids = bootstrap_strata_ids,
       family = family,
-      class_levels = modeled_classes
+      class_levels = modeled_classes,
+      repair_log = stratified_repair
     )
   } else if (is.null(groups)) {
     function(.) classic_bootstrap_indices(
@@ -376,24 +577,57 @@ stabl_fit <- function(
       strata = bootstrap_strata
     )
   }
-  boot_indices <- lapply(seq_len(n_bootstraps), boot_sampler)
 
-  # ---- Per-iteration seeds for adapter calls (audit V-7) -------------------
-  # Pre-generate one integer seed per bootstrap iteration so that the learner
-  # adapter is reproducible and bit-identical across sequential and parallel
-  # execution paths.
-  iter_seeds <- if (!is.null(iter_seed_base)) {
-    set.seed(iter_seed_base)
-    sample.int(.Machine$integer.max, size = n_bootstraps)
-  } else NULL
+  # The bootstrap draws and the per-iteration seeds are generated inside one
+  # `.with_local_seed(boot_seed, ...)` scope: the inner `set.seed(iter_seed_base)`
+  # only affects the iteration seeds, and the caller's `.Random.seed` is
+  # restored on exit either way.
+  draws <- .with_local_seed(boot_seed, {
+    list(
+      boot_indices = lapply(seq_len(n_bootstraps), boot_sampler),
+      iter_seeds = if (!is.null(iter_seed_base)) {
+        set.seed(iter_seed_base)
+        sample.int(.Machine$integer.max, size = n_bootstraps)
+      } else {
+        NULL
+      }
+    )
+  })
+  boot_indices <- draws$boot_indices
+  iter_seeds   <- draws$iter_seeds
+
+  # `n_subsamples` is a lower bound on the realised draw: whole groups are never
+  # trimmed, and the class-feasibility repair below can raise the target further.
+  # Recording the realised length per bootstrap keeps that visible, and a short
+  # draw is an error rather than a smaller-than-requested fit reported against
+  # the requested `sample_fraction`.
+  subsample_sizes <- vapply(boot_indices, length, integer(1L))
+  if (any(subsample_sizes < n_subsamples)) {
+    .abort_stablr(
+      "stablr_bootstrap_infeasible",
+      paste0(
+        "A bootstrap replicate was drawn with ", min(subsample_sizes),
+        " rows, fewer than the requested n_subsamples = ", n_subsamples,
+        "; ", sum(subsample_sizes < n_subsamples), " of ", n_bootstraps,
+        " replicates are affected."
+      ),
+      n_subsamples = n_subsamples,
+      realised = min(subsample_sizes)
+    )
+  }
 
   art_rows <- if (!is.null(artificial_type)) {
     n_features + seq_len(n_injected)
   } else NULL
 
-  if (verbose) message("Running STABL bootstrap loop (",
-                       n_bootstraps, " bootstraps, ",
-                       n_lambdas, " lambdas, 1 path call per bootstrap)...")
+  if (verbose) {
+    message(
+      "Running STABL bootstrap loop (", n_bootstraps, " bootstraps, ",
+      nrow(lambda_grid), " lambdas, ",
+      .stabl_path_calls_per_bootstrap(base_learner, lambda_grid),
+      " solver path call(s) per bootstrap)..."
+    )
+  }
 
   # ---- Stability accumulation -----------------------------------------------
   boot_result  <- .run_bootstrap_accumulation(
@@ -407,21 +641,46 @@ stabl_fit <- function(
     feat_names     = feat_names,
     art_rows       = art_rows,
     artificial_type = artificial_type,
-    workers        = workers
+    workers        = workers,
+    use_furrr      = parallel_backend_available
   )
   stabl_scores_    <- boot_result$stabl_scores_
   stabl_scores_art <- boot_result$stabl_scores_art
 
   # ---- FDP+ diagnostic thresholding ----------------------------------------
+  # `hard_threshold` and the FDP+ minimiser are two different selection rules
+  # and only one of them can win.  When the caller supplied a hard threshold the
+  # FDP+ search is skipped rather than computed and discarded, and the fact is
+  # recorded in `fdp_threshold_suppressed`.  The artificial-feature scores and
+  # provenance are still produced.
   fdp <- NULL
+  fdp_threshold_suppressed <- NA
   if (!is.null(artificial_type)) {
-    fdp <- compute_fdp_plus(
-      stabl_scores            = stabl_scores_,
-      stabl_scores_artificial = stabl_scores_art,
-      artificial_proportion   = effective_artificial_proportion,
-      fdr_threshold_range     = fdr_threshold_range
-    )
+    if (is.null(hard_threshold)) {
+      fdp <- compute_fdp_plus(
+        stabl_scores            = stabl_scores_,
+        stabl_scores_artificial = stabl_scores_art,
+        artificial_proportion   = effective_artificial_proportion,
+        fdr_threshold_range     = fdr_threshold_range
+      )
+      fdp_threshold_suppressed <- FALSE
+    } else {
+      fdp_threshold_suppressed <- TRUE
+    }
   }
+
+  # ---- Fit-time threshold resolution and explore fallback -------------------
+  # The explore fallback is a function of the stability scores and n_explore
+  # only, so it is resolved once here and every accessor reads the same answer
+  # instead of recomputing (and potentially disagreeing about) it.
+  fit_time <- .resolve_fit_time_selection(
+    max_scores   = matrixStats::rowMaxs(stabl_scores_),
+    feat_names   = feat_names,
+    threshold    = if (!is.null(hard_threshold)) hard_threshold else
+      if (!is.null(fdp)) fdp$fdr_min_threshold else NULL,
+    explore      = explore,
+    n_explore    = n_explore
+  )
 
   # ---- Assemble S3 result ---------------------------------------------------
   structure(
@@ -429,26 +688,103 @@ stabl_fit <- function(
       stabl_scores_         = stabl_scores_,
       stabl_scores_artificial_ = stabl_scores_art,
       fitted_lambda_grid    = lambda_grid,
+      lambda_grid_source    = resolved_grid$source,
       fdr_min_threshold_    = if (!is.null(fdp)) fdp$fdr_min_threshold else NULL,
       FDRs_                 = if (!is.null(fdp)) fdp$FDRs              else NULL,
       min_fdr_              = if (!is.null(fdp)) fdp$min_fdr            else NULL,
       fdrs_table_           = if (!is.null(fdp)) fdp$fdrs_table         else NULL,
       fdr_threshold_range   = fdr_threshold_range,
+      fdp_threshold_suppressed = fdp_threshold_suppressed,
       hard_threshold        = hard_threshold,
       artificial_type       = artificial_type,
       artificial_provenance = artificial_provenance,
       artificial_proportion = artificial_proportion,
       effective_artificial_proportion = effective_artificial_proportion,
-      stratify_bootstrap    = !is.null(bootstrap_strata_ids),
+      stratify_bootstrap    = !is.null(stratify_design),
+      stratify_bootstrap_requested = stratify_requested,
+      bootstrap_strata_source = stratify_design,
+      bootstrap_strata_applied = !is.null(bootstrap_strata_ids),
       bootstrap_strata_levels = if (!is.null(bootstrap_strata_ids)) {
         sort(unique(as.character(bootstrap_strata_ids)))
       } else NULL,
+      bootstrap_subsample_target_ = n_subsamples,
+      bootstrap_subsample_sizes_ = subsample_sizes,
+      bootstrap_stratified_repair_ = if (is.null(stratified_repair$target_raised)) {
+        NULL
+      } else {
+        list(
+          target_raised = TRUE,
+          requested_target = stratified_repair$requested_target,
+          repair_target = stratified_repair$repair_target,
+          n_classes = stratified_repair$n_classes,
+          minimum_per_class = stratified_repair$minimum_per_class,
+          n_repairs = stratified_repair$n_repairs
+        )
+      },
       explore               = explore,
       n_explore             = as.integer(n_explore),
+      explore_features_     = fit_time$explore_features,
+      explore_applied_      = fit_time$explore_applied,
+      support_              = fit_time$support,
+      sgl_feature_groups_   = sgl_groups$groups,
+      sgl_group_provenance  = sgl_groups$provenance,
+      rng_kind_             = rng_kind,
       feature_names         = feat_names,
       n_features_in_        = n_features
     ),
     class = "stabl_fit"
+  )
+}
+
+# Solver path calls per bootstrap, for the progress message.  A single-alpha
+# grid costs one call; a grid with k distinct `alpha` values costs k, because
+# the batch adapters fit one path per distinct mixing parameter.
+.stabl_path_calls_per_bootstrap <- function(base_learner, lambda_grid) {
+  has_alpha_col <- "alpha" %in% names(lambda_grid)
+  if (!has_alpha_col) {
+    return(1L)
+  }
+  if (base_learner %in% c("lasso", "adaptive_lasso")) {
+    return(1L)
+  }
+  as.integer(length(unique(lambda_grid[["alpha"]])))
+}
+
+# Resolve the fit-time support mask and the explore fallback candidate set.
+#
+# `explore_features_` is threshold-independent: it is simply the `n_explore`
+# highest-importance features, so every accessor reports the same fallback
+# whatever threshold it is asked about.  `support_` is the mask for the
+# threshold that actually drove this fit, and is `NULL` when no threshold was
+# resolvable (an object whose thresholds were removed after fitting).
+.resolve_fit_time_selection <- function(max_scores, feat_names, threshold,
+                                         explore, n_explore) {
+  names(max_scores) <- feat_names
+  n_exp <- min(as.integer(n_explore), length(max_scores))
+  explore_features <- if (isTRUE(explore) && n_exp > 0L) {
+    names(sort(max_scores, decreasing = TRUE))[seq_len(n_exp)]
+  } else {
+    NULL
+  }
+
+  if (is.null(threshold)) {
+    return(list(
+      support = NULL,
+      explore_features = explore_features,
+      explore_applied = NA
+    ))
+  }
+
+  mask <- max_scores > threshold
+  explore_applied <- FALSE
+  if (!any(mask) && !is.null(explore_features)) {
+    mask[explore_features] <- TRUE
+    explore_applied <- TRUE
+  }
+  list(
+    support = mask,
+    explore_features = explore_features,
+    explore_applied = explore_applied
   )
 }
 
@@ -489,11 +825,27 @@ stabl_fit <- function(
   )
 }
 
+# Learner-feasible bootstrap sampler for `family = "binomial"`/`"multinomial"`.
+#
+# This deliberately does not call `classic_bootstrap_indices()` /
+# `group_bootstrap_indices()` even though both are exported.  The exported
+# samplers guarantee only "at least two distinct classes" via
+# `.guard_diverse_bootstrap()`; a classification fit additionally needs a
+# *minimum number of observations* in every modeled class, and when the groups
+# are class-pure the only way to guarantee that is to raise the row target above
+# `n_subsamples` and redraw stratified.  Routing this through the exported
+# samplers would silently weaken the contract (a 1-vs-19 draw is "diverse") and
+# would lose the typed `stablr_bootstrap_infeasible` aborts below.  The draw
+# primitives are the same ones the exported samplers use, so RNG consumption is
+# unchanged; only the acceptance policy differs.  The raised target and the
+# realised overshoot are reported through `repair_log` and land in the fit as
+# `bootstrap_stratified_repair_` / `bootstrap_subsample_sizes_`.
 .classification_bootstrap_sampler <- function(y, groups, n_subsamples,
                                               replace, strata_ids, family,
                                               class_levels,
                                               minimum_per_class = 2L,
-                                              max_redraws = 1000L) {
+                                              max_redraws = 1000L,
+                                              repair_log = NULL) {
   class_counts <- table(factor(as.character(y), levels = class_levels))
   if (any(class_counts < minimum_per_class)) {
     .abort_bootstrap_infeasible(
@@ -573,6 +925,14 @@ stabl_fit <- function(
         n_subsamples,
         length(class_levels) * minimum_per_class
       )
+      if (!is.null(repair_log)) {
+        repair_log$target_raised <- TRUE
+        repair_log$requested_target <- n_subsamples
+        repair_log$repair_target <- repair_target
+        repair_log$n_classes <- length(class_levels)
+        repair_log$minimum_per_class <- minimum_per_class
+        repair_log$n_repairs <- (repair_log$n_repairs %||% 0L) + 1L
+      }
       return(.stratified_group_bootstrap_indices(
         factor(as.character(y), levels = class_levels),
         groups,
@@ -666,14 +1026,53 @@ stabl_fit <- function(
   invisible(NULL)
 }
 
+# The four `glmnet` response families this package documents and supports for
+# `stabl_fit()`.  Validating here turns a family typo ("gaussain", "binomal")
+# into a typed condition instead of an opaque `glmnet` internal error.  The set
+# is deliberately not "whatever glmnet accepts": `.modeled_class_levels()`,
+# `.feature_abs_coefs()` and `.stop_if_cox_sgl()` all branch on these four.
+.stabl_family_levels <- c("gaussian", "binomial", "multinomial", "cox")
+
+.validate_stabl_family <- function(family) {
+  if (!is.character(family) || length(family) != 1L || is.na(family)) {
+    stop("`family` must be a single character string.", call. = FALSE)
+  }
+  if (!family %in% .stabl_family_levels) {
+    stop(
+      "`family` must be one of: ",
+      paste(sprintf("\"%s\"", .stabl_family_levels), collapse = ", "),
+      "; got \"", family, "\".",
+      call. = FALSE
+    )
+  }
+  family
+}
+
+# `fdr_threshold_range` is swept by compute_fdp_plus(); validate it here so an
+# out-of-range or empty range is reported against the fitting call.
+.validate_fdr_threshold_range <- function(fdr_threshold_range) {
+  if (!is.numeric(fdr_threshold_range) || !is.null(dim(fdr_threshold_range)) ||
+      length(fdr_threshold_range) == 0L ||
+      any(!is.finite(fdr_threshold_range))) {
+    stop("`fdr_threshold_range` must be a non-empty finite numeric vector.",
+         call. = FALSE)
+  }
+  if (any(fdr_threshold_range < 0 | fdr_threshold_range > 1)) {
+    stop("`fdr_threshold_range` must lie in [0, 1].", call. = FALSE)
+  }
+  as.numeric(fdr_threshold_range)
+}
+
 .resolve_sgl_feature_groups <- function(base_learner,
                                         x_original,
                                         x_augmented,
                                         feature_groups,
                                         corr_group_threshold,
-                                        noise_col_indices) {
+                                        noise_col_indices,
+                                        artificial_type = NULL,
+                                        actual_type = NULL) {
   if (base_learner != "sparse_group_lasso") {
-    return(NULL)
+    return(list(groups = NULL, provenance = NULL))
   }
 
   has_explicit <- !is.null(feature_groups)
@@ -704,18 +1103,88 @@ stabl_fit <- function(
     grp <- .build_corr_groups(x_original, corr_group_threshold)
   }
 
-  .append_noise_groups(grp, noise_col_indices, ncol(x_augmented))
+  generator <- if (!is.null(actual_type)) actual_type else artificial_type
+  inherit_groups <- .sgl_noise_group_inheritance(generator)
+  groups <- .append_noise_groups(
+    grp, noise_col_indices, ncol(x_augmented),
+    inherit_groups = identical(inherit_groups, "on")
+  )
+
+  list(
+    groups = groups,
+    provenance = list(
+      group_source = if (has_explicit) "feature_groups" else "corr_group_threshold",
+      noise_group_inheritance = if (is.null(noise_col_indices)) {
+        NA_character_
+      } else {
+        inherit_groups
+      },
+      n_groups = length(unique(groups)),
+      n_noise_features = length(noise_col_indices)
+    )
+  )
 }
 
+# Should an artificial decoy inherit the sparse-group assignment of the original
+# feature it was derived from?
+#
+# Default OFF for permutation decoys.  FDP+ compares the stability of the real
+# block against the artificial block, and it is only a like-for-like comparison
+# when both blocks face the same kind of group-lasso penalty.  Putting a
+# permutation decoy into its source feature's group couples the decoy's
+# selection to the real block's group structure, so the decoy's stability score
+# partly measures the real block rather than the decoy's own noise.
+#
+# Knockoff decoys are the exception: a knockoff is *exchangeable* with its
+# source by construction, so co-grouping them is the honest representation and
+# inheritance is on.  The resolved value is recorded in
+# `sgl_group_provenance$noise_group_inheritance`; pass `"on"`/`"off"` to
+# `.append_noise_groups()` directly to override.
+.sgl_noise_group_inheritance <- function(generator) {
+  if (is.null(generator)) {
+    return("off")
+  }
+  if (is.character(generator) && length(generator) == 1L &&
+      startsWith(generator, "knockoff")) {
+    return("on")
+  }
+  "off"
+}
+
+# `.build_corr_groups()` collapses features into groups using a
+# correlation-threshold graph.  Two behaviours a reader would otherwise have to
+# reverse engineer:
+#
+# 1. `corr[is.na(corr)] <- 0` replaces every undefined correlation with a
+#    numerical zero.  Undefined arises for zero-variance columns and for pairs
+#    with no complete overlap under `use = "pairwise.complete.obs"`.  A
+#    constant column has no estimable correlation, so there is no evidence for
+#    grouping it with anything; zero is the "no association" value, so such a
+#    column is then treated exactly like any genuinely uncorrelated column --
+#    neither force-joined nor treated as maximally correlated.  (Whether a zero
+#    ends up above the cutoff is the same question every uncorrelated pair faces,
+#    and is answered by the percentile below.)  Propagating `NA` into the edge
+#    test instead would make the resulting partition depend on `NA` handling
+#    rather than on the data.
+# 2. The `- 0.1` subtracted from the percentile is a port of the Python
+#    reference (`stabl/stabl.py`:
+#    `threshold = np.percentile(corr_val, perc) - 0.1`).  Correlation
+#    thresholds are otherwise not comparable across implementations; the offset
+#    is what makes the R port reproduce the Python partition, and it is a fixed
+#    constant rather than a tuned parameter.
 .build_corr_groups <- function(x, percentile) {
   if (!is.numeric(percentile) || length(percentile) != 1L ||
+      is.na(percentile) || !is.finite(percentile) ||
       percentile <= 0 || percentile > 100) {
     stop("`corr_group_threshold` must be a numeric scalar in (0, 100].", call. = FALSE)
   }
 
   p <- ncol(x)
-  if (p <= 1L) {
-    return(rep.int(1L, p))
+  if (p < 1L) {
+    stop("`x` must contain at least one feature column.", call. = FALSE)
+  }
+  if (p == 1L) {
+    return(1L)
   }
 
   corr <- suppressWarnings(stats::cor(x, use = "pairwise.complete.obs"))
@@ -750,7 +1219,17 @@ stabl_fit <- function(
   as.integer(as.factor(roots))
 }
 
-.append_noise_groups <- function(groups, noise_col_indices, total_p) {
+# Extend an original-feature group assignment over the artificial block.
+#
+# `inherit_groups = TRUE` (the default, preserved for direct callers of this
+# helper) gives each decoy the group of the original feature recorded in
+# `noise_col_indices`.  `inherit_groups = FALSE` gives every decoy a fresh group
+# id, so the artificial block is penalised independently of the real block and
+# the two blocks stay comparable under the group-lasso penalty.  `stabl_fit()`
+# passes `inherit_groups = FALSE` for permutation decoys; see
+# `.sgl_noise_group_inheritance()`.
+.append_noise_groups <- function(groups, noise_col_indices, total_p,
+                                inherit_groups = TRUE) {
   if (is.null(noise_col_indices)) {
     return(groups)
   }
@@ -764,7 +1243,7 @@ stabl_fit <- function(
 
   for (i in seq_len(n_noise)) {
     src <- as.integer(noise_col_indices[[i]])
-    if (!is.na(src) && src >= 1L && src <= n_orig) {
+    if (isTRUE(inherit_groups) && !is.na(src) && src >= 1L && src <= n_orig) {
       out[n_orig + i] <- groups[[src]]
     } else {
       next_gid        <- next_gid + 1L
@@ -816,7 +1295,8 @@ stabl_fit <- function(
 .run_bootstrap_accumulation <- function(
     batch_adapter, boot_indices, iter_seeds,
     x_fit, y, lambda_grid,
-    n_features, feat_names, art_rows, artificial_type, workers
+    n_features, feat_names, art_rows, artificial_type, workers,
+    use_furrr = NULL
 ) {
   n_bootstraps <- length(boot_indices)
   n_lambdas    <- nrow(lambda_grid)
@@ -837,9 +1317,11 @@ stabl_fit <- function(
     }
   }
 
-  use_furrr <- (workers > 1L) &&
-    requireNamespace("furrr",  quietly = TRUE) &&
-    requireNamespace("future", quietly = TRUE)
+  if (is.null(use_furrr)) {
+    use_furrr <- (workers > 1L) &&
+      requireNamespace("furrr",  quietly = TRUE) &&
+      requireNamespace("future", quietly = TRUE)
+  }
 
   if (use_furrr) {
     batch_adapter <- .make_parallel_safe_batch_adapter(batch_adapter)

@@ -40,8 +40,40 @@
 #' @param workers Passed to [stabl_fit()] for bootstrap-level parallelism.
 #' @param cv_workers Number of outer folds to evaluate in parallel. Uses
 #'   `parallel::mclapply()` on Unix-like systems and falls back to sequential
-#'   execution on Windows.
+#'   execution on Windows.  Must be `1L` unless `random_state` is supplied:
+#'   forked workers inherit an identical `.Random.seed` snapshot, so with no
+#'   seed every fold would draw from one common stream and the result would be
+#'   unreproducible.
 #' @param ... Additional arguments passed to [stabl_fit()].
+#'
+#' @section Candidate selection is optimistic:
+#' The held-out numbers are the score of the *declared candidate workflow*, not
+#' of a candidate chosen without looking at the data.  Within each outer fold
+#' the winner is picked by a single inner-CV number (`which.min` balanced error
+#' rate, or `which.max` accuracy -- ties go to the first candidate), so the
+#' outer estimate inherits the winner's-curse bias of that selection step; no
+#' one-standard-error rule is applied.  This is a scientific decision for the
+#' analysis author, not a defect to be smoothed over here.
+#'
+#' `outer_repeats` defaults to `1L`, which leaves the outer estimate with the
+#' variance of a single repeated-CV split.  Use `outer_repeats > 1L` whenever a
+#' generalisation number from this helper is going to be reported or compared.
+#'
+#' The inner-CV comparison is *paired*: every candidate is fitted on the same
+#' inner folds with the same per-fold seeds, so a difference in inner score
+#' reflects a difference in the candidate rather than a difference in the
+#' bootstrap draws.
+#'
+#' @section RNG:
+#' When `random_state` is an integer, `stabl_multiomic_nested_cv()` does not
+#' mutate the caller's `.Random.seed`.  Every seeded stage -- fold construction,
+#' each inner fit, each outer refit, and the downstream `cv.glmnet` -- runs
+#' inside a `.with_local_seed()` scope.  With `random_state = NULL` the fold
+#' draws come from ambient RNG state and therefore do advance the caller's
+#' stream, as any unseeded stochastic routine does.
+#'
+#' Reproducibility is conditional on `RNGkind()` and on `sample.kind`; neither is
+#' pinned by this function, so changing them between runs changes the folds.
 #'
 #' @note Cooperative fusion (`cooperative_fusion = TRUE`) is not supported in
 #'   nested CV. Use [stabl_multiomic_train_validate()] or
@@ -161,6 +193,19 @@ stabl_multiomic_nested_cv <- function(
   }
 
   if (cv_workers > 1L && .Platform$OS.type != "windows") {
+    if (is.null(random_state)) {
+      .abort_stablr(
+        "stablr_nested_cv_unseeded_parallel",
+        paste0(
+          "`cv_workers > 1` requires `random_state`. Forked workers inherit an ",
+          "identical `.Random.seed` snapshot, so without a seed every outer ",
+          "fold would draw from one common RNG stream: the folds would not be ",
+          "independent and the result would not be reproducible. Supply ",
+          "`random_state`, or use `cv_workers = 1L`."
+        ),
+        cv_workers = cv_workers
+      )
+    }
     outer_results <- parallel::mclapply(
       seq_along(outer_folds),
       fold_runner,
@@ -169,6 +214,12 @@ stabl_multiomic_nested_cv <- function(
   } else {
     outer_results <- lapply(seq_along(outer_folds), fold_runner)
   }
+
+  # mclapply returns a `try-error` object for a failed worker instead of
+  # propagating the error.  Without this check the failure surfaces as
+  # `subscript out of bounds` from the `[[` below, which names neither the fold
+  # nor the cause.
+  .check_nested_cv_fold_results(outer_results, outer_folds)
 
   fold_results <- lapply(outer_results, `[[`, "fold_result")
   names(fold_results) <- vapply(outer_folds, `[[`, character(1L), "fold_id")
@@ -198,6 +249,39 @@ stabl_multiomic_nested_cv <- function(
       stabl_workers = workers
     ),
     class = "stabl_multiomic_nested_cv"
+  )
+}
+
+# Raise a typed condition naming the fold that failed, instead of letting
+# `lapply(results, "[[", "fold_result")` fail with an unrelated
+# "subscript out of bounds" when a worker returned a `try-error`.
+.check_nested_cv_fold_results <- function(results, folds) {
+  failed <- vapply(results, function(result) inherits(result, "try-error"),
+                   logical(1L))
+  if (!any(failed)) {
+    return(invisible(results))
+  }
+  index <- which(failed)[[1L]]
+  condition <- results[[index]]
+  fold_id <- tryCatch(
+    vapply(folds, `[[`, character(1L), "fold_id")[[index]],
+    error = function(e) NA_character_
+  )
+  # mclapply stores the worker's `try-error` as a character string, not as a
+  # condition, so conditionMessage() only applies to the second case.
+  detail <- if (inherits(condition, "condition")) {
+    conditionMessage(condition)
+  } else {
+    paste(as.character(condition), collapse = " ")
+  }
+  .abort_stablr(
+    "stablr_nested_cv_fold_failed",
+    paste0(
+      "Nested-CV outer fold ", index, " (", fold_id, ") failed: ", detail
+    ),
+    parent = if (inherits(condition, "condition")) condition else NULL,
+    fold_index = index,
+    fold_id = fold_id
   )
 }
 
@@ -361,6 +445,40 @@ stabl_multiomic_nested_cv <- function(
                .Machine$integer.max)
 }
 
+# Seed offsets for the four derived streams in one nested-CV run.  They must stay
+# distinct: 1000L drives inner-fold construction, 2000L drives every candidate's
+# inner fit (independently of which candidate it is -- common random numbers),
+# 3000L drives the outer refit, and 4000L drives the downstream `cv.glmnet`.
+.NESTED_INNER_FOLD_SEED_OFFSET <- 1000L
+.NESTED_INNER_FIT_SEED_OFFSET  <- 2000L
+.NESTED_OUTER_FIT_SEED_OFFSET  <- 3000L
+.NESTED_CV_GLMNET_SEED_OFFSET  <- 4000L
+
+# `glmnet::cv.glmnet()` generates its own internal fold assignment, so it
+# consumes ambient RNG state and its result changes with whatever ran before it.
+# Wrapping the call in `.with_local_seed()` gives it a deterministic fold
+# assignment derived from the caller's `random_state` and leaves the caller's
+# `.Random.seed` untouched.  With `random_state = NULL` the call is left
+# unseeded, which is the honest behaviour for an unseeded run.
+#
+# This helper exists so the three unseeded `cv.glmnet()` sites in the package
+# converge on one implementation.  Sites outside `R/nested_cv.R` should call it
+# with the seed already threaded through their own arguments.
+.seeded_cv_glmnet <- function(x, y, family, type.measure, nfolds,
+                              random_state = NULL, ...) {
+  .with_local_seed(
+    random_state,
+    glmnet::cv.glmnet(
+      x = x,
+      y = y,
+      family = family,
+      type.measure = type.measure,
+      nfolds = nfolds,
+      ...
+    )
+  )
+}
+
 .evaluate_stabl_candidates_inner <- function(x_list, y, train_ids, candidates,
                                              inner_folds, lambda_grid, metric,
                                              family, n_bootstraps,
@@ -368,7 +486,7 @@ stabl_multiomic_nested_cv <- function(
                                              random_state, n_lambda, l1_ratio,
                                              workers, ...) {
   candidate_rows <- list()
-  k <- 1L
+  grid_sources <- character(0)
 
   for (cand_name in names(candidates)) {
     candidate <- candidates[[cand_name]]
@@ -378,6 +496,12 @@ stabl_multiomic_nested_cv <- function(
       fold <- inner_folds[[fold_i]]
       inner_train <- fold$train_ids
       inner_valid <- fold$valid_ids
+      # The seed depends on the inner fold only, never on the candidate index:
+      # all candidates are fitted on the same folds with the same bootstrap
+      # draws (common random numbers).  Deriving it from the candidate index
+      # injected sampling noise into a single-number selection rule, and
+      # `k * 100L` also collided with the 1000L and 3000L offsets used for the
+      # inner-fold and outer-refit seeds once a run had ten candidates.
       fit <- .fit_stabl_nested_candidate(
         x_list = x_list,
         y = y,
@@ -389,12 +513,15 @@ stabl_multiomic_nested_cv <- function(
         n_bootstraps = n_bootstraps,
         artificial_type = artificial_type,
         hard_threshold = hard_threshold,
-        random_state = .derive_nested_seed(random_state, fold_i, k * 100L),
+        random_state = .derive_nested_seed(
+          random_state, fold_i, .NESTED_INNER_FIT_SEED_OFFSET
+        ),
         n_lambda = n_lambda,
         l1_ratio = l1_ratio,
         workers = workers,
         ...
       )
+      grid_sources <- c(grid_sources, fit$lambda_grid_source)
       pred_rows[[fold_i]] <- data.frame(
         truth = as.character(y[inner_valid]),
         predicted = fit$predicted,
@@ -412,10 +539,20 @@ stabl_multiomic_nested_cv <- function(
       n_inner_predictions = nrow(preds),
       stringsAsFactors = FALSE
     )
-    k <- k + 1L
   }
 
-  list(summary = do.call(rbind, candidate_rows))
+  summary <- do.call(rbind, candidate_rows)
+  # A named-list `lambda_grid` with no entry for some candidate falls back to an
+  # auto grid on that candidate's training data.  The per-candidate outcome is
+  # recorded here so the substitution is visible in the returned diagnostics
+  # rather than only in a warning.  The resolution depends on the grid
+  # specification and the candidate, not on the fold, so the first fold's label
+  # is the candidate's label.
+  summary$lambda_grid_source <- names(candidate_rows)
+  summary$lambda_grid_resolved <- unname(grid_sources[
+    seq.int(1L, length(grid_sources), by = length(inner_folds))
+  ])
+  list(summary = summary)
 }
 
 .select_nested_candidate <- function(summary, metric) {
@@ -434,18 +571,22 @@ stabl_multiomic_nested_cv <- function(
   x_valid <- .candidate_matrix(x_list, candidate, valid_ids)
   y_train <- y[train_ids]
 
+  # Shared resolver: the named-list lookup and its `auto_lambda_grid` fallback
+  # are defined once in learner_adapters.R, and the fallback now warns.
+  resolved_grid <- .resolve_lambda_grid(
+    lambda_grid,
+    keys = .nested_lambda_grid_keys(candidate),
+    x = x_train, y = y_train,
+    family = family,
+    n_lambda = n_lambda,
+    l1_ratio = l1_ratio,
+    on_missing_key = "warn"
+  )
+
   fit <- stabl_fit(
     x = x_train,
     y = y_train,
-    lambda_grid = .resolve_nested_lambda_grid(
-      lambda_grid,
-      candidate,
-      x_train,
-      y_train,
-      family,
-      n_lambda,
-      l1_ratio
-    ),
+    lambda_grid = resolved_grid$grid,
     family = family,
     n_bootstraps = n_bootstraps,
     artificial_type = artificial_type,
@@ -464,7 +605,10 @@ stabl_multiomic_nested_cv <- function(
     x_train = x_train[, selected, drop = FALSE],
     y_train = y_train,
     x_valid = x_valid[, selected, drop = FALSE],
-    levels = levels(y)
+    levels = levels(y),
+    random_state = .derive_nested_seed(
+      random_state, 1L, .NESTED_CV_GLMNET_SEED_OFFSET
+    )
   )
 
   list(
@@ -472,8 +616,20 @@ stabl_multiomic_nested_cv <- function(
     selected_features = .split_prefixed_features(selected),
     importances = importances,
     predicted = predicted,
-    candidate = candidate$name
+    candidate = candidate$name,
+    lambda_grid_source = resolved_grid$source
   )
+}
+
+# Ordered lookup keys for a named-list `lambda_grid`: the candidate name first,
+# then its single block name (the two cases the resolver can satisfy).  A
+# multi-block candidate only matches on its own name.
+.nested_lambda_grid_keys <- function(candidate) {
+  keys <- candidate$name
+  if (length(candidate$blocks) == 1L) {
+    keys <- c(keys, candidate$blocks[[1L]])
+  }
+  keys
 }
 
 .candidate_matrix <- function(x_list, candidate, ids) {
@@ -487,30 +643,11 @@ stabl_multiomic_nested_cv <- function(
   out
 }
 
-.resolve_nested_lambda_grid <- function(lambda_grid, candidate, x_train, y_train,
-                                        family, n_lambda, l1_ratio = NULL) {
-  if (identical(lambda_grid, "auto")) {
-    return("auto")
-  }
-  if (is.data.frame(lambda_grid)) {
-    return(lambda_grid)
-  }
-  if (is.list(lambda_grid)) {
-    if (!is.null(lambda_grid[[candidate$name]])) {
-      return(lambda_grid[[candidate$name]])
-    }
-    if (length(candidate$blocks) == 1L && !is.null(lambda_grid[[candidate$blocks[[1L]]]])) {
-      return(lambda_grid[[candidate$blocks[[1L]]]])
-    }
-  }
-  auto_lambda_grid(
-    x_train,
-    y_train,
-    family = family,
-    n_lambda = n_lambda,
-    l1_ratio = l1_ratio
-  )
-}
+# `.resolve_nested_lambda_grid()` used to live here.  The named-list lookup, the
+# "auto" expansion and the `auto_lambda_grid()` fallback now have one
+# implementation, `.resolve_lambda_grid()` in `R/learner_adapters.R`, which also
+# validates the resolved grid and warns on the fallback path.  The fallback
+# outcome is recorded per candidate in the returned `diagnostics` table.
 
 .majority_class_prediction <- function(y_train, n) {
   rep(names(which.max(table(y_train))), n)
@@ -523,9 +660,12 @@ stabl_multiomic_nested_cv <- function(
   )
 }
 
-.predict_selected_multinomial <- function(x_train, y_train, x_valid, levels) {
+.predict_selected_multinomial <- function(x_train, y_train, x_valid, levels,
+                                         random_state = NULL) {
   y_train <- factor(y_train, levels = levels)
-  if (ncol(x_train) == 0L || length(unique(y_train)) < 2L) {
+  # cv.glmnet needs at least two predictor columns, so a STABL support of size
+  # 0 or 1 has no downstream model to fit; fall back to the majority class.
+  if (ncol(x_train) < 2L || length(unique(y_train)) < 2L) {
     return(.majority_class_prediction(y_train, nrow(x_valid)))
   }
 
@@ -543,12 +683,13 @@ stabl_multiomic_nested_cv <- function(
         )
       }
       fit <- .with_glmnet_numerical_infeasibility(
-        glmnet::cv.glmnet(
+        .seeded_cv_glmnet(
           x = x_train,
           y = y_train,
           family = if (length(levels) == 2L) "binomial" else "multinomial",
           type.measure = "class",
-          nfolds = min(5L, min(class_counts))
+          nfolds = min(5L, min(class_counts)),
+          random_state = random_state
         ),
         source = "glmnet selected-feature classification fit"
       )
@@ -608,7 +749,9 @@ stabl_multiomic_nested_cv <- function(
   train_ids <- outer$train_ids
   valid_ids <- outer$valid_ids
 
-  inner_seed <- .derive_nested_seed(random_state, outer_i, 1000L)
+  inner_seed <- .derive_nested_seed(
+    random_state, outer_i, .NESTED_INNER_FOLD_SEED_OFFSET
+  )
   inner_folds <- .make_cv_folds(
     y = strata_labels[train_ids],
     v = inner_v,
@@ -628,7 +771,9 @@ stabl_multiomic_nested_cv <- function(
     n_bootstraps = n_bootstraps,
     artificial_type = artificial_type,
     hard_threshold = hard_threshold,
-    random_state = .derive_nested_seed(random_state, outer_i, 2000L),
+    random_state = .derive_nested_seed(
+      random_state, outer_i, .NESTED_INNER_FIT_SEED_OFFSET
+    ),
     n_lambda = n_lambda,
     l1_ratio = l1_ratio,
     workers = workers,
@@ -649,7 +794,9 @@ stabl_multiomic_nested_cv <- function(
     n_bootstraps = n_bootstraps,
     artificial_type = artificial_type,
     hard_threshold = hard_threshold,
-    random_state = .derive_nested_seed(random_state, outer_i, 3000L),
+    random_state = .derive_nested_seed(
+      random_state, outer_i, .NESTED_OUTER_FIT_SEED_OFFSET
+    ),
     n_lambda = n_lambda,
     l1_ratio = l1_ratio,
     workers = workers,

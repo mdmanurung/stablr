@@ -297,3 +297,169 @@ test_that("D2: .stratified_group_bootstrap_indices replace=FALSE exact order (ch
                                                       replace = FALSE)
   expect_identical(idx, c(1L, 7L, 3L, 8L, 2L, 10L, 6L, 9L))
 })
+
+# ---- G4: the grouped sampler must never under-deliver a subsample ------------
+
+test_that("G4 .sample_groups_until aborts instead of returning a short subsample", {
+  # A group label that matches no row (`NA` compares to nothing) contributes an
+  # empty chunk, so the group pool can drain before the row target is met.  The
+  # old loop returned the short result with no error and no warning.
+  groups <- c("a", NA, "b")
+  levels <- unique(groups)
+
+  expect_error(
+    stablr:::.sample_groups_until(levels, groups, target_n = 3L, replace = FALSE),
+    "could only reach 2 of the requested 3 rows"
+  )
+
+  err <- tryCatch(
+    stablr:::.sample_groups_until(levels, groups, target_n = 3L, replace = FALSE),
+    condition = function(e) e
+  )
+  expect_s3_class(err, "stablr_bootstrap_infeasible")
+  expect_s3_class(err, "stablr_error")
+  expect_match(conditionMessage(err), "3")
+  expect_match(conditionMessage(err), "2")
+})
+
+test_that("G4 the grouped sampler names the stratum that could not be filled", {
+  groups <- c("a", NA, "b", "c", "d")
+  levels <- unique(groups)
+
+  err <- tryCatch(
+    stablr:::.sample_groups_until(levels, groups, target_n = 5L,
+                                  replace = FALSE, label = "stratum `X`"),
+    condition = function(e) e
+  )
+
+  expect_s3_class(err, "stablr_bootstrap_infeasible")
+  expect_match(conditionMessage(err), "stratum `X`", fixed = TRUE)
+})
+
+test_that("G4 group_bootstrap_indices rejects group ids that match no row", {
+  y <- c(0L, 0L, 1L, 1L)
+  groups <- c("g1", "g1", "g2", NA)
+
+  expect_error(
+    group_bootstrap_indices(y = y, groups = groups, n_subsamples = 2L,
+                            replace = FALSE, seed = 1L),
+    "groups"
+  )
+})
+
+test_that("G4 group_bootstrap_indices never returns fewer indices than requested", {
+  for (sizes in list(rep(4L, 6L), rep(3L, 8L), c(2L, 5L, 3L, 4L, 6L))) {
+    groups <- rep(seq_along(sizes), sizes)
+    y <- rep(c(0L, 1L), length.out = length(groups))
+    target <- max(2L, floor(0.5 * length(y)))
+    for (s in c(1L, 5L, 23L)) {
+      idx <- group_bootstrap_indices(
+        y = y, groups = groups, n_subsamples = target,
+        replace = FALSE, seed = s
+      )
+      expect_gte(length(idx), target)
+    }
+  }
+})
+
+# ---- G6: both diversity guards raise the same typed condition ----------------
+
+test_that("G6 the degenerate-bootstrap guard raises a typed stablr condition", {
+  classic <- tryCatch(
+    classic_bootstrap_indices(y = c(0L, rep(1L, 19L)), n_subsamples = 1L,
+                              replace = FALSE, seed = 1L),
+    condition = function(e) e
+  )
+  grouped <- tryCatch(
+    {
+      groups <- rep(paste0("id", 1:5), each = 4L)
+      y <- c(rep(0L, 4L), rep(1L, 16L))
+      group_bootstrap_indices(y = y, groups = groups, n_subsamples = 1L,
+                              replace = FALSE, seed = 1L)
+    },
+    condition = function(e) e
+  )
+
+  for (err in list(classic, grouped)) {
+    expect_s3_class(err, "stablr_bootstrap_infeasible")
+    expect_s3_class(err, "stablr_error")
+    expect_s3_class(err, "error")
+    expect_match(conditionMessage(err), "could not draw a class-diverse subsample")
+  }
+  expect_match(conditionMessage(classic), "classic_bootstrap_indices", fixed = TRUE)
+  expect_match(conditionMessage(grouped), "group_bootstrap_indices", fixed = TRUE)
+})
+
+test_that("G6 stabl_fit's own infeasibility guard and the samplers agree on the type", {
+  y <- c(rep(0L, 10L), rep(1L, 2L))
+
+  err <- tryCatch(
+    stablr:::.abort_bootstrap_infeasible(
+      "binomial", 6L, c("0" = 10L, "1" = 2L), "test", 2L
+    ),
+    condition = function(e) e
+  )
+  expect_s3_class(err, "stablr_bootstrap_infeasible")
+})
+
+# ---- G6: the class-weighting divergence is characterised, not accidental ------
+
+test_that("G6 classic_bootstrap_indices class weighting is live, and group sampling is whole-group", {
+  y <- c(rep("NP", 18L), rep("P", 2L))
+
+  weighted <- classic_bootstrap_indices(
+    y = y, n_subsamples = 20L, replace = TRUE,
+    class_weights = c(NP = 1, P = 9), seed = 5L
+  )
+  expect_equal(length(weighted), 20L)
+  expect_gte(sum(y[weighted] == "P"), 2L)
+
+  expect_error(
+    classic_bootstrap_indices(y = y, n_subsamples = 20L, replace = TRUE,
+                              class_weights = c(other = 1), seed = 5L),
+    "class_weights"
+  )
+  expect_error(
+    classic_bootstrap_indices(y = y, n_subsamples = 20L, replace = TRUE,
+                              class_weights = c(NP = 1, P = 1), stratify = TRUE),
+    "class_weights"
+  )
+  expect_error(
+    classic_bootstrap_indices(y = y, n_subsamples = 20L, replace = TRUE,
+                              class_weights = c(NP = 1, P = 1),
+                              strata = y),
+    "class_weights"
+  )
+
+  # The grouped sampler has no `class_weights` formal; it handles imbalance
+  # through whole-group stratification instead, and pins that contract here.
+  expect_false("class_weights" %in% names(formals(group_bootstrap_indices)))
+  groups <- rep(paste0("g", 1:5), each = 4L)
+  groups_y <- rep(c(rep("NP", 16L), rep("P", 4L)), each = 1L)
+  stratified <- group_bootstrap_indices(
+    y = groups_y, groups = groups, n_subsamples = 8L, replace = FALSE,
+    stratify = TRUE, seed = 5L
+  )
+  expect_true(all(c("NP", "P") %in% groups_y[stratified]))
+  expect_gte(length(stratified), 8L)
+})
+
+# ---- G7: the group-sampler docs must not promise a holdout -------------------
+
+test_that("G7 group_bootstrap_indices documents no holdout and no FDP+ premise", {
+  source_lines <- readLines(
+    testthat::test_path("..", "..", "R", "bootstrap_helpers.R"),
+    warn = FALSE
+  )
+  definition <- which(grepl("^group_bootstrap_indices <- function", source_lines))
+  expect_length(definition, 1L)
+  doc_block <- source_lines[seq(definition - 70L, definition - 1L)]
+  text <- paste(doc_block, collapse = "\n")
+
+  expect_match(text, "Why group-level sampling", fixed = TRUE)
+  expect_match(text, "STABL has no holdout", fixed = TRUE)
+  expect_false(grepl("independence assumption", text, fixed = TRUE))
+  expect_false(grepl("subject-disjoint", text, fixed = TRUE))
+  expect_false(grepl("FDP+ diagnostic assumptions", text, fixed = TRUE))
+  expect_match(text, "bootstrap subsample", fixed = TRUE)
+})

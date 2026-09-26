@@ -73,20 +73,32 @@ make_glmnet_adapter <- function(
 #' Adaptive lasso improves on standard lasso by assigning stronger penalties
 #' to features with small initial coefficients (likely noise) and weaker
 #' penalties to features with large initial coefficients (likely signal).
-#' This asymmetric penalisation achieves the oracle property under regularity
-#' conditions, selecting the true support more reliably than plain lasso when
-#' signal features have moderate to large effect sizes.
+#' This asymmetric penalisation is what the *oracle property* claim means: under
+#' regularity conditions it recovers the true support more reliably than plain
+#' lasso.  That claim is **conditional on the response scale**.  The weights are
+#' computed on the scale of `y`, so with an absolute denominator floor a
+#' small-scale `y` pushes every score below the floor, all penalty factors
+#' become equal, and the weights collapse to a constant -- silently reducing
+#' this adapter to plain lasso.  The floor used here is therefore relative to
+#' the observed score scale, as given below.
 #'
 #' Weights are defined as:
-#' \deqn{w_j = 1 / (|\hat\beta_j^{\mathrm{init}}| + \epsilon)^\gamma}
+#' \deqn{w_j = 1 / \bigl(|\hat\beta_j^{\mathrm{init}}| + \epsilon\,s\bigr)^\gamma}
 #' where \eqn{\hat\beta_j^{\mathrm{init}}} comes from a ridge regression on
-#' the same bootstrap subsample.  The `epsilon` floor avoids division by zero
-#' for features with near-zero ridge coefficients.
+#' the same bootstrap subsample and \eqn{s} is the median absolute initial
+#' score.  The `epsilon * s` floor avoids division by zero for features with
+#' near-zero ridge coefficients while staying on the scale of `y`; when the
+#' median score is not positive and finite it falls back to `s = 1`, which
+#' reproduces the historical absolute floor.
 #'
 #' @details
 #' This adapter factory is primarily an internal backend used by [stabl_fit()].
 #' For end-to-end feature selection workflows, prefer
 #' `base_learner = "adaptive_lasso"` in [stabl_fit()].
+#'
+#' `gamma` and `epsilon` are validated by the underlying batch factory, so the
+#' same guards apply whether the adapter is reached through this public factory
+#' or through [stabl_fit()]'s batch path.
 #'
 #' @param family Character; the `glmnet` response family, for example
 #'   `"gaussian"`, `"binomial"`, `"multinomial"`, or `"cox"`.
@@ -94,8 +106,8 @@ make_glmnet_adapter <- function(
 #'   down-penalise features with large ridge coefficients.  Larger values
 #'   make the penalty more selective.  Default `1.0` matches the Python
 #'   reference implementation.
-#' @param epsilon Positive numeric scalar; added to the denominator of the
-#'   weight to avoid division by zero.  Default `1e-6`.
+#' @param epsilon Positive numeric scalar; scales the denominator floor by the
+#'   median absolute initial score.  Default `1e-6`.
 #' @param bootstrap_threshold Positive numeric; absolute-coefficient cutoff
 #'   used to decide that a feature is selected in a given bootstrap.  Features
 #'   with `|coef| > bootstrap_threshold` are counted as selected.
@@ -122,12 +134,6 @@ make_adaptive_lasso_adapter <- function(
     bootstrap_threshold = .BOOTSTRAP_COEF_THRESHOLD
 ) {
   .require_pkg("glmnet")
-  if (!is.numeric(gamma) || length(gamma) != 1L || gamma <= 0) {
-    stop("`gamma` must be a positive numeric scalar.", call. = FALSE)
-  }
-  if (!is.numeric(epsilon) || length(epsilon) != 1L || epsilon <= 0) {
-    stop("`epsilon` must be a positive numeric scalar.", call. = FALSE)
-  }
   batch_adapter <- .make_adaptive_lasso_batch_adapter(
     family = family,
     gamma = gamma,
@@ -167,6 +173,14 @@ make_adaptive_lasso_adapter <- function(
 #' the within-group lasso penalty and the group-level penalty: 0 = pure group
 #' lasso; 1 = pure lasso (no group penalty).  The default of `0.05` used when
 #' no `alpha` column is present matches the Python STABL reference.
+#'
+#' **Multinomial is one-vs-rest, not joint.** `sparsegl` has no multinomial
+#' response, so `family = "multinomial"` is fitted as one binary `sparsegl`
+#' problem per class and the per-class coefficients are combined with a
+#' per-feature `pmax`.  This is an approximation of the joint multinomial path
+#' that `glmnet` computes for `base_learner = "lasso"` /
+#' `"elastic_net"`, and the two back-ends are not expected to agree on
+#' multinomial data.  Use them for different purposes, not as a cross-check.
 #'
 #' @details
 #' This adapter factory is primarily an internal backend used by [stabl_fit()].
@@ -349,6 +363,7 @@ auto_lambda_grid <- function(
 ) {
   .require_pkg("glmnet")
   cox_ties <- .COX_TIES
+  l1_ratio <- .validate_l1_ratio(l1_ratio)
 
   alphas <- if (is.null(l1_ratio)) 1.0 else as.numeric(l1_ratio)
   add_alpha <- !is.null(l1_ratio)
@@ -375,6 +390,127 @@ auto_lambda_grid <- function(
   }
 
   do.call(rbind, grids)
+}
+
+# `l1_ratio` is the elastic-net mixing parameter, i.e. the `alpha` that
+# `glmnet` receives.  Validate it here so a typo or an out-of-range value is a
+# typed condition at the call site rather than a `glmnet` internal error.
+.validate_l1_ratio <- function(l1_ratio) {
+  if (is.null(l1_ratio)) {
+    return(NULL)
+  }
+  if (!is.numeric(l1_ratio) || length(l1_ratio) == 0L ||
+      any(!is.finite(l1_ratio))) {
+    stop("`l1_ratio` must be NULL or a non-empty finite numeric vector.",
+         call. = FALSE)
+  }
+  if (any(l1_ratio < 0 | l1_ratio > 1)) {
+    stop("`l1_ratio` must lie in [0, 1].", call. = FALSE)
+  }
+  as.numeric(l1_ratio)
+}
+
+# ---- Single lambda-grid resolver ------------------------------------------------
+# Every entry point that accepts a `lambda_grid` specification resolves it here.
+# Before this existed the same three-way decision ("auto" expansion, named-list
+# lookup, pre-expanded data frame) was reimplemented in `stabl_fit()` and in
+# `nested_cv()`, and the silent `auto_lambda_grid()` fallback lived inside that
+# duplication.  One resolver makes the fallback a single, named, recorded event.
+
+# `lambda_grid` is one of:
+#   "auto"                       -> data-driven grid from `x`, `y`
+#   a data.frame                 -> validated and used as supplied
+#   a named list of data frames  -> first entry matching `keys`, in order
+# `keys` is the ordered list of lookup keys (e.g. candidate name then omic name).
+#
+# Returns `list(grid = <validated data.frame>, source = <character>)`.  `source`
+# is one of "auto", "data.frame", "list:<key>", or "auto_fallback" so that
+# callers record provenance instead of inferring what happened.
+.resolve_lambda_grid <- function(lambda_grid, keys = character(0), x, y,
+                                 family, n_lambda, l1_ratio = NULL,
+                                 on_missing_key = c("warn", "silent")) {
+  on_missing_key <- match.arg(on_missing_key)
+  build_auto <- function(source) {
+    list(
+      grid = auto_lambda_grid(
+        x = x, y = y, family = family,
+        n_lambda = n_lambda, l1_ratio = l1_ratio
+      ),
+      source = source
+    )
+  }
+
+  if (identical(lambda_grid, "auto")) {
+    return(build_auto("auto"))
+  }
+  if (is.data.frame(lambda_grid)) {
+    return(list(grid = .validate_lambda_grid_frame(lambda_grid),
+                source = "data.frame"))
+  }
+  if (is.list(lambda_grid)) {
+    for (key in keys) {
+      entry <- lambda_grid[[key]]
+      if (!is.null(entry)) {
+        return(list(grid = .validate_lambda_grid_frame(entry),
+                    source = paste0("list:", key)))
+      }
+    }
+    if (on_missing_key == "warn") {
+      warning(
+        "`lambda_grid` has no entry for ", paste(keys, collapse = "/"),
+        "; falling back to `auto_lambda_grid()` computed on the training data. ",
+        "Add a `lambda_grid` entry under that name, or pass a single ",
+        "data.frame, to silence this.",
+        call. = FALSE
+      )
+    }
+    return(build_auto("auto_fallback"))
+  }
+
+  stop(
+    "`lambda_grid` must be a data.frame, a named list of data frames, or \"auto\".",
+    call. = FALSE
+  )
+}
+
+# Validate one pre-expanded grid row set.  Checks the columns the batch
+# adapters index into before they reach glmnet: an `NA` in `alpha` makes
+# `unique()` return `NA`, `which(alpha == NA)` return `integer(0)`, and glmnet
+# then receives an empty lambda vector and fails with an opaque message.
+.validate_lambda_grid_frame <- function(lambda_grid) {
+  if (!is.data.frame(lambda_grid)) {
+    stop("`lambda_grid` must be a data.frame or \"auto\".", call. = FALSE)
+  }
+  if (nrow(lambda_grid) == 0L) {
+    stop("`lambda_grid` must contain at least one row.", call. = FALSE)
+  }
+  if (!"lambda" %in% names(lambda_grid)) {
+    stop("`lambda_grid` must contain a `lambda` column.", call. = FALSE)
+  }
+  if (any(.stabl_grid_column(lambda_grid[["lambda"]], "lambda") < 0)) {
+    stop("`lambda_grid$lambda` must be non-negative.", call. = FALSE)
+  }
+  if ("alpha" %in% names(lambda_grid)) {
+    alpha <- .stabl_grid_column(lambda_grid[["alpha"]], "alpha")
+    if (any(alpha < 0 | alpha > 1)) {
+      stop("`lambda_grid$alpha` must lie in [0, 1].", call. = FALSE)
+    }
+  }
+  lambda_grid
+}
+
+# Numeric, finite, NA-free extraction of one grid column, with a typed error
+# naming the offending column.
+.stabl_grid_column <- function(column, name) {
+  if (!is.numeric(column) || length(column) == 0L) {
+    stop("`lambda_grid$", name, "` must be a non-empty numeric column.",
+         call. = FALSE)
+  }
+  if (any(!is.finite(column))) {
+    stop("`lambda_grid$", name, "` must contain only finite values.",
+         call. = FALSE)
+  }
+  as.numeric(column)
 }
 
 .feature_abs_coefs <- function(fit, s, family = "gaussian") {
@@ -539,6 +675,11 @@ auto_lambda_grid <- function(
 .make_adaptive_lasso_batch_adapter <- function(family, gamma, epsilon,
                                                bootstrap_threshold) {
   cox_ties <- .COX_TIES
+  # Validated here rather than only in the public single-lambda factory:
+  # stabl_fit() reaches this batch factory directly, and an unvalidated
+  # gamma = -1 or epsilon = 0 reaches the weight formula below as a division
+  # by zero (or a sign-flipped exponent) instead of a diagnosable condition.
+  .validate_adaptive_lasso_hyperparameters(gamma, epsilon)
   function(x, y, lambda_grid) {
     lambda_seq <- lambda_grid[["lambda"]]
 
@@ -557,7 +698,7 @@ auto_lambda_grid <- function(
     init_lambda    <- tail(init_fit$lambda, n = 1L)
     init_scores    <- .feature_abs_coefs(fit = init_fit, s = init_lambda,
                        family = family)
-    penalty_factor <- 1.0 / ((init_scores + epsilon) ^ gamma)
+    penalty_factor <- .adaptive_lasso_penalty_factor(init_scores, gamma, epsilon)
 
     # Fit adaptive lasso across the full lambda path (one call)
     fit <- .with_glmnet_numerical_infeasibility(
@@ -575,6 +716,42 @@ auto_lambda_grid <- function(
     coef_mat <- .feature_abs_coefs_batch(fit, lambda_seq, family = family)
     coef_mat > bootstrap_threshold
   }
+}
+
+# `gamma`/`epsilon` guards for the adaptive-lasso weight formula.  Owned by the
+# batch factory so that both the public single-lambda adapter and stabl_fit()'s
+# batch path are covered by one implementation.
+.validate_adaptive_lasso_hyperparameters <- function(gamma, epsilon) {
+  if (!is.numeric(gamma) || length(gamma) != 1L || !is.finite(gamma) ||
+      gamma <= 0) {
+    stop("`gamma` must be a positive numeric scalar.", call. = FALSE)
+  }
+  if (!is.numeric(epsilon) || length(epsilon) != 1L || !is.finite(epsilon) ||
+      epsilon <= 0) {
+    stop("`epsilon` must be a positive numeric scalar.", call. = FALSE)
+  }
+  invisible(TRUE)
+}
+
+# Adaptive-lasso penalty factors `1 / (score + epsilon * scale)^gamma`.
+#
+# The floor is relative to the response scale because the scores are on the
+# scale of `y`.  With an absolute floor, a small-scale `y` pushes every score
+# below the floor, all penalty factors become equal, and adaptive lasso
+# silently becomes plain lasso.  `scale` is the median absolute initial score
+# (a robust measure of the typical score magnitude); when it is not positive
+# and finite the scale falls back to 1, reproducing the historical absolute
+# floor, which is also the correct answer when the ridge fit is identically
+# zero (there is no signal to be adaptive about).
+.adaptive_lasso_penalty_factor <- function(init_scores, gamma, epsilon) {
+  # A feature with no estimable ridge coefficient carries no evidence of signal,
+  # so it takes the maximum penalty rather than a NaN weight.
+  init_scores[!is.finite(init_scores)] <- 0
+  scale <- stats::median(init_scores)
+  if (!is.finite(scale) || scale <= 0) {
+    scale <- 1
+  }
+  1.0 / ((init_scores + epsilon * scale)^gamma)
 }
 
 .make_sgl_batch_adapter <- function(family, feature_groups, alpha_fixed,

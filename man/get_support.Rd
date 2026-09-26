@@ -10,7 +10,8 @@ get_support(object, new_hard_threshold = NULL)
 \item{object}{A fitted \code{"stabl_fit"} object returned by \code{\link[=stabl_fit]{stabl_fit()}}.}
 
 \item{new_hard_threshold}{Numeric in \verb{(0, 1]} or \code{NULL}.  When supplied,
-overrides the threshold stored in \code{object} for this call only.}
+overrides the threshold stored in \code{object} for this call only.  \code{NA},
+non-finite, negative and greater-than-one values are rejected.}
 }
 \value{
 Named logical vector of length \code{object$n_features_in_}.  Names are
@@ -40,7 +41,13 @@ if \code{stabl_fit()} was called with both \code{artificial_type = NULL} and no
 feature's score exceeds the threshold, the function returns the top
 \code{n_explore} features instead of an all-\code{FALSE} vector.  This is useful in
 exploratory analyses where you want at least some candidates even when the
-signal is weak.
+signal is weak.  The fallback candidate set is resolved once at fit time and
+stored in \code{object$explore_features_}; it does not depend on the threshold, so
+every accessor reports the same fallback.  Whether it actually fired for the
+threshold that drove the fit is recorded in \code{object$explore_applied_}, and
+the resulting mask for that threshold is in \code{object$support_}, so this
+accessor and \code{\link[=get_importances]{get_importances()}} cannot disagree about which features the
+fit considered selected.
 }
 \examples{
 set.seed(1L)

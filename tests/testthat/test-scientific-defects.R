@@ -388,3 +388,92 @@ test_that("SCI-10 legacy validation shape comes only from predictors", {
     with_labels$late_fusion$valid_predictions
   )
 })
+
+# ---- C5: the reported stratify_bootstrap must answer the user's question ------
+# The field used to echo whether a design *resolved*, which conflated three
+# different questions: did the user ask, how did they ask, and did it reach the
+# sampler.  These pin the three answers separately.
+
+test_that("C5 stratify_bootstrap, its request flag and its source are distinct fields", {
+  set.seed(707)
+  n <- 36L
+  ids <- paste0("s", seq_len(n))
+  x <- matrix(rnorm(n * 5L), nrow = n,
+              dimnames = list(ids, paste0("f", seq_len(5L))))
+  y <- stats::setNames(factor(rep(c("NP", "P"), each = n / 2)), ids)
+  lam <- data.frame(lambda = c(0.2, 0.1))
+  strata <- stats::setNames(rep(c("A", "B"), length.out = n), ids)
+
+  explicit <- suppressWarnings(stabl_fit(
+    x, y, lambda_grid = lam, family = "binomial", n_bootstraps = 4L,
+    artificial_type = NULL, hard_threshold = 0.3,
+    bootstrap_strata = strata, random_state = 707L
+  ))
+  # stratify_bootstrap = FALSE, but the user did ask for stratified sampling by
+  # supplying a design: both answers are now recoverable.
+  expect_true(explicit$stratify_bootstrap)
+  expect_false(explicit$stratify_bootstrap_requested)
+  expect_identical(explicit$bootstrap_strata_source, "bootstrap_strata")
+  expect_true(explicit$bootstrap_strata_applied)
+
+  flagged <- suppressWarnings(stabl_fit(
+    x, y, lambda_grid = lam, family = "binomial", n_bootstraps = 4L,
+    artificial_type = NULL, hard_threshold = 0.3,
+    stratify_bootstrap = TRUE, random_state = 707L
+  ))
+  expect_true(flagged$stratify_bootstrap)
+  expect_true(flagged$stratify_bootstrap_requested)
+  expect_identical(flagged$bootstrap_strata_source, "stratify_bootstrap")
+
+  none <- suppressWarnings(stabl_fit(
+    x, y, lambda_grid = lam, family = "binomial", n_bootstraps = 4L,
+    artificial_type = NULL, hard_threshold = 0.3, random_state = 707L
+  ))
+  expect_false(none$stratify_bootstrap)
+  expect_false(none$stratify_bootstrap_requested)
+  expect_null(none$bootstrap_strata_source)
+  expect_false(none$bootstrap_strata_applied)
+})
+
+# ---- C6: fit-time support mask is what the accessors report -------------------
+
+test_that("C6 the fit-time support mask, get_support and get_feature_names_out agree", {
+  set.seed(708)
+  n <- 30L; p <- 8L
+  x <- matrix(rnorm(n * p), nrow = n,
+              dimnames = list(paste0("s", seq_len(n)), paste0("f", seq_len(p))))
+  y <- stats::setNames(rnorm(n), rownames(x))
+
+  # Nothing passes the threshold, so explore alone determines the support.
+  fallback <- stabl_fit(
+    x, y, lambda_grid = data.frame(lambda = c(10, 20)), n_bootstraps = 6L,
+    artificial_type = NULL, hard_threshold = 0.99, explore = TRUE,
+    n_explore = 4L, random_state = 1L
+  )
+  expect_true(fallback$explore_applied_)
+  expect_identical(
+    get_feature_names_out(fallback),
+    fallback$explore_features_
+  )
+  expect_identical(unname(get_support(fallback)), unname(fallback$support_))
+  expect_identical(
+    transform_stabl(fallback, x) |> colnames(),
+    fallback$explore_features_
+  )
+
+  # A threshold that admits features bypasses explore entirely.
+  admitting <- stabl_fit(
+    x, y, lambda_grid = data.frame(lambda = c(0.3, 0.2)), n_bootstraps = 6L,
+    artificial_type = NULL, hard_threshold = 0.3, explore = TRUE,
+    n_explore = 4L, random_state = 1L
+  )
+  if (admitting$explore_applied_) {
+    expect_identical(sum(admitting$support_), 4L)
+  } else {
+    # The candidate set is still recorded (it is threshold-independent), but it
+    # did not determine the support.
+    expect_length(admitting$explore_features_, 4L)
+    expect_true(any(admitting$support_))
+  }
+  expect_identical(unname(get_support(admitting)), unname(admitting$support_))
+})

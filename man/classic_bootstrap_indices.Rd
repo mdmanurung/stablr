@@ -26,7 +26,10 @@ not exceed \code{length(y)} when \code{replace = FALSE}.}
 
 \item{class_weights}{Optional named numeric vector keyed by class labels
 (as produced by \code{as.character(y)}).  When \code{NULL} all samples are equally
-likely.}
+likely.  Not available in \code{\link[=group_bootstrap_indices]{group_bootstrap_indices()}}: weighting there would
+have to be defined over groups rather than samples, and group-level
+imbalance is already addressed exactly by \code{stratify = TRUE}, which samples
+whole groups within outcome strata.}
 
 \item{stratify}{Logical; if \code{TRUE}, draw approximately the same class
 proportions as \code{y} by sampling within each outcome class.  This is useful
@@ -40,8 +43,9 @@ design across multiple factors.  Bootstrap samples are drawn within the
 interaction of all supplied columns.  When \code{NULL}, no stratification is
 used unless \code{stratify = TRUE}, in which case \code{y} is used as the strata.}
 
-\item{seed}{Optional integer; passed to \code{\link[=set.seed]{set.seed()}} before sampling for
-reproducibility.  \code{NULL} leaves the RNG state unchanged.}
+\item{seed}{Optional integer; seeds this call for reproducibility.  The
+caller's RNG state is saved and restored, so a seeded call does not
+advance the global stream.  \code{NULL} draws from the ambient stream.}
 }
 \value{
 Integer vector of length \code{n_subsamples} containing 1-based row
@@ -69,6 +73,16 @@ retries (without a seed) until a class-diverse subsample is found.  This
 prevents downstream model failures in classifiers that require at least two
 classes.
 }
+\section{Seeding in a loop}{
+
+Because \code{seed} scopes to a single call and the prior RNG state is restored
+afterwards, calling this function repeatedly with the same \code{seed} returns
+the same indices every time. To draw many distinct replicates, either leave
+\code{seed = NULL} and seed once outside the loop, or vary the seed per iteration.
+\code{\link[=stabl_fit]{stabl_fit()}} does the latter: it never passes \code{seed} here and instead
+derives one seed for the whole bootstrap loop.
+}
+
 \examples{
 set.seed(42L)
 y <- c(rep(0, 15), rep(1, 15))  # balanced binary outcome

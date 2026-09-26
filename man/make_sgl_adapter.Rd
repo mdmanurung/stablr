@@ -49,6 +49,14 @@ the within-group lasso penalty and the group-level penalty: 0 = pure group
 lasso; 1 = pure lasso (no group penalty).  The default of \code{0.05} used when
 no \code{alpha} column is present matches the Python STABL reference.
 
+\strong{Multinomial is one-vs-rest, not joint.} \code{sparsegl} has no multinomial
+response, so \code{family = "multinomial"} is fitted as one binary \code{sparsegl}
+problem per class and the per-class coefficients are combined with a
+per-feature \code{pmax}.  This is an approximation of the joint multinomial path
+that \code{glmnet} computes for \code{base_learner = "lasso"} /
+\code{"elastic_net"}, and the two back-ends are not expected to agree on
+multinomial data.  Use them for different purposes, not as a cross-check.
+
 This adapter factory is primarily an internal backend used by \code{\link[=stabl_fit]{stabl_fit()}}.
 For end-to-end feature selection workflows, prefer
 \code{base_learner = "sparse_group_lasso"} in \code{\link[=stabl_fit]{stabl_fit()}} and provide

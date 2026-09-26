@@ -72,8 +72,13 @@ bootstrap.  Default: \code{0.5}.}
 \item{replace}{Logical; sample with replacement?  Default: \code{FALSE}.}
 
 \item{hard_threshold}{Numeric in \verb{(0, 1]} or \code{NULL}.  When supplied, FDP+
-control is bypassed and this value is the stability-score cut-off.
-Default: \code{NULL}.}
+threshold control is \strong{suppressed} and this value is the stability-score
+cut-off.  Supplying it together with \code{artificial_type} is allowed -- the
+artificial features are still generated and their stability scores are
+still returned -- but the FDP+ curve is \emph{not} computed, so \code{FDRs_},
+\code{min_fdr_}, \code{fdr_min_threshold_} and \code{fdrs_table_} are all \code{NULL} and
+\code{\link[=plot_fdr_graph]{plot_fdr_graph()}} raises an error.  The suppression is recorded in
+\code{fdp_threshold_suppressed}; see Details.  Default: \code{NULL}.}
 
 \item{fdr_threshold_range}{Numeric vector swept when computing FDP+.
 Default: \code{seq(0, 0.99, by = 0.01)}, matching Python STABL's
@@ -124,7 +129,9 @@ grid used by existing workflows.}
 
 \item{feature_groups}{Optional feature-group definition for
 \code{base_learner = "sparse_group_lasso"}. Provide a vector/factor of length
-\code{ncol(x)} assigning each original feature to a group.}
+\code{ncol(x)} assigning each original feature to a group.  Artificial decoys
+are \emph{not} placed in their source feature's group for permutation decoys
+(see the "Sparse-group artificial features" section).}
 
 \item{corr_group_threshold}{Optional numeric percentile in \verb{(0, 100]} used
 to derive sparse-group feature groups from pairwise correlations of
@@ -146,6 +153,11 @@ actually used.}
 \item{\code{FDRs_}}{Numeric vector of FDP+ estimates per threshold, or \code{NULL}.}
 \item{\code{min_fdr_}}{Minimum FDP+ achieved, or \code{NULL}.}
 \item{\code{fdrs_table_}}{Per-lambda FDP+ matrix, or \code{NULL}.}
+\item{\code{fdp_threshold_suppressed}}{Logical; \code{TRUE} when
+\code{hard_threshold} was supplied and therefore the FDP+ threshold search
+was skipped, \code{FALSE} when FDP+ drove selection, and \code{NA} when no
+artificial features were generated.  See the "Threshold resolution"
+section above.}
 \item{\code{hard_threshold}}{As supplied.}
 \item{\code{artificial_type}}{As supplied.}
 \item{\code{artificial_provenance}}{List returned by
@@ -156,6 +168,50 @@ the scientific source of truth for the generator used; or \code{NULL} when
 \item{\code{artificial_proportion}}{As supplied.}
 \item{\code{explore}}{As supplied.}
 \item{\code{n_explore}}{As supplied.}
+\item{\code{explore_features_}}{Character vector of the \code{n_explore} highest
+importance features resolved at fit time, or \code{NULL} when
+\code{explore = FALSE}.  This is the fixed set the \code{explore} fallback
+selects for \emph{any} threshold, so every accessor reports the same
+fallback rather than recomputing it per call.}
+\item{\code{explore_applied_}}{Logical; \code{TRUE} when the resolved threshold
+admitted no feature and the \code{explore} fallback therefore determined
+the returned support.}
+\item{\code{stratify_bootstrap}}{Logical; \code{TRUE} when stratified bootstrap
+sampling was requested, i.e. when \code{stratify_bootstrap = TRUE} \strong{or}
+\code{bootstrap_strata} was supplied.  See
+\code{stratify_bootstrap_requested} and \code{bootstrap_strata_source} for the
+literal argument and the origin of the design.}
+\item{\code{stratify_bootstrap_requested}}{The literal \code{stratify_bootstrap}
+argument as supplied.}
+\item{\code{bootstrap_strata_source}}{\code{"bootstrap_strata"} when an explicit
+design was supplied, \code{"stratify_bootstrap"} when the design was
+derived from \code{y}, or \code{NULL} when no stratification was requested.}
+\item{\code{bootstrap_strata_applied}}{Logical; \code{TRUE} when a resolved
+stratification design actually reached the bootstrap sampler.}
+\item{\code{bootstrap_subsample_target_}}{Integer; the requested
+\code{floor(sample_fraction * nrow(x))} subsample size.  This is a \emph{lower
+bound} on the realised draw, not an exact count: whole groups are never
+trimmed by grouped sampling, and the classification feasibility repair
+below can raise the target further.}
+\item{\code{bootstrap_subsample_sizes_}}{Integer vector of the realised
+subsample size of every bootstrap replicate, so any overshoot against
+\code{bootstrap_subsample_target_} is readable from the result.  A replicate
+shorter than the target is an error, not a silently smaller fit.}
+\item{\code{bootstrap_stratified_repair_}}{\code{NULL} unless the grouped
+classification sampler had to raise its row target to guarantee
+\code{minimum_per_class} observations of every modeled class; otherwise a
+list with \code{target_raised}, \code{requested_target}, \code{repair_target},
+\code{n_classes}, \code{minimum_per_class} and \code{n_repairs}.}
+\item{\code{sgl_feature_groups_}}{Integer sparse-group assignment actually
+used, of length \code{ncol(x)} plus \code{n_injected}, or \code{NULL} when
+\code{base_learner != "sparse_group_lasso"}.}
+\item{\code{sgl_group_provenance}}{For \code{base_learner = "sparse_group_lasso"},
+a list recording \code{group_source} (\code{"feature_groups"} or
+\code{"corr_group_threshold"}), \code{noise_group_inheritance} (\code{"on"}, \code{"off"},
+or \code{NA} when there are no artificial features), \code{n_groups}, and
+\code{n_noise_features}; otherwise \code{NULL}.}
+\item{\code{rng_kind_}}{The \code{RNGkind()} in force when the fit ran.  Results
+are reproducible only for the same \code{RNGkind()} and \code{sample.kind}.}
 \item{\code{feature_names}}{Character vector of original feature names.}
 \item{\code{n_features_in_}}{Integer number of original features.}
 }
@@ -167,12 +223,85 @@ data-adaptive FDP+ threshold diagnostics. The fitting rule chooses the FDP+
 minimizer; it is not a universal false-discovery guarantee. This is the R counterpart of
 \code{Stabl.fit()} in the Python STABL library.
 }
+\details{
+\strong{Cost of the bootstrap loop.} Each bootstrap fits the full lambda path in
+a single solver call for \code{base_learner = "lasso"}, \code{"adaptive_lasso"}, and
+for \code{"elastic_net"}/\code{"sparse_group_lasso"} when a single \code{alpha} (resp.
+\code{asparse}) value is in play.  A grid with \eqn{k} distinct \code{alpha} values
+costs \eqn{k} path calls per bootstrap, and \code{"sparse_group_lasso"} pays
+\code{n_lambda} \code{coef()} extractions per path call because the sparse
+coefficient helper has no on-grid fast path.
+}
 \section{Methods (by generic)}{
 \itemize{
 \item \code{print(stabl_fit)}: Print a concise summary of a fitted \code{stabl_fit} object;
 invisibly returns \code{x}.
 
 }}
+\section{Sparse-group artificial features}{
+
+FDP+ compares the stability of the real block against the stability of the
+artificial block, which is only a like-for-like comparison if both blocks
+face the same group-lasso penalty.  When \code{artificial_type} generates
+\emph{permutation} decoys, each decoy therefore receives its own fresh group
+rather than joining the group of the original feature it was permuted from;
+otherwise the decoy's selection is coupled to the real block's group
+structure and its stability score partly measures the real block instead of
+the decoy's own noise.  For \verb{knockoff*} decoys the decoy is exchangeable
+with its source by construction, so co-grouping is the honest
+representation and inheritance stays on.  The resolved choice is recorded in
+\code{sgl_group_provenance$noise_group_inheritance}, and the group vector actually
+used is in \code{sgl_feature_groups_}.
+}
+
+\section{RNG and reproducibility}{
+
+When \code{random_state} is an integer, \code{stabl_fit()} does not mutate the
+caller's \code{.Random.seed}: it derives three independent sub-seeds (one for
+artificial-feature generation, one for the bootstrap index draws, one as the
+base of the per-iteration seeds) and seeds each bootstrap iteration
+individually, every one of them inside a \code{.with_local_seed()} scope.  Results
+are then identical for \code{workers = 1L} and for a \code{furrr} parallel run.  That
+guarantee is conditional on \code{random_state}; \code{workers > 1L} with
+\code{random_state = NULL} warns, because there is no per-iteration seed to make
+the parallel run reproducible.
+
+With \code{random_state = NULL} the bootstrap draws come from ambient RNG state
+and therefore do advance the caller's stream, exactly as any unseeded
+stochastic routine does.  Seed the fit if you need the caller protected.
+
+Reproducibility is also conditional on \code{RNGkind()} and on
+\code{sample.kind}.  \code{stabl_fit()} does not set either, so changing them between
+runs changes the sampled indices.  \code{RNGkind()} in force at fit time is
+recorded in the returned \code{rng_kind_} field.
+}
+
+\section{Threshold resolution and \code{hard_threshold}}{
+
+Exactly one of \code{hard_threshold} and \code{artificial_type} drives selection.
+When both are supplied, \code{hard_threshold} wins (as the accessor
+documentation has always specified) and the FDP+ threshold search is skipped
+rather than computed and discarded.  Nothing is lost except the FDP+
+curve: \code{stabl_scores_artificial_} and \code{artificial_provenance} are still
+returned.  The outcome is recorded in \code{fdp_threshold_suppressed}, so a
+consumer can tell "no artificial features" from "artificial features
+present, FDP+ not used".
+}
+
+\section{Bootstrap subsample size}{
+
+\code{sample_fraction} sets a \emph{lower bound} on the rows in a bootstrap replicate,
+not an exact count, and the realised size is recorded in the result so the
+difference is visible.  Two mechanisms legitimately raise it.  Grouped
+sampling never trims a partially drawn group, so the realised count is the
+smallest group-aligned value at or above the target.  For \code{family = "binomial"}/\code{"multinomial"} with class-pure groups, guaranteeing the minimum
+number of observations per modeled class requires raising the row target to
+\code{n_classes * minimum_per_class} and redrawing stratified; the raised target
+is reported in \code{bootstrap_stratified_repair_}.  A replicate that ends up
+\emph{shorter} than the target is an error, because a fit on fewer rows than
+requested must not be reported against the requested \code{sample_fraction}.
+}
+
 \examples{
 set.seed(42)
 n <- 50L

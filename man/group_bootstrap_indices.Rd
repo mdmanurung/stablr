@@ -21,9 +21,10 @@ group_bootstrap_indices(
 be any type that supports \code{unique()} and equality comparison.}
 
 \item{n_subsamples}{Positive integer; target number of rows in the
-subsample.  The actual count may differ slightly due to whole-group
+subsample.  The actual count may be larger due to whole-group
 granularity (whole groups are always preserved; the realised count is
-the smallest group-aligned value \verb{>= n_subsamples}).}
+the smallest group-aligned value \verb{>= n_subsamples}).  A target that
+cannot be reached from the available groups is an error.}
 
 \item{replace}{Logical; may the same group be sampled more than once?
 Default \code{FALSE}.}
@@ -39,8 +40,11 @@ for one stratification factor, or a \code{data.frame}/matrix/list for a joint
 design across multiple factors.  Each group must map to exactly one
 realised stratum.}
 
-\item{seed}{Optional integer; passed to \code{\link[=set.seed]{set.seed()}} before sampling.
-\code{NULL} leaves the RNG state unchanged.}
+\item{seed}{Optional integer; seeds this call for reproducibility.  The
+caller's RNG state is saved and restored, so a seeded call does not
+advance the global stream.  \code{NULL} draws from the ambient stream.  See the
+\emph{Seeding in a loop} section of \code{\link[=classic_bootstrap_indices]{classic_bootstrap_indices()}} for the
+consequence of reusing one seed across many calls.}
 }
 \value{
 Integer vector of 1-based row indices into the training set.
@@ -53,20 +57,26 @@ measurements or known clusters (e.g. multiple time-points per subject,
 technical replicates, or family members).
 }
 \details{
-\strong{Why group-level sampling prevents leakage:} If individual rows from the
-same subject appear in both the bootstrap subsample and its complement, the
-stability score becomes inflated because the learner can partially memorise
-subject-level patterns.  By sampling complete groups, the subsample and its
-"holdout" are subject-disjoint, preserving the independence assumption
-underlying STABL's FDP+ diagnostic assumptions.
+\strong{Why group-level sampling:} STABL has no holdout.  The bootstrap subsample
+is the only data any replicate is fitted on, so a subject that appears on
+both sides of the draw does not leak into a model -- there is no model
+fitted on the complement.  What whole-group sampling buys is an
+exchangeable draw: the rows of one subject are not independent replicates, so
+a row-level subsample contains correlated rows and the resulting stability
+scores concentrate on subject-specific patterns instead of on features that
+generalise.  Drawing whole subjects keeps the subsample a set of independent
+units.  This is orthogonal to the FDP+ calibration, which assumes the
+artificial features are exchangeable with the real ones and says nothing
+about subject disjointness.
 
 \strong{How groups are sampled:} Groups are drawn one at a time (without
 replacement by default) until the running tally of included rows reaches
 or exceeds \code{n_subsamples}.  Whole groups are always kept intact: if the
 last added group causes the count to exceed \code{n_subsamples}, the surplus
-rows are \emph{not} trimmed.  This guarantees the strongest leakage prevention
-(the subsample and its complement are always group-disjoint), at the cost
-of a slightly variable subsample size.  When \code{replace = TRUE} the same
+rows are \emph{not} trimmed.  The realised count is therefore the smallest
+group-aligned value \verb{>= n_subsamples}, which can be materially larger than
+\code{n_subsamples} when groups are large; a draw that cannot reach the target at
+all is an error, never a short subsample.  When \code{replace = TRUE} the same
 group may be drawn multiple times (useful when there are very few groups).
 
 \strong{Degenerate bootstrap guard:} As with \code{\link[=classic_bootstrap_indices]{classic_bootstrap_indices()}}, if

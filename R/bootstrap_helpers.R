@@ -29,7 +29,10 @@
 #' @param replace Logical; sample with replacement?  Default `TRUE`.
 #' @param class_weights Optional named numeric vector keyed by class labels
 #'   (as produced by `as.character(y)`).  When `NULL` all samples are equally
-#'   likely.
+#'   likely.  Not available in [group_bootstrap_indices()]: weighting there would
+#'   have to be defined over groups rather than samples, and group-level
+#'   imbalance is already addressed exactly by `stratify = TRUE`, which samples
+#'   whole groups within outcome strata.
 #' @param stratify Logical; if `TRUE`, draw approximately the same class
 #'   proportions as `y` by sampling within each outcome class.  This is useful
 #'   for small or imbalanced classification tasks where unstratified
@@ -40,8 +43,17 @@
 #'   design across multiple factors.  Bootstrap samples are drawn within the
 #'   interaction of all supplied columns.  When `NULL`, no stratification is
 #'   used unless `stratify = TRUE`, in which case `y` is used as the strata.
-#' @param seed Optional integer; passed to [set.seed()] before sampling for
-#'   reproducibility.  `NULL` leaves the RNG state unchanged.
+#' @param seed Optional integer; seeds this call for reproducibility.  The
+#'   caller's RNG state is saved and restored, so a seeded call does not
+#'   advance the global stream.  `NULL` draws from the ambient stream.
+#'
+#' @section Seeding in a loop:
+#' Because `seed` scopes to a single call and the prior RNG state is restored
+#' afterwards, calling this function repeatedly with the same `seed` returns
+#' the same indices every time. To draw many distinct replicates, either leave
+#' `seed = NULL` and seed once outside the loop, or vary the seed per iteration.
+#' [stabl_fit()] does the latter: it never passes `seed` here and instead
+#' derives one seed for the whole bootstrap loop.
 #'
 #' @return Integer vector of length `n_subsamples` containing 1-based row
 #'   indices into the training set.
@@ -69,10 +81,6 @@ classic_bootstrap_indices <- function(
   strata = NULL,
   seed = NULL
 ) {
-  if (!is.null(seed)) {
-    set.seed(seed)
-  }
-
   n <- length(y)
   if (!replace && n_subsamples > n) {
     stop("`n_subsamples` cannot exceed sample size when replace = FALSE.", call. = FALSE)
@@ -113,13 +121,15 @@ classic_bootstrap_indices <- function(
     function() sample.int(n = n, size = n_subsamples, replace = replace, prob = probs)
   }
 
-  idx <- draw_once()
+  idx <- .with_local_seed(seed, {
+    idx <- draw_once()
 
-  idx <- .guard_diverse_bootstrap(
-    y, idx, draw_once,
-    caller = "classic_bootstrap_indices",
-    hint   = "Check class balance or increase `sample_fraction`."
-  )
+    .guard_diverse_bootstrap(
+      y, idx, draw_once,
+      caller = "classic_bootstrap_indices",
+      hint   = "Check class balance or increase `sample_fraction`."
+    )
+  })
 
   idx
 }
@@ -133,20 +143,26 @@ classic_bootstrap_indices <- function(
 #' technical replicates, or family members).
 #'
 #' @details
-#' **Why group-level sampling prevents leakage:** If individual rows from the
-#' same subject appear in both the bootstrap subsample and its complement, the
-#' stability score becomes inflated because the learner can partially memorise
-#' subject-level patterns.  By sampling complete groups, the subsample and its
-#' "holdout" are subject-disjoint, preserving the independence assumption
-#' underlying STABL's FDP+ diagnostic assumptions.
+#' **Why group-level sampling:** STABL has no holdout.  The bootstrap subsample
+#' is the only data any replicate is fitted on, so a subject that appears on
+#' both sides of the draw does not leak into a model -- there is no model
+#' fitted on the complement.  What whole-group sampling buys is an
+#' exchangeable draw: the rows of one subject are not independent replicates, so
+#' a row-level subsample contains correlated rows and the resulting stability
+#' scores concentrate on subject-specific patterns instead of on features that
+#' generalise.  Drawing whole subjects keeps the subsample a set of independent
+#' units.  This is orthogonal to the FDP+ calibration, which assumes the
+#' artificial features are exchangeable with the real ones and says nothing
+#' about subject disjointness.
 #'
 #' **How groups are sampled:** Groups are drawn one at a time (without
 #' replacement by default) until the running tally of included rows reaches
 #' or exceeds `n_subsamples`.  Whole groups are always kept intact: if the
 #' last added group causes the count to exceed `n_subsamples`, the surplus
-#' rows are *not* trimmed.  This guarantees the strongest leakage prevention
-#' (the subsample and its complement are always group-disjoint), at the cost
-#' of a slightly variable subsample size.  When `replace = TRUE` the same
+#' rows are *not* trimmed.  The realised count is therefore the smallest
+#' group-aligned value `>= n_subsamples`, which can be materially larger than
+#' `n_subsamples` when groups are large; a draw that cannot reach the target at
+#' all is an error, never a short subsample.  When `replace = TRUE` the same
 #' group may be drawn multiple times (useful when there are very few groups).
 #'
 #' **Degenerate bootstrap guard:** As with [classic_bootstrap_indices()], if
@@ -157,9 +173,10 @@ classic_bootstrap_indices <- function(
 #' @param groups Vector of group identifiers (same length as `y`).  Values may
 #'   be any type that supports `unique()` and equality comparison.
 #' @param n_subsamples Positive integer; target number of rows in the
-#'   subsample.  The actual count may differ slightly due to whole-group
+#'   subsample.  The actual count may be larger due to whole-group
 #'   granularity (whole groups are always preserved; the realised count is
-#'   the smallest group-aligned value `>= n_subsamples`).
+#'   the smallest group-aligned value `>= n_subsamples`).  A target that
+#'   cannot be reached from the available groups is an error.
 #' @param replace Logical; may the same group be sampled more than once?
 #'   Default `FALSE`.
 #' @param stratify Logical; if `TRUE`, sample whole groups within outcome
@@ -171,8 +188,11 @@ classic_bootstrap_indices <- function(
 #'   for one stratification factor, or a `data.frame`/matrix/list for a joint
 #'   design across multiple factors.  Each group must map to exactly one
 #'   realised stratum.
-#' @param seed Optional integer; passed to [set.seed()] before sampling.
-#'   `NULL` leaves the RNG state unchanged.
+#' @param seed Optional integer; seeds this call for reproducibility.  The
+#'   caller's RNG state is saved and restored, so a seeded call does not
+#'   advance the global stream.  `NULL` draws from the ambient stream.  See the
+#'   *Seeding in a loop* section of [classic_bootstrap_indices()] for the
+#'   consequence of reusing one seed across many calls.
 #'
 #' @return Integer vector of 1-based row indices into the training set.
 #'
@@ -190,13 +210,10 @@ classic_bootstrap_indices <- function(
 group_bootstrap_indices <- function(y, groups, n_subsamples, replace = FALSE,
                                     stratify = FALSE, strata = NULL,
                                     seed = NULL) {
-  if (!is.null(seed)) {
-    set.seed(seed)
-  }
-
   if (length(groups) != length(y)) {
     stop("`groups` must be the same length as `y`.", call. = FALSE)
   }
+  .validate_group_ids(groups)
 
   n <- length(y)
   if (!replace && n_subsamples > n) {
@@ -229,15 +246,18 @@ group_bootstrap_indices <- function(y, groups, n_subsamples, replace = FALSE,
     )
   }
 
-  sampled_idx <- draw_once()
   # Whole-group invariant (D3): never trim partial groups, even if the
   # final tally exceeds n_subsamples.
 
-  sampled_idx <- .guard_diverse_bootstrap(
-    y, sampled_idx, draw_once,
-    caller = "group_bootstrap_indices",
-    hint   = "Check class balance or group structure."
-  )
+  sampled_idx <- .with_local_seed(seed, {
+    idx <- draw_once()
+
+    .guard_diverse_bootstrap(
+      y, idx, draw_once,
+      caller = "group_bootstrap_indices",
+      hint   = "Check class balance or group structure."
+    )
+  })
 
   sampled_idx
 }
@@ -249,15 +269,34 @@ group_bootstrap_indices <- function(y, groups, n_subsamples, replace = FALSE,
   while (length(unique(y[idx])) < 2L) {
     attempt <- attempt + 1L
     if (attempt > max_retries) {
-      stop(
-        caller, ": could not draw a class-diverse subsample after ",
-        max_retries, " attempts. ", hint,
-        call. = FALSE
+      .abort_stablr(
+        "stablr_bootstrap_infeasible",
+        paste0(
+          caller, ": could not draw a class-diverse subsample after ",
+          max_retries, " attempts. ", hint
+        ),
+        caller = caller,
+        max_retries = max_retries
       )
     }
     idx <- draw_once()
   }
   idx
+}
+
+# A group label that matches no row (`NA`/`NaN`) contributes an empty chunk to
+# `.sample_groups_until()`, so the group pool can drain without ever reaching the
+# row target.  Rejecting it here names the cause instead of letting the draw
+# silently come up short.
+.validate_group_ids <- function(groups) {
+  if (anyNA(groups)) {
+    stop(
+      "`groups` cannot contain missing values: a group label with no matching ",
+      "row contributes no samples to the bootstrap subsample.",
+      call. = FALSE
+    )
+  }
+  invisible(TRUE)
 }
 
 .bootstrap_strata_ids <- function(strata, n, arg = "strata") {
@@ -457,12 +496,20 @@ group_bootstrap_indices <- function(y, groups, n_subsamples, replace = FALSE,
 
 .unstratified_group_bootstrap_indices <- function(groups, group_levels,
                                                   n_subsamples, replace) {
-  .sample_groups_until(group_levels, groups, n_subsamples, replace)
+  .sample_groups_until(group_levels, groups, n_subsamples, replace,
+                       label = "Grouped bootstrap")
 }
 
 # Shared group-sampling while-loop: draw groups until target_n indices are
 # accumulated; use index-then-subset to avoid R's sample(x,1) length-1 pitfall.
-.sample_groups_until <- function(group_levels, groups, target_n, replace) {
+#
+# `target_n` is a lower bound, not an exact count: whole groups are never
+# trimmed, so the loop legitimately overshoots.  Coming up *short* is a
+# different matter -- the group pool ran dry -- and is an error rather than a
+# silently smaller subsample, because nothing downstream records the realised
+# length and the caller would report the requested target as if it were met.
+.sample_groups_until <- function(group_levels, groups, target_n, replace,
+                                 label = "Grouped bootstrap") {
   remaining  <- group_levels
   idx_chunks <- list()
   total_len  <- 0L
@@ -477,6 +524,21 @@ group_bootstrap_indices <- function(y, groups, n_subsamples, replace = FALSE,
   }
 
   idx <- unlist(idx_chunks, use.names = FALSE)
+  realised <- if (!replace) length(unique(idx)) else length(idx)
+  if (realised < target_n) {
+    .abort_stablr(
+      "stablr_bootstrap_infeasible",
+      paste0(
+        label, " could only reach ", realised,
+        " of the requested ", target_n, " rows from ",
+        length(group_levels), " group(s). Lower `n_subsamples` (or raise ",
+        "`sample_fraction` granularity) or allow `replace = TRUE`."
+      ),
+      target_n = target_n,
+      realised = realised,
+      n_groups = length(group_levels)
+    )
+  }
   if (!replace) unique(idx) else idx
 }
 
@@ -508,16 +570,12 @@ group_bootstrap_indices <- function(y, groups, n_subsamples, replace = FALSE,
 
   for (stratum in names(target_counts)) {
     stratum_idx <- .sample_groups_until(
-      group_levels[group_strata == stratum], groups, target_counts[[stratum]], replace
+      group_levels[group_strata == stratum],
+      groups,
+      target_counts[[stratum]],
+      replace,
+      label = paste0("Grouped stratified bootstrap for stratum `", stratum, "`")
     )
-
-    if (length(stratum_idx) < target_counts[[stratum]]) {
-      stop(
-        "Could not satisfy grouped stratified bootstrap target for stratum `",
-        stratum, "`.",
-        call. = FALSE
-      )
-    }
     outer_chunks[[length(outer_chunks) + 1L]] <- stratum_idx
   }
 

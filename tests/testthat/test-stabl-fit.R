@@ -1316,3 +1316,243 @@ test_that(".build_corr_groups applies -0.1 offset matching Python reference", {
   expect_true(all(grps >= 1L))
   expect_length(grps, ncol(x))
 })
+
+# ---- C11: sparse-group decoys are group-comparable with the real block --------
+# The pinned SGL tests above only check output dimensions, so they do not see
+# which group each artificial decoy lands in.  These assert the group assignment
+# itself, which is what FDP+ compares.
+
+test_that("C11 permutation decoys are not co-grouped with their source feature", {
+  skip_if_not_installed("sparsegl")
+
+  set.seed(18)
+  n <- 44L; p <- 12L
+  x <- matrix(rnorm(n * p), n, p,
+              dimnames = list(paste0("s", seq_len(n)), paste0("f", seq_len(p))))
+  y <- setNames(rnorm(n), rownames(x))
+
+  fit <- stabl_fit(
+    x, y, lambda_grid = data.frame(lambda = 0.1),
+    base_learner        = "sparse_group_lasso",
+    feature_groups      = rep(seq_len(4L), each = 3L),
+    n_bootstraps        = 3L,
+    artificial_type     = "random_permutation",
+    random_state        = 18L
+  )
+
+  groups <- fit$sgl_feature_groups_
+  expect_length(groups, 2L * p)
+  expect_identical(fit$sgl_group_provenance$noise_group_inheritance, "off")
+  expect_identical(sort(unique(groups[seq_len(p)])), seq_len(4L))
+  # Every decoy got a fresh group, so the artificial block is penalised on its
+  # own terms and its stability score measures the decoy, not the real block.
+  expect_length(intersect(groups[seq_len(p)], groups[p + seq_len(p)]), 0L)
+})
+
+test_that("C11 sparse_group_lasso still runs without artificial features", {
+  skip_if_not_installed("sparsegl")
+  set.seed(19)
+  n <- 40L; p <- 9L
+  x <- matrix(rnorm(n * p), n, p,
+              dimnames = list(paste0("s", seq_len(n)), paste0("f", seq_len(p))))
+  y <- setNames(rnorm(n), rownames(x))
+
+  fit <- stabl_fit(
+    x, y, lambda_grid = data.frame(lambda = 0.1),
+    base_learner = "sparse_group_lasso",
+    feature_groups = rep(seq_len(3L), each = 3L),
+    n_bootstraps = 3L, artificial_type = NULL, hard_threshold = 0.3,
+    random_state = 19L
+  )
+  expect_s3_class(fit, "stabl_fit")
+  expect_length(fit$sgl_feature_groups_, p)
+  expect_true(is.na(fit$sgl_group_provenance$noise_group_inheritance))
+  expect_identical(fit$sgl_group_provenance$n_noise_features, 0L)
+})
+
+# ---- C12: the progress message is honest about the loop cost ------------------
+
+test_that("C12 the loop-cost message counts one solver path per distinct alpha", {
+  set.seed(33)
+  n <- 36L; p <- 6L
+  x <- matrix(rnorm(n * p), n, p,
+              dimnames = list(paste0("s", seq_len(n)), paste0("f", seq_len(p))))
+  y <- setNames(rnorm(n), rownames(x))
+
+  mixed <- data.frame(alpha = c(0.2, 0.6, 0.9), lambda = c(0.3, 0.2, 0.1))
+  expect_message(
+    stabl_fit(x, y, lambda_grid = mixed, base_learner = "elastic_net",
+              n_bootstraps = 2L, artificial_type = NULL, hard_threshold = 0.3,
+              verbose = TRUE, random_state = 1L),
+    "3 solver path call\\(s\\) per bootstrap"
+  )
+  # lasso pins alpha, so a mixed-alpha grid is still a single call.
+  expect_message(
+    stabl_fit(x, y, lambda_grid = mixed, base_learner = "lasso",
+              n_bootstraps = 2L, artificial_type = NULL, hard_threshold = 0.3,
+              verbose = TRUE, random_state = 1L),
+    "1 solver path call\\(s\\) per bootstrap"
+  )
+  # The old message claimed one path call per bootstrap unconditionally; the
+  # unconditional wording must be gone.
+  emitted <- utils::capture.output(
+    invisible(stabl_fit(x, y, lambda_grid = mixed, base_learner = "elastic_net",
+                        n_bootstraps = 2L, artificial_type = NULL,
+                        hard_threshold = 0.3, verbose = TRUE, random_state = 1L)),
+    type = "message"
+  )
+  expect_false(any(grepl("1 path call per bootstrap", emitted, fixed = TRUE)))
+})
+
+# ---- G2: training omics are held to the same finiteness contract as validation
+
+test_that("G2 stabl_fit rejects non-finite training features on every path", {
+  set.seed(808L)
+  n <- 30L; p <- 4L
+  x <- matrix(rnorm(n * p), n, p,
+              dimnames = list(paste0("s", seq_len(n)), paste0("f", seq_len(p))))
+  y <- setNames(rnorm(n), rownames(x))
+
+  nonfinite <- list("NaN" = NaN, "Inf" = Inf, "-Inf" = -Inf, "NA" = NA_real_)
+
+  # `artificial_type = NULL` is the path that previously had no finiteness check
+  # at all: `make_artificial_features()` was the only thing rejecting NaN, and
+  # Inf passed through to the solver unchallenged.
+  for (art in list(NULL, "random_permutation")) {
+    for (label in names(nonfinite)) {
+      x_bad <- x
+      x_bad[3L, 2L] <- nonfinite[[label]]
+      expect_error(
+        stabl_fit(x_bad, y, lambda_grid = data.frame(lambda = 0.1),
+                  n_bootstraps = 2L, artificial_type = art,
+                  hard_threshold = 0.3, random_state = 1L),
+        "finite"
+      )
+    }
+  }
+
+  # Same contract for a data.frame `x`, and the message names the offender.
+  x_df_bad <- as.data.frame(x)
+  x_df_bad[5L, 1L] <- Inf
+  expect_error(
+    stabl_fit(x_df_bad, y, lambda_grid = data.frame(lambda = 0.1),
+              n_bootstraps = 2L, artificial_type = NULL,
+              hard_threshold = 0.3, random_state = 1L),
+    "must contain only finite"
+  )
+
+  # The finite control still fits, so the check is not vacuously rejecting.
+  expect_s3_class(
+    stabl_fit(x, y, lambda_grid = data.frame(lambda = 0.1), n_bootstraps = 2L,
+              artificial_type = NULL, hard_threshold = 0.3, random_state = 1L),
+    "stabl_fit"
+  )
+})
+
+test_that("G2 stabl_fit rejects group ids that match no sample row", {
+  set.seed(809L)
+  n <- 24L; p <- 4L
+  x <- matrix(rnorm(n * p), n, p,
+              dimnames = list(paste0("s", seq_len(n)), paste0("f", seq_len(p))))
+  y <- setNames(rnorm(n), rownames(x))
+  groups <- setNames(c(paste0("g", seq_len(n - 1L)), NA_character_), rownames(x))
+
+  expect_error(
+    stabl_fit(x, y, lambda_grid = data.frame(lambda = 0.1), n_bootstraps = 2L,
+              artificial_type = NULL, hard_threshold = 0.3, groups = groups,
+              random_state = 1L),
+    "groups.*(missing|NA|match)", ignore.case = TRUE
+  )
+})
+
+# ---- G4/G5: the realised bootstrap subsample size is part of the result ------
+
+test_that("G4 stabl_fit records the requested and realised subsample sizes", {
+  set.seed(810L)
+  n <- 30L; p <- 4L
+  x <- matrix(rnorm(n * p), n, p,
+              dimnames = list(paste0("s", seq_len(n)), paste0("f", seq_len(p))))
+  y <- setNames(rnorm(n), rownames(x))
+
+  fit <- stabl_fit(x, y, lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+                   n_bootstraps = 6L, artificial_type = NULL,
+                   hard_threshold = 0.3, sample_fraction = 0.5,
+                   random_state = 4L)
+
+  expect_identical(fit$bootstrap_subsample_target_, 15L)
+  expect_length(fit$bootstrap_subsample_sizes_, 6L)
+  expect_true(all(fit$bootstrap_subsample_sizes_ >= 15L))
+  # Gaussian sampling has no class repair, so there is nothing to disclose.
+  expect_null(fit$bootstrap_stratified_repair_)
+})
+
+test_that("G4 stabl_fit aborts rather than fitting on an undersized subsample", {
+  set.seed(811L)
+  n <- 20L; p <- 4L
+  x <- matrix(rnorm(n * p), n, p,
+              dimnames = list(paste0("s", seq_len(n)), paste0("f", seq_len(p))))
+  y <- setNames(rnorm(n), rownames(x))
+  # Four 4-row groups plus one label that matches no row: at most 16 rows are
+  # reachable, so a request for 18 can never be met and must abort.
+  groups <- setNames(c(rep(paste0("g", 1:4), each = 4L), rep(NA_character_, 4L)),
+                     rownames(x))
+
+  expect_error(
+    stabl_fit(x, y, lambda_grid = data.frame(lambda = 0.1), n_bootstraps = 2L,
+              artificial_type = NULL, hard_threshold = 0.3, groups = groups,
+              sample_fraction = 0.9, random_state = 1L),
+    "stablr_bootstrap_infeasible|groups"
+  )
+})
+
+test_that("G5 a grouped stratified repair records the raised target and the overshoot", {
+  set.seed(812L)
+  n <- 40L; p <- 5L
+  ids <- paste0("s", seq_len(n))
+  x <- matrix(rnorm(n * p), n, p, dimnames = list(ids, paste0("f", seq_len(p))))
+  groups <- setNames(rep(paste0("g", 1:10), each = 4L), ids)
+  # Class-pure groups, so the repair branch of the classification sampler is the
+  # only way to satisfy the >= 2 observations per modeled class rule.
+  group_class <- rep(c(0L, 1L), each = 5L)
+  y <- setNames(unlist(lapply(seq_along(group_class), function(i) {
+    rep(group_class[[i]], 4L)
+  })), ids)
+
+  fit <- suppressWarnings(stabl_fit(
+    x, y, lambda_grid = data.frame(lambda = 0.1), family = "binomial",
+    n_bootstraps = 3L, artificial_type = NULL, hard_threshold = 0.3,
+    groups = groups, sample_fraction = 0.05, random_state = 5L
+  ))
+
+  requested <- as.integer(floor(0.05 * n))
+  expect_identical(fit$bootstrap_subsample_target_, requested)
+  expect_true(fit$bootstrap_stratified_repair_$target_raised)
+  expect_identical(fit$bootstrap_stratified_repair_$requested_target, requested)
+  expect_identical(
+    fit$bootstrap_stratified_repair_$repair_target,
+    max(requested, 2L * 2L)
+  )
+  expect_identical(fit$bootstrap_stratified_repair_$n_repairs, 3L)
+  # The realised draws are larger than the requested subsample, and the size
+  # difference is now readable from the result instead of being implicit.
+  expect_true(all(fit$bootstrap_subsample_sizes_ > requested))
+  expect_true(max(fit$bootstrap_subsample_sizes_) >= fit$bootstrap_stratified_repair_$repair_target)
+})
+
+test_that("G5 whole-group overshoot is visible even without a class repair", {
+  set.seed(813L)
+  n <- 24L; p <- 4L
+  ids <- paste0("s", seq_len(n))
+  x <- matrix(rnorm(n * p), n, p, dimnames = list(ids, paste0("f", seq_len(p))))
+  y <- setNames(rnorm(n), ids)
+  groups <- setNames(rep(paste0("g", 1:6), each = 4L), ids)
+
+  fit <- stabl_fit(x, y, lambda_grid = data.frame(lambda = 0.1), n_bootstraps = 4L,
+                   artificial_type = NULL, hard_threshold = 0.3, groups = groups,
+                   sample_fraction = 0.25, random_state = 6L)
+
+  # Requested 6 rows of 4-row groups, so the realised count is 8.
+  expect_identical(fit$bootstrap_subsample_target_, 6L)
+  expect_true(all(fit$bootstrap_subsample_sizes_ == 8L))
+  expect_null(fit$bootstrap_stratified_repair_)
+})
