@@ -30,9 +30,14 @@ resource rather than a short application note.
 - Local package tests: `FAIL 0 | WARN 0 | SKIP 1 | PASS 1611`
 - `R CMD check --no-manual --ignore-vignettes --no-build-vignettes`: `Status: OK`
 - Six pkgdown articles live on the package site
-- OOL parity metrics: `n=150`, `p=1317`, 500 bootstraps, 10 lambda values,
-  7/7 Python tutorial selected-feature recall, Jaccard `0.778`, Spearman
-  `0.808`
+- OOL full-profile run (sealed, `RESULT_STATUS=not_ready`): `n=150`, `p=1317`,
+  500 bootstraps, 10 lambda values, 7/7 Python tutorial selected-feature recall,
+  Jaccard `0.778`, Spearman `0.785`, FDP-threshold delta `0.08` against frozen
+  gates of `0.80` / `0.90` / `0.05`. This run **failed** its gates because the
+  requested fixed-X knockoff construction is infeasible at `p > n` and fell back
+  to random-permutation artificial features, so its FDP+ was calibrated against a
+  different null than the Python reference. No OOL parity claim is made. See
+  `docs/release/0.1.1-ool-parity-reconciliation.md`.
 
 ## Scope lock
 

@@ -14,15 +14,17 @@ feature generation, multi-omic integration workflows, and publication-oriented
 diagnostics through R-native APIs. The package supports glmnet-family learners,
 random-permutation and knockoff artificial features, grouped bootstrapping,
 single-omic and multi-omic workflows, and optional cooperative fusion. We
-validate the release on the Onset of Labor proteomics tutorial dataset using
-publication-scale settings: 500 bootstraps, knockoff null features, and the
-reference tutorial selected-feature set. `stablr` recovered all seven reference
-selected features, with selected-set Jaccard similarity of 0.778 and
-feature-score Spearman correlation of 0.808. The v0.1.0 release passes local R
-package tests, no-manual `R CMD check`, vignette rendering, and pkgdown
-documentation builds. `stablr` makes stability-based biomarker discovery with
-FDP+ control available to R-centered omics workflows without requiring a Python
-runtime.
+validate the implementation against the pinned Python STABL reference on fixed
+synthetic fixtures, where selection masks, FDP+ curves, stacking behaviour,
+metric scalars and signal-feature ranking all agree. We also report a
+full-profile run on the Onset of Labor proteomics tutorial dataset as a negative
+result: it recovered all seven reference selected features but failed its frozen
+acceptance thresholds, because the artificial-feature generator it used was
+calibrated against a different null distribution than the Python reference. A
+corrected run is pending, and we therefore make no OOL parity claim.
+`stablr` makes stability-based biomarker discovery with
+FDP+ thresholding available to R-centered omics workflows without requiring a
+Python runtime.
 
 ## Introduction
 
@@ -92,19 +94,40 @@ paired outer-fold benchmark and uncertainty intervals.
 
 ### OOL parity validation recovers the Python tutorial selected features
 
-We validated `stablr` on the OOL proteomics tutorial dataset using
+We evaluated `stablr` on the OOL proteomics tutorial dataset using
 publication-scale settings: 150 samples, 1,317 protein features, gaussian lasso
-models, 500 bootstraps, 10 lambda values, and knockoff artificial features. The
-analysis used fixed seeds and the same reference tutorial selected-feature set
-used in the Python workflow.
+models, 500 bootstraps, 10 lambda values, and a fixed seed. The analysis used the
+same reference tutorial selected-feature set used in the Python workflow.
 
-`stablr` selected nine features and recovered all seven Python tutorial selected
-features: Angiopoietin.2, Siglec.6, Activin.A, IL.1.R4, SLPI, MMP.12, and
-PLXB2. The selected-set Jaccard similarity between the R and Python tutorial
-reference sets was 0.778. The Spearman correlation between R maximum stability
-scores and Python tutorial scores was 0.808. These metrics support the intended
-release claim: R and Python outputs are concordant at the feature selection and
-ranking level under matched preprocessing and publication-scale settings.
+This evaluation is reported as a **negative result that is still under
+adjudication, not as a validated parity claim**. A sealed full-profile run
+(`stablr-0.1.1-c59780093899`, retained under
+`RESULT_STATUS=not_ready`) selected nine features and recovered all seven Python
+tutorial selected features, giving a selected-set Jaccard similarity of 0.778
+and a maximum-stability-score Spearman correlation of 0.785. However, that run
+requested a fixed-X knockoff construction that is infeasible when the number of
+features exceeds the number of samples, so it silently fell back to
+random-permutation artificial features. Its FDP+ was therefore calibrated
+against a different null distribution than the Python reference, and the run
+failed its own frozen acceptance thresholds (Jaccard >= 0.80, Spearman >= 0.90,
+FDP-threshold delta <= 0.05; observed 0.778, 0.785, 0.08).
+
+A corrected run using the Gaussian model-X equicorrelated knockoff construction
+that the Python reference actually implements has not yet been executed at full
+profile. A two-bootstrap smoke of that corrected pipeline was mechanically
+successful in reaching the correct generator with no fallback, but two
+bootstraps quantise the stability scores to three levels and make the resulting
+Jaccard, Spearman and threshold figures uninterpretable; that smoke is retained
+as non-promotable and is not reported here as a measurement.
+
+We therefore make no OOL parity claim in this manuscript. The parity evidence
+that is currently supported is narrower and is described in the cross-language
+validation section: deterministic agreement of selection masks, FDP+ curves,
+stacking behaviour, metric scalars, and signal-feature ranking against the
+pinned Python STABL reference on fixed synthetic fixtures. Establishing OOL
+parity requires a full-profile run with the corrected generator together with a
+Monte-Carlo estimate of the correlation ceiling implied by the two implementations
+drawing bootstrap resamples from independent random number generators.
 
 ### Release engineering supports reproducible use and review
 

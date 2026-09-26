@@ -17,13 +17,17 @@ workflows, diagnostics, export utilities, vignettes, and package-level
 verification.
 
 The submitted package is framed as a software and reproducibility resource, not
-as a new statistical method. We validate the v0.1.0 release on the Onset of
-Labor proteomics tutorial dataset using publication-scale settings (150
-samples, 1,317 features, 500 bootstraps, knockoff null features). The R release
-recovers all seven Python tutorial selected features, with selected-set Jaccard
-similarity of 0.778 and feature-score Spearman correlation of 0.808. The release
-passes local R package tests, no-manual `R CMD check`, vignette rendering, and
-pkgdown documentation deployment.
+as a new statistical method. We validate the implementation against the pinned
+Python STABL reference on fixed synthetic fixtures, where selection masks, FDP+
+curves, stacking behaviour, metric scalars and signal-feature ranking all agree.
+We additionally report a full-profile Onset of Labor proteomics run as a negative
+result: at publication scale (150 samples, 1,317 features, 500 bootstraps) the R
+release recovers all seven reference selected features but reaches only Jaccard
+0.778 and Spearman 0.785 against frozen thresholds of 0.80 and 0.90, because the
+artificial-feature generator it used was calibrated against a different null
+distribution than the reference. A corrected run is pending, so we make no OOL
+parity claim. The release passes local R package tests, `R CMD check --as-cran`,
+vignette rendering, and pkgdown documentation deployment.
 
 We believe this manuscript fits Cell Reports Methods because it provides a
 practical, validated, open-source computational method implementation for

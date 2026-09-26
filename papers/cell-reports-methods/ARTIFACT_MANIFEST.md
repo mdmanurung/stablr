@@ -23,9 +23,10 @@
 | `R CMD check --no-manual --ignore-vignettes --no-build-vignettes` | `Status: OK` |
 | Vignette render | Six HTML files rendered |
 | pkgdown | Built and deployed |
-| OOL recall | `7/7` |
-| OOL Jaccard | `0.778` |
-| OOL Spearman | `0.808` |
+| OOL recall | `7/7` (sealed run, negative result) |
+| OOL Jaccard | `0.778` (gate `>= 0.80`, not met) |
+| OOL Spearman | `0.785` (gate `>= 0.90`, not met) |
+| OOL FDP-threshold delta | `0.08` (gate `<= 0.05`, not met) |
 
 ## Archive decision
 

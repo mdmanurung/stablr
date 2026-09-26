@@ -209,3 +209,54 @@ test_that("vendored cooperative S3 note matches the hand-maintained namespace", 
   expect_false(grepl("Package-level startup messages", cran, fixed = TRUE))
   expect_false(grepl("coef_ordered.multiview", cran, fixed = TRUE))
 })
+
+test_that("the withdrawn OOL Spearman figure does not reappear in any claim", {
+  # 0.808 came from a Bounded Run with no candidate SHA, no manifest and no
+  # seal (stablr-experiments/papers/application-note/artifacts/
+  # ool_publication_parity_metrics.csv). Under this project's own vocabulary a
+  # Bounded Run cannot back a release claim, so the figure was withdrawn in
+  # docs/release/0.1.1-ool-parity-reconciliation.md. Only the full-precision
+  # value and its rounded form are checked; the sealed v2 packet's 0.7847 and
+  # the withdrawn 0.8076 must not be confused.
+  withdrawn <- c("0.808", "0.80756318147208")
+  for (file in c(
+    "papers/cell-reports-methods/MANUSCRIPT_DRAFT.md",
+    "papers/cell-reports-methods/README.md",
+    "papers/cell-reports-methods/FIGURE_LEGENDS.md",
+    "papers/cell-reports-methods/ARTIFACT_MANIFEST.md",
+    "papers/cell-reports-methods/COVER_LETTER.md"
+  )) {
+    text <- paste(release_source_lines(file), collapse = "\n")
+    for (value in withdrawn) {
+      expect_false(
+        grepl(value, text, fixed = TRUE),
+        label = paste0(file, " restates the withdrawn OOL Spearman ", value)
+      )
+    }
+  }
+})
+
+test_that("every OOL figure quoted in the papers is the sealed full-profile value", {
+  # The only promotable-looking OOL numbers are the sealed v2 packet's triple.
+  # Any OOL Jaccard or Spearman stated without that provenance is a claim
+  # waiting to drift, so require the packet identity alongside the figures.
+  reconciliation <- release_source_lines(
+    "docs/release/0.1.1-ool-parity-reconciliation.md"
+  )
+  expect_match(
+    paste(reconciliation, collapse = "\n"),
+    "stablr-0.1.1-c59780093899",
+    fixed = TRUE
+  )
+
+  manuscript <- paste(
+    release_source_lines("papers/cell-reports-methods/MANUSCRIPT_DRAFT.md"),
+    collapse = "\n"
+  )
+  # A parity claim may only be made once a full-profile run with the corrected
+  # generator exists. Until then the manuscript must present the OOL result as
+  # a negative result and must not claim validation.
+  expect_match(manuscript, "negative result", fixed = TRUE)
+  expect_match(manuscript, "make no OOL parity claim", fixed = TRUE)
+  expect_false(grepl("we validate the release on the Onset of Labor", manuscript))
+})

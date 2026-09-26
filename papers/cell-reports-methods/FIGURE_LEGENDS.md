@@ -19,13 +19,19 @@ combines the FDP+ curve and stability path used to inspect selected features.
 
 Source file: `papers/application-note/artifacts/figure2_ool_validation.pdf`
 
-## Table 1. Selection-level parity against the Python tutorial reference
+## Table 1. OOL full-profile run against the Python tutorial reference (negative result)
 
-Summary of OOL parity metrics. `stablr` selected 9 features and recovered all 7
-Python tutorial selected features. The selected-set Jaccard similarity was
-0.778, and Spearman correlation of maximum feature scores was 0.808.
+Summary of a sealed full-profile OOL run. `stablr` selected 9 features and
+recovered all 7 Python tutorial selected features, giving a selected-set Jaccard
+similarity of 0.778 and a maximum-feature-score Spearman correlation of 0.785.
+Both fall short of the frozen acceptance thresholds of 0.80 and 0.90, and the
+FDP-threshold delta of 0.08 exceeds the 0.05 threshold. The run requested a
+fixed-X knockoff construction that is infeasible when features outnumber
+samples, so it fell back to random-permutation artificial features and its FDP+
+was calibrated against a different null distribution than the reference. The
+table is reported as a negative result; it does not support a parity claim.
 
-Source file: `papers/application-note/artifacts/table1_ool_parity_metrics.csv`
+Source file: `papers/application-note/artifacts/stablr-0.1.1-c59780093899/ool_parity_results.csv`
 
 ## Optional supplementary table. Selected OOL features
 
