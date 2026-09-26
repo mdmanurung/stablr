@@ -4,7 +4,7 @@
 \alias{plot_fdr_graph}
 \title{Plot the FDP+ FDR Estimate Curve}
 \usage{
-plot_fdr_graph(object, title = "FDR Estimate", fdr_target = 0.05)
+plot_fdr_graph(object, title = "FDP+ Estimate", fdr_target = 0.05)
 }
 \arguments{
 \item{object}{A fitted \code{"stabl_fit"} object returned by \code{\link[=stabl_fit]{stabl_fit()}}.}

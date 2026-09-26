@@ -11,11 +11,13 @@ pearson_similarity(list_i, list_j, d)
 
 \item{list_j}{Character or integer vector of selected feature identifiers.}
 
-\item{d}{Integer; total number of candidate features in the universe.}
+\item{d}{Integer; total number of candidate features in the universe.  Must
+be a positive integer.}
 }
 \value{
-Numeric scalar.  Positive values indicate more overlap than chance;
-the maximum is typically close to 1 for perfectly matching sets.
+Numeric scalar.  Positive values indicate more overlap than chance.
+Two identical sets score exactly 1, unlike \code{\link[=adjusted_similarity]{adjusted_similarity()}}, whose
+normalization is bounded away from 1 for sets smaller than the universe.
 }
 \description{
 Computes a Pearson-correlation-inspired similarity that corrects for
@@ -36,7 +38,7 @@ returns 0 when one set is empty or equals the universe.
 }
 \examples{
 pearson_similarity(c("f1","f2","f3"), c("f2","f3","f4"), d = 10L)
-pearson_similarity(c("f1","f2"),      c("f1","f2"),      d = 10L) # near 1
+pearson_similarity(c("f1","f2"),      c("f1","f2"),      d = 10L) # 1
 pearson_similarity(character(0),      c("f1","f2"),      d = 10L) # 0
 }
 \seealso{

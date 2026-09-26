@@ -10,6 +10,21 @@
 # For simulation benchmarks where a ground-truth feature set is known, the
 # file also provides FDR, TPR, and F-score functions.
 
+# Shared validator for the `nb_total_elements` universe size. Without it a
+# non-positive universe reaches the chance-correction arithmetic and yields
+# NaN from sqrt() rather than a diagnosable condition.
+.validate_universe_size <- function(nb_total_elements) {
+  if (length(nb_total_elements) != 1L || !is.numeric(nb_total_elements) ||
+      !is.finite(nb_total_elements) || nb_total_elements < 1 ||
+      nb_total_elements != floor(nb_total_elements)) {
+    stop(
+      "`nb_total_elements` must be a single positive finite integer.",
+      call. = FALSE
+    )
+  }
+  as.integer(nb_total_elements)
+}
+
 # ── Jaccard ──────────────────────────────────────────────────────────────────
 
 #' Jaccard Similarity Between Two Feature Sets
@@ -113,6 +128,12 @@ jaccard_matrix <- function(list_of_lists, remove_diag = TRUE) {
 #' where \eqn{r = |A \cap B|}, \eqn{k_i = |A_i|}, \eqn{d =} `nb_total_elements`,
 #' and \eqn{\mathbb{E}[r] = k_1 k_2 / d}.
 #'
+#' Note that the denominator is not the full set size, so like Cohen's kappa
+#' this measure does \emph{not} reach 1 for two identical sets that are smaller
+#' than the universe.  For \eqn{A = B} of size \eqn{k} in a universe of size
+#' \eqn{d} it evaluates to \eqn{1 - k/d}.  Compare [pearson_similarity()],
+#' which is normalized so that identical sets score exactly 1.
+#'
 #' Returns 0 when either set is empty or equals the full universe (edge cases
 #' where the correction denominator is zero).
 #'
@@ -120,10 +141,12 @@ jaccard_matrix <- function(list_of_lists, remove_diag = TRUE) {
 #' @param list2 Character or integer vector of selected feature identifiers.
 #' @param nb_total_elements Integer; total number of candidate features in the
 #'   universe (i.e. the number of columns in the original predictor matrix).
+#'   Must be a positive integer.
 #'
-#' @return Numeric scalar in \eqn{(-1, 1]}.  Values above 0 indicate more
-#'   overlap than expected by chance; 1 means perfect agreement; negative
-#'   values indicate less overlap than chance.
+#' @return Numeric scalar.  Values above 0 indicate more overlap than expected
+#'   by chance; negative values indicate less overlap than chance.  The
+#'   theoretical maximum depends on the set sizes relative to
+#'   `nb_total_elements`; see the note above.
 #'
 #' @seealso [adjusted_similarity_values()] for computing all pairwise values at
 #'   once, [adjusted_similarity_measure()] for a summary statistic,
@@ -132,10 +155,14 @@ jaccard_matrix <- function(list_of_lists, remove_diag = TRUE) {
 #' @examples
 #' # 10-feature universe; sets A and B share 2 out of 3 features each
 #' adjusted_similarity(c("f1","f2","f3"), c("f2","f3","f4"), nb_total_elements = 10L)
-#' adjusted_similarity(c("f1","f2"),      c("f1","f2"),      nb_total_elements = 10L) # 1
+#'
+#' # Identical sets do NOT score 1: the value is 1 - k/d, here 1 - 2/10.
+#' adjusted_similarity(c("f1","f2"),      c("f1","f2"),      nb_total_elements = 10L)
+#'
 #' adjusted_similarity(character(0),      c("f1"),           nb_total_elements = 10L) # 0
 #' @export
 adjusted_similarity <- function(list1, list2, nb_total_elements) {
+  d <- .validate_universe_size(nb_total_elements)
   s1 <- unique(list1)
   s2 <- unique(list2)
   r  <- length(intersect(s1, s2))
@@ -143,7 +170,6 @@ adjusted_similarity <- function(list1, list2, nb_total_elements) {
   k2 <- length(s2)
   u  <- k1 + k2 - r
 
-  d <- as.integer(nb_total_elements)
   if (u > d) {
     stop(
       "Union cardinal (", u, ") exceeds nb_total_elements (", d, ").",
@@ -242,10 +268,12 @@ adjusted_similarity_measure <- function(list_of_lists, nb_total_elements,
 #'
 #' @param list_i Character or integer vector of selected feature identifiers.
 #' @param list_j Character or integer vector of selected feature identifiers.
-#' @param d Integer; total number of candidate features in the universe.
+#' @param d Integer; total number of candidate features in the universe.  Must
+#'   be a positive integer.
 #'
-#' @return Numeric scalar.  Positive values indicate more overlap than chance;
-#'   the maximum is typically close to 1 for perfectly matching sets.
+#' @return Numeric scalar.  Positive values indicate more overlap than chance.
+#'   Two identical sets score exactly 1, unlike [adjusted_similarity()], whose
+#'   normalization is bounded away from 1 for sets smaller than the universe.
 #'
 #' @seealso [pearson_similarity_values()] for computing all pairwise values at
 #'   once, [pearson_similarity_measure()] for a summary statistic,
@@ -253,16 +281,16 @@ adjusted_similarity_measure <- function(list_of_lists, nb_total_elements,
 #'
 #' @examples
 #' pearson_similarity(c("f1","f2","f3"), c("f2","f3","f4"), d = 10L)
-#' pearson_similarity(c("f1","f2"),      c("f1","f2"),      d = 10L) # near 1
+#' pearson_similarity(c("f1","f2"),      c("f1","f2"),      d = 10L) # 1
 #' pearson_similarity(character(0),      c("f1","f2"),      d = 10L) # 0
 #' @export
 pearson_similarity <- function(list_i, list_j, d) {
+  d  <- .validate_universe_size(d)
   si <- unique(list_i)
   sj <- unique(list_j)
   r  <- length(intersect(si, sj))
   ki <- length(si)
   kj <- length(sj)
-  d  <- as.integer(d)
 
   if ((ki == d && kj == d) || (ki == 0L && kj == 0L)) {
     return(1)
@@ -446,6 +474,13 @@ fscore_similarity <- function(list1, list2, beta = 1) {
 }
 
 .similarity_summary <- function(vals, stat) {
+  # Fewer than two runs means there are no pairs to compare. Returning NA
+  # quietly is correct, but mean(numeric(0)) is NaN and
+  # sqrt(mean((numeric(0) - NaN)^2)) would emit "NaNs produced" on the way to
+  # an NA, so short-circuit before the arithmetic.
+  if (length(vals) == 0L) {
+    return(list(statistic = NA_real_, err = c(NA_real_, NA_real_)))
+  }
   if (stat == "median") {
     list(
       statistic = stats::median(vals),

@@ -236,7 +236,7 @@ plot_stabl_path <- function(object, new_hard_threshold = NULL,
 #' }
 #' }
 #' @export
-plot_fdr_graph <- function(object, title = "FDR Estimate", fdr_target = 0.05) {
+plot_fdr_graph <- function(object, title = "FDP+ Estimate", fdr_target = 0.05) {
   .check_fitted_stabl(object)
   .require_ggplot2()
   title <- .validate_nonempty_scalar_character(title, "title")
@@ -247,9 +247,12 @@ plot_fdr_graph <- function(object, title = "FDR Estimate", fdr_target = 0.05) {
     allow_null = TRUE
   )
   if (is.null(object$FDRs_) || is.null(object$fdr_threshold_range)) {
+    suppressed <- isTRUE(object$fdp_threshold_suppressed)
     stop(
-      "`object` was fitted without artificial features (artificial_type = NULL). ",
-      "FDR graph requires FDRs_ and fdr_threshold_range to be present.",
+      "`object` has no FDP+ curve. This happens when it was fitted without ",
+      "artificial features (artificial_type = NULL)",
+      if (suppressed) ", or when an explicit hard_threshold suppressed the FDP+ search" else "",
+      ". FDP+ graph requires FDRs_ and fdr_threshold_range to be present.",
       call. = FALSE
     )
   }
@@ -287,7 +290,7 @@ plot_fdr_graph <- function(object, title = "FDR Estimate", fdr_target = 0.05) {
     ggplot2::labs(
       title = title,
       x     = "Stability threshold",
-      y     = "FDR estimate"
+      y     = "FDP+ estimate"
     ) +
     ggplot2::theme_minimal(base_size = 11) +
     ggplot2::theme(

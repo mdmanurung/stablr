@@ -12,12 +12,14 @@ adjusted_similarity(list1, list2, nb_total_elements)
 \item{list2}{Character or integer vector of selected feature identifiers.}
 
 \item{nb_total_elements}{Integer; total number of candidate features in the
-universe (i.e. the number of columns in the original predictor matrix).}
+universe (i.e. the number of columns in the original predictor matrix).
+Must be a positive integer.}
 }
 \value{
-Numeric scalar in \eqn{(-1, 1]}.  Values above 0 indicate more
-overlap than expected by chance; 1 means perfect agreement; negative
-values indicate less overlap than chance.
+Numeric scalar.  Values above 0 indicate more overlap than expected
+by chance; negative values indicate less overlap than chance.  The
+theoretical maximum depends on the set sizes relative to
+\code{nb_total_elements}; see the note above.
 }
 \description{
 Computes a chance-corrected similarity between two feature sets.  Unlike
@@ -32,13 +34,22 @@ The formula is analogous to Cohen's kappa for sets:
 where \eqn{r = |A \cap B|}, \eqn{k_i = |A_i|}, \eqn{d =} \code{nb_total_elements},
 and \eqn{\mathbb{E}[r] = k_1 k_2 / d}.
 
+Note that the denominator is not the full set size, so like Cohen's kappa
+this measure does \emph{not} reach 1 for two identical sets that are smaller
+than the universe.  For \eqn{A = B} of size \eqn{k} in a universe of size
+\eqn{d} it evaluates to \eqn{1 - k/d}.  Compare \code{\link[=pearson_similarity]{pearson_similarity()}},
+which is normalized so that identical sets score exactly 1.
+
 Returns 0 when either set is empty or equals the full universe (edge cases
 where the correction denominator is zero).
 }
 \examples{
 # 10-feature universe; sets A and B share 2 out of 3 features each
 adjusted_similarity(c("f1","f2","f3"), c("f2","f3","f4"), nb_total_elements = 10L)
-adjusted_similarity(c("f1","f2"),      c("f1","f2"),      nb_total_elements = 10L) # 1
+
+# Identical sets do NOT score 1: the value is 1 - k/d, here 1 - 2/10.
+adjusted_similarity(c("f1","f2"),      c("f1","f2"),      nb_total_elements = 10L)
+
 adjusted_similarity(character(0),      c("f1"),           nb_total_elements = 10L) # 0
 }
 \seealso{
