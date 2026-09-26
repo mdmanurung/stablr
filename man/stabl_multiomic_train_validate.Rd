@@ -94,7 +94,15 @@ field.}
 \item{late_fusion_training}{How stacking weights are trained. \code{"oof"}
 (default) refits STABL selection and the downstream model inside every
 stacking fold. \code{"python_legacy"} preserves the historical in-sample
-Python-compatible algorithm.}
+Python-compatible algorithm: it fits the downstream models on the whole
+training set and then optimises the stacking weights against \code{y_train} on
+those same in-sample predictions, so \code{score}, \code{train_predictions} and
+\code{in_sample_score} are optimistically biased and are \strong{not} a held-out
+estimate.  The mode emits a \code{stablr_python_legacy_late_fusion_leakage}
+warning that names the measured optimism unless
+\code{getOption("stablr.acknowledge_python_legacy_late_fusion")} is \code{TRUE}.
+\code{train_predictions} and \code{selected_features} are the honest outputs of
+either mode; the score is the optimistically biased one in this mode.}
 
 \item{late_fusion_nfolds}{Number of stacking folds used in OOF mode.}
 
@@ -108,7 +116,10 @@ per-omic STABL fits. Native v1 supports \code{family = "gaussian"} and
 \code{"binomial"} only.}
 
 \item{rho}{Numeric scalar or vector of non-negative cooperation strengths.
-When \code{NULL}, defaults to \code{0}.}
+When \code{NULL}, a positive default ladder (\code{0.1}, \code{0.25}, \code{0.5}, \code{1}) is
+swept. Note that a strength of \code{0} applies no agreement penalty and is
+therefore equivalent to early fusion, so it is excluded from the default;
+pass \code{rho = 0} explicitly to obtain that baseline.}
 
 \item{cooperation_selection}{Character scalar. Either \code{"cv"} or
 \code{"validation"}. \code{"cv"} tunes over \code{rho} with shared inner fold
@@ -148,12 +159,23 @@ list with \code{weights}, \code{valid_predictions}, and mode-specific training
 results. OOF mode provides \code{oof_predictions} and \code{oof_score}; legacy
 mode provides \code{in_sample_predictions} and \code{in_sample_score}.
 \code{train_predictions} and \code{score} remain exact 0.1.x compatibility
-aliases for the active mode-specific fields. Multinomial tasks also
+aliases for the active mode-specific fields, so in legacy mode the
+aliased score is the in-sample one. \code{weights} carries both
+\code{Associated_weight} (the raw winning draw) and \code{Normalised_weight}
+(that draw as a share of the stacked average). Multinomial tasks also
 include \code{levels}, \code{log_loss}, and classification metrics.}
 \item{\code{cooperative_fusion}}{Present only when
 \code{cooperative_fusion = TRUE}. A list containing the selected multiview
 fit, chosen \code{rho} and \code{lambda}, selected features per view,
-train/validation predictions, and tuning diagnostics.}
+train/validation predictions, and tuning diagnostics. \code{score} is
+accompanied by \code{score_semantics}: with
+\code{cooperation_selection = "validation"} the score is a
+\emph{resubstitution} value, because \code{rho} and \code{lambda} were both chosen on
+the supplied validation set that the score is then read from, so it is
+optimistic and not a held-out estimate; \code{train_predictions} and
+\code{selected_features} are the honest outputs of that mode. For binomial
+tasks \code{binary_event_mapping} records which outcome level was encoded
+as the event.}
 }
 }
 \description{

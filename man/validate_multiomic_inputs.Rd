@@ -35,6 +35,21 @@ mismatches early and provides informative error messages naming the
 offending omic layer, which is much easier to diagnose than silent
 misalignment detected later in the modelling pipeline.
 }
+\section{Order strictness}{
+
+Training omics must agree on sample \strong{order}, not just on the sample-ID set,
+because bootstrap subsampling and cooperative stacking index every view
+positionally.  Validation omics are only required to agree on the sample-ID
+\emph{set}, which is checked by the private
+\code{.validate_multiomic_validation_inputs()} rather than here.  That asymmetry
+is safe only because the sole caller,
+\code{\link[=stabl_multiomic_train_validate]{stabl_multiomic_train_validate()}}, re-orders every validation table and the
+validation outcome by sample ID on the statements immediately after the
+check; a permuted validation arrival therefore cannot reach the model.  Any
+new caller of the validation validator must preserve that name-based
+re-ordering, or the check has to become order-strict here too.
+}
+
 \examples{
 ids <- paste0("s", 1:4)
 x_list <- list(

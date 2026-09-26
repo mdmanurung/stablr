@@ -1,6 +1,12 @@
 # Leakage-safe late fusion.  The historical implementation remains in
 # multiomic_workflows.R because it is also the public Python-parity path.
 
+# Seed offset for the per-omic downstream `cv.glmnet` stream.  It must stay
+# distinct from the fold-construction (29001L), fold (31001L) and stacking
+# (47001L) offsets used in this file and in multiomic_workflows.R, so no two RNG
+# streams in one run share a seed.
+.LATE_FUSION_DOWNSTREAM_SEED_OFFSET <- 51001L
+
 .late_fusion_add_mode_fields <- function(result, training_mode) {
   if (!training_mode %in% c("oof", "python_legacy")) {
     stop("Internal error: unknown late-fusion training mode.", call. = FALSE)
@@ -34,7 +40,7 @@
   binary_mapping <- NULL
   y_downstream <- y_train
   if (identical(task_type, "binary")) {
-    mapped <- .late_fusion_binary_outcome(y_train)
+    mapped <- .multiomic_binary_outcome(y_train)
     y_downstream <- mapped$y
     binary_mapping <- mapped$mapping
   }
@@ -91,14 +97,18 @@
     )
 
     fallback <- setNames(character(length(omic_names)), omic_names)
-    for (omic in omic_names) {
+    for (omic_index in seq_along(omic_names)) {
+      omic <- omic_names[[omic_index]]
       pred <- .late_fusion_fit_omic_safe(
         x_train_sel = captured$selected_train[[omic]],
         y_train = .subset_outcome_by_ids(y_downstream, train_ids),
         x_valid_sel = captured$selected_valid[[omic]],
         task_type = task_type,
         levels = if (identical(task_type, "multiclass")) classes else NULL,
-        selection_condition = captured$selection_conditions[[omic]]
+        selection_condition = captured$selection_conditions[[omic]],
+        random_state = .derive_nested_seed(
+          fold_seed, omic_index, .LATE_FUSION_DOWNSTREAM_SEED_OFFSET
+        )
       )
       warnings_seen <- unique(c(warnings_seen, pred$warnings))
       fallback[[omic]] <- pred$fallback_reason %||% NA_character_
@@ -148,7 +158,8 @@
     x_valid_list = x_valid_list, task_type = task_type,
     omic_names = omic_names,
     levels = if (identical(task_type, "multiclass")) levels(factor(y_train)) else NULL,
-    weights = stacked$weights$Associated_weight
+    weights = stacked$weights$Associated_weight,
+    random_state = random_state
   )
   result <- list(
     weights = stacked$weights,
@@ -160,9 +171,11 @@
       training_mode = "oof", fold_id = fold_id,
       seeds = list(folds = vapply(fold_details, `[[`, integer(1L), "seed"),
                    stacking = .derive_nested_seed(random_state, 1L, 47001L),
-                   full_refit = random_state),
+                   full_refit = random_state,
+                   downstream_cv_glmnet_offset = .LATE_FUSION_DOWNSTREAM_SEED_OFFSET),
       folds = fold_details, warnings = warnings_seen,
       binary_event_mapping = binary_mapping,
+      score_semantics = "out_of_fold_estimate",
       full_refit = full$diagnostics
     )
   )
@@ -186,7 +199,8 @@
 
 .late_fusion_fit_omic_safe <- function(x_train_sel, y_train, x_valid_sel,
                                        task_type, levels = NULL,
-                                       selection_condition = NULL) {
+                                       selection_condition = NULL,
+                                       random_state = NULL) {
   if (!is.null(selection_condition) &&
       !inherits(selection_condition, "stablr_numerical_infeasibility")) {
     stop(
@@ -204,14 +218,20 @@
   }
   y_mean <- if (identical(task_type, "regression")) mean(unname(y_train)) else NA_real_
   captured_warnings <- character()
+  # `do.call` passes the seed by name only when one was supplied, so an
+  # unseeded run still matches the six-argument shape of
+  # `.late_fusion_fit_omic()` that predate this parameter.
+  fit_omic <- function(x_sel, x_valid) {
+    args <- list(x_sel, y_train, x_valid, y_mean, task_type, levels)
+    if (!is.null(random_state)) args$random_state <- random_state
+    do.call(.late_fusion_fit_omic, args)
+  }
   out <- NULL
   if (is.null(fallback_reason)) {
     out <- tryCatch(
       withCallingHandlers(
         {
-          fitted <- .late_fusion_fit_omic(
-            x_train_sel, y_train, x_valid_sel, y_mean, task_type, levels
-          )
+          fitted <- fit_omic(x_train_sel, x_valid_sel)
           fitted_values <- c(
             unlist(fitted$train_preds, use.names = FALSE),
             unlist(fitted$valid_preds, use.names = FALSE)
@@ -243,9 +263,7 @@
     empty <- x_train_sel[, integer(), drop = FALSE]
     empty_valid <- if (is.null(x_valid_sel)) NULL else
       x_valid_sel[, integer(), drop = FALSE]
-    out <- .late_fusion_fit_omic(
-      empty, y_train, empty_valid, y_mean, task_type, levels
-    )
+    out <- fit_omic(empty, empty_valid)
   }
   if (!is.null(fallback_reason) && identical(task_type, "binary")) {
     prior <- mean(as.numeric(y_train))
@@ -313,7 +331,7 @@
   out
 }
 
-.late_fusion_binary_outcome <- function(y) {
+.multiomic_binary_outcome <- function(y) {
   ids <- names(y)
   if (is.logical(y)) {
     values <- as.integer(y)
@@ -322,7 +340,11 @@
     values <- as.integer(y)
     labels <- c("0", "1")
   } else {
-    f <- factor(y)
+    # Declared factor level order is the caller's event declaration and is
+    # honoured, matching `.modeled_class_levels()` in stabl_fit.R.  Unlabelled
+    # types fall back to the sorted level order, which is the only
+    # order-independent choice available.
+    f <- if (is.factor(y)) droplevels(y) else factor(y)
     if (nlevels(f) != 2L || anyNA(f)) {
       stop("Binary outcomes must contain exactly two complete event levels.",
            call. = FALSE)
@@ -339,7 +361,8 @@
 
 .late_fusion_full_refit_predictions <- function(full_per_omic, y_train,
                                                 x_valid_list, task_type,
-                                                omic_names, levels, weights) {
+                                                omic_names, levels, weights,
+                                                random_state = NULL) {
   fallbacks <- setNames(character(length(omic_names)), omic_names)
   fallback_conditions <- setNames(
     vector("list", length(omic_names)), omic_names
@@ -353,12 +376,16 @@
       dimnames = list(rownames(x_valid_list[[1L]]), omic_names)
     )
   }
-  for (omic in omic_names) {
+  for (omic_index in seq_along(omic_names)) {
+    omic <- omic_names[[omic_index]]
     pred <- .late_fusion_fit_omic_safe(
       full_per_omic$selected_train[[omic]], y_train,
       if (is.null(x_valid_list)) NULL else full_per_omic$selected_valid[[omic]],
       task_type, levels,
-      selection_condition = full_per_omic$selection_conditions[[omic]]
+      selection_condition = full_per_omic$selection_conditions[[omic]],
+      random_state = .derive_nested_seed(
+        random_state, omic_index, .LATE_FUSION_DOWNSTREAM_SEED_OFFSET
+      )
     )
     fallbacks[[omic]] <- pred$fallback_reason %||% NA_character_
     fallback_conditions[omic] <- list(pred$fallback_condition)

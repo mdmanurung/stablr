@@ -47,14 +47,25 @@
 #' @param late_fusion_training How stacking weights are trained. `"oof"`
 #'   (default) refits STABL selection and the downstream model inside every
 #'   stacking fold. `"python_legacy"` preserves the historical in-sample
-#'   Python-compatible algorithm.
+#'   Python-compatible algorithm: it fits the downstream models on the whole
+#'   training set and then optimises the stacking weights against `y_train` on
+#'   those same in-sample predictions, so `score`, `train_predictions` and
+#'   `in_sample_score` are optimistically biased and are **not** a held-out
+#'   estimate.  The mode emits a `stablr_python_legacy_late_fusion_leakage`
+#'   warning that names the measured optimism unless
+#'   `getOption("stablr.acknowledge_python_legacy_late_fusion")` is `TRUE`.
+#'   `train_predictions` and `selected_features` are the honest outputs of
+#'   either mode; the score is the optimistically biased one in this mode.
 #' @param late_fusion_nfolds Number of stacking folds used in OOF mode.
 #' @param cooperative_fusion Logical. When `TRUE`, fit a built-in cooperative
 #'   learning branch (vendored multiview engine) in addition to the existing
 #'   per-omic STABL fits. Native v1 supports `family = "gaussian"` and
 #'   `"binomial"` only.
 #' @param rho Numeric scalar or vector of non-negative cooperation strengths.
-#'   When `NULL`, defaults to `0`.
+#'   When `NULL`, a positive default ladder (`0.1`, `0.25`, `0.5`, `1`) is
+#'   swept. Note that a strength of `0` applies no agreement penalty and is
+#'   therefore equivalent to early fusion, so it is excluded from the default;
+#'   pass `rho = 0` explicitly to obtain that baseline.
 #' @param cooperation_selection Character scalar. Either `"cv"` or
 #'   `"validation"`. `"cv"` tunes over `rho` with shared inner fold
 #'   assignments. `"validation"` tunes over `rho` and `lambda` on the
@@ -84,12 +95,23 @@
 #'       results. OOF mode provides `oof_predictions` and `oof_score`; legacy
 #'       mode provides `in_sample_predictions` and `in_sample_score`.
 #'       `train_predictions` and `score` remain exact 0.1.x compatibility
-#'       aliases for the active mode-specific fields. Multinomial tasks also
+#'       aliases for the active mode-specific fields, so in legacy mode the
+#'       aliased score is the in-sample one. `weights` carries both
+#'       `Associated_weight` (the raw winning draw) and `Normalised_weight`
+#'       (that draw as a share of the stacked average). Multinomial tasks also
 #'       include `levels`, `log_loss`, and classification metrics.}
 #'     \item{`cooperative_fusion`}{Present only when
 #'       `cooperative_fusion = TRUE`. A list containing the selected multiview
 #'       fit, chosen `rho` and `lambda`, selected features per view,
-#'       train/validation predictions, and tuning diagnostics.}
+#'       train/validation predictions, and tuning diagnostics. `score` is
+#'       accompanied by `score_semantics`: with
+#'       `cooperation_selection = "validation"` the score is a
+#'       *resubstitution* value, because `rho` and `lambda` were both chosen on
+#'       the supplied validation set that the score is then read from, so it is
+#'       optimistic and not a held-out estimate; `train_predictions` and
+#'       `selected_features` are the honest outputs of that mode. For binomial
+#'       tasks `binary_event_mapping` records which outcome level was encoded
+#'       as the event.}
 #'   }
 #'
 #' @examples
@@ -139,6 +161,9 @@ stabl_multiomic_train_validate <- function(
     ...
 ) {
   late_fusion_training <- match.arg(late_fusion_training)
+  if (identical(late_fusion_training, "python_legacy")) {
+    .warn_python_legacy_late_fusion()
+  }
   late_fusion_nfolds <- .validate_scalar_integer_like(
     late_fusion_nfolds, "late_fusion_nfolds", min = 2L
   )
@@ -298,6 +323,48 @@ stabl_multiomic_train_validate <- function(
     out,
     class = "stabl_multiomic_fit"
   )
+}
+
+# Mean optimism of `late_fusion_training = "python_legacy"` measured as the
+# in-sample stacking score minus the held-out score (the release-evidence
+# replicate study, `fixtures/release_evidence_baseline/v1`).  These numbers are
+# the reason the mode is acknowledged rather than merely documented.
+.PYTHON_LEGACY_LATE_FUSION_OPTIMISM <- c(
+  binomial = 0.211, gaussian = 0.513, multinomial = 0.181
+)
+
+# The mode is retained for Python parity, so it is not blocked; instead it
+# cannot be reached without the caller seeing what it costs.  Acknowledging the
+# bias is explicit and is recorded in the returned provenance.
+.warn_python_legacy_late_fusion <- function() {
+  if (isTRUE(getOption("stablr.acknowledge_python_legacy_late_fusion", FALSE))) {
+    return(invisible(NULL))
+  }
+  optimism <- paste(
+    sprintf("%s %.3f", names(.PYTHON_LEGACY_LATE_FUSION_OPTIMISM),
+            .PYTHON_LEGACY_LATE_FUSION_OPTIMISM),
+    collapse = ", "
+  )
+  warning(structure(
+    list(
+      message = paste0(
+        "late_fusion_training = \"python_legacy\" optimises the stacking ",
+        "weights on IN-SAMPLE downstream predictions, so `score`, ",
+        "`in_sample_score` and `train_predictions` are optimistically biased ",
+        "and are not a held-out estimate. Measured mean optimism ",
+        "(in-sample score minus held-out score): ", optimism, ". Use ",
+        "late_fusion_training = \"oof\" for an honest estimate, or set ",
+        "getOption(\"stablr.acknowledge_python_legacy_late_fusion\") = TRUE ",
+        "to accept the bias deliberately."
+      ),
+      call = NULL,
+      training_mode = "python_legacy",
+      measured_optimism = .PYTHON_LEGACY_LATE_FUSION_OPTIMISM
+    ),
+    class = c("stablr_python_legacy_late_fusion_leakage", "stablr_warning",
+              "warning", "condition")
+  ))
+  invisible(NULL)
 }
 
 #' Multi-Omic STABL Cross-Validation Workflow
@@ -607,7 +674,7 @@ stabl_multiomic_cv <- function(
   task_type <- .family_to_task_type(family)
   binary_mapping <- NULL
   if (identical(task_type, "binary")) {
-    mapped <- .late_fusion_binary_outcome(y_train)
+    mapped <- .multiomic_binary_outcome(y_train)
     y_train <- mapped$y
     binary_mapping <- mapped$mapping
     if (!is.null(y_valid)) {
@@ -628,7 +695,13 @@ stabl_multiomic_cv <- function(
   }
   out$provenance <- list(
     training_mode = "python_legacy",
-    binary_event_mapping = binary_mapping
+    binary_event_mapping = binary_mapping,
+    prediction_source = "in_sample",
+    score_semantics = "in_sample_optimistically_biased",
+    leakage_acknowledged = isTRUE(
+      getOption("stablr.acknowledge_python_legacy_late_fusion", FALSE)
+    ),
+    measured_legacy_optimism = .PYTHON_LEGACY_LATE_FUSION_OPTIMISM
   )
   .late_fusion_add_mode_fields(out, "python_legacy")
 }
@@ -639,13 +712,17 @@ stabl_multiomic_cv <- function(
   valid_preds <- if (!is.null(selected_valid)) .named_omic_list(omic_names) else NULL
   y_levels    <- levels(factor(y_train))
 
-  for (omic in omic_names) {
+  for (omic_index in seq_along(omic_names)) {
+    omic <- omic_names[[omic_index]]
     omic_result <- .late_fusion_fit_omic_safe(
       x_train_sel  = selected_train[[omic]],
       y_train      = y_train,
       x_valid_sel  = if (!is.null(selected_valid)) selected_valid[[omic]] else NULL,
       task_type    = "multiclass",
-      levels       = y_levels
+      levels       = y_levels,
+      random_state = .derive_nested_seed(
+        random_state, omic_index, .LATE_FUSION_DOWNSTREAM_SEED_OFFSET
+      )
     )
     train_preds[[omic]] <- omic_result$train_preds
     if (!is.null(valid_preds)) valid_preds[[omic]] <- omic_result$valid_preds
@@ -704,13 +781,17 @@ stabl_multiomic_cv <- function(
     NULL
   }
 
-  for (omic in omic_names) {
+  for (omic_index in seq_along(omic_names)) {
+    omic <- omic_names[[omic_index]]
     omic_result <- .late_fusion_fit_omic_safe(
       x_train_sel  = selected_train[[omic]],
       y_train      = y_train,
       x_valid_sel  = if (!is.null(selected_valid)) selected_valid[[omic]] else NULL,
       task_type    = task_type,
-      levels       = NULL
+      levels       = NULL,
+      random_state = .derive_nested_seed(
+        random_state, omic_index, .LATE_FUSION_DOWNSTREAM_SEED_OFFSET
+      )
     )
     train_preds[, omic] <- omic_result$train_preds
     if (!is.null(valid_preds)) valid_preds[, omic] <- omic_result$valid_preds
@@ -789,7 +870,7 @@ stabl_multiomic_cv <- function(
     stop("`y_valid` must be non-empty and complete for late fusion.", call. = FALSE)
   }
   if (identical(family, "binomial")) {
-    mapping <- .late_fusion_binary_outcome(y_train)$mapping
+    mapping <- .multiomic_binary_outcome(y_train)$mapping
     valid <- if (is.null(y_valid)) NULL else factor(y_valid, levels = names(mapping))
     if (!is.null(valid) && anyNA(valid)) {
       stop("Validation outcomes must use the training binary event levels.",
@@ -1090,19 +1171,6 @@ stabl_multiomic_cv <- function(
   unname(foldid[sample_ids])
 }
 
-.cooperative_coerce_binary_outcome <- function(y) {
-  if (is.factor(y)) {
-    return(as.integer(y) - 1L)
-  }
-
-  y_num <- as.numeric(y)
-  if (all(sort(unique(y_num)) %in% c(0, 1))) {
-    return(as.integer(y_num))
-  }
-
-  as.integer(as.factor(y)) - 1L
-}
-
 .cooperative_binomial_deviance <- function(pred, y) {
   prob_min <- 1e-05
   prob_max <- 1 - prob_min
@@ -1139,7 +1207,7 @@ stabl_multiomic_cv <- function(
     type_measure,
     mse = mean((as.numeric(true_y) - as.numeric(pred_y))^2),
     class = mean(as.character(true_y) != as.character(pred_y)),
-    auc = .r_auc(.cooperative_coerce_binary_outcome(true_y), as.numeric(pred_y)),
+    auc = .r_auc(.multiomic_binary_outcome(true_y)$y, as.numeric(pred_y)),
     mae = mean(abs(as.numeric(true_y) - as.numeric(pred_y))),
     deviance = switch(
       family,
@@ -1452,6 +1520,21 @@ stabl_multiomic_cv <- function(
   mv_family  <- .cooperative_family_to_backend(family)
   direction  <- .cooperative_metric_direction(cooperative_args$cooperation_type_measure)
 
+  binary_event_mapping <- NULL
+  if (identical(family, "binomial")) {
+    mapped <- .multiomic_binary_outcome(y_train)
+    y_train <- mapped$y
+    binary_event_mapping <- mapped$mapping
+    if (!is.null(y_valid)) {
+      valid_factor <- factor(as.character(y_valid), levels = names(binary_event_mapping))
+      if (anyNA(valid_factor)) {
+        stop("Validation outcomes must use the training binary event levels.",
+             call. = FALSE)
+      }
+      y_valid <- setNames(as.integer(valid_factor) - 1L, names(y_valid))
+    }
+  }
+
   sel <- if (identical(cooperative_args$cooperative_selection, "cv")) {
     .cooperative_select_cv(
       x_train_mv      = x_train_mv,
@@ -1490,6 +1573,7 @@ stabl_multiomic_cv <- function(
     fit             = sel$best_fit,
     rho             = sel$best_rho,
     rho_grid        = cooperative_args$rho,
+    rho_defaulted   = isTRUE(cooperative_args$rho_defaulted),
     selection       = cooperative_args$cooperative_selection,
     selector        = sel$selector,
     type_measure    = cooperative_args$cooperation_type_measure,
@@ -1498,6 +1582,9 @@ stabl_multiomic_cv <- function(
       type_measure = cooperative_args$cooperation_type_measure
     ),
     score             = sel$best_score,
+    score_semantics   = .cooperative_score_semantics(
+      cooperative_args$cooperative_selection
+    ),
     selected_lambda   = sel$best_lambda,
     selected_features = selected_features,
     selected_train    = selected_train,
@@ -1509,9 +1596,24 @@ stabl_multiomic_cv <- function(
     valid_predictions = if (is.null(sel$valid_pred)) NULL else {
       .cooperative_prediction_vector(sel$valid_pred, rownames(x_valid_mv[[1L]]))
     },
+    binary_event_mapping = binary_event_mapping,
     diagnostics = sel$diagnostics,
     foldid      = sel$foldid
   )
+}
+
+# "cv" mode scores the winner on folds the winner never saw, so the number is a
+# selection-inflated but out-of-sample estimate.  "validation" mode tunes
+# rho AND lambda on the supplied validation set and then reports the winning
+# metric from that same set, so it is a resubstitution score: optimistic and
+# not a held-out estimate.  It is reported under the same `score` field either
+# way, so the label travels with the value.
+.cooperative_score_semantics <- function(selection) {
+  if (identical(selection, "validation")) {
+    "resubstitution_score_optimistic_not_held_out"
+  } else {
+    "inner_cv_score_selection_inflated"
+  }
 }
 
 # ---------------------------------------------------------------------------
@@ -1519,11 +1621,19 @@ stabl_multiomic_cv <- function(
 # ---------------------------------------------------------------------------
 
 # Wilcoxon rank-sum based AUC.  y must be 0/1.
+#
+# A candidate that cannot separate the two classes carries no information, and
+# the arithmetic AUC of such a candidate is undefined rather than chance-level.
+# Returning the 0.5 no-information value let a degenerate candidate compete
+# with, and win, the argmax against genuine ones, so an unscoreable candidate
+# reports NA_real_ and the caller drops it.  See
+# `.abort_stacking_unscoreable()` for the case where *every* candidate is
+# unscoreable, which is an error rather than a search.
 .r_auc <- function(y, scores) {
   pos <- which(y == 1L)
   n1 <- length(pos)
   n0 <- length(y) - n1
-  if (n1 == 0L || n0 == 0L) return(0.5)
+  if (n1 == 0L || n0 == 0L) return(NA_real_)
   r <- rank(scores, ties.method = "average")
   (sum(r[pos]) - n1 * (n1 + 1L) / 2L) / (n1 * n0)
 }
@@ -1532,7 +1642,7 @@ stabl_multiomic_cv <- function(
   pos <- which(y == 1L)
   n1 <- length(pos)
   n0 <- length(y) - n1
-  if (n1 == 0L || n0 == 0L) return(rep(0.5, ncol(scores)))
+  if (n1 == 0L || n0 == 0L) return(rep(NA_real_, ncol(scores)))
   ranks <- matrixStats::colRanks(scores, ties.method = "average",
                                   preserveShape = TRUE)
   unname(
@@ -1540,15 +1650,18 @@ stabl_multiomic_cv <- function(
   )
 }
 
+# R^2 against the mean.  A constant outcome leaves ss_tot == 0 and the ratio
+# undefined; the old floor of 0 was indistinguishable from a perfect fit, so an
+# unscoreable candidate reports NA_real_ and the caller drops it.
 .r_squared <- function(y, y_hat) {
   ss_tot <- sum((y - mean(y))^2)
-  if (ss_tot == 0) return(0)
+  if (ss_tot == 0) return(NA_real_)
   1 - sum((y - y_hat)^2) / ss_tot
 }
 
 .r_squared_batch <- function(y, y_hat) {
   ss_tot <- sum((y - mean(y))^2)
-  if (ss_tot == 0) return(rep(0, ncol(y_hat)))
+  if (ss_tot == 0) return(rep(NA_real_, ncol(y_hat)))
   unname(1 - colSums((y_hat - y)^2) / ss_tot)
 }
 
@@ -1558,16 +1671,35 @@ stabl_multiomic_cv <- function(
 
 #' Stacked Generalization Over Per-Omic Predictions
 #'
-#' Finds optimal omic weights by random search, matching the Python
-#' `stacked_multi_omic` algorithm from `stabl/stacked_generalization.py`.
-#' Missing values in `predictions` are handled per-row: rows with all-NA
-#' predictions receive `NA` in the stacked output.
+#' Draws `n_iter` weight vectors, each component uniform on `[0, 10]`, and
+#' returns the highest-scoring one.  This is a random search, not an optimiser:
+#' there is no local refinement and no convergence criterion, so the reported
+#' weights are the best of `n_iter` draws, not a global optimum, and raising
+#' `n_iter` is the only way to search harder.  The search mirrors the Python
+#' `stacked_multi_omic` algorithm from `stabl/stacked_generalization.py`,
+#' including its unnormalised weight draws and its strict-improvement,
+#' first-maximum-wins update rule.  Missing values in `predictions` are handled
+#' per-row: rows with all-NA predictions receive `NA` in the stacked output.
 #'
 #' For binary and regression tasks, candidate weighted predictions are
 #' evaluated in chunks while preserving the scalar algorithm's RNG order,
 #' strict `score > best_score` incumbent update, and first-maximum tie policy.
 #' The multiclass path remains scalar because exact probability-normalization
 #' and tie parity are prioritized for this release.
+#'
+#' Binary AUC and regression R^2 are undefined for some candidate sets: an AUC
+#' needs both outcome classes among the scored rows, and R^2 needs a
+#' non-constant outcome.  Such candidates are skipped rather than scored at
+#' their no-information values, and a candidate set for which *no* candidate is
+#' scoreable is a `stablr_stacking_infeasible` error rather than a returned
+#' `score` of `-Inf`.
+#'
+#' Multiclass log loss is computed with every probability floored at `1e-15`
+#' before renormalisation.  That floor bounds the attainable loss at
+#' `-log(1e-15)` (about 34.54) per sample, so a multiclass `score` cannot fall
+#' below `log(1e-15)` (about -34.54) however badly a candidate ranks the
+#' observed class.  Scores within `34.54` of that bound are not meaningful
+#' differences in model quality.
 #'
 #' @param predictions For `task_type = "binary"` or `"regression"`, a
 #'   `data.frame` or numeric matrix with one column per omic and one row per
@@ -1593,8 +1725,12 @@ stabl_multiomic_cv <- function(
 #'   \describe{
 #'     \item{`predictions`}{`data.frame` with one column per omic plus a
 #'       `"Stacked Gen. Predictions"` column of the best weighted average.}
-#'     \item{`weights`}{`data.frame` with one row per omic and a column
-#'       `Associated_weight` containing the optimal weight.}
+#'     \item{`weights`}{`data.frame` with one row per omic and two columns:
+#'       `Associated_weight` is the raw winning draw from `[0, 10]` (the pinned
+#'       quantity), and `Normalised_weight` is that draw divided by its sum,
+#'       i.e. each omic's share of the weighted average. The two differ by a
+#'       single constant, so a share is read from `Normalised_weight` and only
+#'       `Associated_weight` is comparable with the pinned reference.}
 #'     \item{`score`}{Best score achieved (AUC, R², or negative log loss).}
 #'   }
 #' @export
@@ -1619,6 +1755,22 @@ stacked_multi_omic <- function(
     ))
   }
 
+  .stacked_multi_omic_scalar(
+    predictions = predictions,
+    y = y,
+    task_type = task_type,
+    n_iter = n_iter,
+    random_state = random_state
+  )
+}
+
+# Scalar (binary / regression) candidate search.  Split out of the exported
+# wrapper so the chunked loop can be exercised at a chosen chunk size: with
+# `chunk_size` hard-coded to 512 every test with n_iter < 513 takes the
+# single-chunk branch, so a chunk-boundary defect is invisible to the suite.
+# `chunk_size` is internal and defaults to the packaged value.
+.stacked_multi_omic_scalar <- function(predictions, y, task_type, n_iter,
+                                       random_state = NULL, chunk_size = 512L) {
   prediction_ids <- .stacking_row_ids(predictions)
   predictions <- as.matrix(predictions)
   rownames(predictions) <- prediction_ids
@@ -1650,6 +1802,8 @@ stacked_multi_omic <- function(
   y_na_mask    <- !is.na(y)
   complete_idx <- rowSums(is_obs_preds) > 0L & y_na_mask
 
+  .abort_stacking_unscoreable(y, complete_idx, task_type)
+
   .with_local_seed(
     if (!is.null(random_state)) as.integer(random_state),
     {
@@ -1663,7 +1817,7 @@ stacked_multi_omic <- function(
         byrow = TRUE
       )
 
-      chunk_size <- min(512L, n_iter)
+      chunk_size <- max(1L, min(as.integer(chunk_size), as.integer(n_iter)))
       starts <- seq.int(1L, n_iter, by = chunk_size)
       for (start in starts) {
         end <- min(start + chunk_size - 1L, n_iter)
@@ -1674,7 +1828,6 @@ stacked_multi_omic <- function(
           is_obs = is_obs_preds
         )
 
-        if (sum(complete_idx) < 2L) next
         score_mat <- weighted_probs_chunk[complete_idx, , drop = FALSE]
         scores <- if (task_type == "binary") {
           .r_auc_batch(y[complete_idx], score_mat)
@@ -1692,14 +1845,103 @@ stacked_multi_omic <- function(
         }
       }
 
-      weights_df        <- data.frame(Associated_weight = best_weights,
-                                      row.names = colnames(predictions))
-      preds_df          <- as.data.frame(predictions)
-      preds_df[["Stacked Gen. Predictions"]] <- best_probs
-
-      list(predictions = preds_df, weights = weights_df, score = best_score)
+      list(
+        predictions = .stacking_prediction_frame(
+          predictions = predictions,
+          best_probs = best_probs
+        ),
+        weights = .stacking_weight_frame(
+          best_weights = best_weights,
+          omic_names = colnames(predictions)
+        ),
+        score = best_score
+      )
     }
   )
+}
+
+.stacking_prediction_frame <- function(predictions, best_probs) {
+  out <- as.data.frame(predictions)
+  out[["Stacked Gen. Predictions"]] <- best_probs
+  out
+}
+
+.stacking_weight_frame <- function(best_weights, omic_names) {
+  total <- sum(best_weights)
+  normalised <- if (is.finite(total) && total > 0) {
+    best_weights / total
+  } else {
+    rep(NA_real_, length(best_weights))
+  }
+  data.frame(
+    Associated_weight = best_weights,
+    Normalised_weight = normalised,
+    row.names = omic_names
+  )
+}
+
+# A score is only defined when at least two rows are fully observed and the
+# outcome varies across them.  Both failures used to pass silently: the row
+# count left `best_score` at -Inf with an all-NA stacked column, and a constant
+# or single-class outcome scored every candidate at its no-information floor and
+# then reported the first candidate's weights as the winner.
+.abort_stacking_unscoreable <- function(y, complete_idx, task_type) {
+  n_samples <- length(complete_idx)
+  n_complete <- sum(complete_idx)
+  if (n_complete < 2L) {
+    .abort_stablr(
+      "stablr_stacking_infeasible",
+      sprintf(
+        paste0(
+          "Stacking needs at least 2 fully observed rows to score any ",
+          "candidate weight vector; %d of %d row(s) had an observed omic ",
+          "prediction."
+        ),
+        n_complete, n_samples
+      ),
+      task_type = task_type,
+      n_samples = as.integer(n_samples),
+      complete_rows = as.integer(n_complete)
+    )
+  }
+  scored <- y[complete_idx]
+  if (identical(task_type, "binary")) {
+    class_counts <- table(factor(scored, levels = c(0, 1)))
+    if (any(class_counts == 0L)) {
+      .abort_stablr(
+        "stablr_stacking_infeasible",
+        sprintf(
+          paste0(
+            "Stacking needs both outcome classes among the %d fully observed ",
+            "rows; the scored rows contain only %s."
+          ),
+          n_complete,
+          paste(names(class_counts)[class_counts > 0L], collapse = " and ")
+        ),
+        task_type = task_type,
+        n_samples = as.integer(n_samples),
+        complete_rows = as.integer(n_complete),
+        scored_class_counts = class_counts
+      )
+    }
+    return(invisible(TRUE))
+  }
+  if (sum((scored - mean(scored))^2) == 0) {
+    .abort_stablr(
+      "stablr_stacking_infeasible",
+      sprintf(
+        paste0(
+          "Stacking needs a non-constant outcome among the %d fully observed ",
+          "rows; R-squared is undefined for a constant outcome."
+        ),
+        n_complete
+      ),
+      task_type = task_type,
+      n_samples = as.integer(n_samples),
+      complete_rows = as.integer(n_complete)
+    )
+  }
+  invisible(TRUE)
 }
 
 .stacked_multi_omic_multiclass <- function(predictions,
@@ -1748,8 +1990,7 @@ stacked_multi_omic <- function(
         }
       }
 
-      weights_df <- data.frame(Associated_weight = best_weights,
-                               row.names = omic_names)
+      weights_df <- .stacking_weight_frame(best_weights, omic_names)
       preds_df <- as.data.frame(best_probs, check.names = FALSE)
       names(preds_df) <- paste0("prob_", names(preds_df))
       preds_df$predicted_class <- classes[max.col(best_probs, ties.method = "first")]
@@ -1955,10 +2196,16 @@ stacked_multi_omic <- function(
 
 # Fit a downstream predictor on selected features for one omic.
 # Returns a list(train_preds, valid_preds, model) where valid_preds may be NULL.
+#
+# `random_state` is threaded to the multinomial `cv.glmnet` below, which builds
+# its own internal fold assignment and therefore consumes ambient RNG state
+# unless it is seeded.  Callers pass a per-omic derived seed; NULL keeps the
+# honest unseeded behaviour.
 .late_fusion_fit_omic <- function(x_train_sel, y_train,
                                   x_valid_sel = NULL, y_train_mean,
                                   task_type,
-                                  levels = NULL) {
+                                  levels = NULL,
+                                  random_state = NULL) {
   n_sel <- ncol(x_train_sel)
 
   if (identical(task_type, "multiclass")) {
@@ -1991,12 +2238,13 @@ stacked_multi_omic <- function(
       )
     }
     model_fit <- .with_glmnet_numerical_infeasibility(
-      glmnet::cv.glmnet(
+      .seeded_cv_glmnet(
         x = as.matrix(x_train_sel),
         y = y_train,
         family = "multinomial",
         type.measure = "class",
-        nfolds = downstream_folds
+        nfolds = downstream_folds,
+        random_state = random_state
       ),
       source = "glmnet multiclass downstream fit"
     )

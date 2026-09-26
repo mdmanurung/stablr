@@ -83,7 +83,10 @@ train-fold grids.}
 
 \item{cv_workers}{Number of outer folds to evaluate in parallel. Uses
 \code{parallel::mclapply()} on Unix-like systems and falls back to sequential
-execution on Windows.}
+execution on Windows.  Must be \code{1L} unless \code{random_state} is supplied:
+forked workers inherit an identical \code{.Random.seed} snapshot, so with no
+seed every fold would draw from one common stream and the result would be
+unreproducible.}
 
 \item{...}{Additional arguments passed to \code{\link[=stabl_fit]{stabl_fit()}}.}
 
@@ -116,6 +119,39 @@ estimate predictive performance for the declared candidate workflow; they
 do not establish dataset-wide FDP control. Late-fusion stacking is not a
 candidate type in this helper.
 }
+\section{Candidate selection is optimistic}{
+
+The held-out numbers are the score of the \emph{declared candidate workflow}, not
+of a candidate chosen without looking at the data.  Within each outer fold
+the winner is picked by a single inner-CV number (\code{which.min} balanced error
+rate, or \code{which.max} accuracy -- ties go to the first candidate), so the
+outer estimate inherits the winner's-curse bias of that selection step; no
+one-standard-error rule is applied.  This is a scientific decision for the
+analysis author, not a defect to be smoothed over here.
+
+\code{outer_repeats} defaults to \code{1L}, which leaves the outer estimate with the
+variance of a single repeated-CV split.  Use \code{outer_repeats > 1L} whenever a
+generalisation number from this helper is going to be reported or compared.
+
+The inner-CV comparison is \emph{paired}: every candidate is fitted on the same
+inner folds with the same per-fold seeds, so a difference in inner score
+reflects a difference in the candidate rather than a difference in the
+bootstrap draws.
+}
+
+\section{RNG}{
+
+When \code{random_state} is an integer, \code{stabl_multiomic_nested_cv()} does not
+mutate the caller's \code{.Random.seed}.  Every seeded stage -- fold construction,
+each inner fit, each outer refit, and the downstream \code{cv.glmnet} -- runs
+inside a \code{.with_local_seed()} scope.  With \code{random_state = NULL} the fold
+draws come from ambient RNG state and therefore do advance the caller's
+stream, as any unseeded stochastic routine does.
+
+Reproducibility is conditional on \code{RNGkind()} and on \code{sample.kind}; neither is
+pinned by this function, so changing them between runs changes the folds.
+}
+
 \examples{
 set.seed(3L)
 ids <- paste0("s", 1:18)

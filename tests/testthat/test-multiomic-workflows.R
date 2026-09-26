@@ -1691,3 +1691,207 @@ test_that("[C7] .classification_metrics mcc = 0 for degenerate (all-one-class) p
   m <- stablr:::.classification_metrics(truth, predicted)
   expect_equal(m$mcc, 0, tolerance = 1e-12)
 })
+
+# ---------------------------------------------------------------------------
+# H5 / H7 / H9 / H10: the weights the object reports, the score label it
+# carries, the event convention the two fusion branches share, and the
+# acknowledgement the leaking legacy mode now demands.
+# ---------------------------------------------------------------------------
+
+test_that("H5 late fusion reports the raw draw and the normalised share", {
+  ids <- paste0("s", seq_len(18L))
+  x <- matrix(rnorm(18L * 3L), 18L,
+              dimnames = list(ids, paste0("f", 1:3)))
+  y <- setNames(rnorm(18L), ids)
+  fit <- stabl_multiomic_train_validate(
+    list(a = x), y, data.frame(lambda = 0.1),
+    artificial_type = NULL, hard_threshold = 1, n_bootstraps = 2L,
+    sample_fraction = 1, late_fusion = TRUE, late_fusion_nfolds = 3L,
+    n_iter_lf = 20L, random_state = 700L
+  )
+  weights <- fit$late_fusion$weights
+  expect_named(weights, c("Associated_weight", "Normalised_weight"))
+  expect_equal(
+    weights$Normalised_weight,
+    weights$Associated_weight / sum(weights$Associated_weight)
+  )
+  expect_equal(sum(weights$Normalised_weight), 1)
+})
+
+test_that("H7 the cooperative score carries a label describing its own bias", {
+  d <- .cf_make_two_omic(n = 24L, seed = 200L)
+  base <- list(
+    x_train_list = list(omic_a = d$x_a, omic_b = d$x_b),
+    y_train = d$y, lambda_grid = data.frame(lambda = c(0.3, 0.15, 0.05)),
+    artificial_type = NULL, hard_threshold = 0.3, n_bootstraps = 4L,
+    family = "gaussian", random_state = 200L, cooperative_fusion = TRUE,
+    rho = c(0, 0.2, 0.5), cooperation_nfolds = 3L
+  )
+  cv_fit <- do.call(stabl_multiomic_train_validate, c(
+    base, list(cooperation_selection = "cv",
+               cooperation_selector = "lambda.min")
+  ))
+  expect_identical(
+    cv_fit$cooperative_fusion$score_semantics,
+    "inner_cv_score_selection_inflated"
+  )
+
+  validation <- list(
+    x_valid_list = list(
+      omic_a = d$x_a[1:6, , drop = FALSE],
+      omic_b = d$x_b[1:6, , drop = FALSE]
+    ),
+    y_valid = d$y[1:6]
+  )
+  validation_fit <- do.call(stabl_multiomic_train_validate, c(
+    base, validation, list(cooperation_selection = "validation",
+                           cooperation_selector = "lambda.min")
+  ))
+  expect_identical(
+    validation_fit$cooperative_fusion$score_semantics,
+    "resubstitution_score_optimistic_not_held_out"
+  )
+  # The label must travel with the number it describes, not replace it.
+  expect_true(is.finite(validation_fit$cooperative_fusion$score))
+  expect_identical(validation_fit$cooperative_fusion$selection, "validation")
+})
+
+test_that("H9 the cooperative branch records the binary event mapping it used", {
+  set.seed(7001L)
+  n <- 24L
+  ids <- paste0("s", seq_len(n))
+  x_a <- matrix(rnorm(n * 3L), n, dimnames = list(ids, paste0("a", 1:3)))
+  x_b <- matrix(rnorm(n * 3L), n, dimnames = list(ids, paste0("b", 1:3)))
+  events <- rbinom(n, 1L, 0.5)
+  y <- setNames(factor(ifelse(events == 1L, "event", "control"),
+                       levels = c("control", "event")), ids)
+
+  fit <- suppressWarnings(stabl_multiomic_train_validate(
+    x_train_list = list(omic_a = x_a, omic_b = x_b),
+    y_train = y, lambda_grid = data.frame(lambda = 0.1), family = "binomial",
+    artificial_type = NULL, hard_threshold = 1, n_bootstraps = 2L,
+    random_state = 7001L, cooperative_fusion = TRUE, rho = c(0, 0.3),
+    cooperation_selection = "cv", cooperation_nfolds = 3L
+  ))
+  expect_identical(
+    fit$cooperative_fusion$binary_event_mapping,
+    c(control = 0L, event = 1L)
+  )
+  expect_true(all(unlist(fit$cooperative_fusion$binary_event_mapping) %in% c(0L, 1L)))
+  # A gaussian cooperative run has no event to map.
+  gaussian <- stabl_multiomic_train_validate(
+    x_train_list = list(omic_a = x_a, omic_b = x_b),
+    y_train = setNames(rnorm(n), ids),
+    lambda_grid = data.frame(lambda = 0.1), family = "gaussian",
+    artificial_type = NULL, hard_threshold = 1, n_bootstraps = 2L,
+    random_state = 7001L, cooperative_fusion = TRUE, rho = c(0, 0.3),
+    cooperation_selection = "cv", cooperation_nfolds = 3L
+  )
+  expect_null(gaussian$cooperative_fusion$binary_event_mapping)
+})
+
+test_that("H9 the cooperative and late-fusion branches agree on the event level", {
+  set.seed(7002L)
+  n <- 24L
+  ids <- paste0("s", seq_len(n))
+  x_a <- matrix(rnorm(n * 3L), n, dimnames = list(ids, paste0("a", 1:3)))
+  x_b <- matrix(rnorm(n * 3L), n, dimnames = list(ids, paste0("b", 1:3)))
+  events <- rbinom(n, 1L, 0.5)
+  # Declared level order is the caller's event declaration.
+  y <- setNames(factor(ifelse(events == 1L, "event", "control"),
+                       levels = c("event", "control")), ids)
+
+  args <- list(
+    x_train_list = list(omic_a = x_a, omic_b = x_b), y_train = y,
+    lambda_grid = data.frame(lambda = 0.1), family = "binomial",
+    artificial_type = NULL, hard_threshold = 1, n_bootstraps = 2L,
+    sample_fraction = 1, random_state = 7002L
+  )
+  late <- suppressWarnings(do.call(stabl_multiomic_train_validate, c(
+    args, list(late_fusion = TRUE, late_fusion_nfolds = 3L, n_iter_lf = 10L,
+               late_fusion_training = "python_legacy")
+  )))
+  cooperative <- suppressWarnings(do.call(stabl_multiomic_train_validate, c(
+    args, list(cooperative_fusion = TRUE, rho = c(0, 0.3),
+               cooperation_selection = "cv", cooperation_nfolds = 3L)
+  )))
+
+  expect_identical(
+    late$late_fusion$provenance$binary_event_mapping,
+    cooperative$cooperative_fusion$binary_event_mapping
+  )
+  expect_identical(
+    late$late_fusion$provenance$binary_event_mapping,
+    c(event = 0L, control = 1L)
+  )
+})
+
+test_that("H10 python_legacy warns with the measured optimism unless acknowledged", {
+  ids <- paste0("s", 1:12)
+  x <- matrix(seq_len(36), 12, 3,
+              dimnames = list(ids, paste0("f", 1:3)))
+  y <- setNames(seq_len(12), ids)
+  args <- list(
+    x_train_list = list(a = x), y_train = y,
+    lambda_grid = data.frame(lambda = 0.1),
+    artificial_type = NULL, hard_threshold = 1, n_bootstraps = 2L,
+    sample_fraction = 1, late_fusion = TRUE,
+    late_fusion_training = "python_legacy", n_iter_lf = 10L,
+    random_state = 7003L
+  )
+
+  warning <- expect_warning(do.call(stabl_multiomic_train_validate, args))
+  expect_s3_class(warning, "stablr_python_legacy_late_fusion_leakage")
+  expect_match(conditionMessage(warning), "IN-SAMPLE")
+  expect_match(conditionMessage(warning), "not a held-out estimate")
+  for (family in c("binomial", "gaussian", "multinomial")) {
+    expect_match(conditionMessage(warning), family, fixed = TRUE)
+  }
+  expect_equal(
+    warning$measured_optimism, stablr:::.PYTHON_LEGACY_LATE_FUSION_OPTIMISM
+  )
+
+  fit <- suppressWarnings(do.call(stabl_multiomic_train_validate, args))
+  provenance <- fit$late_fusion$provenance
+  expect_false(provenance$leakage_acknowledged)
+  expect_identical(
+    provenance$score_semantics, "in_sample_optimistically_biased"
+  )
+  expect_identical(provenance$prediction_source, "in_sample")
+})
+
+test_that("H10 acknowledging the legacy leak is explicit and silences the warning", {
+  ids <- paste0("s", 1:12)
+  x <- matrix(seq_len(36), 12, 3,
+              dimnames = list(ids, paste0("f", 1:3)))
+  y <- setNames(seq_len(12), ids)
+  withr::local_options(stablr.acknowledge_python_legacy_late_fusion = TRUE)
+  expect_no_warning(fit <- stabl_multiomic_train_validate(
+    x_train_list = list(a = x), y_train = y,
+    lambda_grid = data.frame(lambda = 0.1),
+    artificial_type = NULL, hard_threshold = 1, n_bootstraps = 2L,
+    sample_fraction = 1, late_fusion = TRUE,
+    late_fusion_training = "python_legacy", n_iter_lf = 10L,
+    random_state = 7004L
+  ))
+  expect_true(fit$late_fusion$provenance$leakage_acknowledged)
+})
+
+test_that("H10 the default OOF mode never triggers the legacy leakage warning", {
+  ids <- paste0("s", 1:12)
+  x <- matrix(seq_len(36), 12, 3,
+              dimnames = list(ids, paste0("f", 1:3)))
+  y <- setNames(seq_len(12), ids)
+  expect_no_warning(fit <- stabl_multiomic_train_validate(
+    x_train_list = list(a = x), y_train = y,
+    lambda_grid = data.frame(lambda = 0.1),
+    artificial_type = NULL, hard_threshold = 1, n_bootstraps = 2L,
+    sample_fraction = 1, late_fusion = TRUE, late_fusion_nfolds = 3L,
+    n_iter_lf = 10L, random_state = 7005L
+  ))
+  expect_identical(
+    fit$late_fusion$provenance$score_semantics, "out_of_fold_estimate"
+  )
+  expect_false("leakage_acknowledged" %in% names(fit$late_fusion$provenance))
+  expect_false("measured_legacy_optimism" %in% names(fit$late_fusion$provenance))
+})

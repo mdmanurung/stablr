@@ -460,3 +460,198 @@ test_that("OOF downstream numerical infeasibility uses a typed fallback", {
     "stablr_downstream_numerical_infeasibility"
   )
 })
+
+# ---------------------------------------------------------------------------
+# H8 / H9: the downstream multinomial fit must not read ambient RNG state, and
+# both fusion branches must encode the same event from the same `y`.
+# ---------------------------------------------------------------------------
+
+.lf_multiclass_design <- function(n = 45L, seed = 8100L) {
+  set.seed(seed)
+  ids <- paste0("s", seq_len(n))
+  x <- matrix(rnorm(n * 4L), n, dimnames = list(ids, paste0("f", 1:4)))
+  classes <- rep(c("A", "B", "C"), length.out = n)
+  for (level in c("A", "B", "C")) {
+    x[classes == level, 1:2] <- x[classes == level, 1:2] + 2
+  }
+  y <- factor(classes, levels = c("A", "B", "C"))
+  names(y) <- ids
+  list(x = x, y = y)
+}
+
+test_that("H8 a seeded downstream multinomial fit ignores ambient RNG state", {
+  d <- .lf_multiclass_design()
+  fit_with <- function(ambient_seed) {
+    set.seed(ambient_seed)
+    stablr:::.late_fusion_fit_omic_safe(
+      x_train_sel = d$x, y_train = d$y, x_valid_sel = NULL,
+      task_type = "multiclass", levels = levels(d$y), random_state = 4242L
+    )
+  }
+
+  first <- fit_with(1L)
+  second <- fit_with(987654L)
+  expect_identical(first$train_preds, second$train_preds)
+  expect_null(first$fallback_reason)
+})
+
+test_that("H8 an unseeded downstream multinomial fit still reads ambient state", {
+  # The honest consequence of random_state = NULL: the caller asked for an
+  # unseeded run, so the fit is free to depend on ambient RNG state.
+  d <- .lf_multiclass_design()
+  fit_with <- function(ambient_seed) {
+    set.seed(ambient_seed)
+    stablr:::.late_fusion_fit_omic_safe(
+      x_train_sel = d$x, y_train = d$y, x_valid_sel = NULL,
+      task_type = "multiclass", levels = levels(d$y)
+    )
+  }
+  expect_false(identical(fit_with(1L)$train_preds, fit_with(999L)$train_preds))
+})
+
+test_that("H8 seeded python_legacy multinomial late fusion is RNG independent", {
+  d <- .lf_multiclass_design(n = 30L)
+  ids <- rownames(d$x)
+  run <- function(ambient_seed) {
+    set.seed(ambient_seed)
+    suppressWarnings(stabl_multiomic_train_validate(
+      x_train_list = list(a = d$x[, 1:3, drop = FALSE],
+                          b = d$x[, c(1L, 2L, 4L), drop = FALSE]),
+      y_train = d$y, lambda_grid = data.frame(lambda = 0.05),
+      family = "multinomial", artificial_type = NULL, hard_threshold = 1e-9,
+      n_bootstraps = 2L, sample_fraction = 1, late_fusion = TRUE,
+      late_fusion_training = "python_legacy", n_iter_lf = 20L,
+      random_state = 5150L
+    ))
+  }
+  first <- run(2L)
+  second <- run(7777L)
+  expect_identical(first$late_fusion$train_predictions,
+                   second$late_fusion$train_predictions)
+  expect_identical(first$late_fusion$weights, second$late_fusion$weights)
+  expect_identical(first$late_fusion$score, second$late_fusion$score)
+  expect_identical(rownames(first$late_fusion$train_predictions), ids)
+})
+
+test_that("H8 seeded OOF multinomial late fusion is RNG independent", {
+  d <- .lf_multiclass_design(n = 30L)
+  run <- function(ambient_seed) {
+    set.seed(ambient_seed)
+    stabl_multiomic_train_validate(
+      x_train_list = list(a = d$x[, 1:3, drop = FALSE],
+                          b = d$x[, c(1L, 2L, 4L), drop = FALSE]),
+      y_train = d$y, lambda_grid = data.frame(lambda = 0.05),
+      family = "multinomial", artificial_type = NULL, hard_threshold = 1e-9,
+      n_bootstraps = 2L, sample_fraction = 1, late_fusion = TRUE,
+      late_fusion_nfolds = 3L, n_iter_lf = 10L, random_state = 5151L
+    )
+  }
+  first <- run(3L)
+  second <- run(8888L)
+  expect_identical(first$late_fusion$train_predictions,
+                   second$late_fusion$train_predictions)
+  expect_identical(first$late_fusion$valid_predictions,
+                   second$late_fusion$valid_predictions)
+  expect_identical(first$late_fusion$score, second$late_fusion$score)
+})
+
+test_that("H9 one mapper serves both branches and returns the mapping", {
+  expect_false(exists(".cooperative_coerce_binary_outcome",
+                      envir = asNamespace("stablr"), inherits = FALSE))
+
+  logical_y <- c(TRUE, FALSE, TRUE)
+  numeric_y <- c(0, 1, 0, 1)
+  factor_sorted <- factor(c("control", "event", "control", "event"))
+  factor_declared <- factor(c("control", "event", "control", "event"),
+                            levels = c("event", "control"))
+
+  expect_identical(
+    stablr:::.multiomic_binary_outcome(logical_y)$y,
+    c(1L, 0L, 1L)
+  )
+  expect_identical(
+    stablr:::.multiomic_binary_outcome(logical_y)$mapping,
+    c("FALSE" = 0L, "TRUE" = 1L)
+  )
+  expect_identical(
+    stablr:::.multiomic_binary_outcome(numeric_y)$y,
+    c(0L, 1L, 0L, 1L)
+  )
+  expect_identical(
+    stablr:::.multiomic_binary_outcome(factor_sorted)$mapping,
+    c(control = 0L, event = 1L)
+  )
+  # A declared level order is the caller's event declaration, not a hint to be
+  # re-sorted: the second declared level is the event.
+  expect_identical(
+    stablr:::.multiomic_binary_outcome(factor_declared)$mapping,
+    c(event = 0L, control = 1L)
+  )
+  expect_error(
+    stablr:::.multiomic_binary_outcome(c(0, 1, 2)),
+    "exactly two complete event levels"
+  )
+  expect_error(
+    stablr:::.multiomic_binary_outcome(c(0L, 0L, 0L)),
+    "exactly two complete event levels"
+  )
+})
+
+test_that("H9 the cooperative AUC metric maps a labelled outcome, not NA", {
+  # A character validation outcome used to reach `sort(unique(as.numeric(y)))`,
+  # which drops the NA and leaves an empty vector, so every candidate was
+  # scored as all-NA and then as a no-information 0.5 AUC.
+  truth <- c("event", "control", "event", "control")
+  aligned <- c(0.8, 0.2, 0.7, 0.3)
+  for (true_y in list(factor(truth, levels = c("control", "event")), truth)) {
+    expect_equal(
+      stablr:::.cooperative_validation_metric(
+        true_y = true_y, pred_y = aligned, family = "binomial",
+        type_measure = "auc"
+      ),
+      1
+    )
+  }
+  # Reversing the ranking reverses the AUC, which is what proves the two
+  # branches now encode the same event rather than opposite ones.
+  expect_equal(
+    stablr:::.cooperative_validation_metric(
+      true_y = truth, pred_y = rev(aligned), family = "binomial",
+      type_measure = "auc"
+    ),
+    0
+  )
+  # A single-class validation outcome cannot tune an AUC at all; scoring it at
+  # the no-information 0.5 would silently select a candidate.
+  expect_error(
+    stablr:::.cooperative_validation_metric(
+      true_y = rep("event", 4L), pred_y = aligned, family = "binomial",
+      type_measure = "auc"
+    ),
+    "exactly two complete event levels"
+  )
+})
+
+test_that("H9 a declared non-alphabetical event order is honoured end to end", {
+  d <- .lf_multiclass_design(n = 24L, seed = 8101L)
+  ids <- rownames(d$x)
+  set.seed(8101L)
+  events <- rbinom(length(ids), 1L, 0.5)
+  y <- factor(ifelse(events == 1L, "event", "control"),
+              levels = c("event", "control"))
+  names(y) <- ids
+  x <- matrix(rnorm(length(ids) * 4L), length(ids),
+              dimnames = list(ids, paste0("f", 1:4)))
+
+  fit <- suppressWarnings(stabl_multiomic_train_validate(
+    x_train_list = list(a = x[, 1:2], b = x[, 3:4]), y_train = y,
+    lambda_grid = data.frame(lambda = 0.1), family = "binomial",
+    artificial_type = NULL, hard_threshold = 1, n_bootstraps = 2L,
+    sample_fraction = 1, random_state = 8102L, late_fusion = TRUE,
+    late_fusion_nfolds = 3L, n_iter_lf = 10L
+  ))
+  expect_identical(
+    fit$late_fusion$provenance$binary_event_mapping,
+    c(event = 0L, control = 1L)
+  )
+})

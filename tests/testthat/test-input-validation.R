@@ -268,3 +268,130 @@ test_that("nested multi-omic CV scalar validators reject invalid values", {
   expect_error(base_call(n_lambda = 0L), "n_lambda")
   expect_error(base_call(random_state = 1.5), "random_state")
 })
+
+# ---- G3: sample identifiers of a data.frame outcome live in its row names -----
+#
+# `names()` on a data.frame returns COLUMN names, so an id resolution that
+# prefers `names(y)` reads the measurement axis of a Surv-style outcome as if it
+# were the sample axis.  The fixtures below are built so the wrong axis is
+# observable: the data.frame's columns are deliberately named after samples in
+# the first test, which makes the defect a silent misalignment rather than a
+# loud error.
+
+.g3_fixture <- function() {
+  ids <- paste0("s", 1:4)
+  x <- matrix(1:12, 4L, 3L, dimnames = list(ids, paste0("f", 1:3)))
+  # Rows deliberately stored out of order so alignment has to be name-based.
+  y <- data.frame(time = c(40, 10, 30, 20), event = c(1L, 0L, 1L, 1L),
+                  row.names = c("s2", "s1", "s4", "s3"))
+  list(x = x, y = y, ids = ids)
+}
+
+test_that("G3 a data.frame outcome resolves sample ids from row names, not column names", {
+  d <- .g3_fixture()
+
+  expect_identical(stablr:::.outcome_sample_ids(d$y), rownames(d$y))
+  expect_false(identical(stablr:::.outcome_sample_ids(d$y), names(d$y)))
+})
+
+test_that("G3 validate_sample_alignment accepts a row-name-identified data.frame outcome", {
+  d <- .g3_fixture()
+
+  expect_invisible(validate_sample_alignment(d$x, d$y))
+  expect_invisible(validate_sample_alignment(d$x, d$y, groups = stats::setNames(rep("g1", 4L), d$ids)))
+})
+
+test_that("G3 a data.frame outcome whose column names match sample ids cannot align the wrong axis", {
+  ids <- paste0("s", 1:4)
+  x <- matrix(1:12, 4L, 3L, dimnames = list(ids, paste0("f", 1:3)))
+  # One column, four rows, and the column happens to be named "s1" -- the same
+  # token as a sample id.  Resolving ids from `names()` would accept this and
+  # then subset the COLUMN axis, returning a 1-row frame for a 4-sample design.
+  y <- data.frame(s1 = c(1, 2, 3, 4), row.names = ids)
+
+  aligned <- stablr:::.subset_outcome_by_ids(y, ids)
+
+  expect_identical(dim(aligned), c(4L, 1L))
+  expect_identical(rownames(aligned), ids)
+  expect_identical(aligned[[1L]], c(1, 2, 3, 4))
+})
+
+test_that("G3 subsetting a data.frame outcome reorders rows by sample id", {
+  d <- .g3_fixture()
+
+  aligned <- stablr:::.subset_outcome_by_ids(d$y, d$ids)
+
+  expect_identical(rownames(aligned), d$ids)
+  expect_identical(aligned$time, c(10, 40, 20, 30))
+  expect_identical(aligned$event, c(0L, 1L, 1L, 1L))
+})
+
+test_that("G3 named vectors, matrices and Surv objects keep their identifier axis", {
+  ids <- paste0("s", 1:4)
+  y_vec <- stats::setNames(c(0, 1, 0, 1), rev(ids))
+  expect_identical(stablr:::.outcome_sample_ids(y_vec), names(y_vec))
+  expect_identical(
+    stablr:::.subset_outcome_by_ids(y_vec, ids),
+    stats::setNames(c(1, 0, 1, 0), ids)
+  )
+
+  y_mat <- matrix(1:8, 4L, 2L, dimnames = list(rev(ids), c("time", "status")))
+  expect_null(names(y_mat))
+  expect_identical(stablr:::.outcome_sample_ids(y_mat), rownames(y_mat))
+  expect_identical(rownames(stablr:::.subset_outcome_by_ids(y_mat, ids)), ids)
+
+  skip_if_not_installed("survival")
+  y_surv <- survival::Surv(time = 1:4, event = c(1, 0, 1, 1))
+  rownames(y_surv) <- ids
+  expect_identical(stablr:::.outcome_sample_ids(y_surv), ids)
+  expect_identical(
+    rownames(stablr:::.subset_outcome_by_ids(y_surv, rev(ids))),
+    rev(ids)
+  )
+})
+
+test_that("G3 an unnamed, unrownamed outcome is still rejected as unidentified", {
+  x <- matrix(1:4, 2L, 2L, dimnames = list(c("s1", "s2"), c("a", "b")))
+
+  expect_error(validate_sample_alignment(x, c(0, 1)), "sample ids")
+})
+
+# ---- G9: training order strictness vs validation order tolerance -------------
+
+test_that("G9 training omics must agree on sample order, validation omics need not", {
+  ids <- paste0("s", 1:4)
+  x1 <- matrix(1:4, 4L, 1L, dimnames = list(ids, "a"))
+  x2 <- matrix(5:8, 4L, 1L, dimnames = list(rev(ids), "a"))
+  y <- stats::setNames(c(0, 1, 0, 1), ids)
+
+  expect_error(
+    validate_multiomic_inputs(list(omic1 = x1, omic2 = x2), y),
+    "identical sample order"
+  )
+
+  # The validation validator is deliberately order-tolerant: its single caller
+  # re-orders every validation table and the validation outcome by name on the
+  # next statement, so a permuted arrival cannot reach the model.
+  expect_no_error(
+    stablr:::.validate_multiomic_validation_inputs(
+      x_valid_list = list(omic1 = x1, omic2 = x2),
+      y_valid = y,
+      train_omic_names = c("omic1", "omic2")
+    )
+  )
+})
+
+test_that("G9 the validation validator still rejects a genuinely different id set", {
+  ids <- paste0("s", 1:4)
+  v1 <- matrix(1:4, 4L, 1L, dimnames = list(ids, "a"))
+  v2 <- matrix(5:8, 4L, 1L, dimnames = list(paste0("s", 5:8), "a"))
+
+  expect_error(
+    stablr:::.validate_multiomic_validation_inputs(
+      x_valid_list = list(omic1 = v1, omic2 = v2),
+      y_valid = NULL,
+      train_omic_names = c("omic1", "omic2")
+    ),
+    "same sample-ID set"
+  )
+})

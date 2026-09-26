@@ -85,13 +85,24 @@ validate_sample_alignment <- function(x, y, groups = NULL) {
 }
 
 # Resolve sample identifiers from supported outcome types.
+#
+# `names()` is the sample axis only for a plain named vector.  For a matrix-like
+# outcome the columns are measurements (a `survival::Surv` carries time and
+# status), so the sample axis is `rownames()`; on a `data.frame` `names()` is the
+# column axis outright, which is why it must not be consulted there at all.
+# `Surv` happens to make `names()` return its row names, but relying on that
+# would make identifier resolution depend on a third-party S3 method.
 .outcome_sample_ids <- function(y) {
-  if (!is.null(names(y))) {
-    return(names(y))
+  if (is.data.frame(y) || is.matrix(y) || inherits(y, "Surv")) {
+    row_ids <- rownames(y)
+    if (is.null(row_ids)) {
+      return(NULL)
+    }
+    return(row_ids)
   }
 
-  if (is.matrix(y) || is.data.frame(y) || inherits(y, "Surv")) {
-    return(rownames(y))
+  if (!is.null(names(y))) {
+    return(names(y))
   }
 
   NULL
@@ -106,15 +117,11 @@ validate_sample_alignment <- function(x, y, groups = NULL) {
     stop("`y` cannot contain missing sample mappings after alignment.", call. = FALSE)
   }
 
-  if (!is.null(names(y))) {
-    return(y[sample_ids])
-  }
-
-  if (is.matrix(y) || is.data.frame(y) || inherits(y, "Surv")) {
+  if (is.data.frame(y) || is.matrix(y) || inherits(y, "Surv")) {
     return(y[idx, , drop = FALSE])
   }
 
-  y[idx]
+  y[sample_ids]
 }
 
 #' Validate Multi-Omic Input Contract
@@ -141,6 +148,19 @@ validate_sample_alignment <- function(x, y, groups = NULL) {
 #'
 #' @return Invisibly returns `TRUE` when all checks pass.  Raises an
 #'   informative error as soon as the first violation is found.
+#'
+#' @section Order strictness:
+#' Training omics must agree on sample **order**, not just on the sample-ID set,
+#' because bootstrap subsampling and cooperative stacking index every view
+#' positionally.  Validation omics are only required to agree on the sample-ID
+#' *set*, which is checked by the private
+#' `.validate_multiomic_validation_inputs()` rather than here.  That asymmetry
+#' is safe only because the sole caller,
+#' [stabl_multiomic_train_validate()], re-orders every validation table and the
+#' validation outcome by sample ID on the statements immediately after the
+#' check; a permuted validation arrival therefore cannot reach the model.  Any
+#' new caller of the validation validator must preserve that name-based
+#' re-ordering, or the check has to become order-strict here too.
 #'
 #' @examples
 #' ids <- paste0("s", 1:4)
@@ -227,6 +247,32 @@ validate_multiomic_inputs <- function(x_list, y, groups = NULL) {
   )
 }
 
+.cooperative_default_rho <- function() {
+  c(0.1, 0.25, 0.5, 1)
+}
+
+# Why a positive ladder and not `0`.
+#
+# `rho` is the weight on the multiview agreement penalty, and the vendored
+# `.mv_multiview()` reduces to a plain per-view `glmnet` early-fusion fit when
+# `rho` is exactly 0.  The previous default resolved `rho = NULL` to the single
+# value 0, so `unique(as.numeric(0))` left one candidate,
+# `.cooperative_select_cv()` fitted `cv.multiview` once and returned it, and the
+# result reported `cooperative_rho = 0` together with
+# `cooperative_selection = "cv"` while running no cooperative learning at all.
+#
+# The default is therefore the ladder the vendored `.mv_multiview()`
+# documentation itself recommends for `rho` (0.1, 0.25, 0.5, 1) with 0 removed,
+# so the documented default of `cooperative_fusion = TRUE` always fits a real
+# agreement penalty.  A caller who wants the early-fusion baseline in the sweep
+# still asks for it explicitly with `rho = 0` or `rho = c(0, 0.25)`.
+# asks for it explicitly with `rho = 0` or `rho = c(0, 0.25)`.
+#
+# The resolved ladder is the value the fit reports as `rho_grid` and the value
+# `get_cooperative_diagnostics()` enumerates, so the agreement penalties that
+# were actually swept are visible in the returned diagnostics.  `rho_defaulted`
+# records *why* that ladder was chosen; it is not yet a field of the returned
+# fit, because that list is assembled in `R/multiomic_workflows.R`.
 .normalize_cooperative_multiomic_args <- function(x_list,
                                                   family,
                                                   rho = NULL,
@@ -260,8 +306,9 @@ validate_multiomic_inputs <- function(x_list, y, groups = NULL) {
     )
   }
 
-  if (is.null(rho)) {
-    rho <- 0
+  rho_defaulted <- is.null(rho)
+  if (rho_defaulted) {
+    rho <- .cooperative_default_rho()
   }
 
   if (!is.numeric(rho) || length(rho) == 0L || anyNA(rho) || any(!is.finite(rho))) {
@@ -304,6 +351,7 @@ validate_multiomic_inputs <- function(x_list, y, groups = NULL) {
 
   list(
     rho = unique(as.numeric(rho)),
+    rho_defaulted = rho_defaulted,
     cooperative_selection = cooperative_selection,
     cooperation_selector = cooperation_selector,
     cooperation_type_measure = type_measure,
