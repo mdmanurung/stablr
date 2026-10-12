@@ -58,6 +58,20 @@ reference:
   - make_adaptive_lasso_adapter
   - make_sgl_adapter
 
+- title: Experimental Learner Adapters
+  desc: Experimental extension beyond the glmnet family; API and statistical
+    validation are still in progress.
+  contents:
+  - make_ranger_adapter
+  - auto_rf_threshold_grid
+
+- title: Environment Stability
+  desc: ICP-inspired transportability workflow across environments (batches,
+    cohorts, sites); experimental extension beyond Python STABL.
+  contents:
+  - stabl_environment_stability
+  - get_min_scores
+
 - title: Artificial Features
   desc: Decoy-feature generation for FDP+ calibration.
   contents:
@@ -74,9 +88,11 @@ reference:
   contents:
   - get_support
   - get_feature_names_out
+  - get_fdrs
   - transform_stabl
   - get_stabl_scores
   - get_importances
+  - get_lambda_grid
   - get_cooperative_features
   - get_cooperative_diagnostics
 
@@ -96,6 +112,17 @@ reference:
   - plot_prc
   - boxplot_features
   - scatterplot_features
+
+- title: Plot a fitted stabl_fit
+  desc: S3 plot method for fitted STABL objects (stability path and FDP+ graph).
+  contents:
+  - plot.stabl_fit
+
+- title: Summarise a fitted stabl_fit
+  desc: S3 summary and print methods for fitted STABL objects.
+  contents:
+  - summary.stabl_fit
+  - print.summary.stabl_fit
 
 - title: Export
   contents:

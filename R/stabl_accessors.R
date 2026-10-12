@@ -412,6 +412,104 @@ get_importances.stabl_fit <- function(object) {
   scores
 }
 
+#' Get the FDP+ Estimates from a Fitted STABL Object
+#'
+#' Returns the vector of FDP+ estimates computed during fitting: one estimate
+#' per stability-score threshold in the swept `fdr_threshold_range`.  This is
+#' the diagnostic curve that [stabl_fit()] minimises to choose
+#' `fdr_min_threshold_` (the default threshold used by [get_support()]).
+#'
+#' @details
+#' **What FDP+ is and is not:** these values are *diagnostic estimates* of the
+#' false discovery proportion, obtained by comparing real features against the
+#' artificial (null) features injected during fitting.  They are **not** an FDR
+#' guarantee: calibration depends on the artificial features being fair null
+#' competitors, and no formal FDR control is enforced by construction.  Use
+#' them to guide threshold choice, not as a validity certificate.
+#'
+#' @param object A fitted `"stabl_fit"` object returned by [stabl_fit()].
+#'
+#' @return Named numeric vector of FDP+ estimates, one per swept threshold.
+#'   Names are the threshold values from `object$fdr_threshold_range`.  A fit
+#'   run with `artificial_type = NULL` has no FDP+ diagnostics; the accessor
+#'   errors in that case.
+#'
+#' @seealso [get_support()] for the selection mask, [get_importances()] for
+#'   per-feature stability scores, [plot_fdr_graph()] to plot the curve.
+#'
+#' @examples
+#' set.seed(1L)
+#' x <- matrix(rnorm(30 * 5), 30, 5,
+#'             dimnames = list(paste0("s", 1:30), paste0("f", 1:5)))
+#' y <- setNames(rnorm(30), rownames(x))
+#' fit <- stabl_fit(x, y,
+#'                  lambda_grid     = data.frame(lambda = c(0.2, 0.1, 0.05)),
+#'                  n_bootstraps    = 4L,
+#'                  artificial_type = "random_permutation",
+#'                  random_state    = 1L)
+#' fdrs <- get_fdrs(fit)   # FDP+ diagnostic estimate per threshold
+#' head(fdrs, 3L)
+#' @export
+get_fdrs <- function(object) {
+  UseMethod("get_fdrs")
+}
+
+#' @export
+get_fdrs.stabl_fit <- function(object) {
+  .check_fitted_stabl(object)
+  if (is.null(object$FDRs_)) {
+    stop(
+      "Object has no `FDRs_`: FDP+ diagnostics require artificial features; ",
+      "refit with an `artificial_type` (e.g. \"random_permutation\").",
+      call. = FALSE
+    )
+  }
+  fdrs       <- object$FDRs_
+  thresholds <- object$fdr_threshold_range
+  if (!is.null(thresholds) && length(thresholds) == length(fdrs)) {
+    names(fdrs) <- thresholds
+  }
+  fdrs
+}
+
+#' Get the Lambda Grid Actually Used by a Fitted STABL Object
+#'
+#' Returns the `data.frame` of regularisation-path configurations that
+#' [stabl_fit()] actually swept.  This can differ from the `lambda_grid`
+#' argument when `"auto"` was requested: the auto-generated grid is resolved
+#' per family/learner and stored on the fit.  Use this accessor instead of
+#' reaching into `fit$fitted_lambda_grid` directly.
+#'
+#' @param object A fitted `"stabl_fit"` object returned by [stabl_fit()].
+#'
+#' @return A `data.frame` with one row per fitted lambda combination (the same
+#'   object stored on the fit as `fitted_lambda_grid`).
+#'
+#' @seealso [get_stabl_scores()] for the per-lambda score matrix (one column
+#'   per row of the grid).
+#'
+#' @examples
+#' set.seed(1L)
+#' x <- matrix(rnorm(30 * 5), 30, 5,
+#'             dimnames = list(paste0("s", 1:30), paste0("f", 1:5)))
+#' y <- setNames(rnorm(30), rownames(x))
+#' fit <- stabl_fit(x, y,
+#'                  lambda_grid    = data.frame(lambda = c(0.2, 0.1, 0.05)),
+#'                  n_bootstraps   = 4L,
+#'                  hard_threshold = 0.3,
+#'                  random_state   = 1L)
+#' get_lambda_grid(fit)
+#' @export
+get_lambda_grid <- function(object) {
+  UseMethod("get_lambda_grid")
+}
+
+#' @export
+get_lambda_grid.stabl_fit <- function(object) {
+  .check_fitted_stabl(object)
+  object$fitted_lambda_grid
+}
+
 #' @describeIn stabl_fit Print a concise summary of a fitted `stabl_fit` object;
 #'   invisibly returns `x`.
 #' @param ... Ignored; present for S3 `print` method compatibility.

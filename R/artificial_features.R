@@ -173,6 +173,27 @@ make_rp_features <- function(x, n_injected) {
   invisible(x)
 }
 
+# Standardize columns for fixed-X knockoff construction.
+#
+# `knockoff::create.fixed()` documents its `x` argument as a "normalized
+# n-by-p matrix of original variables", so centering/scaling is the caller's
+# responsibility.  Each column is centered and divided by its sample standard
+# deviation; zero-variance columns are centered but left at scale 1 (division
+# by zero is avoided and they stay valid knockoff targets because a constant
+# feature has a constant knockoff).
+.standardize_columns <- function(x) {
+  means <- colMeans(x)
+  x_centered <- sweep(x, 2L, means, `-`)
+  sds <- apply(x_centered, 2L, stats::sd)
+  degenerate <- !is.finite(sds) | sds == 0
+  sds[degenerate] <- 1
+  list(
+    x = sweep(x_centered, 2L, sds, `/`),
+    means = means,
+    sds = sds
+  )
+}
+
 #' Make Knockoff Artificial Features
 #'
 #' Generates **fixed-X** knockoff features via `knockoff::create.fixed()`, with
@@ -181,12 +202,33 @@ make_rp_features <- function(x, n_injected) {
 #' Falls back to random-permutation features when the supported-dimensional
 #' knockoff constructor fails (e.g., rank-deficient input).
 #'
+#' `create.fixed()` documents its `x` argument as a *normalized* n-by-p
+#' matrix, so `x` is standardized internally before the knockoff construction
+#' (each column centered and scaled by its sample standard deviation;
+#' zero-variance columns are centered only, i.e. left at scale 1).  The column
+#' means and standard deviations used are recorded in
+#' `artificial_provenance$standardization`.
+#'
+#' @section Caveat on bootstrap reuse:
+#' Fixed-X knockoffs are generated once on the full design, so their
+#' exchangeability guarantee does not survive the row subsampling of the
+#' bootstrap loop: a knockoff row is only exchangeable with the matching
+#' original row of that same realized design.  When correlation structure
+#' matters (in particular with `sample_fraction < 1`), prefer the model-X
+#' modes `"knockoff_equi"` or `"knockoff_mvr"`, whose knockoff rows are
+#' i.i.d. draws from a fitted Gaussian model and remain valid under row
+#' subsampling.
+#'
 #' @param x Numeric matrix of predictors (samples \eqn{\times} features).
 #' @param n_injected Integer; number of knockoff columns to select.
 #' @param random_state Optional integer seed.
 #'
 #' @return Named list with elements `x_augmented`, `noise_col_indices`, and
 #'   `artificial_provenance`; see [make_rp_features()] for details.
+#'   `artificial_provenance$standardization` records `standardized` (TRUE
+#'   when the fixed-X construction ran, together with the `means` and `sds`
+#'   used) and is `standardized = FALSE` with NULL `means`/`sds` when the
+#'   random-permutation fallback was taken.
 #' @keywords internal
 make_knockoff_features <- function(x, n_injected, random_state = NULL) {
   .assert_supported_knockoff_dimension(x, "knockoff")
@@ -209,10 +251,14 @@ make_knockoff_features <- function(x, n_injected, random_state = NULL) {
             n_features = ncol(x_chunk)
           )
         }
+        # A1: create.fixed() requires a normalized (centered/scaled) design;
+        # standardize here so the construction runs on the correct geometry
+        # and the hard-coded sigma = 1 is consistent with the input scale.
+        standardized <- .standardize_columns(x_chunk)
         augmented_rows <- FALSE
         xk <- .with_linear_algebra_numerical_infeasibility(
           withCallingHandlers(
-            knockoff::create.fixed(x_chunk, sigma = 1)$Xk,
+            knockoff::create.fixed(standardized$x, sigma = 1)$Xk,
             warning = function(w) {
               if (grepl("Augmenting the model with extra rows",
                         conditionMessage(w), fixed = TRUE)) {
@@ -242,7 +288,12 @@ make_knockoff_features <- function(x, n_injected, random_state = NULL) {
           x_art = xk,
           actual_type = "knockoff",
           fallback_reason = NA_character_,
-          fallback_history = .empty_artificial_fallback_history()
+          fallback_history = .empty_artificial_fallback_history(),
+          standardization = list(
+            standardized = TRUE,
+            means = standardized$means,
+            sds = standardized$sds
+          )
         )
       },
       stablr_numerical_infeasibility = function(e) {
@@ -262,6 +313,11 @@ make_knockoff_features <- function(x, n_injected, random_state = NULL) {
             "knockoff",
             "random_permutation",
             e
+          ),
+          standardization = list(
+            standardized = FALSE,
+            means = NULL,
+            sds = NULL
           )
         )
       }
@@ -285,17 +341,23 @@ make_knockoff_features <- function(x, n_injected, random_state = NULL) {
   x_art   <- x_art_full[, sel_idx, drop = FALSE]
   selected_types <- type_map[sel_idx]
 
+  provenance <- .make_artificial_provenance(
+    requested_type = "knockoff",
+    selected_types = selected_types,
+    chunks = chunks,
+    fallback_histories = fallback_histories
+  )
+  # A1: record the column standardization applied before the fixed-X
+  # construction (NULL means/sds when the random-permutation fallback was
+  # taken, since that path uses no standardization).
+  provenance$standardization <- chunk_result$standardization
+
   list(
     x_augmented      = cbind(x, x_art),
     # Return original-feature indices (not x_art_full indices) so that
     # .append_noise_groups in stabl_fit.R can look up SGL groups correctly.
     noise_col_indices = orig_map[sel_idx],
-    artificial_provenance = .make_artificial_provenance(
-      requested_type = "knockoff",
-      selected_types = selected_types,
-      chunks = chunks,
-      fallback_histories = fallback_histories
-    )
+    artificial_provenance = provenance
   )
 }
 
@@ -599,8 +661,12 @@ make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
 #'     preserving marginal distributions.  Fast and broadly applicable.}
 #'   \item{`"knockoff"`}{Generates **fixed-X** knockoffs via
 #'     [knockoff::create.fixed()], which preserve the covariance structure of
-#'     the original features under the fixed-design assumption.  Kept for
-#'     backward compatibility.}
+#'     the original features under the fixed-design assumption.  The design is
+#'     standardized internally before the construction.  Kept for backward
+#'     compatibility; note that fixed-X knockoffs are generated once on the
+#'     full design, so their exchangeability does not survive the row
+#'     subsampling of the bootstrap loop — prefer `"knockoff_equi"` or
+#'     `"knockoff_mvr"` when correlation structure matters.}
 #'   \item{`"knockoff_equi"`}{Generates **model-X equicorrelated** knockoffs
 #'     via `knockoff::create.gaussian(..., method = "equi")`.  This matches the
 #'     `GaussianSampler(method='equicorrelated')` call in Python STABL and is

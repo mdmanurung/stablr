@@ -66,7 +66,9 @@
 .mvr_loss <- function(Sigma, S, smoothing = 0) {
   s_diag    <- diag(S)
   eigs_diff <- eigen(2 * Sigma - S, symmetric = TRUE, only.values = TRUE)$values
-  if (min(s_diag) < 0 || min(eigs_diff) < 0) return(Inf)
+  # Conceptual bound: S must be positive definite; with smoothing = 0 the
+  # loss is +Inf at s = 0 anyway (1 / (0 + 0)).
+  if (min(s_diag) <= 0 || min(eigs_diff) < 0) return(Inf)
   sum(1 / (eigs_diff + smoothing)) + sum(1 / (s_diag + smoothing))
 }
 
@@ -89,10 +91,10 @@
   coef1 <- 2 * (-cn * (sj + smoothing) + cd)
   coef0 <- -cn * (sj + smoothing)^2 - 1
 
-  # Roots of the quadratic (2 roots for a degree-2 polynomial)
-  roots <- Re(polyroot(c(coef0, coef1, coef2)))  # polyroot uses increasing degree
-  # Keep only real roots (imaginary part exactly 0 after polyroot — not always
-  # guaranteed due to floating-point, so check the complex polyroot output)
+  # Roots of the quadratic (2 roots for a degree-2 polynomial); polyroot uses
+  # increasing degree.  Keep only real roots (imaginary part exactly 0 after
+  # polyroot — not always guaranteed due to floating-point, so check the
+  # complex polyroot output).
   all_roots <- polyroot(c(coef0, coef1, coef2))
   roots <- Re(all_roots[abs(Im(all_roots)) < 1e-10 * abs(Re(all_roots)) + 1e-14])
 

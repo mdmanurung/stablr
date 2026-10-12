@@ -434,6 +434,26 @@ get_feature_names_out(fit_en)
 
 ---
 
+## What FDP+ is and is not
+
+`stabl_fit()` chooses its stability threshold by minimizing an FDP+ surrogate:
+at each candidate threshold it estimates the false-discovery proportion among
+selected features from the artificial (decoy) features and keeps the first
+minimizer along the grid. Three caveats keep this honest:
+
+- **Not a universal FDR guarantee.** The fitted threshold minimizes an
+  observed diagnostic curve; neither it nor the plotted `fdr_target` line
+  controls false discoveries by construction.
+- **Calibration depends on fair null competitors.** The FDP+ estimate is only
+  as good as the artificial features: they must behave as exchangeable nulls
+  for the real features under the base learner. Poorly matched decoys distort
+  the estimate.
+- **`FDRs_` / `min_fdr_` are names, not promises.** These fitted fields keep
+  their historical Python-parity names; they contain FDP+ estimates, not
+  guaranteed false-discovery rates.
+
+---
+
 ## Next steps
 
 This vignette stays close to the core idea: repeat the sparse fit, count what

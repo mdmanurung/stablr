@@ -40,8 +40,12 @@
 #'   design across multiple factors.  Bootstrap samples are drawn within the
 #'   interaction of all supplied columns.  When `NULL`, no stratification is
 #'   used unless `stratify = TRUE`, in which case `y` is used as the strata.
-#' @param seed Optional integer; passed to [set.seed()] before sampling for
-#'   reproducibility.  `NULL` leaves the RNG state unchanged.
+#' @param random_state Optional integer; seed used for this draw.  The
+#'   function does **not** clobber the caller's global RNG state: the previous
+#'   `.Random.seed` is restored on exit (via [withr::local_seed()]).
+#' @param seed Deprecated; use `random_state` instead.  If supplied, a
+#'   deprecation warning is emitted and the value is used as `random_state`
+#'   when the latter is `NULL`.  It will be removed in a future release.
 #'
 #' @return Integer vector of length `n_subsamples` containing 1-based row
 #'   indices into the training set.
@@ -52,12 +56,12 @@
 #' @examples
 #' set.seed(42L)
 #' y <- c(rep(0, 15), rep(1, 15))  # balanced binary outcome
-#' idx <- classic_bootstrap_indices(y, n_subsamples = 20L, seed = 1L)
+#' idx <- classic_bootstrap_indices(y, n_subsamples = 20L, random_state = 1L)
 #' table(y[idx])  # class distribution in the bootstrap
 #'
 #' # Stratified sampling preserves class proportions
 #' idx_str <- classic_bootstrap_indices(y, n_subsamples = 20L,
-#'                                      stratify = TRUE, seed = 1L)
+#'                                      stratify = TRUE, random_state = 1L)
 #' table(y[idx_str])
 #' @export
 classic_bootstrap_indices <- function(
@@ -67,10 +71,21 @@ classic_bootstrap_indices <- function(
   class_weights = NULL,
   stratify = FALSE,
   strata = NULL,
+  random_state = NULL,
   seed = NULL
 ) {
-  if (!is.null(seed)) {
-    set.seed(seed)
+  # Deprecation shim: `seed` was renamed to `random_state`.  missing() (not
+  # is.null()) so that an explicit `seed = NULL` also warns.
+  if (!missing(seed)) {
+    warning("`seed` is deprecated; use `random_state` instead.", call. = FALSE)
+    if (is.null(random_state)) random_state <- seed
+  }
+
+  # RNG hygiene: seed the sampler locally without clobbering the caller's
+  # global RNG state; withr::local_seed() restores the previous .Random.seed
+  # when this function exits.
+  if (!is.null(random_state)) {
+    withr::local_seed(random_state)
   }
 
   n <- length(y)
@@ -171,8 +186,12 @@ classic_bootstrap_indices <- function(
 #'   for one stratification factor, or a `data.frame`/matrix/list for a joint
 #'   design across multiple factors.  Each group must map to exactly one
 #'   realised stratum.
-#' @param seed Optional integer; passed to [set.seed()] before sampling.
-#'   `NULL` leaves the RNG state unchanged.
+#' @param random_state Optional integer; seed used for this draw.  The
+#'   function does **not** clobber the caller's global RNG state: the previous
+#'   `.Random.seed` is restored on exit (via [withr::local_seed()]).
+#' @param seed Deprecated; use `random_state` instead.  If supplied, a
+#'   deprecation warning is emitted and the value is used as `random_state`
+#'   when the latter is `NULL`.  It will be removed in a future release.
 #'
 #' @return Integer vector of 1-based row indices into the training set.
 #'
@@ -184,14 +203,25 @@ classic_bootstrap_indices <- function(
 #' # 3 groups with 4 samples each; binary outcome
 #' y      <- c(0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1)
 #' groups <- rep(c("G1", "G2", "G3"), each = 4L)
-#' idx    <- group_bootstrap_indices(y, groups, n_subsamples = 8L, seed = 1L)
+#' idx    <- group_bootstrap_indices(y, groups, n_subsamples = 8L,
+#'                                   random_state = 1L)
 #' table(groups[idx])  # whole groups only; count >= 8
 #' @export
 group_bootstrap_indices <- function(y, groups, n_subsamples, replace = FALSE,
                                     stratify = FALSE, strata = NULL,
-                                    seed = NULL) {
-  if (!is.null(seed)) {
-    set.seed(seed)
+                                    random_state = NULL, seed = NULL) {
+  # Deprecation shim: `seed` was renamed to `random_state`.  missing() (not
+  # is.null()) so that an explicit `seed = NULL` also warns.
+  if (!missing(seed)) {
+    warning("`seed` is deprecated; use `random_state` instead.", call. = FALSE)
+    if (is.null(random_state)) random_state <- seed
+  }
+
+  # RNG hygiene: seed the sampler locally without clobbering the caller's
+  # global RNG state; withr::local_seed() restores the previous .Random.seed
+  # when this function exits.
+  if (!is.null(random_state)) {
+    withr::local_seed(random_state)
   }
 
   if (length(groups) != length(y)) {

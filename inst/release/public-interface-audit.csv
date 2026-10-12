@@ -60,3 +60,16 @@ print.stabl_fit,s3,print,stabl_fit,selection,R/stabl_accessors.R,man/stabl_fit.R
 print.stabl_multiomic_cv,s3,print,stabl_multiomic_cv,multiomic,R/stabl_accessors.R,man/stabl_multiomic_cv.Rd,running_workflow,test-multiomic-workflows.R,not_applicable-print-method,accessor_contract
 print.stabl_multiomic_fit,s3,print,stabl_multiomic_fit,multiomic,R/stabl_accessors.R,man/stabl_multiomic_train_validate.Rd,running_workflow,test-multiomic-workflows.R,not_applicable-print-method,accessor_contract
 print.stabl_multiomic_nested_cv,s3,print,stabl_multiomic_nested_cv,multiomic,R/nested_cv.R,man/stabl_multiomic_nested_cv.Rd,running_workflow,test-nested-cv.R,not_applicable-print-method,accessor_contract
+get_fdrs,export,,,selection,R/stabl_accessors.R,man/get_fdrs.Rd,running,test-accessors-s3.R,not_applicable-total-set-function,accessor_contract
+get_lambda_grid,export,,,selection,R/stabl_accessors.R,man/get_lambda_grid.Rd,running,test-accessors-s3.R,not_applicable-total-set-function,accessor_contract
+get_fdrs.stabl_fit,s3,get_fdrs,stabl_fit,selection,R/stabl_accessors.R,man/get_fdrs.Rd,running,test-accessors-s3.R,not_applicable-method,accessor_contract
+get_lambda_grid.stabl_fit,s3,get_lambda_grid,stabl_fit,selection,R/stabl_accessors.R,man/get_lambda_grid.Rd,running,test-accessors-s3.R,not_applicable-method,accessor_contract
+plot.stabl_fit,s3,plot,stabl_fit,visualization,R/s3_methods.R,man/plot.stabl_fit.Rd,running,test-accessors-s3.R,not_applicable-method,accessor_contract
+summary.stabl_fit,s3,summary,stabl_fit,selection,R/s3_methods.R,man/summary.stabl_fit.Rd,running,test-accessors-s3.R,not_applicable-method,accessor_contract
+print.summary.stabl_fit,s3,print,summary.stabl_fit,selection,R/s3_methods.R,man/summary.stabl_fit.Rd,running,test-accessors-s3.R,not_applicable-method,accessor_contract
+stabl_environment_stability,export,,,workflow,R/environment_stability.R,man/stabl_environment_stability.Rd,running_workflow,test-environment-stability.R,test-environment-stability.R,core_contract
+get_min_scores,export,,,workflow,R/environment_stability.R,man/get_min_scores.Rd,running,test-environment-stability.R,not_applicable-total-set-function,accessor_contract
+get_min_scores.stabl_env_stability,s3,get_min_scores,stabl_env_stability,workflow,R/environment_stability.R,man/get_min_scores.Rd,running,test-environment-stability.R,not_applicable-method,accessor_contract
+print.stabl_env_stability,s3,print,stabl_env_stability,workflow,R/environment_stability.R,man/print.stabl_env_stability.Rd,running,test-environment-stability.R,not_applicable-print-method,accessor_contract
+make_ranger_adapter,export,,,selection,R/learner_rf.R,man/make_ranger_adapter.Rd,runnable_donttest,test-rf-adapter.R,test-rf-adapter.R,core_contract
+auto_rf_threshold_grid,export,,,selection,R/learner_rf.R,man/auto_rf_threshold_grid.Rd,runnable_donttest,test-rf-adapter.R,test-rf-adapter.R,core_contract

@@ -100,7 +100,11 @@ Python-compatible algorithm.}
 
 \item{n_iter_lf}{Number of random weight draws passed to
 \code{\link[=stacked_multi_omic]{stacked_multi_omic()}} during late fusion.  Ignored when
-\code{late_fusion = FALSE}.}
+\code{late_fusion = FALSE}.  Naming note: \code{\link[=stacked_multi_omic]{stacked_multi_omic()}} calls this
+same quantity \code{n_iter}; the multiomic workflows expose it as \code{n_iter_lf}
+so that the \code{...} channel (forwarded to \code{\link[=stabl_fit]{stabl_fit()}}) stays free of
+name collisions.  \code{n_iter} itself is not a \code{\link[=stabl_fit]{stabl_fit()}} argument and is
+therefore rejected if passed through \code{...}.}
 
 \item{cooperative_fusion}{Logical. When \code{TRUE}, fit a built-in cooperative
 learning branch (vendored multiview engine) in addition to the existing
