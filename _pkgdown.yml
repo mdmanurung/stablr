@@ -32,6 +32,8 @@ navbar:
         href: articles/stablr-tcga-nestedcv.html
       - text: Cooperative fusion
         href: articles/stablr-cooperative.html
+      - text: Environment stability
+        href: articles/stablr-environments.html
       - text: Advanced workflows
         href: articles/stablr-advanced.html
     github:
@@ -73,6 +75,7 @@ reference:
   contents:
   - stabl_environment_stability
   - get_min_scores
+  - print.stabl_env_stability
 
 - title: Artificial Features
   desc: Decoy-feature generation for FDP+ calibration.
@@ -154,4 +157,5 @@ articles:
   - stablr-tcga
   - stablr-tcga-nestedcv
   - stablr-cooperative
+  - stablr-environments
   - stablr-advanced

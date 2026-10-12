@@ -177,23 +177,6 @@ make_rp_features <- function(x, n_injected) {
 #
 # `knockoff::create.fixed()` documents its `x` argument as a "normalized
 # n-by-p matrix of original variables", so centering/scaling is the caller's
-# responsibility.  Each column is centered and divided by its sample standard
-# deviation; zero-variance columns are centered but left at scale 1 (division
-# by zero is avoided and they stay valid knockoff targets because a constant
-# feature has a constant knockoff).
-.standardize_columns <- function(x) {
-  means <- colMeans(x)
-  x_centered <- sweep(x, 2L, means, `-`)
-  sds <- apply(x_centered, 2L, stats::sd)
-  degenerate <- !is.finite(sds) | sds == 0
-  sds[degenerate] <- 1
-  list(
-    x = sweep(x_centered, 2L, sds, `/`),
-    means = means,
-    sds = sds
-  )
-}
-
 #' Make Knockoff Artificial Features
 #'
 #' Generates **fixed-X** knockoff features via `knockoff::create.fixed()`, with
@@ -202,11 +185,12 @@ make_rp_features <- function(x, n_injected) {
 #' Falls back to random-permutation features when the supported-dimensional
 #' knockoff constructor fails (e.g., rank-deficient input).
 #'
-#' `create.fixed()` documents its `x` argument as a *normalized* n-by-p
-#' matrix, so `x` is standardized internally before the knockoff construction
-#' (each column centered and scaled by its sample standard deviation;
-#' zero-variance columns are centered only, i.e. left at scale 1).  The column
-#' means and standard deviations used are recorded in
+#' `create.fixed()` column-normalizes its input internally (scale only, no
+#' centering) and returns knockoffs on that internal unit-norm scale.  The
+#' knockoffs are therefore rescaled by the input column norms so that the
+#' shipped pair `(x, xk)` satisfies the fixed-X Gram condition on the input's
+#' own scale: `t(xk) xk = t(x) x` and `t(x) xk = t(x) x - diag(s)` with
+#' `s_j >= 0`.  The normalization actually applied is recorded in
 #' `artificial_provenance$standardization`.
 #'
 #' @section Caveat on bootstrap reuse:
@@ -225,10 +209,10 @@ make_rp_features <- function(x, n_injected) {
 #'
 #' @return Named list with elements `x_augmented`, `noise_col_indices`, and
 #'   `artificial_provenance`; see [make_rp_features()] for details.
-#'   `artificial_provenance$standardization` records `standardized` (TRUE
-#'   when the fixed-X construction ran, together with the `means` and `sds`
-#'   used) and is `standardized = FALSE` with NULL `means`/`sds` when the
-#'   random-permutation fallback was taken.
+#'   `artificial_provenance$standardization` records the fixed-X scale
+#'   contract (`knockoff_rescaled_to_input_scale = TRUE` when the fixed-X
+#'   construction ran) and carries `standardized = FALSE` with NULL
+#'   `means`/`sds` when the random-permutation fallback was taken.
 #' @keywords internal
 make_knockoff_features <- function(x, n_injected, random_state = NULL) {
   .assert_supported_knockoff_dimension(x, "knockoff")
@@ -251,14 +235,10 @@ make_knockoff_features <- function(x, n_injected, random_state = NULL) {
             n_features = ncol(x_chunk)
           )
         }
-        # A1: create.fixed() requires a normalized (centered/scaled) design;
-        # standardize here so the construction runs on the correct geometry
-        # and the hard-coded sigma = 1 is consistent with the input scale.
-        standardized <- .standardize_columns(x_chunk)
         augmented_rows <- FALSE
         knockoff_result <- .with_linear_algebra_numerical_infeasibility(
           withCallingHandlers(
-            knockoff::create.fixed(standardized$x, sigma = 1),
+            knockoff::create.fixed(x_chunk, sigma = 1),
             warning = function(w) {
               if (grepl("Augmenting the model with extra rows",
                         conditionMessage(w), fixed = TRUE)) {
@@ -270,17 +250,20 @@ make_knockoff_features <- function(x, n_injected, random_state = NULL) {
           source = "knockoff::create.fixed",
           subclass = "stablr_knockoff_infeasible"
         )
-        # create.fixed() column-normalizes its input to unit Euclidean norm
-        # and returns BOTH $X (the normalized design) and $Xk (knockoffs on
-        # that normalized scale, entries ~ 1/sqrt(n)).  Pairing $Xk with the
-        # sd-1 standardized design would put the knockoffs at ~1/sqrt(n)
-        # scale -- invisible to the learner, anti-conservative FDP+ (F5
-        # benchmark: lasso+knockoff empirical FDP 0.665 pre-fix).  Rescale
-        # $Xk by the standardized column norms so that Xk'Xk = X'X and
-        # X'Xk = diag(s) hold on the scale actually shipped downstream.
-        col_norms <- sqrt(colSums(standardized$x^2))
+        # Scale contract (0.2.2): create.fixed() column-normalizes its input
+        # (normc, center = FALSE) and returns BOTH $X (the normalized design)
+        # and $Xk (knockoffs on that unit-norm scale, entries ~ 1/sqrt(n)).
+        # The fixed-X Gram condition is preserved under diagonal rescaling of
+        # BOTH blocks (s_j -> s_j * norm_j^2), so rescaling $Xk by the INPUT
+        # column norms back-transforms the knockoffs to the input scale
+        # exactly.  The shipped pair (x, xk) then satisfies, on x's own
+        # scale, t(xk) xk = t(x) x and t(x) xk = t(x) x - diag(s * norms^2).
+        # (0.2.0-0.2.1 centered/scaled the input first and shipped the
+        # knockoffs on the standardized scale next to the raw design -- a
+        # mismatched pair whenever input columns were heterogeneous.)
+        col_norms <- sqrt(colSums(x_chunk^2))
         xk <- knockoff_result$Xk %*% diag(col_norms)
-        colnames(xk) <- colnames(standardized$x)
+        colnames(xk) <- colnames(x_chunk)
         if (isTRUE(augmented_rows) || nrow(xk) != nrow(x_chunk)) {
           .abort_numerical_infeasibility(
             "stablr_knockoff_infeasible",
@@ -301,10 +284,11 @@ make_knockoff_features <- function(x, n_injected, random_state = NULL) {
           fallback_reason = NA_character_,
           fallback_history = .empty_artificial_fallback_history(),
           standardization = list(
-            standardized = TRUE,
-            means = standardized$means,
-            sds = standardized$sds,
-            knockoff_rescaled_to_standardized_scale = TRUE
+            standardized = FALSE,
+            means = NULL,
+            sds = NULL,
+            normalization = "scale_only_internal_to_create.fixed",
+            knockoff_rescaled_to_input_scale = TRUE
           )
         )
       },
@@ -365,9 +349,9 @@ make_knockoff_features <- function(x, n_injected, random_state = NULL) {
     chunks = chunks,
     fallback_histories = fallback_histories
   )
-  # A1: record the column standardization applied before the fixed-X
-  # construction (NULL means/sds when the random-permutation fallback was
-  # taken, since that path uses no standardization).
+  # Record the fixed-X normalization/rescale contract actually applied
+  # (NULL means/sds and no normalization tag when the random-permutation
+  # fallback was taken, since that path uses no knockoff construction).
   provenance$standardization <- chunk_result$standardization
 
   list(

@@ -36,24 +36,6 @@ skip_if_no_aorsf <- function() {
   list(x = X, y = y, signals = paste0("f", seq_len(2L)))
 }
 
-# Canonical knockoff sanity probe (plan A1/F5 caveat): the sandbox knockoff
-# 0.3.6 build is degenerate (create.fixed on a standardized matrix returns
-# knockoffs with sd ~ 0.09 instead of ~ 1).  Calibration assertions for
-# knockoff_equi are only meaningful on a sane build; on a degenerate build we
-# still exercise the code path but skip the recovery assertion (CI has the
-# CRAN knockoff build).
-.knockoff_build_sane <- function() {
-  tryCatch(
-    {
-      set.seed(1)
-      X  <- scale(matrix(rnorm(120 * 10), 120, 10))
-      kd <- knockoff::create.fixed(X, sigma = 1)
-      max(abs(apply(kd$Xk, 2, sd) - 1)) < 0.25
-    },
-    error = function(e) FALSE
-  )
-}
-
 # ---- (a) Adapter contract -----------------------------------------------------
 
 test_that("make_aorsf_adapter returns valid logical masks of the right length", {
@@ -127,8 +109,10 @@ test_that("stabl_fit(base_learner='oblique_rf') recovers non-linear planted sign
   d <- .make_oblique_synthetic(n = 80L, p = 8L, seed = 31L)
 
   # Structure + recovery via the statistically sound pairing (model-X knockoff
-  # nulls) when the knockoff package is available AND its local build is sane;
-  # the sandbox build is degenerate, so on it we only exercise the path.
+  # nulls).  The knockoff_equi generator (create.gaussian) is independent of
+  # the fixed-X create.fixed construction, so no fixed-X build probe gates
+  # this assertion (a former probe here measured create.fixed's internal
+  # unit-norm scale against a sd ~ 1 expectation and always skipped).
   if (requireNamespace("knockoff", quietly = TRUE)) {
     fit_k <- stabl_fit(
       x = d$x, y = d$y,
@@ -140,14 +124,9 @@ test_that("stabl_fit(base_learner='oblique_rf') recovers non-linear planted sign
     )
     expect_s3_class(fit_k, "stabl_fit")
     expect_identical(nrow(fit_k$fitted_lambda_grid), 30L)
-    if (.knockoff_build_sane()) {
-      selected <- get_feature_names_out(fit_k)
-      expect_true(all(d$signals %in% selected),
-                  info = paste("selected:", paste(selected, collapse = ",")))
-    } else {
-      skip(paste("local knockoff build is degenerate (sd probe failed);",
-                 "knockoff_equi recovery is asserted on CI only"))
-    }
+    selected <- get_feature_names_out(fit_k)
+    expect_true(all(d$signals %in% selected),
+                info = paste("selected:", paste(selected, collapse = ",")))
   } else {
     skip("knockoff package not available")
   }
