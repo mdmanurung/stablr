@@ -3,19 +3,23 @@
 # documented contract requires a normalized n-by-p matrix) and must record
 # the standardization in the returned provenance metadata.
 #
-# Sandbox caveat: the locally installed knockoff 0.3.6 build produces
-# degenerate knockoffs even in canonical usage (sd(Xk) ~ 1/sqrt(n) instead
-# of ~1).  Knockoff-quality and calibration assertions therefore probe the
-# local knockoff first and skip when it is degenerate; they run on CI with
-# a healthy CRAN knockoff.  Standardization-contract assertions run
-# unconditionally (the fixed-X branch is exercised through a mocked
-# create.fixed where needed).
+# Scale-contract note: create.fixed() column-normalizes its input to unit
+# Euclidean norm and returns knockoffs on that internal scale (entries
+# ~ 1/sqrt(n)).  The package rescales $Xk by the standardized column norms
+# before shipping, so the knockoffs satisfy t(Xk) Xk = t(X) X on the scale
+# actually paired with the design.  Quality and calibration assertions
+# probe this shipped contract and run wherever the knockoff package is
+# available.  Standardization-contract assertions run unconditionally (the
+# fixed-X branch is exercised through a mocked create.fixed where needed).
 
 .fixedx_probe_sd_tolerance <- 0.5
 
-# Runs canonical create.fixed() on a standardized matrix and checks that the
-# resulting knockoffs have column sds within `tolerance` of 1.  Returns FALSE
-# when the knockoff package is unavailable.
+# Probes the SHIPPED fixed-X contract end to end: create.fixed() returns
+# knockoffs on its internal unit-norm column scale (entries ~ 1/sqrt(n));
+# the package rescales them by the standardized column norms before use.
+# The probe replicates that rescale and requires column sds ~ 1 plus the
+# defining Gram identity t(Xk) Xk = t(X) X.  Returns FALSE when the
+# knockoff package is unavailable.
 .fixedx_knockoff_probe_ok <- function(seed = 20261012L, n = 120L, p = 8L,
                                       tolerance = .fixedx_probe_sd_tolerance) {
   if (!requireNamespace("knockoff", quietly = TRUE)) {
@@ -24,9 +28,12 @@
   set.seed(seed)
   x <- matrix(rnorm(n * p), nrow = n, ncol = p)
   x <- scale(x)
-  xk <- suppressWarnings(knockoff::create.fixed(x, sigma = 1)$Xk)
+  kd <- suppressWarnings(knockoff::create.fixed(x, sigma = 1))
+  col_norms <- sqrt(colSums(x^2))
+  xk <- kd$Xk %*% diag(col_norms)
   sds <- apply(xk, 2L, sd)
-  all(abs(sds - 1) < tolerance)
+  gram_ok <- max(abs(crossprod(xk) - crossprod(x))) < 1e-6
+  all(abs(sds - 1) < tolerance) && gram_ok
 }
 
 .fixedx_probe_ok <- .fixedx_knockoff_probe_ok()
@@ -120,7 +127,10 @@ test_that("fixed-X branch passes a standardized matrix to create.fixed", {
 
   # The injected knockoff block is the mocked constructor's output.
   xk_block <- result$x_augmented[, ncol(x) + seq_len(3L), drop = FALSE]
-  mock_xk <- captured$x + 1
+  # The shipped block is the mocked constructor's output RESCALED to the
+  # standardized scale (create.fixed's unit-norm-scale return times the
+  # standardized column norms).
+  mock_xk <- (captured$x + 1) %*% diag(sqrt(colSums(captured$x^2)))
   matched <- apply(xk_block, 2L, function(col) {
     any(vapply(seq_len(ncol(mock_xk)), function(j) {
       isTRUE(all.equal(col, mock_xk[, j]))
@@ -172,7 +182,7 @@ test_that("fixed-X knockoffs reproduce the standardized design's Gram matrix", {
                      "quality assertions are validated on CI with CRAN knockoff"))
 
   n <- 120L
-  x <- stablr:::.fixedx_heterogeneous_design(n, p = 8L, seed = 20261018L)
+  x <- .fixedx_heterogeneous_design(n, p = 8L, seed = 20261018L)
 
   result <- make_artificial_features(
     x = x,
@@ -194,7 +204,7 @@ test_that("fixed-X knockoffs reproduce the standardized design's Gram matrix", {
   expect_equal(gram_k, gram_x, tolerance = 1e-8)
 
   s_mat <- gram_x - gram_xk
-  expect_equal(s_mat - diag(diag(s_mat)),
+  expect_equal(unname(s_mat - diag(diag(s_mat))),
                matrix(0, ncol(x), ncol(x)), tolerance = 1e-8)
   expect_gte(min(diag(s_mat)), 0)
   expect_lte(max(diag(s_mat) - 2 * diag(gram_x)), 1e-8)
@@ -203,16 +213,24 @@ test_that("fixed-X knockoffs reproduce the standardized design's Gram matrix", {
              -1e-8)
 })
 
-test_that("fixed-X knockoffs calibrate FDP+ on a heterogeneous-scale design", {
+test_that("model-X knockoffs calibrate FDP+ end to end on a heterogeneous-scale design", {
   skip_if_not_installed("knockoff")
-  skip_if_not(.fixedx_probe_ok,
-              paste0("local knockoff build produces degenerate knockoffs; ",
-                     "calibration assertions are validated on CI with CRAN knockoff"))
 
+  # End-to-end calibration is asserted in the bootstrap-valid regime:
+  # model-X knockoff rows are i.i.d. Gaussian draws and survive the row
+  # subsampling of the bootstrap loop.  Fixed-X knockoffs are construction-
+  # tested above (Gram identities); under sample_fraction < 1 their
+  # exchangeability does not survive resampling, so they are not the right
+  # subject for an end-to-end calibration assertion.
   n <- 150L
   p <- 12L
-  x <- stablr:::.fixedx_heterogeneous_design(n, p = p, seed = 20261019L)
-  signal_idx <- c(1L, 2L, 3L)
+  x <- .fixedx_heterogeneous_design(n, p = p, seed = 20261019L)
+  rownames(x) <- paste0("s", seq_len(n))
+  # Plant signals on the large-scale features (f10-f12): after
+  # standardization their standardized effect (beta * sd) is ~2-3.4 sigma,
+  # so the test has power.  (On f1-f3, sd ~ 0.01-0.03 makes the planted
+  # signal invisible and the test uninformative.)
+  signal_idx <- c(10L, 11L, 12L)
   signals <- paste0("f", signal_idx)
   nulls <- setdiff(colnames(x), signals)
   beta <- numeric(p)
@@ -226,10 +244,9 @@ test_that("fixed-X knockoffs calibrate FDP+ on a heterogeneous-scale design", {
     fit <- stabl_fit(
       x = x,
       y = y,
-      lambda_grid = "auto",
-      n_lambda = 15L,
+      lambda_grid = data.frame(lambda = c(0.6, 0.4, 0.25)),
       n_bootstraps = 25L,
-      artificial_type = "knockoff",
+      artificial_type = "knockoff_equi",
       random_state = 2700L + s
     )
     selected <- get_feature_names_out(fit)
@@ -241,7 +258,7 @@ test_that("fixed-X knockoffs calibrate FDP+ on a heterogeneous-scale design", {
     empirical_tpr[[s]] <- sum(signals %in% selected) / length(signals)
   }
 
-  # A1 acceptance: empirical FDP at the FDP+-chosen threshold at or below
+  # Acceptance: empirical FDP at the FDP+-chosen threshold at or below
   # nominal (0.1) across seeds, with the planted signals recovered.
   expect_lte(mean(empirical_fdp), 0.1)
   expect_gte(mean(empirical_tpr), 2 / 3)

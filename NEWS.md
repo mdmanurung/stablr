@@ -1,3 +1,53 @@
+# stablr 0.2.1
+
+## Fixed-X knockoff scale and alignment fix (flagged behavior change)
+
+- **Scale contract:** `knockoff::create.fixed()` column-normalizes its input
+  and returns knockoffs on that internal scale (entries ~ 1/√n).  The fixed-X
+  path previously paired these knockoffs with the sd-1 standardized design,
+  making the knockoffs ~√n times too small — effectively invisible to the
+  learner and anti-conservative for FDP+ (the F5 benchmark measured empirical
+  FDP 0.665 for lasso + fixed-X knockoff at nominal 0.1).  Knockoffs are now
+  rescaled by the standardized column norms so that `t(Xk) Xk = t(X) X` holds
+  exactly on the scale shipped downstream.  Fits using fixed-X knockoffs
+  (`artificial_type = "knockoff"`) may select different features, and FDP+
+  estimates on such fits change.
+- **Column alignment:** artificial features are now shipped in aligned order
+  (injected column k is the artificial counterpart of feature k's selected
+  subset).  The previous random column permutation broke the knockoff
+  swap-symmetry in the bootstrap design, because stability scores are
+  accumulated positionally.  Applies to the fixed-X and model-X knockoff
+  types; random-permutation nulls are unaffected.
+- **Probes and tests:** the knockoff sanity probe (tests and F5 benchmark)
+  now probes the shipped contract (rescaled scale + Gram identity) instead of
+  the internal normalized scale; the formerly CI-gated knockoff quality and
+  calibration assertions now run wherever the knockoff package is available.
+  The end-to-end calibration test was redesigned to the bootstrap-valid
+  model-X regime (`knockoff_equi`) with an explicit lambda grid and powered
+  signals; fixed-X knockoffs under row subsampling remain documented as an
+  invalid combination and are not asserted.
+
+## New experimental oblique random-forest learner (plan item D2)
+
+- `base_learner = "oblique_rf"` via `make_aorsf_adapter()` /
+  `auto_oblique_threshold_grid()` (aorsf backend, negation importance),
+  mirroring the random-forest adapter: importance-threshold penalty path,
+  per-tree seeds drawn from the caller's seeded RNG stream, and the same
+  model-X-knockoff-pairing guardrail.  As with `rf`, selection frequencies
+  are noisier than the glmnet family's; the adapter is experimental and
+  FDP+ calibration is empirical (F5-style benchmarks).  aorsf is a Suggests
+  dependency; the feature is guarded by `.require_pkg()`.
+
+## Multiview-parity fixtures (plan item F4)
+
+- SHA-256-pinned fixtures (`tests/testthat/fixtures/multiview_parity/`) lock
+  the vendored cooperative-learning backend's outputs to CRAN multiview 1.0
+  on gaussian, binomial, and weighted fits, plus the documented B1/B2/B3
+  divergence sites (offset handling in `build_predmat`, warm-start residual
+  weighting, `lower.limits` clamping).  Upstream `build_predmat` errors with
+  an offset (divergence D4 confirmed live); the vendored fix is pinned by
+  fixture.  Makes the PATCHES.cooperative.md divergence log testable.
+
 # stablr 0.2.0
 
 Breaking renames ship with deprecation shims that warn for one minor release
