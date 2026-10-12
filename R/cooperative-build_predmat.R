@@ -23,7 +23,7 @@ build_predmat <- function(outlist, lambda, x_list, offset, foldid, alignment, fa
     if (is.null(offset)) {
       offset_sub  <- NULL
     } else {
-      offset_sub <- rep(offset_sub[which, drop = FALSE])
+      offset_sub <- offset[which, drop = FALSE]
     }
     preds <- switch(alignment,
                     fraction = predict(fitobj, x_sub_list, newoffset = offset_sub,...),

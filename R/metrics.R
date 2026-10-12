@@ -110,16 +110,26 @@ jaccard_matrix <- function(list_of_lists, remove_diag = TRUE) {
 #' The formula is analogous to Cohen's kappa for sets:
 #' \deqn{S_{\text{adj}}(A, B) =
 #'   \frac{r - \mathbb{E}[r]}{\min(k_1, k_2) - \max(0, k_1 + k_2 - d)}}
-#' where \eqn{r = |A \cap B|}, \eqn{k_i = |A_i|}, \eqn{d =} `nb_total_elements`,
+#' where \eqn{r = |A \cap B|}, \eqn{k_i = |A_i|}, \eqn{d =} `n_universe`,
 #' and \eqn{\mathbb{E}[r] = k_1 k_2 / d}.
 #'
 #' Returns 0 when either set is empty or equals the full universe (edge cases
 #' where the correction denominator is zero).
 #'
-#' @param list1 Character or integer vector of selected feature identifiers.
-#' @param list2 Character or integer vector of selected feature identifiers.
-#' @param nb_total_elements Integer; total number of candidate features in the
+#' @param set1 Character or integer vector of selected feature identifiers.
+#' @param set2 Character or integer vector of selected feature identifiers.
+#' @param n_universe Integer; total number of candidate features in the
 #'   universe (i.e. the number of columns in the original predictor matrix).
+#' @param list1 Deprecated; use `set1` instead.  If supplied by name, a
+#'   deprecation warning is emitted and the value is used as `set1` when the
+#'   latter is `NULL`.  It will be removed in a future release.
+#' @param list2 Deprecated; use `set2` instead.  If supplied by name, a
+#'   deprecation warning is emitted and the value is used as `set2` when the
+#'   latter is `NULL`.  It will be removed in a future release.
+#' @param nb_total_elements Deprecated; use `n_universe` instead.  If supplied
+#'   by name, a deprecation warning is emitted and the value is used as
+#'   `n_universe` when the latter is `NULL`.  It will be removed in a future
+#'   release.
 #'
 #' @return Numeric scalar in \eqn{(-1, 1]}.  Values above 0 indicate more
 #'   overlap than expected by chance; 1 means perfect agreement; negative
@@ -131,22 +141,41 @@ jaccard_matrix <- function(list_of_lists, remove_diag = TRUE) {
 #'
 #' @examples
 #' # 10-feature universe; sets A and B share 2 out of 3 features each
-#' adjusted_similarity(c("f1","f2","f3"), c("f2","f3","f4"), nb_total_elements = 10L)
-#' adjusted_similarity(c("f1","f2"),      c("f1","f2"),      nb_total_elements = 10L) # 1
-#' adjusted_similarity(character(0),      c("f1"),           nb_total_elements = 10L) # 0
+#' adjusted_similarity(c("f1","f2","f3"), c("f2","f3","f4"), n_universe = 10L)
+#' adjusted_similarity(c("f1","f2"),      c("f1","f2"),      n_universe = 10L) # 0.8
+#' adjusted_similarity(character(0),      c("f1"),           n_universe = 10L) # 0
 #' @export
-adjusted_similarity <- function(list1, list2, nb_total_elements) {
-  s1 <- unique(list1)
-  s2 <- unique(list2)
+adjusted_similarity <- function(set1 = NULL, set2 = NULL, n_universe = NULL,
+                                list1 = NULL, list2 = NULL,
+                                nb_total_elements = NULL) {
+  # Deprecation shim: `list1`/`list2`/`nb_total_elements` were renamed to
+  # `set1`/`set2`/`n_universe`.  missing() (not is.null()) so that explicit
+  # NULLs also warn; purely positional calls are unaffected.
+  if (!missing(list1) || !missing(list2) || !missing(nb_total_elements)) {
+    warning(
+      "`list1`, `list2` and `nb_total_elements` are deprecated; use ",
+      "`set1`, `set2` and `n_universe` instead.",
+      call. = FALSE
+    )
+    if (is.null(set1)) set1 <- list1
+    if (is.null(set2)) set2 <- list2
+    if (is.null(n_universe)) n_universe <- nb_total_elements
+  }
+  if (is.null(n_universe)) {
+    stop("argument \"n_universe\" is missing, with no default", call. = FALSE)
+  }
+
+  s1 <- unique(set1)
+  s2 <- unique(set2)
   r  <- length(intersect(s1, s2))
   k1 <- length(s1)
   k2 <- length(s2)
   u  <- k1 + k2 - r
 
-  d <- as.integer(nb_total_elements)
+  d <- as.integer(n_universe)
   if (u > d) {
     stop(
-      "Union cardinal (", u, ") exceeds nb_total_elements (", d, ").",
+      "Union cardinal (", u, ") exceeds n_universe (", d, ").",
       call. = FALSE
     )
   }
@@ -183,7 +212,7 @@ adjusted_similarity <- function(list1, list2, nb_total_elements) {
 adjusted_similarity_values <- function(list_of_lists, nb_total_elements) {
   .pairwise_upper_triangle(
     list_of_lists,
-    function(a, b) adjusted_similarity(a, b, nb_total_elements)
+    function(a, b) adjusted_similarity(a, b, n_universe = nb_total_elements)
   )
 }
 
@@ -240,9 +269,18 @@ adjusted_similarity_measure <- function(list_of_lists, nb_total_elements,
 #' Edge cases: returns 1 when both sets are empty or both equal the universe;
 #' returns 0 when one set is empty or equals the universe.
 #'
-#' @param list_i Character or integer vector of selected feature identifiers.
-#' @param list_j Character or integer vector of selected feature identifiers.
-#' @param d Integer; total number of candidate features in the universe.
+#' @param set1 Character or integer vector of selected feature identifiers.
+#' @param set2 Character or integer vector of selected feature identifiers.
+#' @param n_universe Integer; total number of candidate features in the universe.
+#' @param list_i Deprecated; use `set1` instead.  If supplied by name, a
+#'   deprecation warning is emitted and the value is used as `set1` when the
+#'   latter is `NULL`.  It will be removed in a future release.
+#' @param list_j Deprecated; use `set2` instead.  If supplied by name, a
+#'   deprecation warning is emitted and the value is used as `set2` when the
+#'   latter is `NULL`.  It will be removed in a future release.
+#' @param d Deprecated; use `n_universe` instead.  If supplied by name, a
+#'   deprecation warning is emitted and the value is used as `n_universe` when
+#'   the latter is `NULL`.  It will be removed in a future release.
 #'
 #' @return Numeric scalar.  Positive values indicate more overlap than chance;
 #'   the maximum is typically close to 1 for perfectly matching sets.
@@ -252,17 +290,35 @@ adjusted_similarity_measure <- function(list_of_lists, nb_total_elements,
 #'   [adjusted_similarity()] for an alternative chance-correction.
 #'
 #' @examples
-#' pearson_similarity(c("f1","f2","f3"), c("f2","f3","f4"), d = 10L)
-#' pearson_similarity(c("f1","f2"),      c("f1","f2"),      d = 10L) # near 1
-#' pearson_similarity(character(0),      c("f1","f2"),      d = 10L) # 0
+#' pearson_similarity(c("f1","f2","f3"), c("f2","f3","f4"), n_universe = 10L)
+#' pearson_similarity(c("f1","f2"),      c("f1","f2"),      n_universe = 10L) # near 1
+#' pearson_similarity(character(0),      c("f1","f2"),      n_universe = 10L) # 0
 #' @export
-pearson_similarity <- function(list_i, list_j, d) {
-  si <- unique(list_i)
-  sj <- unique(list_j)
+pearson_similarity <- function(set1 = NULL, set2 = NULL, n_universe = NULL,
+                               list_i = NULL, list_j = NULL, d = NULL) {
+  # Deprecation shim: `list_i`/`list_j`/`d` were renamed to
+  # `set1`/`set2`/`n_universe`.  missing() (not is.null()) so that explicit
+  # NULLs also warn; purely positional calls are unaffected.
+  if (!missing(list_i) || !missing(list_j) || !missing(d)) {
+    warning(
+      "`list_i`, `list_j` and `d` are deprecated; use ",
+      "`set1`, `set2` and `n_universe` instead.",
+      call. = FALSE
+    )
+    if (is.null(set1)) set1 <- list_i
+    if (is.null(set2)) set2 <- list_j
+    if (is.null(n_universe)) n_universe <- d
+  }
+  if (is.null(n_universe)) {
+    stop("argument \"n_universe\" is missing, with no default", call. = FALSE)
+  }
+
+  si <- unique(set1)
+  sj <- unique(set2)
   r  <- length(intersect(si, sj))
   ki <- length(si)
   kj <- length(sj)
-  d  <- as.integer(d)
+  d  <- as.integer(n_universe)
 
   if ((ki == d && kj == d) || (ki == 0L && kj == 0L)) {
     return(1)
@@ -302,7 +358,7 @@ pearson_similarity <- function(list_i, list_j, d) {
 pearson_similarity_values <- function(list_of_lists, d) {
   .pairwise_upper_triangle(
     list_of_lists,
-    function(a, b) pearson_similarity(a, b, d)
+    function(a, b) pearson_similarity(a, b, n_universe = d)
   )
 }
 

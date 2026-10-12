@@ -28,7 +28,7 @@ Task List Path:
    inventory, commands, logs, exits, raw outputs, normalized outputs,
    comparisons, source hashes, and runtime identity there.
 3. Before execution, manifest path, type, mode, size, SHA-256, or symlink target
-   for the preservation-only set: `.gitignore`, `CONTEXT.md`,
+   for the preservation-only set: `.gitignore`, `docs/CONTEXT.md`,
    `docs/architecture/`, `docs/release/0.1.1-next-tasks.md`, `papers/`, and
    `.claude/reviews/stabl_lw/summary.md`. Compare after all runs.
 4. Resolve and record the R4_51 `Rscript` real path and SHA-256, companion R,
@@ -118,7 +118,7 @@ Forbidden or out of scope:
 
 - Production/runtime source, metadata, runner, public Interface, or scientific
   formula changes.
-- Editing `.gitignore`, `CONTEXT.md`, architecture documentation,
+- Editing `.gitignore`, `docs/CONTEXT.md`, architecture documentation,
   `docs/release/0.1.1-next-tasks.md`, `papers/`, or the Linus review.
 - Repairing, renaming, deleting, or relabeling historical validation artifacts.
 - Running a full locked release profile or claiming release/publication

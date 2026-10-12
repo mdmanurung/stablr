@@ -43,7 +43,11 @@
 #'   field.
 #' @param n_iter_lf Number of random weight draws passed to
 #'   [stacked_multi_omic()] during late fusion.  Ignored when
-#'   `late_fusion = FALSE`.
+#'   `late_fusion = FALSE`.  Naming note: [stacked_multi_omic()] calls this
+#'   same quantity `n_iter`; the multiomic workflows expose it as `n_iter_lf`
+#'   so that the `...` channel (forwarded to [stabl_fit()]) stays free of
+#'   name collisions.  `n_iter` itself is not a [stabl_fit()] argument and is
+#'   therefore rejected if passed through `...`.
 #' @param late_fusion_training How stacking weights are trained. `"oof"`
 #'   (default) refits STABL selection and the downstream model inside every
 #'   stacking fold. `"python_legacy"` preserves the historical in-sample
@@ -245,14 +249,14 @@ stabl_multiomic_train_validate <- function(
       )
     } else {
       .late_fusion_oof_fit(
-        x_train_list = x_train_list, y_train = y_train,
-        x_valid_list = x_valid_list, y_valid = y_valid,
-        groups_train = groups_train,
-        bootstrap_strata_train = bootstrap_strata_train,
-        lambda_by_omic = lambda_by_omic, fit_params = fit_params,
-        omic_names = omic_names,
-        family = family, n_iter_lf = n_iter_lf,
-        nfolds = late_fusion_nfolds, random_state = random_state, ...
+        .lf_x_train_list = x_train_list, .lf_y_train = y_train,
+        .lf_x_valid_list = x_valid_list, .lf_y_valid = y_valid,
+        .lf_groups_train = groups_train,
+        .lf_bootstrap_strata_train = bootstrap_strata_train,
+        .lf_lambda_by_omic = lambda_by_omic, .lf_fit_params = fit_params,
+        .lf_omic_names = omic_names,
+        .lf_family = family, .lf_n_iter = n_iter_lf,
+        .lf_nfolds = late_fusion_nfolds, .lf_random_state = random_state, ...
       )
     }
   } else {
@@ -315,7 +319,10 @@ stabl_multiomic_train_validate <- function(
 #' @param y Named outcome vector.
 #' @param lambda_grid Either a shared lambda grid (`data.frame` or `"auto"`)
 #'   used for all omics, or a named list mapping each omic name to its own
-#'   lambda grid.
+#'   lambda grid. Prefer `"auto"` (each fold's grid is derived from its
+#'   training data) or a grid computed from training data only: a grid
+#'   computed on the full data leaks mild information into the
+#'   cross-validated estimates.
 #' @param v Number of folds. Must be at least 2.
 #' @param groups Optional named grouping vector. When supplied, all samples in
 #'   the same group are assigned to the same assessment fold.
@@ -1585,7 +1592,9 @@ stabl_multiomic_cv <- function(
 #' @param task_type `"binary"` (maximise AUC), `"regression"` (maximise R²), or
 #'   `"multiclass"` (minimise multiclass log loss).
 #' @param n_iter Number of random weight draws to try.  Mirrors `n_iter` in
-#'   the Python implementation (default `10000`).
+#'   the Python implementation (default `10000`).  The multiomic workflow
+#'   functions expose this same quantity as `n_iter_lf`; see
+#'   [stabl_multiomic_train_validate()].
 #' @param random_state Optional integer seed for reproducibility.  Saves and
 #'   restores the RNG state on exit so caller state is unaffected.
 #'

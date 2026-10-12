@@ -679,7 +679,8 @@ multiview.fit <- function(x_list, x, y, rho, weights, lambda, alpha = 1.0,
                      exclude = exclude,
                      intercept = FALSE, from.glmnet.fit = TRUE, save.fit = TRUE,
                      thresh = thresh, maxit = maxit,
-                     upper.limits = upper.limits, penalty.factor = vp, warm = fit
+                     upper.limits = upper.limits, lower.limits = lower.limits,
+                     penalty.factor = vp, warm = fit
                      )
 
     if (fit$jerr != 0) return(list(jerr = fit$jerr))
@@ -765,7 +766,7 @@ multiview.fit <- function(x_list, x, y, rho, weights, lambda, alpha = 1.0,
       fit$warm_fit$a <- start
       fit$warm_fit$aint <- start_int
       g_eta <- get_eta(features, start, 0) ## intercept is zero for larger fit!
-      fit$warm_fit$r <- w_std * (target - g_eta) + g_offset
+      fit$warm_fit$r <- w_std * (target - g_eta + g_offset)
     }
 
     # test for convergence

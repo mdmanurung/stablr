@@ -25,11 +25,29 @@
   result
 }
 
-.late_fusion_oof_fit <- function(x_train_list, y_train, x_valid_list, y_valid,
-                                 groups_train, bootstrap_strata_train,
-                                 lambda_by_omic, fit_params,
-                                 omic_names, family, n_iter_lf, nfolds,
-                                 random_state, ...) {
+.late_fusion_oof_fit <- function(.lf_x_train_list, .lf_y_train,
+                                 .lf_x_valid_list, .lf_y_valid,
+                                 .lf_groups_train, .lf_bootstrap_strata_train,
+                                 .lf_lambda_by_omic, .lf_fit_params,
+                                 .lf_omic_names, .lf_family, .lf_n_iter,
+                                 .lf_nfolds, .lf_random_state, ...) {
+  # C5 (`...` collision safety): every formal carries a `.lf_` prefix so that
+  # no argument a caller forwards through `...` (intended for stabl_fit())
+  # can be matched by multiple actual arguments at this internal boundary.
+  # The body keeps the historical local names for reviewability.
+  x_train_list <- .lf_x_train_list
+  y_train <- .lf_y_train
+  x_valid_list <- .lf_x_valid_list
+  y_valid <- .lf_y_valid
+  groups_train <- .lf_groups_train
+  bootstrap_strata_train <- .lf_bootstrap_strata_train
+  lambda_by_omic <- .lf_lambda_by_omic
+  fit_params <- .lf_fit_params
+  omic_names <- .lf_omic_names
+  family <- .lf_family
+  n_iter_lf <- .lf_n_iter
+  nfolds <- .lf_nfolds
+  random_state <- .lf_random_state
   task_type <- .family_to_task_type(family)
   binary_mapping <- NULL
   y_downstream <- y_train
@@ -78,11 +96,11 @@
 
     captured <- withCallingHandlers(
       .late_fusion_select_per_omic_safe(
-        x_train_list = .subset_multiomic_rows(x_train_list, train_ids),
-        y_train = .subset_outcome_by_ids(y_train, train_ids),
-        lambda_by_omic = lambda_by_omic,
-        x_valid_list = .subset_multiomic_rows(x_train_list, assess_ids),
-        omic_names = omic_names, fit_params = fold_params, ...
+        .lf_x_train_list = .subset_multiomic_rows(x_train_list, train_ids),
+        .lf_y_train = .subset_outcome_by_ids(y_train, train_ids),
+        .lf_lambda_by_omic = lambda_by_omic,
+        .lf_x_valid_list = .subset_multiomic_rows(x_train_list, assess_ids),
+        .lf_omic_names = omic_names, .lf_fit_params = fold_params, ...
       ),
       warning = function(w) {
         warnings_seen <<- unique(c(warnings_seen, conditionMessage(w)))
@@ -133,9 +151,9 @@
 
   full_captured <- withCallingHandlers(
     .late_fusion_select_per_omic_safe(
-      x_train_list = x_train_list, y_train = y_train,
-      lambda_by_omic = lambda_by_omic, x_valid_list = x_valid_list,
-      omic_names = omic_names, fit_params = fit_params, ...
+      .lf_x_train_list = x_train_list, .lf_y_train = y_train,
+      .lf_lambda_by_omic = lambda_by_omic, .lf_x_valid_list = x_valid_list,
+      .lf_omic_names = omic_names, .lf_fit_params = fit_params, ...
     ),
     warning = function(w) {
       warnings_seen <<- unique(c(warnings_seen, conditionMessage(w)))
@@ -267,9 +285,19 @@
   out
 }
 
-.late_fusion_select_per_omic_safe <- function(x_train_list, y_train,
-                                               lambda_by_omic, x_valid_list,
-                                               omic_names, fit_params, ...) {
+.late_fusion_select_per_omic_safe <- function(.lf_x_train_list, .lf_y_train,
+                                               .lf_lambda_by_omic,
+                                               .lf_x_valid_list,
+                                               .lf_omic_names,
+                                               .lf_fit_params, ...) {
+  # C5: dot-prefixed formals so user-forwarded `...` args cannot collide;
+  # see .late_fusion_oof_fit().
+  x_train_list <- .lf_x_train_list
+  y_train <- .lf_y_train
+  lambda_by_omic <- .lf_lambda_by_omic
+  x_valid_list <- .lf_x_valid_list
+  omic_names <- .lf_omic_names
+  fit_params <- .lf_fit_params
   out <- list(
     fits = setNames(vector("list", length(omic_names)), omic_names),
     selected_features = setNames(vector("list", length(omic_names)), omic_names),

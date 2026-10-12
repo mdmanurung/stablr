@@ -4,15 +4,35 @@
 \alias{adjusted_similarity}
 \title{Adjusted Similarity Between Two Feature Sets}
 \usage{
-adjusted_similarity(list1, list2, nb_total_elements)
+adjusted_similarity(
+  set1 = NULL,
+  set2 = NULL,
+  n_universe = NULL,
+  list1 = NULL,
+  list2 = NULL,
+  nb_total_elements = NULL
+)
 }
 \arguments{
-\item{list1}{Character or integer vector of selected feature identifiers.}
+\item{set1}{Character or integer vector of selected feature identifiers.}
 
-\item{list2}{Character or integer vector of selected feature identifiers.}
+\item{set2}{Character or integer vector of selected feature identifiers.}
 
-\item{nb_total_elements}{Integer; total number of candidate features in the
+\item{n_universe}{Integer; total number of candidate features in the
 universe (i.e. the number of columns in the original predictor matrix).}
+
+\item{list1}{Deprecated; use \code{set1} instead.  If supplied by name, a
+deprecation warning is emitted and the value is used as \code{set1} when the
+latter is \code{NULL}.  It will be removed in a future release.}
+
+\item{list2}{Deprecated; use \code{set2} instead.  If supplied by name, a
+deprecation warning is emitted and the value is used as \code{set2} when the
+latter is \code{NULL}.  It will be removed in a future release.}
+
+\item{nb_total_elements}{Deprecated; use \code{n_universe} instead.  If supplied
+by name, a deprecation warning is emitted and the value is used as
+\code{n_universe} when the latter is \code{NULL}.  It will be removed in a future
+release.}
 }
 \value{
 Numeric scalar in \eqn{(-1, 1]}.  Values above 0 indicate more
@@ -29,7 +49,7 @@ so it does not systematically penalise methods that select many features.
 The formula is analogous to Cohen's kappa for sets:
 \deqn{S_{\text{adj}}(A, B) =
   \frac{r - \mathbb{E}[r]}{\min(k_1, k_2) - \max(0, k_1 + k_2 - d)}}
-where \eqn{r = |A \cap B|}, \eqn{k_i = |A_i|}, \eqn{d =} \code{nb_total_elements},
+where \eqn{r = |A \cap B|}, \eqn{k_i = |A_i|}, \eqn{d =} \code{n_universe},
 and \eqn{\mathbb{E}[r] = k_1 k_2 / d}.
 
 Returns 0 when either set is empty or equals the full universe (edge cases
@@ -37,9 +57,9 @@ where the correction denominator is zero).
 }
 \examples{
 # 10-feature universe; sets A and B share 2 out of 3 features each
-adjusted_similarity(c("f1","f2","f3"), c("f2","f3","f4"), nb_total_elements = 10L)
-adjusted_similarity(c("f1","f2"),      c("f1","f2"),      nb_total_elements = 10L) # 1
-adjusted_similarity(character(0),      c("f1"),           nb_total_elements = 10L) # 0
+adjusted_similarity(c("f1","f2","f3"), c("f2","f3","f4"), n_universe = 10L)
+adjusted_similarity(c("f1","f2"),      c("f1","f2"),      n_universe = 10L) # 0.8
+adjusted_similarity(character(0),      c("f1"),           n_universe = 10L) # 0
 }
 \seealso{
 \code{\link[=adjusted_similarity_values]{adjusted_similarity_values()}} for computing all pairwise values at

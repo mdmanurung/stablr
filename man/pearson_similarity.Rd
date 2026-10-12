@@ -4,14 +4,33 @@
 \alias{pearson_similarity}
 \title{Pearson-Corrected Similarity Between Two Feature Sets}
 \usage{
-pearson_similarity(list_i, list_j, d)
+pearson_similarity(
+  set1 = NULL,
+  set2 = NULL,
+  n_universe = NULL,
+  list_i = NULL,
+  list_j = NULL,
+  d = NULL
+)
 }
 \arguments{
-\item{list_i}{Character or integer vector of selected feature identifiers.}
+\item{set1}{Character or integer vector of selected feature identifiers.}
 
-\item{list_j}{Character or integer vector of selected feature identifiers.}
+\item{set2}{Character or integer vector of selected feature identifiers.}
 
-\item{d}{Integer; total number of candidate features in the universe.}
+\item{n_universe}{Integer; total number of candidate features in the universe.}
+
+\item{list_i}{Deprecated; use \code{set1} instead.  If supplied by name, a
+deprecation warning is emitted and the value is used as \code{set1} when the
+latter is \code{NULL}.  It will be removed in a future release.}
+
+\item{list_j}{Deprecated; use \code{set2} instead.  If supplied by name, a
+deprecation warning is emitted and the value is used as \code{set2} when the
+latter is \code{NULL}.  It will be removed in a future release.}
+
+\item{d}{Deprecated; use \code{n_universe} instead.  If supplied by name, a
+deprecation warning is emitted and the value is used as \code{n_universe} when
+the latter is \code{NULL}.  It will be removed in a future release.}
 }
 \value{
 Numeric scalar.  Positive values indicate more overlap than chance;
@@ -35,9 +54,9 @@ Edge cases: returns 1 when both sets are empty or both equal the universe;
 returns 0 when one set is empty or equals the universe.
 }
 \examples{
-pearson_similarity(c("f1","f2","f3"), c("f2","f3","f4"), d = 10L)
-pearson_similarity(c("f1","f2"),      c("f1","f2"),      d = 10L) # near 1
-pearson_similarity(character(0),      c("f1","f2"),      d = 10L) # 0
+pearson_similarity(c("f1","f2","f3"), c("f2","f3","f4"), n_universe = 10L)
+pearson_similarity(c("f1","f2"),      c("f1","f2"),      n_universe = 10L) # near 1
+pearson_similarity(character(0),      c("f1","f2"),      n_universe = 10L) # 0
 }
 \seealso{
 \code{\link[=pearson_similarity_values]{pearson_similarity_values()}} for computing all pairwise values at

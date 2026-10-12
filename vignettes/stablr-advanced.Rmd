@@ -204,6 +204,11 @@ length(get_feature_names_out(fit_grp))
 The same `groups` argument is forwarded by `stabl_multiomic_train_validate()`
 and `stabl_multiomic_cv()` for outer fold construction.
 
+Note that classification bootstraps redraw subsamples until at least two
+observations per class are present, which slightly biases the subsample
+distribution relative to vanilla STABL; this is a deliberate, documented
+deviation that buys class-diverse subsamples.
+
 ---
 
 ## 5. Reproducibility across repeated fits

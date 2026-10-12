@@ -1,3 +1,79 @@
+# stablr 0.2.0
+
+Breaking renames ship with deprecation shims that warn for one minor release
+before removal.
+
+## Scientific correctness
+
+- **Behavior change (flagged):** the fixed-X knockoff path now standardizes
+  the input matrix before calling `knockoff::create.fixed()`, matching that
+  function's documented contract. Fits on heterogeneous feature scales may
+  select different features. Standardization details (means, sds, zero-
+  variance handling) are recorded in the fit provenance, and the fixed-X
+  documentation now states the bootstrap-reuse caveat.
+- **FDP+ communication:** new "What FDP+ is and is not" vignette section and
+  documented interpretation caveats on `get_fdrs()`.
+
+## Vendored cooperative-backend fixes
+
+- **Offset subsetting in `build_predmat`:** the cross-validation prediction
+  path now subsets the `offset` argument per fold instead of referencing an
+  undefined symbol. The path was previously unreachable because offsets are
+  not exposed through the public API.
+- **Halved-step residual weighting:** after step-halving, the warm-start
+  residual now weights the offset consistently with the non-halved branch.
+- **`lower.limits` symmetry:** the cooperative path now passes
+  `lower.limits` to `elnet.fit()` alongside `upper.limits`.
+- **Divergence log:** `inst/PATCHES.cooperative.md` records every deviation
+  from CRAN multiview 1.0.
+
+All backend fixes are inherited from CRAN multiview 1.0 and are
+behavior-neutral under unit weights, the only weighting stablr exercises
+today.
+
+## API consistency
+
+- **`seed` deprecated:** `classic_bootstrap_indices()` and
+  `group_bootstrap_indices()` now take `random_state`; `seed` still works but
+  warns, and will be removed in the following minor release. The helpers no
+  longer clobber the global RNG state (`withr` promoted from Suggests to
+  Imports).
+- **Similarity-metric argument renames:** `adjusted_similarity()` and
+  `pearson_similarity()` (and their `_values`/`_measure` variants) rename
+  their arguments to `set1`/`set2`/`n_universe`; old names keep working
+  through deprecation shims.
+- **New accessors:** `get_fdrs()` and `get_lambda_grid()` expose fitted FDP+
+  estimates and the lambda grid, with documented interpretation caveats.
+- **New S3 methods:** `plot.stabl_fit()` and `summary.stabl_fit()` (with
+  `print.summary.stabl_fit()`) for fitted STABL objects.
+- **Internal:** late-fusion internal formals are dot-prefixed so user
+  arguments passed through `...` cannot collide with them; no user-visible
+  impact.
+
+## New capabilities (extensions beyond Python STABL, labeled experimental)
+
+- **Random-forest base learner:** `base_learner = "rf"` via
+  `make_ranger_adapter()` and `auto_rf_threshold_grid()` — permutation-
+  importance threshold paths so the full STABL machinery runs unchanged on
+  non-linear signals. Random forests must be paired with model-X knockoff
+  artificial features; the anti-conservative random-permutation pairing now
+  warns. Calibration is validated empirically by the F5 benchmark
+  (`inst/benchmarks/f5_rf_validation.R`).
+- **Environment-stability workflow:** `stabl_environment_stability()` fits
+  STABL per environment (batch, cohort, site) and aggregates selection
+  frequencies by their minimum across environments — an ICP-inspired
+  transportability heuristic without causal assumptions or new dependencies —
+  with `get_min_scores()`, a print method, and a new vignette.
+
+## Tests and documentation
+
+- Golden-path rendering tests for all four plotting functions (plot-data
+  correctness: rows, mappings, threshold geometries, FDP+ curve values).
+- Lambda-grid leakage guidance for cross-validated multi-omic workflows, a
+  note on the classification-bootstrap subsample deviation, dead-code removal
+  in the MVR knockoff solver, and the release-evidence glossary moved from
+  the repository root to `docs/CONTEXT.md`.
+
 # stablr 0.1.1
 
 ## Release correctness

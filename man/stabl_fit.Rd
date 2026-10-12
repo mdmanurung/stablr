@@ -50,7 +50,12 @@ data-driven grid via \code{\link[=auto_lambda_grid]{auto_lambda_grid()}} (uses \
 
 \item{base_learner}{Character; \code{"lasso"} (alpha = 1), \code{"elastic_net"}
 (reads \code{alpha} from the \code{lambda_grid} \code{alpha} column), or
-\code{"adaptive_lasso"}, or \code{"sparse_group_lasso"}. Default: \code{"lasso"}.}
+\code{"adaptive_lasso"}, or \code{"sparse_group_lasso"}, or \code{"rf"} (random forest
+via \code{ranger}; requires \code{lambda_grid} from \code{\link[=auto_rf_threshold_grid]{auto_rf_threshold_grid()}} or
+\code{"auto"}). Default: \code{"lasso"}. \code{"rf"} is an experimental extension beyond
+Python STABL: FDP+ calibration for random forests is empirical, not
+guaranteed, and is validated separately (see the package's RF validation
+study); it must be paired with model-X knockoff artificial features.}
 
 \item{family}{Character; \code{glmnet} response family (\code{"gaussian"},
 \code{"binomial"}, \code{"multinomial"}, or \code{"cox"}). Default: \code{"gaussian"}.}

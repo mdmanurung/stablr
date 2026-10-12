@@ -67,8 +67,12 @@ columns and shuffles each copy independently, breaking all signal while
 preserving marginal distributions.  Fast and broadly applicable.}
 \item{\code{"knockoff"}}{Generates \strong{fixed-X} knockoffs via
 \code{\link[knockoff:create.fixed]{knockoff::create.fixed()}}, which preserve the covariance structure of
-the original features under the fixed-design assumption.  Kept for
-backward compatibility.}
+the original features under the fixed-design assumption.  The design is
+standardized internally before the construction.  Kept for backward
+compatibility; note that fixed-X knockoffs are generated once on the
+full design, so their exchangeability does not survive the row
+subsampling of the bootstrap loop — prefer \code{"knockoff_equi"} or
+\code{"knockoff_mvr"} when correlation structure matters.}
 \item{\code{"knockoff_equi"}}{Generates \strong{model-X equicorrelated} knockoffs
 via \code{knockoff::create.gaussian(..., method = "equi")}.  This matches the
 \code{GaussianSampler(method='equicorrelated')} call in Python STABL and is

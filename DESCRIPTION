@@ -1,6 +1,6 @@
 Package: stablr
 Title: Sparse and Reliable Biomarker Discovery in R
-Version: 0.1.1
+Version: 0.2.0
 Authors@R:
     c(
     person(given = "Mikaël", family = "Manurung", role = c("aut", "cre", "cph"),
@@ -49,7 +49,8 @@ Imports:
     methods,
     RColorBrewer,
     stats,
-    utils
+    utils,
+    withr
 LinkingTo:
     Rcpp,
     RcppEigen
@@ -63,11 +64,12 @@ Suggests:
     knockoff,
     knitr,
     mixOmics,
+    ranger,
+    rlang,
     rmarkdown,
     sparsegl,
     survival,
-    testthat (>= 3.0.0),
-    withr
+    testthat (>= 3.0.0)
 NeedsCompilation: yes
 SystemRequirements: C++17
 Collate:
@@ -80,6 +82,7 @@ Collate:
     'exports.R'
     'fdp_control.R'
     'learner_adapters.R'
+    'learner_rf.R'
     'metrics.R'
     'stabl_fit.R'
     'cooperative-utils.R'
@@ -109,7 +112,9 @@ Collate:
     'multiomic_workflows.R'
     'nested_cv.R'
     'stabl_accessors.R'
+    's3_methods.R'
+    'environment_stability.R'
     'visualization.R'
 VignetteBuilder: knitr
 Config/testthat/edition: 3
-Config/roxygen2/version: 8.0.0
+Config/roxygen2/version: 8.1.1

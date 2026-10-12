@@ -16,7 +16,12 @@
 #'   data-driven grid via [auto_lambda_grid()] (uses `family` and `n_lambda`).
 #' @param base_learner Character; `"lasso"` (alpha = 1), `"elastic_net"`
 #'   (reads `alpha` from the `lambda_grid` `alpha` column), or
-#'   `"adaptive_lasso"`, or `"sparse_group_lasso"`. Default: `"lasso"`.
+#'   `"adaptive_lasso"`, or `"sparse_group_lasso"`, or `"rf"` (random forest
+#'   via `ranger`; requires `lambda_grid` from [auto_rf_threshold_grid()] or
+#'   `"auto"`). Default: `"lasso"`. `"rf"` is an experimental extension beyond
+#'   Python STABL: FDP+ calibration for random forests is empirical, not
+#'   guaranteed, and is validated separately (see the package's RF validation
+#'   study); it must be paired with model-X knockoff artificial features.
 #' @param family Character; `glmnet` response family (`"gaussian"`,
 #'   `"binomial"`, `"multinomial"`, or `"cox"`). Default: `"gaussian"`.
 #' @param n_bootstraps Positive integer; bootstrap iterations per lambda.
@@ -251,13 +256,18 @@ stabl_fit <- function(
   # ---- Lambda grid ----------------------------------------------------------
   if (identical(lambda_grid, "auto")) {
     if (verbose) message("Computing auto lambda grid...")
-    lambda_grid <- auto_lambda_grid(
-      x,
-      y,
-      family = family,
-      n_lambda = n_lambda,
-      l1_ratio = l1_ratio
-    )
+    lambda_grid <- if (identical(base_learner, "rf")) {
+      # RF sweeps an importance-threshold path, not a glmnet lambda path.
+      auto_rf_threshold_grid(x, y, n_grid = n_lambda, seed = random_state)
+    } else {
+      auto_lambda_grid(
+        x,
+        y,
+        family = family,
+        n_lambda = n_lambda,
+        l1_ratio = l1_ratio
+      )
+    }
   }
   if (!is.data.frame(lambda_grid)) {
     stop("`lambda_grid` must be a data.frame or \"auto\".", call. = FALSE)
@@ -309,6 +319,13 @@ stabl_fit <- function(
     x_fit             <- art_result$x_augmented
     noise_col_indices <- art_result$noise_col_indices
     artificial_provenance <- art_result$artificial_provenance
+  }
+
+  # D1 guardrail: permuted nulls are not fair importance competitors for a
+  # multivariate learner (see make_ranger_adapter).
+  if (identical(base_learner, "rf") &&
+      identical(artificial_type, "random_permutation")) {
+    .warn_rf_random_permutation_nulls()
   }
 
   # ---- Sparse-group feature groups -----------------------------------------
@@ -446,7 +463,8 @@ stabl_fit <- function(
       explore               = explore,
       n_explore             = as.integer(n_explore),
       feature_names         = feat_names,
-      n_features_in_        = n_features
+      n_features_in_        = n_features,
+      n_bootstraps          = as.integer(n_bootstraps)
     ),
     class = "stabl_fit"
   )
@@ -806,8 +824,12 @@ stabl_fit <- function(
       alpha_fixed         = NULL,
       bootstrap_threshold = .BOOTSTRAP_COEF_THRESHOLD
     ),
+    rf = .make_ranger_batch_adapter(
+      family    = family,
+      num_trees = 500L
+    ),
     stop(
-      "`base_learner` must be one of: \"lasso\", \"elastic_net\", \"adaptive_lasso\", \"sparse_group_lasso\".",
+      "`base_learner` must be one of: \"lasso\", \"elastic_net\", \"adaptive_lasso\", \"sparse_group_lasso\", \"rf\".",
       call. = FALSE
     )
   )

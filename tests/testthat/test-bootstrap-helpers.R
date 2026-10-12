@@ -1,6 +1,6 @@
 test_that("classic_bootstrap_indices returns requested size", {
   y <- c(0, 1, 0, 1, 0, 1)
-  idx <- classic_bootstrap_indices(y = y, n_subsamples = 4, replace = FALSE, seed = 1)
+  idx <- classic_bootstrap_indices(y = y, n_subsamples = 4, replace = FALSE, random_state = 1)
 
   expect_length(idx, 4)
   expect_true(all(idx >= 1 & idx <= length(y)))
@@ -22,7 +22,7 @@ test_that("classic_bootstrap_indices can stratify by outcome class", {
     n_subsamples = 19L,
     replace = FALSE,
     stratify = TRUE,
-    seed = 11L
+    random_state = 11L
   )
 
   expect_length(idx, 19L)
@@ -52,7 +52,7 @@ test_that("classic_bootstrap_indices can stratify by a multi-column design", {
     n_subsamples = 19L,
     replace = FALSE,
     strata = strata,
-    seed = 12L
+    random_state = 12L
   )
 
   observed <- table(interaction(strata[idx, ], drop = TRUE, sep = "\r"))
@@ -144,7 +144,7 @@ test_that("group_bootstrap_indices replace=FALSE never re-draws the same group",
   for (seed_val in c(1L, 7L, 42L, 99L, 200L)) {
     idx             <- group_bootstrap_indices(y = y, groups = groups,
                                               n_subsamples = 12L,
-                                              replace = FALSE, seed = seed_val)
+                                              replace = FALSE, random_state = seed_val)
     selected_groups <- groups[idx]
     group_counts    <- table(selected_groups)
     # Every sampled row belongs to a group; each group is present at most once
@@ -170,7 +170,7 @@ test_that("group_bootstrap_indices can stratify while preserving whole groups", 
     n_subsamples = 8L,
     replace = FALSE,
     stratify = TRUE,
-    seed = 22L
+    random_state = 22L
   )
 
   expect_true(all(table(y[idx]) >= 4L))
@@ -190,7 +190,7 @@ test_that("group_bootstrap_indices stratification requires class-pure groups", {
       groups = groups,
       n_subsamples = 2L,
       stratify = TRUE,
-      seed = 1L
+      random_state = 1L
     ),
     "exactly one realised stratum"
   )
@@ -206,7 +206,7 @@ test_that("group_bootstrap_indices stratified replacement can reuse groups", {
     n_subsamples = 6L,
     replace = TRUE,
     stratify = TRUE,
-    seed = 3L
+    random_state = 3L
   )
 
   expect_gte(length(idx), 6L)
@@ -219,7 +219,7 @@ test_that("classic_bootstrap_indices errors after max retries on impossible clas
   # has 2 classes, so the iterative retry loop must hit its cap and stop().
   y <- c(0L, rep(1L, 19L))   # 2-class population
   expect_error(
-    classic_bootstrap_indices(y = y, n_subsamples = 1L, replace = FALSE, seed = 1L),
+    classic_bootstrap_indices(y = y, n_subsamples = 1L, replace = FALSE, random_state = 1L),
     "could not draw a class-diverse subsample"
   )
 })
@@ -233,7 +233,7 @@ test_that("group_bootstrap_indices errors after max retries on impossible class 
   # n_subsamples = 1 → one group drawn (4 rows) → always single-class → error
   expect_error(
     group_bootstrap_indices(y = y, groups = groups, n_subsamples = 1L,
-                            replace = FALSE, seed = 1L),
+                            replace = FALSE, random_state = 1L),
     "could not draw a class-diverse subsample"
   )
 })

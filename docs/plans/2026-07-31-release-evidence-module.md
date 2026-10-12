@@ -84,7 +84,7 @@ implementation.
   2. Create the new, no-replace raw baseline directory
      `.claude/reviews/stabl_lw/re01-baseline-c7bd2f8-v1/`. Record porcelain-v2
      status, the tracked binary diff, source hashes, and a path/type/mode/size/
-     SHA-256 manifest for the preservation-only set: `.gitignore`, `CONTEXT.md`,
+     SHA-256 manifest for the preservation-only set: `.gitignore`, `docs/CONTEXT.md`,
      `docs/architecture/`, `docs/release/0.1.1-next-tasks.md`, `papers/`, and
      `.claude/reviews/stabl_lw/summary.md`.
   3. Limit RE-01 writes to the raw baseline directory,
@@ -594,7 +594,7 @@ The publication stop rule remains absolute:
 - **JSON dependency:** Release tooling requires `jsonlite`; normal package use
   should not. The Release Contract and Runtime Artifact make that requirement
   explicit.
-- **Dirty worktree:** `.gitignore`, `CONTEXT.md`,
+- **Dirty worktree:** `.gitignore`, `docs/CONTEXT.md`,
   `docs/release/0.1.1-next-tasks.md`, and `papers/` are pre-existing or
   user-owned work. Every implementation stage must compare status before and
   after and avoid broad staging or cleanup.

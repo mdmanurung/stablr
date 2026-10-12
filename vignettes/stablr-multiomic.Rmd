@@ -229,6 +229,12 @@ lambda_list <- list(
 )
 ```
 
+When you plan to cross-validate with `stabl_multiomic_cv()`, prefer
+`lambda_grid = "auto"` or derive grids from training data only. A grid
+computed on the full dataset leaks mild information into the cross-validated
+estimates; `"auto"` sidesteps this by building each fold's grid from its
+training data alone.
+
 ```{r multiomic-fit}
 multi_fit <- stabl_multiomic_train_validate(
   x_train_list    = ool_train$x_list,

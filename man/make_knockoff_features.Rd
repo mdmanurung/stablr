@@ -16,6 +16,10 @@ make_knockoff_features(x, n_injected, random_state = NULL)
 \value{
 Named list with elements \code{x_augmented}, \code{noise_col_indices}, and
 \code{artificial_provenance}; see \code{\link[=make_rp_features]{make_rp_features()}} for details.
+\code{artificial_provenance$standardization} records \code{standardized} (TRUE
+when the fixed-X construction ran, together with the \code{means} and \code{sds}
+used) and is \code{standardized = FALSE} with NULL \code{means}/\code{sds} when the
+random-permutation fallback was taken.
 }
 \description{
 Generates \strong{fixed-X} knockoff features via \code{knockoff::create.fixed()}, with
@@ -24,4 +28,24 @@ chunked construction did not establish a valid global knockoff design.
 Falls back to random-permutation features when the supported-dimensional
 knockoff constructor fails (e.g., rank-deficient input).
 }
+\details{
+\code{create.fixed()} documents its \code{x} argument as a \emph{normalized} n-by-p
+matrix, so \code{x} is standardized internally before the knockoff construction
+(each column centered and scaled by its sample standard deviation;
+zero-variance columns are centered only, i.e. left at scale 1).  The column
+means and standard deviations used are recorded in
+\code{artificial_provenance$standardization}.
+}
+\section{Caveat on bootstrap reuse}{
+
+Fixed-X knockoffs are generated once on the full design, so their
+exchangeability guarantee does not survive the row subsampling of the
+bootstrap loop: a knockoff row is only exchangeable with the matching
+original row of that same realized design.  When correlation structure
+matters (in particular with \code{sample_fraction < 1}), prefer the model-X
+modes \code{"knockoff_equi"} or \code{"knockoff_mvr"}, whose knockoff rows are
+i.i.d. draws from a fitted Gaussian model and remain valid under row
+subsampling.
+}
+
 \keyword{internal}

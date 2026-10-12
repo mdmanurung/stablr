@@ -11,6 +11,7 @@ group_bootstrap_indices(
   replace = FALSE,
   stratify = FALSE,
   strata = NULL,
+  random_state = NULL,
   seed = NULL
 )
 }
@@ -39,8 +40,13 @@ for one stratification factor, or a \code{data.frame}/matrix/list for a joint
 design across multiple factors.  Each group must map to exactly one
 realised stratum.}
 
-\item{seed}{Optional integer; passed to \code{\link[=set.seed]{set.seed()}} before sampling.
-\code{NULL} leaves the RNG state unchanged.}
+\item{random_state}{Optional integer; seed used for this draw.  The
+function does \strong{not} clobber the caller's global RNG state: the previous
+\code{.Random.seed} is restored on exit (via \code{\link[withr:local_seed]{withr::local_seed()}}).}
+
+\item{seed}{Deprecated; use \code{random_state} instead.  If supplied, a
+deprecation warning is emitted and the value is used as \code{random_state}
+when the latter is \code{NULL}.  It will be removed in a future release.}
 }
 \value{
 Integer vector of 1-based row indices into the training set.
@@ -77,7 +83,8 @@ until a class-diverse sample is obtained.
 # 3 groups with 4 samples each; binary outcome
 y      <- c(0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1)
 groups <- rep(c("G1", "G2", "G3"), each = 4L)
-idx    <- group_bootstrap_indices(y, groups, n_subsamples = 8L, seed = 1L)
+idx    <- group_bootstrap_indices(y, groups, n_subsamples = 8L,
+                                  random_state = 1L)
 table(groups[idx])  # whole groups only; count >= 8
 }
 \seealso{

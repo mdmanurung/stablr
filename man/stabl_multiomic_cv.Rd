@@ -44,7 +44,10 @@ each with row names as sample IDs.}
 
 \item{lambda_grid}{Either a shared lambda grid (\code{data.frame} or \code{"auto"})
 used for all omics, or a named list mapping each omic name to its own
-lambda grid.}
+lambda grid. Prefer \code{"auto"} (each fold's grid is derived from its
+training data) or a grid computed from training data only: a grid
+computed on the full data leaks mild information into the
+cross-validated estimates.}
 
 \item{v}{Number of folds. Must be at least 2.}
 

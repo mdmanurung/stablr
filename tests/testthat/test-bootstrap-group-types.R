@@ -48,7 +48,7 @@ for (spec in group_specs) {
       for (s in seq_len(50L)) {
         idx <- group_bootstrap_indices(y = y, groups = groups,
                                        n_subsamples = 18L,
-                                       replace = FALSE, seed = s)
+                                       replace = FALSE, random_state = s)
         .assert_no_fabricated_labels(idx, groups, paste(nm, "seed", s))
       }
     })
@@ -60,7 +60,7 @@ for (spec in group_specs) {
       for (s in seq_len(20L)) {
         idx <- group_bootstrap_indices(y = y, groups = groups,
                                        n_subsamples = 18L,
-                                       replace = FALSE, seed = s)
+                                       replace = FALSE, random_state = s)
         .assert_whole_groups_only(idx, groups, paste(nm, "seed", s))
       }
     })
@@ -79,7 +79,7 @@ test_that("group_bootstrap_indices does not fabricate labels when the eligible p
   for (s in seq_len(200L)) {
     idx <- group_bootstrap_indices(y = y, groups = groups,
                                    n_subsamples = 12L,  # = total: must hit all 3
-                                   replace = FALSE, seed = s)
+                                   replace = FALSE, random_state = s)
     .assert_no_fabricated_labels(idx, groups, paste("forced-singleton seed", s))
   }
 })
@@ -94,7 +94,7 @@ test_that("group_bootstrap_indices does not split groups when target falls insid
   for (s in seq_len(50L)) {
     idx <- group_bootstrap_indices(y = y, groups = groups,
                                    n_subsamples = 6L,
-                                   replace = FALSE, seed = s)
+                                   replace = FALSE, random_state = s)
     .assert_whole_groups_only(idx, groups, paste("mid-group seed", s))
     # Realised count must be a multiple of group size (4), and >= target
     expect_true(length(idx) %% 4L == 0L)

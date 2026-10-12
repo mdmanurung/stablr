@@ -11,6 +11,7 @@ classic_bootstrap_indices(
   class_weights = NULL,
   stratify = FALSE,
   strata = NULL,
+  random_state = NULL,
   seed = NULL
 )
 }
@@ -40,8 +41,13 @@ design across multiple factors.  Bootstrap samples are drawn within the
 interaction of all supplied columns.  When \code{NULL}, no stratification is
 used unless \code{stratify = TRUE}, in which case \code{y} is used as the strata.}
 
-\item{seed}{Optional integer; passed to \code{\link[=set.seed]{set.seed()}} before sampling for
-reproducibility.  \code{NULL} leaves the RNG state unchanged.}
+\item{random_state}{Optional integer; seed used for this draw.  The
+function does \strong{not} clobber the caller's global RNG state: the previous
+\code{.Random.seed} is restored on exit (via \code{\link[withr:local_seed]{withr::local_seed()}}).}
+
+\item{seed}{Deprecated; use \code{random_state} instead.  If supplied, a
+deprecation warning is emitted and the value is used as \code{random_state}
+when the latter is \code{NULL}.  It will be removed in a future release.}
 }
 \value{
 Integer vector of length \code{n_subsamples} containing 1-based row
@@ -72,12 +78,12 @@ classes.
 \examples{
 set.seed(42L)
 y <- c(rep(0, 15), rep(1, 15))  # balanced binary outcome
-idx <- classic_bootstrap_indices(y, n_subsamples = 20L, seed = 1L)
+idx <- classic_bootstrap_indices(y, n_subsamples = 20L, random_state = 1L)
 table(y[idx])  # class distribution in the bootstrap
 
 # Stratified sampling preserves class proportions
 idx_str <- classic_bootstrap_indices(y, n_subsamples = 20L,
-                                     stratify = TRUE, seed = 1L)
+                                     stratify = TRUE, random_state = 1L)
 table(y[idx_str])
 }
 \seealso{
