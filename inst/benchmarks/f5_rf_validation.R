@@ -18,12 +18,19 @@
 # and compare mean empirical FDP per configuration against the nominal 0.1.
 #
 # Honesty caveats, recorded in the outputs:
-# * Sandbox knockoff caveat: the local knockoff 0.3.6 build is degenerate
-#   (canonical create.fixed on a standardized matrix returns knockoffs with
-#   sd far from 1).  The script probes knockoff sanity at start and records
-#   the probe status; knockoff_equi configurations on a degenerate build are
-#   NOT evidence about model-X calibration and must be re-validated on CI
-#   with the CRAN knockoff build.
+# * Scale contract (0.2.1 hotfix): knockoff::create.fixed() column-normalizes
+#   its input and returns knockoffs on that unit-norm scale; stablr rescales
+#   them to the standardized design before use.  The start-of-run probe
+#   replicates the rescale and checks column sds ~ 1 plus the Gram identity
+#   Xk'Xk = X'X.  A probe failure invalidates the knockoff_equi rows.
+# * The lasso + knockoff_equi rows are expected to show FDP above nominal on
+#   this design: the knockoff pool itself is valid (direct exchangeability
+#   check -- knockoff nulls are selected at least as often as real nulls at
+#   every lambda), but a linear learner's stability frequencies for AR(1)
+#   correlated nulls overlap the knockoff frequencies, so the min-FDP+
+#   threshold cannot reach 0.1.  FDP+ remains a conservative estimate of the
+#   realized FDP (measured: estimate 0.67 vs empirical 0.33-0.58).  The rf
+#   rows, which separate signals sharply, are the calibration evidence.
 # * FDP+ is a diagnostic minimizer, not a universal FDR guarantee; for the
 #   RF learner its calibration is purely empirical (plan item D1).
 # * Boruta baseline is included only if the Boruta package is installed
@@ -70,13 +77,19 @@ if (!has_ranger) stop("ranger is required for the F5 RF validation suite.")
 has_boruta <- requireNamespace("Boruta", quietly = TRUE)
 
 # ---- Knockoff sanity probe --------------------------------------------------
-# Canonical usage per knockoff docs: create.fixed on a *normalized* matrix.
+# Probes the SHIPPED contract: create.fixed() returns knockoffs on its
+# internal unit-norm column scale (entries ~ 1/sqrt(n)); stablr rescales
+# them by the standardized column norms before use.  The probe replicates
+# that rescale and requires column sds ~ 1 plus the Gram identity.
 probe_status <- tryCatch({
   set.seed(2026L)
   X0 <- scale(matrix(rnorm(200 * 20), 200, 20))
   kd <- knockoff::create.fixed(X0, sigma = 1)
-  sds <- apply(kd$Xk, 2, sd)
-  if (max(abs(sds - 1)) < 0.25) "ok" else "degenerate"
+  col_norms <- sqrt(colSums(X0^2))
+  Xk0 <- kd$Xk %*% diag(col_norms)
+  sds <- apply(Xk0, 2, sd)
+  gram_ok <- max(abs(crossprod(Xk0) - crossprod(X0))) < 1e-6
+  if (max(abs(sds - 1)) < 0.25 && gram_ok) "ok" else "degenerate"
 }, error = function(e) paste0("error: ", conditionMessage(e)))
 
 # ---- Synthetic design (mirrors tests/testthat/test-rf-adapter.R) ------------
@@ -236,12 +249,14 @@ lines <- c(
   "## Caveats",
   "",
   if (probe_status != "ok") paste0(
-    "- **Sandbox knockoff caveat:** the local knockoff build is degenerate (probe: ",
-    probe_status, "), so `knockoff_equi` rows here do NOT measure model-X knockoff ",
-    "calibration (stablr falls back to permutation nulls with a recorded provenance ",
-    "warning, or the knockoffs themselves are malformed). Re-run on CI with the CRAN ",
-    "knockoff build before drawing conclusions about `knockoff_equi` configs."
-  ) else "- Knockoff build passed the sanity probe.",
+    "- **Knockoff probe FAILED (probe: ", probe_status, "):** the fixed-X scale ",
+    "contract is violated in this environment, so `knockoff_equi` rows here do NOT ",
+    "measure model-X knockoff calibration. Re-run on CI with the CRAN knockoff ",
+    "build before drawing conclusions about `knockoff_equi` configs."
+  ) else paste0(
+    "- Knockoff build passed the sanity probe (rescaled create.fixed knockoffs: ",
+    "column sds ~ 1, Gram identity Xk'Xk = X'X exact to 1e-6)."
+  ),
   "- FDP+ is a diagnostic minimizer, not a universal FDR guarantee; for `rf` its calibration is purely empirical (plan D1) and is validated by this suite.",
   "- With `random_permutation` nulls, RF FDP+ is expected to be anti-conservative (permuted nulls do not receive the correlation leakage real nulls receive); the rf+permutation rows should show inflated empirical FDP relative to the knockoff rows on a sane knockoff build.",
   ""

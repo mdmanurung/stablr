@@ -256,9 +256,9 @@ make_knockoff_features <- function(x, n_injected, random_state = NULL) {
         # and the hard-coded sigma = 1 is consistent with the input scale.
         standardized <- .standardize_columns(x_chunk)
         augmented_rows <- FALSE
-        xk <- .with_linear_algebra_numerical_infeasibility(
+        knockoff_result <- .with_linear_algebra_numerical_infeasibility(
           withCallingHandlers(
-            knockoff::create.fixed(standardized$x, sigma = 1)$Xk,
+            knockoff::create.fixed(standardized$x, sigma = 1),
             warning = function(w) {
               if (grepl("Augmenting the model with extra rows",
                         conditionMessage(w), fixed = TRUE)) {
@@ -270,6 +270,17 @@ make_knockoff_features <- function(x, n_injected, random_state = NULL) {
           source = "knockoff::create.fixed",
           subclass = "stablr_knockoff_infeasible"
         )
+        # create.fixed() column-normalizes its input to unit Euclidean norm
+        # and returns BOTH $X (the normalized design) and $Xk (knockoffs on
+        # that normalized scale, entries ~ 1/sqrt(n)).  Pairing $Xk with the
+        # sd-1 standardized design would put the knockoffs at ~1/sqrt(n)
+        # scale -- invisible to the learner, anti-conservative FDP+ (F5
+        # benchmark: lasso+knockoff empirical FDP 0.665 pre-fix).  Rescale
+        # $Xk by the standardized column norms so that Xk'Xk = X'X and
+        # X'Xk = diag(s) hold on the scale actually shipped downstream.
+        col_norms <- sqrt(colSums(standardized$x^2))
+        xk <- knockoff_result$Xk %*% diag(col_norms)
+        colnames(xk) <- colnames(standardized$x)
         if (isTRUE(augmented_rows) || nrow(xk) != nrow(x_chunk)) {
           .abort_numerical_infeasibility(
             "stablr_knockoff_infeasible",
@@ -292,7 +303,8 @@ make_knockoff_features <- function(x, n_injected, random_state = NULL) {
           standardization = list(
             standardized = TRUE,
             means = standardized$means,
-            sds = standardized$sds
+            sds = standardized$sds,
+            knockoff_rescaled_to_standardized_scale = TRUE
           )
         )
       },
@@ -337,7 +349,13 @@ make_knockoff_features <- function(x, n_injected, random_state = NULL) {
   )
   fallback_histories <- list(chunk_result$fallback_history)
 
-  sel_idx <- sample.int(n = ncol(x_art_full), size = n_injected, replace = FALSE)
+  # Aligned selection: injected column k must be the artificial counterpart
+  # of feature sel_idx[k] -- the bootstrap accumulates scores positionally
+  # (real_rows vs art_rows) and the fixed-X / model-X knockoff exchangeability
+  # requires each knockoff to stay paired with its own feature.  A random
+  # FEATURE subset (sorted) keeps the null pool valid; a random column
+  # permutation of the knockoff matrix does not.
+  sel_idx <- sort(sample.int(n = ncol(x_art_full), size = n_injected, replace = FALSE))
   x_art   <- x_art_full[, sel_idx, drop = FALSE]
   selected_types <- type_map[sel_idx]
 
@@ -459,7 +477,13 @@ make_knockoff_equi_features <- function(x, n_injected, random_state = NULL) {
   )
   fallback_histories <- list(chunk_result$fallback_history)
 
-  sel_idx <- sample.int(n = ncol(x_art_full), size = n_injected, replace = FALSE)
+  # Aligned selection: injected column k must be the artificial counterpart
+  # of feature sel_idx[k] -- the bootstrap accumulates scores positionally
+  # (real_rows vs art_rows) and the fixed-X / model-X knockoff exchangeability
+  # requires each knockoff to stay paired with its own feature.  A random
+  # FEATURE subset (sorted) keeps the null pool valid; a random column
+  # permutation of the knockoff matrix does not.
+  sel_idx <- sort(sample.int(n = ncol(x_art_full), size = n_injected, replace = FALSE))
   x_art   <- x_art_full[, sel_idx, drop = FALSE]
   selected_types <- type_map[sel_idx]
 
@@ -617,7 +641,13 @@ make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
   )
   fallback_histories <- list(chunk_result$fallback_history)
 
-  sel_idx <- sample.int(n = ncol(x_art_full), size = n_injected, replace = FALSE)
+  # Aligned selection: injected column k must be the artificial counterpart
+  # of feature sel_idx[k] -- the bootstrap accumulates scores positionally
+  # (real_rows vs art_rows) and the fixed-X / model-X knockoff exchangeability
+  # requires each knockoff to stay paired with its own feature.  A random
+  # FEATURE subset (sorted) keeps the null pool valid; a random column
+  # permutation of the knockoff matrix does not.
+  sel_idx <- sort(sample.int(n = ncol(x_art_full), size = n_injected, replace = FALSE))
   x_art   <- x_art_full[, sel_idx, drop = FALSE]
   selected_types <- type_map[sel_idx]
 

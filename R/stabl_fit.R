@@ -18,10 +18,15 @@
 #'   (reads `alpha` from the `lambda_grid` `alpha` column), or
 #'   `"adaptive_lasso"`, or `"sparse_group_lasso"`, or `"rf"` (random forest
 #'   via `ranger`; requires `lambda_grid` from [auto_rf_threshold_grid()] or
-#'   `"auto"`). Default: `"lasso"`. `"rf"` is an experimental extension beyond
-#'   Python STABL: FDP+ calibration for random forests is empirical, not
-#'   guaranteed, and is validated separately (see the package's RF validation
-#'   study); it must be paired with model-X knockoff artificial features.
+#'   `"auto"`), or `"oblique_rf"` (oblique random forest via `aorsf`;
+#'   requires `lambda_grid` from [auto_oblique_threshold_grid()] or
+#'   `"auto"`). Default: `"lasso"`. `"rf"` and `"oblique_rf"` are experimental
+#'   extensions beyond Python STABL: FDP+ calibration for (oblique) random
+#'   forests is empirical, not guaranteed, and is validated separately (see
+#'   the package's RF validation study); they must be paired with model-X
+#'   knockoff artificial features. For `"oblique_rf"` the per-feature
+#'   selection frequencies are noisier than for `"rf"` because importance is
+#'   spread across the linear combinations used in each split.
 #' @param family Character; `glmnet` response family (`"gaussian"`,
 #'   `"binomial"`, `"multinomial"`, or `"cox"`). Default: `"gaussian"`.
 #' @param n_bootstraps Positive integer; bootstrap iterations per lambda.
@@ -259,6 +264,9 @@ stabl_fit <- function(
     lambda_grid <- if (identical(base_learner, "rf")) {
       # RF sweeps an importance-threshold path, not a glmnet lambda path.
       auto_rf_threshold_grid(x, y, n_grid = n_lambda, seed = random_state)
+    } else if (identical(base_learner, "oblique_rf")) {
+      # Oblique RF sweeps a negation-importance-threshold path (plan D2).
+      auto_oblique_threshold_grid(x, y, n_grid = n_lambda, seed = random_state)
     } else {
       auto_lambda_grid(
         x,
@@ -321,9 +329,10 @@ stabl_fit <- function(
     artificial_provenance <- art_result$artificial_provenance
   }
 
-  # D1 guardrail: permuted nulls are not fair importance competitors for a
-  # multivariate learner (see make_ranger_adapter).
-  if (identical(base_learner, "rf") &&
+  # D1/D2 guardrail: permuted nulls are not fair importance competitors for a
+  # multivariate learner (see make_ranger_adapter / make_aorsf_adapter).
+  if ((identical(base_learner, "rf") ||
+       identical(base_learner, "oblique_rf")) &&
       identical(artificial_type, "random_permutation")) {
     .warn_rf_random_permutation_nulls()
   }
@@ -828,8 +837,12 @@ stabl_fit <- function(
       family    = family,
       num_trees = 500L
     ),
+    oblique_rf = .make_aorsf_batch_adapter(
+      family    = family,
+      num_trees = 500L
+    ),
     stop(
-      "`base_learner` must be one of: \"lasso\", \"elastic_net\", \"adaptive_lasso\", \"sparse_group_lasso\", \"rf\".",
+      "`base_learner` must be one of: \"lasso\", \"elastic_net\", \"adaptive_lasso\", \"sparse_group_lasso\", \"rf\", \"oblique_rf\".",
       call. = FALSE
     )
   )

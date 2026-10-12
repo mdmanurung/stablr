@@ -64,6 +64,8 @@ reference:
   contents:
   - make_ranger_adapter
   - auto_rf_threshold_grid
+  - make_aorsf_adapter
+  - auto_oblique_threshold_grid
 
 - title: Environment Stability
   desc: ICP-inspired transportability workflow across environments (batches,

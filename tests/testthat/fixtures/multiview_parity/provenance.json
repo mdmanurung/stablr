@@ -1,0 +1,50 @@
+{
+  "fixture_set": "multiview_parity (improvement item F4)",
+  "generated_utc": "2026-10-12T14:05:23Z",
+  "reference_engine": {
+    "package": "multiview",
+    "version": "1.0",
+    "source": "CRAN"
+  },
+  "vendored_engine": {
+    "package": "stablr",
+    "files": "R/cooperative-*.R",
+    "patch_log": "inst/PATCHES.cooperative.md"
+  },
+  "r_version": "4.4.2",
+  "glmnet_version": "5.0",
+  "seed": 2026,
+  "inputs": "inputs.rds",
+  "design": {
+    "n": 80,
+    "p": 6,
+    "views": ["a", "b"],
+    "rho": 0.3,
+    "families": ["gaussian", "binomial"],
+    "weights": ["unit", "weighted"],
+    "offsets": ["zero", "nonzero", "separating"]
+  },
+  "parity_cases": ["reference_parity_gaussian.csv", "reference_parity_binomial.csv", "reference_parity_weighted.csv"],
+  "divergence_cases": {
+    "D4_B1": {
+      "patch": "offset subsetting in build_predmat",
+      "fixtures": ["reference_b1_predmat_offset.csv", "reference_b1_cv_offset.csv"],
+      "upstream_1_0_behavior": "error: object 'offset_sub' not found"
+    },
+    "D5_B2": {
+      "patch": "halved-step warm-start residual weighting",
+      "fixture": "reference_b2_weighted_offset.csv",
+      "max_abs_coef_diff_vendored_vs_cran": 0,
+      "aggressive_offset_case": {
+        "completed": true,
+        "halving_warnings_vendored": "non-integer #successes in a binomial glm!",
+        "halving_warnings_cran": "non-integer #successes in a binomial glm!"
+      }
+    },
+    "D6_B3": {
+      "patch": "lower.limits plumbing to elnet.fit",
+      "fixture": "reference_b3_lower_limits.csv",
+      "max_abs_coef_diff_vendored_vs_cran": 0
+    }
+  }
+}

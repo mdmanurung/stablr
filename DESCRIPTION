@@ -1,6 +1,6 @@
 Package: stablr
 Title: Sparse and Reliable Biomarker Discovery in R
-Version: 0.2.0
+Version: 0.2.1
 Authors@R:
     c(
     person(given = "Mikaël", family = "Manurung", role = c("aut", "cre", "cph"),
@@ -33,7 +33,11 @@ Description: R-native implementation of STABL for sparse and reliable biomarker
     export utilities without a Python or tidymodels runtime dependency. The
     STABL method is described by
     Hédou et al. (2024) <doi:10.1038/s41587-023-02033-x>, and cooperative
-    learning by Ding et al. (2022) <doi:10.1073/pnas.2202113119>.
+    learning by Ding et al. (2022) <doi:10.1073/pnas.2202113119>. The
+    cooperative-learning backend (R/cooperative-*.R) is a vendored, modified
+    fork of CRAN multiview 1.0 (GPL-2); the full attribution and the
+    machine-readable divergence log ship as inst/COPYING.cooperative and
+    inst/PATCHES.cooperative.md.
 License: GPL (>= 2)
 URL: https://mdmanurung.github.io/stablr/,
     https://github.com/mdmanurung/stablr
@@ -55,6 +59,8 @@ LinkingTo:
     Rcpp,
     RcppEigen
 Suggests:
+    aorsf,
+    multiview,
     corpcor,
     covr,
     furrr,
@@ -83,6 +89,7 @@ Collate:
     'fdp_control.R'
     'learner_adapters.R'
     'learner_rf.R'
+    'learner_oblique_rf.R'
     'metrics.R'
     'stabl_fit.R'
     'cooperative-utils.R'
