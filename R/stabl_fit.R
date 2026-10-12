@@ -84,6 +84,12 @@
 #'   to derive sparse-group feature groups from pairwise correlations of
 #'   original features. Used only when
 #'   `base_learner = "sparse_group_lasso"`.
+#' @param knockoff_fallback Character; policy when a knockoff constructor
+#'   fails on a supported-dimensional input (audit A1).  `"stop"` (the
+#'   default) raises an error because a knockoff-to-random-permutation
+#'   fallback silently changes the FDP+ calibration target; `"allow"`
+#'   restores the pre-0.2.2 warn-and-fall-back behavior (recorded in the
+#'   artificial provenance's `fallback_history`).
 #'
 #' @return An S3 object of class `"stabl_fit"` containing:
 #'   \describe{
@@ -206,7 +212,8 @@ stabl_fit <- function(
     adaptive_gamma        = 1.0,
     adaptive_epsilon      = 1e-6,
     feature_groups        = NULL,
-    corr_group_threshold  = NULL
+    corr_group_threshold  = NULL,
+    knockoff_fallback     = c("stop", "allow")
 ) {
   # ---- Input coercion -------------------------------------------------------
   if (is.data.frame(x)) x <- as.matrix(x)
@@ -323,18 +330,28 @@ stabl_fit <- function(
     if (verbose) message("Generating artificial features (type=",
                          artificial_type, ")...")
     art_result        <- make_artificial_features(x, n_injected,
-                                                  artificial_type, art_seed)
+                                                  artificial_type, art_seed,
+                                                  knockoff_fallback)
     x_fit             <- art_result$x_augmented
     noise_col_indices <- art_result$noise_col_indices
     artificial_provenance <- art_result$artificial_provenance
   }
 
-  # D1/D2 guardrail: permuted nulls are not fair importance competitors for a
-  # multivariate learner (see make_ranger_adapter / make_aorsf_adapter).
+  # D1/D2 guardrail, extended per audit A2 (confirmatory guard): for the
+  # multivariate RF learners, FDP+ calibration is validated only with
+  # model-X knockoff artificial features.  Permuted nulls are not fair
+  # importance competitors (leakage asymmetry), and fixed-X knockoffs lose
+  # their exchangeability under the bootstrap row subsampling.  Both
+  # unvalidated pairings warn; the model-X pairings (`knockoff_equi` /
+  # `knockoff_mvr`) stay silent.
   if ((identical(base_learner, "rf") ||
        identical(base_learner, "oblique_rf")) &&
-      identical(artificial_type, "random_permutation")) {
-    .warn_rf_random_permutation_nulls()
+      !is.null(artificial_type)) {
+    if (identical(artificial_type, "random_permutation")) {
+      .warn_rf_random_permutation_nulls()
+    } else if (identical(artificial_type, "knockoff")) {
+      .warn_rf_fixedx_knockoff_nulls()
+    }
   }
 
   # ---- Sparse-group feature groups -----------------------------------------

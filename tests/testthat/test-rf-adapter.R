@@ -203,6 +203,26 @@ test_that("rf + random_permutation emits the anti-conservative FDP+ warning", {
   }
 })
 
+# Audit A2 (0.2.2): confirmatory guard for the fixed-X knockoff pairing.
+test_that("rf + fixed-X knockoff emits the unvalidated-pairing warning", {
+  skip_if_no_ranger()
+  skip_if_not_installed("knockoff")
+  d <- .make_rf_synthetic(n = 60L, p = 6L, seed = 51L)
+  expect_warning(
+    stabl_fit(d$x, d$y, lambda_grid = "auto", base_learner = "rf",
+              artificial_type = "knockoff",
+              n_bootstraps = 3L, random_state = 9L),
+    "not validated"
+  )
+  # The model-X pairings must stay silent (guard does not fire).
+  expect_no_warning(
+    suppressWarnings(stabl_fit(d$x, d$y, lambda_grid = "auto",
+                               base_learner = "rf",
+                               artificial_type = "knockoff_equi",
+                               n_bootstraps = 3L, random_state = 10L))
+  )
+})
+
 test_that("unknown base_learner error message lists rf", {
   xn <- matrix(rnorm(40), 10, 4, dimnames = list(paste0("s", 1:10),
                                                  paste0("f", 1:4)))

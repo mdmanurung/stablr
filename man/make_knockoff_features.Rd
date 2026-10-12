@@ -4,7 +4,12 @@
 \alias{make_knockoff_features}
 \title{Make Knockoff Artificial Features}
 \usage{
-make_knockoff_features(x, n_injected, random_state = NULL)
+make_knockoff_features(
+  x,
+  n_injected,
+  random_state = NULL,
+  knockoff_fallback = c("stop", "allow")
+)
 }
 \arguments{
 \item{x}{Numeric matrix of predictors (samples \eqn{\times} features).}
@@ -16,10 +21,10 @@ make_knockoff_features(x, n_injected, random_state = NULL)
 \value{
 Named list with elements \code{x_augmented}, \code{noise_col_indices}, and
 \code{artificial_provenance}; see \code{\link[=make_rp_features]{make_rp_features()}} for details.
-\code{artificial_provenance$standardization} records \code{standardized} (TRUE
-when the fixed-X construction ran, together with the \code{means} and \code{sds}
-used) and is \code{standardized = FALSE} with NULL \code{means}/\code{sds} when the
-random-permutation fallback was taken.
+\code{artificial_provenance$standardization} records the fixed-X scale
+contract (\code{knockoff_rescaled_to_input_scale = TRUE} when the fixed-X
+construction ran) and carries \code{standardized = FALSE} with NULL
+\code{means}/\code{sds} when the random-permutation fallback was taken.
 }
 \description{
 Generates \strong{fixed-X} knockoff features via \code{knockoff::create.fixed()}, with
@@ -29,11 +34,12 @@ Falls back to random-permutation features when the supported-dimensional
 knockoff constructor fails (e.g., rank-deficient input).
 }
 \details{
-\code{create.fixed()} documents its \code{x} argument as a \emph{normalized} n-by-p
-matrix, so \code{x} is standardized internally before the knockoff construction
-(each column centered and scaled by its sample standard deviation;
-zero-variance columns are centered only, i.e. left at scale 1).  The column
-means and standard deviations used are recorded in
+\code{create.fixed()} column-normalizes its input internally (scale only, no
+centering) and returns knockoffs on that internal unit-norm scale.  The
+knockoffs are therefore rescaled by the input column norms so that the
+shipped pair \verb{(x, xk)} satisfies the fixed-X Gram condition on the input's
+own scale: \verb{t(xk) xk = t(x) x} and \verb{t(x) xk = t(x) x - diag(s)} with
+\code{s_j >= 0}.  The normalization actually applied is recorded in
 \code{artificial_provenance$standardization}.
 }
 \section{Caveat on bootstrap reuse}{

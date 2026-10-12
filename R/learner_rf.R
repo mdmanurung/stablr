@@ -216,6 +216,24 @@ auto_rf_threshold_grid <- function(x, y, n_grid = 30L, num_trees = 500L,
   )
 }
 
+# Audit A2 (0.2.2): confirmatory guard for the fixed-X knockoff pairing.
+# Fixed-X knockoffs are generated once on the full design; their
+# exchangeability does not survive the bootstrap row subsampling, so the
+# FDP+ estimate for an RF learner paired with fixed-X knockoffs is not
+# validated (documented-invalid regime).
+.warn_rf_fixedx_knockoff_nulls <- function() {
+  warning(
+    "base_learner = \"rf\" with artificial_type = \"knockoff\" (fixed-X): ",
+    "fixed-X knockoffs are generated once on the full design, so their ",
+    "exchangeability does not survive the bootstrap row subsampling; the ",
+    "FDP+ estimate for this pairing is not validated. Use a model-X ",
+    "knockoff type instead (artificial_type = \"knockoff_equi\" or ",
+    "\"knockoff_mvr\"), whose knockoff rows are i.i.d. draws from a fitted ",
+    "Gaussian model and remain valid under row subsampling.",
+    call. = FALSE
+  )
+}
+
 # ---- Internal batch adapter ---------------------------------------------------
 # Signature matches the other batch adapters:
 #   function(x, y, lambda_grid) -> logical matrix (n_features x n_lambdas)

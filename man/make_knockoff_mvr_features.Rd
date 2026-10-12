@@ -4,7 +4,12 @@
 \alias{make_knockoff_mvr_features}
 \title{Make Model-X MVR Knockoff Artificial Features}
 \usage{
-make_knockoff_mvr_features(x, n_injected, random_state = NULL)
+make_knockoff_mvr_features(
+  x,
+  n_injected,
+  random_state = NULL,
+  knockoff_fallback = c("stop", "allow")
+)
 }
 \arguments{
 \item{x}{Numeric matrix of predictors (samples \eqn{\times} features).}
