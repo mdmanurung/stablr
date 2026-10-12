@@ -1,3 +1,40 @@
+# stablr 0.2.2
+
+## Audit hotfixes (source audit of 0.2.1, PR #3 follow-up)
+
+- **Fixed-X shipped-pair scale contract completed (flagged behavior
+  change):** 0.2.1 rescaled the fixed-X knockoffs to the *standardized*
+  design but still shipped them next to the caller's *raw* matrix — a
+  mismatched pair whenever input columns were heterogeneous.  The
+  construction now runs on the raw design (create.fixed normalizes
+  internally, scale only) and the knockoffs are back-transformed by the
+  input column norms, so the shipped pair `(x, xk)` satisfies the fixed-X
+  Gram condition on the input's own scale: `t(xk) xk = t(x) x` exactly and
+  `t(x) xk = t(x) x - diag(s)` with `s_j >= 0`.  The real block is
+  untouched; the pre-construction centering/scaling step is removed.
+  Gram/cross-Gram identities and paired-block scale matching are now
+  asserted on the actual `x_augmented` matrix under heterogeneous scales
+  (column sds 0.01-100).  Provenance field
+  `knockoff_rescaled_to_standardized_scale` is replaced by
+  `knockoff_rescaled_to_input_scale`.
+- **Windows CI fixtures:** `.gitattributes` now enforces LF (and marks
+  `.rds` binary) for the `multiview_parity` fixtures; the Windows
+  `R-CMD-check` manifest failures were checkout line-ending conversion,
+  not hash drift.
+- **pkgdown index:** the `stablr-environments` vignette and the
+  `print.stabl_env_stability` topic are indexed; the site builds clean.
+- **Oblique-RF tests:** a stale probe (measuring `create.fixed`'s internal
+  unit-norm scale against a sd ~ 1 expectation, and gating a *model-X*
+  assertion on a *fixed-X* build check) was removed; the `knockoff_equi`
+  signal-recovery assertion now runs wherever the knockoff package is
+  installed.
+- **0.2.1 claim corrections:** the F5 measurement of empirical FDP 0.665
+  was for lasso + *model-X equicorrelated* knockoffs (not fixed-X), and the
+  "invisible to the learner" causal statement is moderated: for the lasso
+  backend, glmnet's internal standardization moderates the selection-level
+  impact of a scale mismatch.  The contract violation remains the reason
+  for the fix; the 0.2.1 notes above are corrected in place.
+
 # stablr 0.2.1
 
 ## Fixed-X knockoff scale and alignment fix (flagged behavior change)
@@ -5,11 +42,14 @@
 - **Scale contract:** `knockoff::create.fixed()` column-normalizes its input
   and returns knockoffs on that internal scale (entries ~ 1/√n).  The fixed-X
   path previously paired these knockoffs with the sd-1 standardized design,
-  making the knockoffs ~√n times too small — effectively invisible to the
-  learner and anti-conservative for FDP+ (the F5 benchmark measured empirical
-  FDP 0.665 for lasso + fixed-X knockoff at nominal 0.1).  Knockoffs are now
-  rescaled by the standardized column norms so that `t(Xk) Xk = t(X) X` holds
-  exactly on the scale shipped downstream.  Fits using fixed-X knockoffs
+  violating the fixed-X construction contract (the paired blocks lived on
+  different scales).  Knockoffs are now rescaled so that `t(Xk) Xk = t(X) X`
+  holds on the paired scale.  (0.2.2 correction: the F5 measurement of
+  empirical FDP 0.665 cited here was for lasso + *model-X equicorrelated*
+  knockoffs, not fixed-X; and for the lasso backend the selection-level
+  impact of a scale mismatch is moderated by `glmnet`'s internal
+  standardization — the contract violation, not a measured FDP figure, is
+  the reason for this fix.)  Fits using fixed-X knockoffs
   (`artificial_type = "knockoff"`) may select different features, and FDP+
   estimates on such fits change.
 - **Column alignment:** artificial features are now shipped in aligned order
