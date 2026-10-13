@@ -1,0 +1,129 @@
+---
+title: "Getting started with stabl"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with stabl}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment  = "#>",
+  fig.width  = 6,
+  fig.height = 4
+)
+set.seed(42)
+```
+
+## One function, one answer
+
+`stabl()` is the one-stop-shop entry point to **stablr**.  You give it a
+table of features and an outcome; it runs STABL with statistically safe
+defaults and returns an object that tells you, in plain language, which
+features were selected and how reliable the selection is estimated to be.
+
+That is the whole contract:
+
+```{r, eval = FALSE}
+fit <- stabl(my_data, y = "response")
+fit
+```
+
+Everything else in the package is available when you need more control —
+see "The expert layer" below.
+
+## A worked example
+
+We simulate a small proteomic-style dataset: 60 samples, 8 features, of
+which two truly drive the outcome.
+
+```{r data}
+set.seed(1L)
+df <- data.frame(
+  m1 = rnorm(60), m2 = rnorm(60), m3 = rnorm(60), m4 = rnorm(60),
+  m5 = rnorm(60), n1 = rnorm(60), n2 = rnorm(60), n3 = rnorm(60)
+)
+df$response <- 0.9 * df$m1 + 0.9 * df$m2 + rnorm(60, sd = 0.4)
+```
+
+Fit STABL.  Here we lower the number of bootstraps so the vignette knits
+quickly; the default (`n_bootstraps = 1000`) is what you should use in
+practice.
+
+```{r fit, message = FALSE}
+library(stablr)
+fit <- stabl(df, y = "response", n_bootstraps = 200L, random_state = 1L)
+```
+
+Printing the fit gives the plain-language answer:
+
+```{r print}
+fit
+```
+
+The selected features, as a character vector:
+
+```{r names}
+feature_names(fit)
+```
+
+`summary()` adds the stability threshold and the FDP+ estimate;
+`plot()` draws the stability paths and the FDP+ curve:
+
+```{r summary}
+summary(fit)
+```
+
+```{r plot, fig.width = 7, fig.height = 5}
+plot(fit)
+```
+
+## What `stabl()` does for you
+
+| Decision | Default chosen | Why |
+|---|---|---|
+| Artificial features | model-X knockoffs (`knockoff_equi`) | the pairing validated for FDP+ calibration; the raw `random_permutation` default of the expert interface is anti-conservative for multivariate learners |
+| Calibration | FDP+ on (no fixed `hard_threshold`) | the threshold is chosen to control the estimated false discovery proportion rather than fixed by hand |
+| Knockoff failure | `knockoff_fallback = "stop"` | a silent fallback would silently change what the FDP+ estimates mean |
+| Lambda grid | automatic | a sensible grid is derived from the data |
+
+Any expert argument — `artificial_proportion`, `sample_fraction`,
+`sample_groups`, a custom adapter — is one `...` away:
+
+```{r, eval = FALSE}
+fit <- stabl(df, y = "response", base_learner = "elastic_net",
+             artificial_proportion = 0.5)
+```
+
+## The expert layer
+
+`stabl()` is a thin, opinionated wrapper around `stabl_fit()`, the expert
+interface with full control over all arguments (lambda grids, bootstrap
+design, thresholds, learner adapters, grouping).  Every `stabl()` result
+is also a valid `stabl_fit` object, so the whole expert toolkit applies
+unchanged:
+
+```{r expert}
+# accessors (identical on stabl and stabl_fit objects)
+head(get_stabl_scores(fit))
+get_fdrs(fit)
+
+# the multiomic workflows, metrics, and plotting helpers all accept
+# stabl_fit objects — including the one you just built with stabl()
+class(fit)
+```
+
+Read `?stabl_fit` for the full expert interface, and the other vignettes
+for multi-omic workflows, nested cross-validation, and environment
+stability.
+
+## If you used the package before 0.3.0
+
+Nothing is removed.  A handful of ambiguous names were renamed
+(`get_feature_names_out()` is now `get_feature_names()`,
+`stacked_multi_omic()` is now `stabl_multiomic_stacked()`,
+`jaccard_matrix()` is now `jaccard_similarity_matrix()`, and so on — see
+`NEWS.md` for the full table).  The old names still work: each warns once
+and delegates to the new name.

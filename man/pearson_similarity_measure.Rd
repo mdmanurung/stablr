@@ -2,32 +2,21 @@
 % Please edit documentation in R/metrics.R
 \name{pearson_similarity_measure}
 \alias{pearson_similarity_measure}
-\title{Summary Statistic of Pearson Similarity Values}
+\title{Deprecated: use \code{\link[=pearson_similarity_summary]{pearson_similarity_summary()}}}
 \usage{
 pearson_similarity_measure(list_of_lists, d, stat = "median")
 }
-\arguments{
-\item{list_of_lists}{A list of character/integer vectors, one per run.}
-
-\item{d}{Integer; total number of candidate features.}
-
-\item{stat}{Character; \code{"median"} (default) or \code{"mean"}.}
-}
-\value{
-A named list with \code{statistic} and \code{err} (see
-\code{\link[=adjusted_similarity_measure]{adjusted_similarity_measure()}} for the exact definitions).
-}
 \description{
-Convenience wrapper analogous to \code{\link[=adjusted_similarity_measure]{adjusted_similarity_measure()}} but
-using the Pearson-corrected similarity.  See \code{\link[=pearson_similarity]{pearson_similarity()}} for a
-description of the underlying metric and when to prefer it over the
-adjusted similarity.
+\code{pearson_similarity_measure()} is deprecated and will be removed in a
+future release; use \code{\link[=pearson_similarity_summary]{pearson_similarity_summary()}} instead.
 }
 \examples{
-sets <- list(c("f1","f2","f3"), c("f2","f3","f4"), c("f1","f3","f5"))
-pearson_similarity_measure(sets, d = 10L)
-pearson_similarity_measure(sets, d = 10L, stat = "mean")
+sets <- list(c("f1", "f2", "f3"), c("f2", "f3", "f4"), c("f1", "f3", "f5"))
+# warns; use pearson_similarity_summary()
+same <- suppressWarnings(identical(
+  pearson_similarity_measure(sets, d = 10L),
+  pearson_similarity_summary(sets, nb_total_elements = 10L)
+))
+stopifnot(same)
 }
-\seealso{
-\code{\link[=pearson_similarity_values]{pearson_similarity_values()}}, \code{\link[=adjusted_similarity_measure]{adjusted_similarity_measure()}}
-}
+\keyword{internal}

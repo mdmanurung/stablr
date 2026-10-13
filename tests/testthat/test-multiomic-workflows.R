@@ -285,17 +285,17 @@ test_that("stabl_multiomic_cv errors when folds exceed grouped units", {
 })
 
 # ---------------------------------------------------------------------------
-# stacked_multi_omic tests
+# stabl_multiomic_stacked tests
 # ---------------------------------------------------------------------------
 
-test_that("stacked_multi_omic returns correct structure for binary task", {
+test_that("stabl_multiomic_stacked returns correct structure for binary task", {
   set.seed(7)
   y <- rep(c(0L, 1L), 10)
   preds <- data.frame(
     omic_a = y + rnorm(20, sd = 0.4),
     omic_b = y + rnorm(20, sd = 1.0)
   )
-  res <- stacked_multi_omic(preds, y, task_type = "binary",
+  res <- stabl_multiomic_stacked(preds, y, task_type = "binary",
                              n_iter = 500L, random_state = 42L)
 
   expect_named(res, c("predictions", "weights", "score"))
@@ -307,7 +307,7 @@ test_that("stacked_multi_omic returns correct structure for binary task", {
   expect_true(res$score > 0.5)            # should be better than chance
 })
 
-test_that("stacked_multi_omic returns correct structure for regression task", {
+test_that("stabl_multiomic_stacked returns correct structure for regression task", {
   set.seed(8)
   n <- 30L
   y <- rnorm(n)
@@ -315,40 +315,40 @@ test_that("stacked_multi_omic returns correct structure for regression task", {
     omic_a = y + rnorm(n, sd = 0.3),
     omic_b = y + rnorm(n, sd = 1.2)
   )
-  res <- stacked_multi_omic(preds, y, task_type = "regression",
+  res <- stabl_multiomic_stacked(preds, y, task_type = "regression",
                              n_iter = 500L, random_state = 99L)
 
   expect_true(res$score > 0)              # positive R² expected
   expect_equal(length(res$weights$Associated_weight), 2L)
 })
 
-test_that("stacked_multi_omic is reproducible with random_state", {
+test_that("stabl_multiomic_stacked is reproducible with random_state", {
   set.seed(1)
   y <- rep(c(0L, 1L), 8)
   preds <- data.frame(a = y + rnorm(16), b = y + rnorm(16))
 
-  r1 <- stacked_multi_omic(preds, y, task_type = "binary",
+  r1 <- stabl_multiomic_stacked(preds, y, task_type = "binary",
                             n_iter = 200L, random_state = 77L)
-  r2 <- stacked_multi_omic(preds, y, task_type = "binary",
+  r2 <- stabl_multiomic_stacked(preds, y, task_type = "binary",
                             n_iter = 200L, random_state = 77L)
 
   expect_equal(r1$score, r2$score)
   expect_equal(r1$weights, r2$weights)
 })
 
-test_that("stacked_multi_omic handles NA predictions per-row", {
+test_that("stabl_multiomic_stacked handles NA predictions per-row", {
   y <- c(0L, 1L, 0L, 1L)
   preds <- data.frame(
     omic_a = c(0.1, 0.9, 0.2, 0.8),
     omic_b = c(NA,  0.8, NA, 0.7)
   )
-  res <- stacked_multi_omic(preds, y, task_type = "binary",
+  res <- stabl_multiomic_stacked(preds, y, task_type = "binary",
                              n_iter = 200L, random_state = 5L)
   # Rows 1 and 3 have NA in omic_b — stacked prediction should still be non-NA
   expect_false(any(is.na(res$predictions[["Stacked Gen. Predictions"]])))
 })
 
-test_that("stacked_multi_omic supports multiclass probability stacking", {
+test_that("stabl_multiomic_stacked supports multiclass probability stacking", {
   set.seed(9)
   y <- factor(rep(c("A", "B", "C"), each = 5L))
   ids <- paste0("s", seq_along(y))
@@ -362,7 +362,7 @@ test_that("stacked_multi_omic supports multiclass probability stacking", {
   preds <- list(omic_a = make_probs(0.05), omic_b = make_probs(0.25))
   names(y) <- ids
 
-  res <- stacked_multi_omic(preds, y, task_type = "multiclass",
+  res <- stabl_multiomic_stacked(preds, y, task_type = "multiclass",
                             n_iter = 200L, random_state = 9L)
 
   expect_named(res, c("predictions", "weights", "score", "log_loss", "levels"))
@@ -374,7 +374,7 @@ test_that("stacked_multi_omic supports multiclass probability stacking", {
   expect_true(res$log_loss < 1)
 })
 
-test_that("stacked_multi_omic errors when multiclass labels are absent from probability columns", {
+test_that("stabl_multiomic_stacked errors when multiclass labels are absent from probability columns", {
   y <- factor(c("A", "B", "C"))
   ids <- paste0("s", seq_along(y))
   names(y) <- ids
@@ -390,45 +390,45 @@ test_that("stacked_multi_omic errors when multiclass labels are absent from prob
   )
 
   expect_error(
-    stacked_multi_omic(preds, y, task_type = "multiclass",
+    stabl_multiomic_stacked(preds, y, task_type = "multiclass",
                        n_iter = 5L, random_state = 99L),
     "All multiclass `y` labels must be present"
   )
 })
 
-test_that("stacked_multi_omic rejects invalid n_iter values", {
+test_that("stabl_multiomic_stacked rejects invalid n_iter values", {
   preds <- data.frame(a = c(0.1, 0.9, 0.2, 0.8), b = c(0.2, 0.8, 0.3, 0.7))
   y <- c(0L, 1L, 0L, 1L)
 
-  expect_error(stacked_multi_omic(preds, y, task_type = "binary", n_iter = 0L), "n_iter")
-  expect_error(stacked_multi_omic(preds, y, task_type = "binary", n_iter = 1.5), "n_iter")
-  expect_error(stacked_multi_omic(preds, y, task_type = "binary", n_iter = NA_integer_), "n_iter")
-  expect_error(stacked_multi_omic(preds, y, task_type = "binary", n_iter = "5"), "n_iter")
+  expect_error(stabl_multiomic_stacked(preds, y, task_type = "binary", n_iter = 0L), "n_iter")
+  expect_error(stabl_multiomic_stacked(preds, y, task_type = "binary", n_iter = 1.5), "n_iter")
+  expect_error(stabl_multiomic_stacked(preds, y, task_type = "binary", n_iter = NA_integer_), "n_iter")
+  expect_error(stabl_multiomic_stacked(preds, y, task_type = "binary", n_iter = "5"), "n_iter")
 })
 
-# Characterization tests for stacked_multi_omic loop-invariant hoist (Item 12).
+# Characterization tests for stabl_multiomic_stacked loop-invariant hoist (Item 12).
 # Pin exact score and weights for binary and regression tasks so that the
 # is_obs / y_na_mask hoist can be verified to produce bit-identical output.
 
-test_that("stacked_multi_omic binary: loop-invariant hoist produces bit-identical output", {
+test_that("stabl_multiomic_stacked binary: loop-invariant hoist produces bit-identical output", {
   set.seed(7L)
   n <- 40L
   preds <- data.frame(A = rnorm(n), B = rnorm(n), C = rnorm(n))
   preds[c(2L, 5L), "B"] <- NA
   y <- rbinom(n, 1L, 0.5)
-  res <- stacked_multi_omic(preds, y, task_type = "binary",
+  res <- stabl_multiomic_stacked(preds, y, task_type = "binary",
                             n_iter = 2000L, random_state = 99L)
   expect_equal(res$score, 0.5652173913, tolerance = 1e-9)
   expect_equal(res$weights$Associated_weight,
                c(0.4014557484, 0.1468211692, 6.7493813089), tolerance = 1e-9)
 })
 
-test_that("stacked_multi_omic regression: loop-invariant hoist produces bit-identical output", {
+test_that("stabl_multiomic_stacked regression: loop-invariant hoist produces bit-identical output", {
   set.seed(13L)
   n <- 30L
   preds <- data.frame(A = rnorm(n), B = rnorm(n))
   y <- rnorm(n)
-  res <- stacked_multi_omic(preds, y, task_type = "regression",
+  res <- stabl_multiomic_stacked(preds, y, task_type = "regression",
                             n_iter = 2000L, random_state = 55L)
   expect_equal(res$score, 0.010970174330076, tolerance = 1e-12)
   expect_equal(res$weights$Associated_weight,
@@ -473,7 +473,7 @@ test_that("stacked_multi_omic regression: loop-invariant hoist produces bit-iden
   )
 }
 
-test_that("stacked_multi_omic batched binary path matches slow scalar reference with missing rows", {
+test_that("stabl_multiomic_stacked batched binary path matches slow scalar reference with missing rows", {
   set.seed(451)
   n <- 32L
   y <- rbinom(n, 1L, 0.45)
@@ -485,7 +485,7 @@ test_that("stacked_multi_omic batched binary path matches slow scalar reference 
   preds[c(2L, 7L, 19L), "omic_b"] <- NA_real_
   preds[5L, ] <- NA_real_
 
-  fast <- stacked_multi_omic(preds, y, task_type = "binary", n_iter = 300L, random_state = 451L)
+  fast <- stabl_multiomic_stacked(preds, y, task_type = "binary", n_iter = 300L, random_state = 451L)
   slow <- .slow_stacked_multi_omic_scalar_reference(preds, y, "binary", 300L, 451L)
 
   expect_equal(fast$score, slow$score, tolerance = 1e-12)
@@ -493,7 +493,7 @@ test_that("stacked_multi_omic batched binary path matches slow scalar reference 
   expect_equal(fast$predictions[["Stacked Gen. Predictions"]], slow$predictions, tolerance = 1e-12)
 })
 
-test_that("stacked_multi_omic batched regression path matches slow scalar reference with all-NA rows", {
+test_that("stabl_multiomic_stacked batched regression path matches slow scalar reference with all-NA rows", {
   set.seed(452)
   n <- 28L
   y <- rnorm(n)
@@ -505,7 +505,7 @@ test_that("stacked_multi_omic batched regression path matches slow scalar refere
   preds[c(4L, 11L), ] <- NA_real_
   preds[c(3L, 9L), "omic_c"] <- NA_real_
 
-  fast <- stacked_multi_omic(preds, y, task_type = "regression", n_iter = 300L, random_state = 452L)
+  fast <- stabl_multiomic_stacked(preds, y, task_type = "regression", n_iter = 300L, random_state = 452L)
   slow <- .slow_stacked_multi_omic_scalar_reference(preds, y, "regression", 300L, 452L)
 
   expect_equal(fast$score, slow$score, tolerance = 1e-12)
@@ -513,11 +513,11 @@ test_that("stacked_multi_omic batched regression path matches slow scalar refere
   expect_equal(fast$predictions[["Stacked Gen. Predictions"]], slow$predictions, tolerance = 1e-12)
 })
 
-test_that("stacked_multi_omic batched scalar path keeps first strict incumbent on ties", {
+test_that("stabl_multiomic_stacked batched scalar path keeps first strict incumbent on ties", {
   y <- rep(c(0L, 1L), 12L)
   preds <- data.frame(omic_a = y, omic_b = y, omic_c = y)
 
-  fast <- stacked_multi_omic(preds, y, task_type = "binary", n_iter = 20L, random_state = 453L)
+  fast <- stabl_multiomic_stacked(preds, y, task_type = "binary", n_iter = 20L, random_state = 453L)
   slow <- .slow_stacked_multi_omic_scalar_reference(preds, y, "binary", 20L, 453L)
 
   expect_equal(fast$score, slow$score, tolerance = 1e-12)

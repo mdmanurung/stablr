@@ -22,7 +22,9 @@ navbar:
     articles:
       text: Vignettes
       menu:
-      - text: Quick start
+      - text: Getting started with stabl
+        href: articles/stablr-getting-started.html
+      - text: Quick start (expert interface)
         href: articles/stablr-intro.html
       - text: Multi-omic OOL workflow
         href: articles/stablr-multiomic.html
@@ -46,8 +48,20 @@ reference:
   contents:
   - stablr-package
 
+- title: Getting started
+  desc: The one-stop-shop entry point for new users — a data.frame in, a
+    plain-language selection out.
+  contents:
+  - stabl
+  - print.stabl
+  - summary.stabl
+  - plot.stabl
+  - support
+  - feature_names
+
 - title: Core STABL Engine
-  desc: Fit single-matrix STABL selectors and compute FDP+ thresholds.
+  desc: Fit single-matrix STABL selectors and compute FDP+ thresholds
+    (expert interface).
   contents:
   - stabl_fit
   - auto_lambda_grid
@@ -86,13 +100,13 @@ reference:
   contents:
   - validate_sample_alignment
   - validate_multiomic_inputs
-  - classic_bootstrap_indices
+  - sample_bootstrap_indices
   - group_bootstrap_indices
 
 - title: Accessors
   contents:
   - get_support
-  - get_feature_names_out
+  - get_feature_names
   - get_fdrs
   - transform_stabl
   - get_stabl_scores
@@ -106,7 +120,7 @@ reference:
   - stabl_multiomic_train_validate
   - stabl_multiomic_cv
   - stabl_multiomic_nested_cv
-  - stacked_multi_omic
+  - stabl_multiomic_stacked
   - load_ool_data
 
 - title: Visualization
@@ -137,21 +151,35 @@ reference:
 - title: Selection Similarity Metrics
   contents:
   - jaccard_similarity
-  - jaccard_matrix
+  - jaccard_similarity_matrix
   - adjusted_similarity
-  - adjusted_similarity_values
-  - adjusted_similarity_measure
+  - adjusted_similarity_pairwise
+  - adjusted_similarity_summary
   - pearson_similarity
-  - pearson_similarity_values
-  - pearson_similarity_measure
+  - pearson_similarity_pairwise
+  - pearson_similarity_summary
   - fdr_similarity
   - tpr_similarity
   - fscore_similarity
+
+- title: Deprecated names
+  desc: Old names kept as deprecation shims; they warn once and delegate to
+    the replacements above.
+  contents:
+  - jaccard_matrix
+  - adjusted_similarity_values
+  - adjusted_similarity_measure
+  - pearson_similarity_values
+  - pearson_similarity_measure
+  - get_feature_names_out
+  - classic_bootstrap_indices
+  - stacked_multi_omic
 
 articles:
 - title: Workflows
   navbar: ~
   contents:
+  - stablr-getting-started
   - stablr-intro
   - stablr-multiomic
   - stablr-tcga

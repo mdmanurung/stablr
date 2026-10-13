@@ -20,6 +20,7 @@ stabl_fit(
   fdr_threshold_range = seq(0, 0.99, by = 0.01),
   explore = FALSE,
   n_explore = 5L,
+  sample_groups = NULL,
   groups = NULL,
   stratify_bootstrap = FALSE,
   bootstrap_strata = NULL,
@@ -95,9 +96,13 @@ back to the top \code{n_explore} features.  Default: \code{FALSE}.}
 
 \item{n_explore}{Positive integer; fallback feature count.  Default: \code{5L}.}
 
-\item{groups}{Named vector of group IDs (same names as \code{rownames(x)}) or
-\code{NULL}.  When supplied, \code{\link[=group_bootstrap_indices]{group_bootstrap_indices()}} is used instead of
-\code{\link[=classic_bootstrap_indices]{classic_bootstrap_indices()}}.  Default: \code{NULL}.}
+\item{sample_groups}{Named vector of group IDs (same names as
+\code{rownames(x)}) or \code{NULL}.  When supplied, \code{\link[=group_bootstrap_indices]{group_bootstrap_indices()}}
+is used instead of \code{\link[=sample_bootstrap_indices]{sample_bootstrap_indices()}} -- use this when
+samples are clustered (e.g., repeated measures, multiple sites) and
+bootstrap resampling must keep clusters intact.  Default: \code{NULL}.}
+
+\item{groups}{Deprecated; use \code{sample_groups} instead.}
 
 \item{stratify_bootstrap}{Logical; if \code{TRUE}, bootstrap subsamples are
 stratified by the outcome class.  This is intended for classification
@@ -212,7 +217,7 @@ fit_lasso <- stabl_fit(
   artificial_type = "random_permutation",
   random_state = 1L
 )
-get_feature_names_out(fit_lasso)
+get_feature_names(fit_lasso)
 
 # Adaptive lasso path
 fit_adaptive <- stabl_fit(
@@ -258,5 +263,5 @@ fit_multi <- suppressWarnings(stabl_fit(
   artificial_type = "random_permutation",
   random_state = 4L
 ))
-get_feature_names_out(fit_multi)
+get_feature_names(fit_multi)
 }

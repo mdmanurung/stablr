@@ -282,7 +282,7 @@ stabl_environment_stability <- function(x,
 # threshold anywhere), rather than failing the whole workflow.
 .pairwise_env_similarity <- function(env_fits) {
   supports <- tryCatch(
-    lapply(env_fits, get_feature_names_out),
+    lapply(env_fits, get_feature_names),
     error = function(e) NULL
   )
   if (is.null(supports)) {
@@ -302,7 +302,7 @@ stabl_environment_stability <- function(x,
       sim[i, j] <- adjusted_similarity(
         supports[[i]],
         supports[[j]],
-        nb_total_elements = n_features
+        n_universe = n_features
       )
     }
   }

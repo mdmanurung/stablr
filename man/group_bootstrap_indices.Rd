@@ -54,7 +54,7 @@ Integer vector of 1-based row indices into the training set.
 \description{
 Draws row indices for a single STABL bootstrap iteration by sampling
 \strong{groups} rather than individual samples.  Use this instead of
-\code{\link[=classic_bootstrap_indices]{classic_bootstrap_indices()}} whenever the training data contains repeated
+\code{\link[=sample_bootstrap_indices]{sample_bootstrap_indices()}} whenever the training data contains repeated
 measurements or known clusters (e.g. multiple time-points per subject,
 technical replicates, or family members).
 }
@@ -75,7 +75,7 @@ rows are \emph{not} trimmed.  This guarantees the strongest leakage prevention
 of a slightly variable subsample size.  When \code{replace = TRUE} the same
 group may be drawn multiple times (useful when there are very few groups).
 
-\strong{Degenerate bootstrap guard:} As with \code{\link[=classic_bootstrap_indices]{classic_bootstrap_indices()}}, if
+\strong{Degenerate bootstrap guard:} As with \code{\link[=sample_bootstrap_indices]{sample_bootstrap_indices()}}, if
 the final subsample contains only one unique class the function retries
 until a class-diverse sample is obtained.
 }
@@ -88,7 +88,7 @@ idx    <- group_bootstrap_indices(y, groups, n_subsamples = 8L,
 table(groups[idx])  # whole groups only; count >= 8
 }
 \seealso{
-\code{\link[=classic_bootstrap_indices]{classic_bootstrap_indices()}} for independent-sample data,
+\code{\link[=sample_bootstrap_indices]{sample_bootstrap_indices()}} for independent-sample data,
 \code{\link[=stabl_fit]{stabl_fit()}} which calls this sampler automatically when \code{groups} is
 supplied.
 }

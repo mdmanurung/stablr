@@ -1,8 +1,8 @@
 # Audit V-10: assert that the public accessors round-trip consistently.
-# Specifically, get_feature_names_out(fit) must equal
+# Specifically, get_feature_names(fit) must equal
 # names(get_support(fit))[get_support(fit)] for any threshold-resolution path.
 
-test_that("get_feature_names_out equals names(get_support())[get_support()]", {
+test_that("get_feature_names equals names(get_support())[get_support()]", {
   withr::local_seed(0)
   n <- 40L; p <- 6L
   x <- matrix(rnorm(n * p), nrow = n,
@@ -16,7 +16,7 @@ test_that("get_feature_names_out equals names(get_support())[get_support()]", {
                    random_state = 1L)
 
   mask <- get_support(fit)
-  expect_identical(get_feature_names_out(fit), names(mask)[mask])
+  expect_identical(get_feature_names(fit), names(mask)[mask])
 })
 
 test_that("accessor round-trip holds with hard_threshold override", {
@@ -33,7 +33,7 @@ test_that("accessor round-trip holds with hard_threshold override", {
                    random_state = 1L)
 
   mask_at_zero <- get_support(fit, new_hard_threshold = 0.001)
-  expect_identical(get_feature_names_out(fit, new_hard_threshold = 0.001),
+  expect_identical(get_feature_names(fit, new_hard_threshold = 0.001),
                    names(mask_at_zero)[mask_at_zero])
 })
 

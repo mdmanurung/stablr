@@ -84,7 +84,7 @@ the column-bound concatenation of all omic matrices in addition to the
 per-omic fits.  Results are returned in the \code{early_fusion} field.}
 
 \item{late_fusion}{Logical.  When \code{TRUE}, a downstream predictor is fitted
-per omic on its selected features, and \code{\link[=stacked_multi_omic]{stacked_multi_omic()}} combines the
+per omic on its selected features, and \code{\link[=stabl_multiomic_stacked]{stabl_multiomic_stacked()}} combines the
 per-omic predictions.  If no features are selected for an omic, late
 fusion falls back to class priors for multinomial tasks or the train-set
 mean for other tasks. The \code{task_type} (binary, regression, or multiclass)
@@ -99,8 +99,8 @@ Python-compatible algorithm.}
 \item{late_fusion_nfolds}{Number of stacking folds used in OOF mode.}
 
 \item{n_iter_lf}{Number of random weight draws passed to
-\code{\link[=stacked_multi_omic]{stacked_multi_omic()}} during late fusion.  Ignored when
-\code{late_fusion = FALSE}.  Naming note: \code{\link[=stacked_multi_omic]{stacked_multi_omic()}} calls this
+\code{\link[=stabl_multiomic_stacked]{stabl_multiomic_stacked()}} during late fusion.  Ignored when
+\code{late_fusion = FALSE}.  Naming note: \code{\link[=stabl_multiomic_stacked]{stabl_multiomic_stacked()}} calls this
 same quantity \code{n_iter}; the multiomic workflows expose it as \code{n_iter_lf}
 so that the \code{...} channel (forwarded to \code{\link[=stabl_fit]{stabl_fit()}}) stays free of
 name collisions.  \code{n_iter} itself is not a \code{\link[=stabl_fit]{stabl_fit()}} argument and is

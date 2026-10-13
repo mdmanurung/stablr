@@ -87,7 +87,7 @@ test_that("C4: summary.stabl_fit returns the documented fields with correct valu
   s <- summary(fit)
   expect_s3_class(s, "summary.stabl_fit")
   expect_type(s$selected_features, "character")
-  expect_setequal(s$selected_features, get_feature_names_out(fit))
+  expect_setequal(s$selected_features, get_feature_names(fit))
   expect_identical(s$n_selected, length(s$selected_features))
   expect_identical(s$stabl_threshold, fit$hard_threshold)
   expect_null(s$min_fdr)

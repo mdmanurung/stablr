@@ -83,7 +83,7 @@ summary.stabl_fit <- function(object, ...) {
   .check_fitted_stabl(object)
   threshold <- .resolve_stabl_threshold(object, on_missing = "null")
   selected  <- tryCatch(
-    get_feature_names_out(object),
+    get_feature_names(object),
     error = function(e) NULL
   )
   structure(

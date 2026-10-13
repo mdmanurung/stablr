@@ -33,7 +33,7 @@
 #' @return Numeric scalar in \eqn{[0, 1]}.  A value of 1 means the two sets
 #'   are identical; 0 means they share no features.
 #'
-#' @seealso [jaccard_matrix()] for computing all pairwise Jaccard similarities
+#' @seealso [jaccard_similarity_matrix()] for computing all pairwise Jaccard similarities
 #'   at once.
 #'
 #' @examples
@@ -69,15 +69,15 @@ jaccard_similarity <- function(list1, list2) {
 #' @return Numeric matrix of dimension N\eqn{\times}N (or N\eqn{\times}(N-1)
 #'   when `remove_diag = TRUE`).  Row/column order matches `list_of_lists`.
 #'
-#' @seealso [jaccard_similarity()], [adjusted_similarity_values()],
-#'   [pearson_similarity_values()]
+#' @seealso [jaccard_similarity()], [adjusted_similarity_pairwise()],
+#'   [pearson_similarity_pairwise()]
 #'
 #' @examples
 #' sets <- list(c("A","B","C"), c("B","C","D"), c("A","C","E"))
-#' jaccard_matrix(sets)           # 3 x 2 (diagonal removed)
-#' jaccard_matrix(sets, remove_diag = FALSE)  # 3 x 3
+#' jaccard_similarity_matrix(sets)           # 3 x 2 (diagonal removed)
+#' jaccard_similarity_matrix(sets, remove_diag = FALSE)  # 3 x 3
 #' @export
-jaccard_matrix <- function(list_of_lists, remove_diag = TRUE) {
+jaccard_similarity_matrix <- function(list_of_lists, remove_diag = TRUE) {
   n   <- length(list_of_lists)
   mat <- matrix(0, nrow = n, ncol = n)
   diag(mat) <- 1
@@ -135,8 +135,8 @@ jaccard_matrix <- function(list_of_lists, remove_diag = TRUE) {
 #'   overlap than expected by chance; 1 means perfect agreement; negative
 #'   values indicate less overlap than chance.
 #'
-#' @seealso [adjusted_similarity_values()] for computing all pairwise values at
-#'   once, [adjusted_similarity_measure()] for a summary statistic,
+#' @seealso [adjusted_similarity_pairwise()] for computing all pairwise values at
+#'   once, [adjusted_similarity_summary()] for a summary statistic,
 #'   [jaccard_similarity()] for the non-chance-corrected alternative.
 #'
 #' @examples
@@ -191,7 +191,7 @@ adjusted_similarity <- function(set1 = NULL, set2 = NULL, n_universe = NULL,
 #' Computes the full pairwise adjusted-similarity matrix for N feature sets and
 #' returns only the N\eqn{\times}(N-1)/2 off-diagonal upper-triangle values as
 #' a flat vector.  This format is convenient for computing summary statistics
-#' (see [adjusted_similarity_measure()]) or for Wilcoxon/permutation tests
+#' (see [adjusted_similarity_summary()]) or for Wilcoxon/permutation tests
 #' comparing reproducibility across methods.
 #'
 #' @param list_of_lists A list of character/integer vectors, one per STABL run.
@@ -202,14 +202,14 @@ adjusted_similarity <- function(set1 = NULL, set2 = NULL, n_universe = NULL,
 #'   order, matching the Python convention).
 #'
 #' @seealso [adjusted_similarity()] for the pairwise function,
-#'   [adjusted_similarity_measure()] for a one-number summary,
-#'   [pearson_similarity_values()] for an alternative chance-correction.
+#'   [adjusted_similarity_summary()] for a one-number summary,
+#'   [pearson_similarity_pairwise()] for an alternative chance-correction.
 #'
 #' @examples
 #' sets <- list(c("f1","f2","f3"), c("f2","f3","f4"), c("f1","f3","f5"))
-#' adjusted_similarity_values(sets, nb_total_elements = 10L)
+#' adjusted_similarity_pairwise(sets, nb_total_elements = 10L)
 #' @export
-adjusted_similarity_values <- function(list_of_lists, nb_total_elements) {
+adjusted_similarity_pairwise <- function(list_of_lists, nb_total_elements) {
   .pairwise_upper_triangle(
     list_of_lists,
     function(a, b) adjusted_similarity(a, b, n_universe = nb_total_elements)
@@ -219,7 +219,7 @@ adjusted_similarity_values <- function(list_of_lists, nb_total_elements) {
 #' Summary Statistic of Adjusted Similarity Values
 #'
 #' Convenience wrapper that computes all pairwise adjusted similarities
-#' (via [adjusted_similarity_values()]) and reduces them to a single
+#' (via [adjusted_similarity_pairwise()]) and reduces them to a single
 #' location statistic with an associated spread measure.  Useful for
 #' reporting a single reproducibility number per STABL configuration in
 #' benchmarking tables.
@@ -237,16 +237,16 @@ adjusted_similarity_values <- function(list_of_lists, nb_total_elements) {
 #'       (RMSD / population SD).}
 #'   }
 #'
-#' @seealso [adjusted_similarity_values()], [pearson_similarity_measure()]
+#' @seealso [adjusted_similarity_pairwise()], [pearson_similarity_summary()]
 #'
 #' @examples
 #' sets <- list(c("f1","f2","f3"), c("f2","f3","f4"), c("f1","f3","f5"))
-#' adjusted_similarity_measure(sets, nb_total_elements = 10L)
-#' adjusted_similarity_measure(sets, nb_total_elements = 10L, stat = "mean")
+#' adjusted_similarity_summary(sets, nb_total_elements = 10L)
+#' adjusted_similarity_summary(sets, nb_total_elements = 10L, stat = "mean")
 #' @export
-adjusted_similarity_measure <- function(list_of_lists, nb_total_elements,
+adjusted_similarity_summary <- function(list_of_lists, nb_total_elements,
                                         stat = "median") {
-  vals <- adjusted_similarity_values(list_of_lists, nb_total_elements)
+  vals <- adjusted_similarity_pairwise(list_of_lists, nb_total_elements)
   .similarity_summary(vals, stat)
 }
 
@@ -285,8 +285,8 @@ adjusted_similarity_measure <- function(list_of_lists, nb_total_elements,
 #' @return Numeric scalar.  Positive values indicate more overlap than chance;
 #'   the maximum is typically close to 1 for perfectly matching sets.
 #'
-#' @seealso [pearson_similarity_values()] for computing all pairwise values at
-#'   once, [pearson_similarity_measure()] for a summary statistic,
+#' @seealso [pearson_similarity_pairwise()] for computing all pairwise values at
+#'   once, [pearson_similarity_summary()] for a summary statistic,
 #'   [adjusted_similarity()] for an alternative chance-correction.
 #'
 #' @examples
@@ -339,52 +339,72 @@ pearson_similarity <- function(set1 = NULL, set2 = NULL, n_universe = NULL,
 #'
 #' Computes all pairwise Pearson-corrected similarities and returns the
 #' N\eqn{\times}(N-1)/2 upper-triangle values as a flat vector (same layout
-#' as [adjusted_similarity_values()], enabling direct comparison between the
+#' as [adjusted_similarity_pairwise()], enabling direct comparison between the
 #' two metrics on the same data).
 #'
 #' @param list_of_lists A list of character/integer vectors, one per run.
-#' @param d Integer; total number of candidate features.
+#' @param nb_total_elements Integer; total number of candidate features.
+#' @param d Deprecated; use `nb_total_elements` instead.
 #'
 #' @return Numeric vector of length N*(N-1)/2.
 #'
 #' @seealso [pearson_similarity()] for the pairwise function,
-#'   [pearson_similarity_measure()] for a one-number summary,
-#'   [adjusted_similarity_values()] for an alternative chance-correction.
+#'   [pearson_similarity_summary()] for a one-number summary,
+#'   [adjusted_similarity_pairwise()] for an alternative chance-correction.
 #'
 #' @examples
 #' sets <- list(c("f1","f2","f3"), c("f2","f3","f4"), c("f1","f3","f5"))
-#' pearson_similarity_values(sets, d = 10L)
+#' pearson_similarity_pairwise(sets, nb_total_elements = 10L)
 #' @export
-pearson_similarity_values <- function(list_of_lists, d) {
+pearson_similarity_pairwise <- function(list_of_lists, nb_total_elements,
+                                        d = NULL) {
+  # Deprecation shim: `d` was renamed to `nb_total_elements` for consistency
+  # with the adjusted-similarity family.  missing() (not is.null()) so that
+  # explicit NULLs also warn; purely positional calls are unaffected.
+  if (!missing(d) && !is.null(d)) {
+    warning(
+      "`d` is deprecated; use `nb_total_elements` instead.", call. = FALSE
+    )
+    if (is.null(nb_total_elements)) nb_total_elements <- d
+  }
   .pairwise_upper_triangle(
     list_of_lists,
-    function(a, b) pearson_similarity(a, b, n_universe = d)
+    function(a, b) pearson_similarity(a, b, n_universe = nb_total_elements)
   )
 }
 
 #' Summary Statistic of Pearson Similarity Values
 #'
-#' Convenience wrapper analogous to [adjusted_similarity_measure()] but
+#' Convenience wrapper analogous to [adjusted_similarity_summary()] but
 #' using the Pearson-corrected similarity.  See [pearson_similarity()] for a
 #' description of the underlying metric and when to prefer it over the
 #' adjusted similarity.
 #'
 #' @param list_of_lists A list of character/integer vectors, one per run.
-#' @param d Integer; total number of candidate features.
+#' @param nb_total_elements Integer; total number of candidate features.
 #' @param stat Character; `"median"` (default) or `"mean"`.
+#' @param d Deprecated; use `nb_total_elements` instead.
 #'
 #' @return A named list with `statistic` and `err` (see
-#'   [adjusted_similarity_measure()] for the exact definitions).
+#'   [adjusted_similarity_summary()] for the exact definitions).
 #'
-#' @seealso [pearson_similarity_values()], [adjusted_similarity_measure()]
+#' @seealso [pearson_similarity_pairwise()], [adjusted_similarity_summary()]
 #'
 #' @examples
 #' sets <- list(c("f1","f2","f3"), c("f2","f3","f4"), c("f1","f3","f5"))
-#' pearson_similarity_measure(sets, d = 10L)
-#' pearson_similarity_measure(sets, d = 10L, stat = "mean")
+#' pearson_similarity_summary(sets, nb_total_elements = 10L)
+#' pearson_similarity_summary(sets, nb_total_elements = 10L, stat = "mean")
 #' @export
-pearson_similarity_measure <- function(list_of_lists, d, stat = "median") {
-  vals <- pearson_similarity_values(list_of_lists, d)
+pearson_similarity_summary <- function(list_of_lists, nb_total_elements,
+                                       stat = "median", d = NULL) {
+  # Deprecation shim: see pearson_similarity_pairwise().
+  if (!missing(d) && !is.null(d)) {
+    warning(
+      "`d` is deprecated; use `nb_total_elements` instead.", call. = FALSE
+    )
+    if (is.null(nb_total_elements)) nb_total_elements <- d
+  }
+  vals <- pearson_similarity_pairwise(list_of_lists, nb_total_elements)
   .similarity_summary(vals, stat)
 }
 
@@ -577,4 +597,124 @@ fscore_similarity <- function(list1, list2, beta = 1) {
     mcc                = unname(mcc),
     confusion          = tab
   )
+}
+
+# ── Deprecation shims (0.3.0 API overhaul) ────────────────────────────────────
+# The 0.3.0 rename scheme: `*_similarity()` for a pair, `*_similarity_matrix()`
+# for an all-pairs matrix, `*_similarity_pairwise()` for the vector of unique
+# pairwise values, `*_similarity_summary()` for a one-number summary.  The old
+# names remain as shims emitting a one-time-per-call deprecation warning.
+
+#' Deprecated: use [jaccard_similarity_matrix()]
+#'
+#' `jaccard_matrix()` is deprecated and will be removed in a future release;
+#' use [jaccard_similarity_matrix()] instead.
+#' @param list_of_lists See [jaccard_similarity_matrix()].
+#' @examples
+#' sets <- list(c("f1", "f2", "f3"), c("f2", "f3", "f4"), c("f1", "f3", "f5"))
+#' # warns; use jaccard_similarity_matrix()
+#' same <- suppressWarnings(identical(
+#'   jaccard_matrix(sets),
+#'   jaccard_similarity_matrix(sets)
+#' ))
+#' stopifnot(same)
+#' @keywords internal
+#' @export
+jaccard_matrix <- function(list_of_lists, remove_diag = TRUE) {
+  warning(
+    "`jaccard_matrix()` is deprecated; use `jaccard_similarity_matrix()` ",
+    "instead.", call. = FALSE
+  )
+  jaccard_similarity_matrix(list_of_lists, remove_diag = remove_diag)
+}
+
+#' Deprecated: use [adjusted_similarity_pairwise()]
+#'
+#' `adjusted_similarity_values()` is deprecated and will be removed in a
+#' future release; use [adjusted_similarity_pairwise()] instead.
+#' @examples
+#' sets <- list(c("f1", "f2", "f3"), c("f2", "f3", "f4"), c("f1", "f3", "f5"))
+#' # warns; use adjusted_similarity_pairwise()
+#' same <- suppressWarnings(identical(
+#'   adjusted_similarity_values(sets, nb_total_elements = 10L),
+#'   adjusted_similarity_pairwise(sets, nb_total_elements = 10L)
+#' ))
+#' stopifnot(same)
+#' @keywords internal
+#' @export
+adjusted_similarity_values <- function(list_of_lists, nb_total_elements) {
+  warning(
+    "`adjusted_similarity_values()` is deprecated; use ",
+    "`adjusted_similarity_pairwise()` instead.", call. = FALSE
+  )
+  adjusted_similarity_pairwise(list_of_lists, nb_total_elements)
+}
+
+#' Deprecated: use [adjusted_similarity_summary()]
+#'
+#' `adjusted_similarity_measure()` is deprecated and will be removed in a
+#' future release; use [adjusted_similarity_summary()] instead.
+#' @param list_of_lists,nb_total_elements,stat See
+#'   [adjusted_similarity_summary()].
+#' @examples
+#' sets <- list(c("f1", "f2", "f3"), c("f2", "f3", "f4"), c("f1", "f3", "f5"))
+#' # warns; use adjusted_similarity_summary()
+#' same <- suppressWarnings(identical(
+#'   adjusted_similarity_measure(sets, nb_total_elements = 10L),
+#'   adjusted_similarity_summary(sets, nb_total_elements = 10L)
+#' ))
+#' stopifnot(same)
+#' @keywords internal
+#' @export
+adjusted_similarity_measure <- function(list_of_lists, nb_total_elements,
+                                        stat = "median") {
+  warning(
+    "`adjusted_similarity_measure()` is deprecated; use ",
+    "`adjusted_similarity_summary()` instead.", call. = FALSE
+  )
+  adjusted_similarity_summary(list_of_lists, nb_total_elements, stat = stat)
+}
+
+#' Deprecated: use [pearson_similarity_pairwise()]
+#'
+#' `pearson_similarity_values()` is deprecated and will be removed in a
+#' future release; use [pearson_similarity_pairwise()] instead.
+#' @examples
+#' sets <- list(c("f1", "f2", "f3"), c("f2", "f3", "f4"), c("f1", "f3", "f5"))
+#' # warns; use pearson_similarity_pairwise()
+#' same <- suppressWarnings(identical(
+#'   pearson_similarity_values(sets, d = 10L),
+#'   pearson_similarity_pairwise(sets, nb_total_elements = 10L)
+#' ))
+#' stopifnot(same)
+#' @keywords internal
+#' @export
+pearson_similarity_values <- function(list_of_lists, d) {
+  warning(
+    "`pearson_similarity_values()` is deprecated; use ",
+    "`pearson_similarity_pairwise()` instead.", call. = FALSE
+  )
+  pearson_similarity_pairwise(list_of_lists, d)
+}
+
+#' Deprecated: use [pearson_similarity_summary()]
+#'
+#' `pearson_similarity_measure()` is deprecated and will be removed in a
+#' future release; use [pearson_similarity_summary()] instead.
+#' @examples
+#' sets <- list(c("f1", "f2", "f3"), c("f2", "f3", "f4"), c("f1", "f3", "f5"))
+#' # warns; use pearson_similarity_summary()
+#' same <- suppressWarnings(identical(
+#'   pearson_similarity_measure(sets, d = 10L),
+#'   pearson_similarity_summary(sets, nb_total_elements = 10L)
+#' ))
+#' stopifnot(same)
+#' @keywords internal
+#' @export
+pearson_similarity_measure <- function(list_of_lists, d, stat = "median") {
+  warning(
+    "`pearson_similarity_measure()` is deprecated; use ",
+    "`pearson_similarity_summary()` instead.", call. = FALSE
+  )
+  pearson_similarity_summary(list_of_lists, d, stat = stat)
 }

@@ -62,7 +62,7 @@ adjusted_similarity(c("f1","f2"),      c("f1","f2"),      n_universe = 10L) # 0.
 adjusted_similarity(character(0),      c("f1"),           n_universe = 10L) # 0
 }
 \seealso{
-\code{\link[=adjusted_similarity_values]{adjusted_similarity_values()}} for computing all pairwise values at
-once, \code{\link[=adjusted_similarity_measure]{adjusted_similarity_measure()}} for a summary statistic,
+\code{\link[=adjusted_similarity_pairwise]{adjusted_similarity_pairwise()}} for computing all pairwise values at
+once, \code{\link[=adjusted_similarity_summary]{adjusted_similarity_summary()}} for a summary statistic,
 \code{\link[=jaccard_similarity]{jaccard_similarity()}} for the non-chance-corrected alternative.
 }

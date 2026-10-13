@@ -213,7 +213,7 @@ test_that("model-X knockoffs calibrate FDP+ end to end on a heterogeneous-scale 
       artificial_type = "knockoff_equi",
       random_state = 2700L + s
     )
-    selected <- get_feature_names_out(fit)
+    selected <- get_feature_names(fit)
     empirical_fdp[[s]] <- if (length(selected)) {
       sum(selected %in% nulls) / length(selected)
     } else {

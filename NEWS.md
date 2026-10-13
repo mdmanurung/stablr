@@ -1,3 +1,54 @@
+# stablr 0.3.0
+
+## Two-tier API: beginner `stabl()` + expert `stabl_fit()`
+
+- **New `stabl()`:** a one-stop-shop entry point for first-time and
+  application users.  Pass a `data.frame` (or a matrix plus an outcome
+  vector; the outcome may also be named as a column of the `data.frame`)
+  and it runs STABL with statistically safe defaults — model-X knockoff
+  artificial features (`artificial_type = "knockoff_equi"`), FDP+
+  calibration, strict knockoff fallback (`knockoff_fallback = "stop"`),
+  and an automatic lambda grid.  Roughly eight arguments cover the common
+  cases; everything else is forwarded to `stabl_fit()` through `...`.
+- **New S3 methods for the `stabl` class:** `print.stabl()` (plain-language
+  answer: what was fitted, which features were selected, the achieved FDP+
+  estimate), `summary.stabl()`, and `plot.stabl()` (stability paths plus
+  the FDP+ curve).  `stabl` objects also remain full `stabl_fit` objects,
+  so every accessor and workflow applies unchanged.
+- **New beginner generics `support()` and `feature_names()`** with methods
+  for `stabl` and `stabl_fit`; they delegate to `get_support()` and
+  `get_feature_names()`.
+
+## Renamed functions and arguments (old names kept as deprecation shims)
+
+Each old name still works: it warns once per session and delegates to the
+new name.  Positional calls are unaffected.
+
+| Old name | New name | Why |
+|---|---|---|
+| `stabl_fit(groups =)` | `stabl_fit(sample_groups =)` | `groups` collided with `feature_groups`; sample- vs feature-grouping is now unambiguous |
+| `get_feature_names_out()` | `get_feature_names()` | drops the sklearn-ism; reads naturally in R |
+| `stacked_multi_omic()` | `stabl_multiomic_stacked()` | joins the `stabl_multiomic_*` family and fixes the multi_omic/multiomic casing split |
+| `jaccard_matrix()` | `jaccard_similarity_matrix()` | states what the matrix contains |
+| `adjusted_similarity_values()` | `adjusted_similarity_pairwise()` | the triplet now reads pair / all-pairs matrix / summary consistently |
+| `adjusted_similarity_measure()` | `adjusted_similarity_summary()` | as above |
+| `pearson_similarity_values()` | `pearson_similarity_pairwise()` | as above |
+| `pearson_similarity_measure()` | `pearson_similarity_summary()` | as above |
+| `classic_bootstrap_indices()` | `sample_bootstrap_indices()` | states what is resampled (samples, not features or groups) |
+| `pearson_similarity_pairwise(d =)` / `_summary(d =)` | `nb_total_elements =` | aligns the element-count argument with the adjusted-similarity family (`d =` still accepted with a deprecation warning) |
+
+## Documentation
+
+- pkgdown reference index reorganized into tiers: Getting started, Core,
+  Workflows, Expert, Metrics, Plotting, Data, and a dedicated Deprecated
+  section.
+- New vignette "Getting started with stabl" — a beginner walkthrough from
+  a `data.frame` to a plain-language selection.
+- README gains a two-tier quick start (beginner `stabl()` first, expert
+  `stabl_fit()` second).
+- All help pages regenerated; every shim's help page points to its
+  replacement.
+
 # stablr 0.2.2
 
 ## Scientific hardening (audit A1-A3, E1-E3)
