@@ -90,18 +90,22 @@ reference:
   - make_adaptive_lasso_adapter
   - make_sgl_adapter
 
-- title: Experimental Learner Adapters
-  desc: Experimental extension beyond the glmnet family; API and statistical
-    validation are still in progress.
+- title: Extended Learner Adapters
+  desc: Extensions beyond the glmnet family. The random forest is calibrated
+    within a measured scope (WS-2); the oblique forest is fenced (WS-3); the
+    ordinal learner is experimental (WS-9).
   contents:
   - make_ranger_adapter
   - auto_rf_threshold_grid
   - make_aorsf_adapter
   - auto_oblique_threshold_grid
+  - make_ordinal_adapter
+  - auto_ordinal_lambda_grid
 
 - title: Environment Stability
   desc: ICP-inspired transportability workflow across environments (batches,
-    cohorts, sites); experimental extension beyond Python STABL.
+    cohorts, sites); promoted with a documented scope after the WS-5
+    transportability benchmark (min-aggregation is the calibrated read).
   contents:
   - stabl_environment_stability
   - get_min_scores

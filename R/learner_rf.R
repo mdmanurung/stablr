@@ -18,7 +18,7 @@
 #   nulls (knockoff_equi / knockoff_mvr) preserve the correlation structure
 #   and must be preferred.  Combining "rf" with "random_permutation" warns.
 
-#' Build a Random-Forest Learner Adapter (Experimental)
+#' Build a Random-Forest Learner Adapter (Calibrated, Scoped)
 #'
 #' Returns a closure that fits ONE `ranger` random forest on a single
 #' bootstrap subsample and returns a logical selection mask over the features,
@@ -48,10 +48,11 @@
 #'   structure and are the only statistically sound pairing.  Combining
 #'   `base_learner = "rf"` with `artificial_type = "random_permutation"` in
 #'   [stabl_fit()] emits a package warning to this effect.
-#' * **Experimental.**  This learner is an extension beyond Python STABL
-#'   (which supports lasso/elastic-net/adaptive-lasso/SGL only).  FDP+
-#'   calibration for random forests is empirical, not guaranteed, and is
-#'   validated separately by the F5 simulation suite; use with care.
+#' * **Calibrated within a measured scope (WS-2).**  With knockoff_equi
+#'   decoys the mean empirical FDP is 0.025 (linear design) and 0.065
+#'   (low-dimensional nonlinear design), meeting the predeclared criterion;
+#'   it is NOT met at p = 50 with strong correlation (0.44) or for binary
+#'   outcomes (0.26).  Simulation evidence, not a guarantee.
 #'
 #' @param num_trees Positive integer; number of trees per forest
 #'   (`ranger`'s `num.trees`).  Default `500L`.

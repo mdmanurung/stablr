@@ -26,7 +26,7 @@
 #   axis-aligned random forests; plan for more bootstraps (or larger forests)
 #   before trusting small stability-score differences between features.
 
-#' Build an Oblique Random-Forest Learner Adapter (Experimental)
+#' Build an Oblique Random-Forest Learner Adapter (Fenced)
 #'
 #' Returns a closure that fits ONE `aorsf` oblique random forest on a single
 #' bootstrap subsample and returns a logical selection mask over the features,
@@ -64,10 +64,11 @@
 #'   per-feature selection frequencies are noisier than for axis-aligned
 #'   random forests ([make_ranger_adapter()]).  Small stability-score
 #'   differences between features are less reliable; prefer more bootstraps.
-#' * **Experimental.**  This learner is an extension beyond Python STABL
-#'   (which supports lasso/elastic-net/adaptive-lasso/SGL only).  FDP+
-#'   calibration for oblique random forests is empirical, not guaranteed, and
-#'   is validated separately by the F5 simulation suite; use with care.
+#' * **Fenced (WS-3).**  No predeclared remedy reached the calibration
+#'   criterion (mean FDP <= 0.15 on both designs; best remedy 0.18 / 0.39).
+#'   Knockoff decoy importance is inflated for oblique forests, so FDP+ is
+#'   anti-conservative.  Use [make_ranger_adapter()] with knockoff_equi for
+#'   knockoff-calibrated selection instead.
 #'
 #' @param num_trees Positive integer; number of trees per forest (`aorsf`'s
 #'   `n_tree`).  Default `500L`.
@@ -113,7 +114,7 @@ make_aorsf_adapter <- function(num_trees = 500L) {
 }
 
 #' Build a Data-Driven Importance-Threshold Grid for the Oblique-RF Learner
-#' (Experimental)
+#' (Fenced)
 #'
 #' Fits one `aorsf` oblique random forest with negation importance on the full
 #' training data and returns the importance-threshold grid as a pre-expanded
