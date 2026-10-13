@@ -17,11 +17,22 @@ knitr::opts_chunk$set(
 set.seed(42)
 ```
 
-## Overview
+# Contents
 
-The introductory and multi-omic vignettes focus on the core Gaussian and
-binomial workflows. This vignette covers additional `stablr` capabilities that
-are easy to miss when reading only the quick-start paths:
+- 1 Scope of this vignette
+- 2 Cox proportional-hazards STABL
+- 3 Multinomial STABL
+- 4 Knockoff artificial features
+- 5 Grouped bootstrap for repeated measures
+- 6 Reproducibility across repeated fits
+- 7 Exporting results to disk
+- 8 Outer cross-validation for multi-omic workflows
+- 9 Cooperative coefficient paths
+- 10 Related vignettes
+
+# 1 Scope of this vignette
+
+The introductory and multi-omic vignettes describe the core Gaussian and binomial workflows. This vignette documents additional `stablr` capabilities that are easy to miss when reading only the quick-start paths. The topics and the corresponding functions are listed in the table below.
 
 | Topic | Functions |
 |-------|-----------|
@@ -34,19 +45,17 @@ are easy to miss when reading only the quick-start paths:
 | Outer multi-omic CV | `stabl_multiomic_cv()` |
 | Cooperative diagnostics | `get_cooperative_features()`, `plot()` on native fits |
 
-Examples use small simulated data so the vignette remains fast during
-`R CMD check`.
+The examples use small simulated data so that the vignette remains fast during `R CMD check`. The package is loaded as follows.
 
 ```{r load}
 library(stablr)
 ```
 
----
+# 2 Cox proportional-hazards STABL
 
-## 1. Cox proportional-hazards STABL
+For time-to-event outcomes, a `survival::Surv` object is passed as `y` and `family = "cox"` is set. Row names of `y` must match `rownames(x)`.
 
-For time-to-event outcomes, pass a `survival::Surv` object as `y` and set
-`family = "cox"`. Row names of `y` must match `rownames(x)`.
+The following commands simulate a small survival dataset with signal in the first two features and construct the lambda grid.
 
 ```{r cox-setup}
 library(survival)
@@ -66,6 +75,10 @@ rownames(y_cox) <- ids
 lambda_cox <- auto_lambda_grid(x_cox, y_cox, family = "cox", n_lambda = 8)
 ```
 
+The linear predictor involves the first two features only, so a stable selection procedure is expected to recover them.
+
+The model is fitted with 40 bootstrap replicates and random-permutation artificial features.
+
 ```{r cox-fit}
 fit_cox <- stabl_fit(
   x               = x_cox,
@@ -81,12 +94,13 @@ get_feature_names_out(fit_cox)
 head(sort(get_importances(fit_cox), decreasing = TRUE), 6)
 ```
 
----
+The output lists the selected feature names, followed by the six features with the largest stability importances. The planted features `g1` and `g2` are expected to rank at the top of the sorted importances.
 
-## 2. Multinomial STABL
+# 3 Multinomial STABL
 
-Multinomial outcomes use a named factor `y`. The stability matrix has one row
-per feature; importances aggregate across classes.
+Multinomial outcomes use a named factor `y`. The stability matrix has one row per feature, and importances aggregate across classes.
+
+The following commands simulate a three-class problem with weak class signal in the first feature and fit the multinomial model.
 
 ```{r multinomial}
 n <- 90
@@ -117,17 +131,13 @@ fit_multi <- stabl_fit(
 get_feature_names_out(fit_multi)
 ```
 
----
+The printed vector contains the features selected by the multinomial fit. Because the class signal is confined to feature `m1`, that feature is expected to appear among the selections.
 
-## 3. Knockoff artificial features
+# 4 Knockoff artificial features
 
-Supported artificial-feature settings are `"random_permutation"`, `"knockoff"`,
-`"knockoff_equi"`, `"knockoff_mvr"`, and `NULL`.  Use
-`artificial_type = "knockoff"` for fixed-X knockoffs.  Use
-`artificial_type = "knockoff_equi"` or `"knockoff_mvr"` for Model-X Gaussian
-knockoffs when the optional `knockoff` package is installed. All three
-knockoff modes support at most 3,000 predictors and fail closed above that
-limit; no chunked construction is claimed to be scientifically valid.
+The supported artificial-feature settings are `"random_permutation"`, `"knockoff"`, `"knockoff_equi"`, `"knockoff_mvr"`, and `NULL`. `artificial_type = "knockoff"` requests fixed-X knockoffs. `artificial_type = "knockoff_equi"` and `"knockoff_mvr"` request Model-X Gaussian knockoffs when the optional `knockoff` package is installed. All three knockoff modes support at most 3,000 predictors and fail closed above that limit; no chunked construction is claimed to be scientifically valid.
+
+The availability of the `knockoff` package is checked before fitting.
 
 ```{r knockoff-check, include = FALSE}
 has_knockoff <- requireNamespace("knockoff", quietly = TRUE)
@@ -135,6 +145,8 @@ if (!has_knockoff) {
   message("Install the knockoff package to evaluate the knockoff example.")
 }
 ```
+
+When the package is available, a binomial fit with equicorrelated Model-X knockoffs is evaluated.
 
 ```{r knockoff-fit, eval = has_knockoff}
 n <- 60
@@ -161,14 +173,13 @@ fit_ko <- stabl_fit(
 get_feature_names_out(fit_ko)
 ```
 
+The printed vector contains the features selected by the knockoff fit. Feature `k1`, on which the outcome depends, is expected to appear among the selections.
 
----
+# 5 Grouped bootstrap for repeated measures
 
-## 4. Grouped bootstrap (repeated measures)
+When several rows belong to the same subject or batch, a `groups` vector is passed so that bootstrap resampling keeps whole groups together. This prevents leakage across related samples.
 
-When several rows belong to the same subject or batch, pass a `groups` vector so
-bootstrap resampling keeps whole groups together. This prevents leakage across
-related samples.
+The following commands simulate four repeated measurements per subject, inspect one grouped subsample draw, and fit the grouped model.
 
 ```{r grouped-bootstrap}
 n <- 48
@@ -201,21 +212,17 @@ fit_grp <- stabl_fit(
 length(get_feature_names_out(fit_grp))
 ```
 
-The same `groups` argument is forwarded by `stabl_multiomic_train_validate()`
-and `stabl_multiomic_cv()` for outer fold construction.
+The call to `unique(groups[idx])` prints the subjects entering one subsample; each subject appears either with all four of its rows or not at all. The final line reports the number of features selected by the grouped Gaussian fit.
 
-Note that classification bootstraps redraw subsamples until at least two
-observations per class are present, which slightly biases the subsample
-distribution relative to vanilla STABL; this is a deliberate, documented
-deviation that buys class-diverse subsamples.
+The same `groups` argument is forwarded by `stabl_multiomic_train_validate()` and `stabl_multiomic_cv()` for outer fold construction.
 
----
+Classification bootstraps redraw subsamples until at least two observations per class are present. This slightly biases the subsample distribution relative to vanilla STABL; the deviation is deliberate and documented, and it buys class-diverse subsamples.
 
-## 5. Reproducibility across repeated fits
+# 6 Reproducibility across repeated fits
 
-Selection-stability metrics compare feature lists from repeated STABL runs.
-Jaccard similarity is the simplest overlap measure; adjusted similarity
-corrects for chance overlap when set sizes differ.
+Selection-stability metrics compare feature lists from repeated STABL runs. Jaccard similarity is the simplest overlap measure, and adjusted similarity corrects for chance overlap when set sizes differ.
+
+Two fits with different random states are compared first, and a pairwise similarity matrix across four seeds is computed afterwards.
 
 ```{r reproducibility}
 run_once <- function(seed) {
@@ -243,12 +250,13 @@ sels <- lapply(fits, get_feature_names_out)
 jaccard_matrix(sels)
 ```
 
----
+The first two printed values are the Jaccard and the adjusted similarity between the selections from seeds 11 and 22. The matrix at the end gives the pairwise Jaccard similarities for the fits with seeds 11 to 14; off-diagonal values close to 1 indicate selections that are robust to the random state.
 
-## 6. Export results to disk
+# 7 Exporting results to disk
 
-`export_stabl_to_csv()` writes stability-score tables for a single-omic fit.
-`save_stabl_results()` bundles scores, diagnostics, selected-feature tables, and feature-distribution figures for a full analysis folder. It writes `STABL scores.csv`, `Max STABL scores.csv`, `FDR Graph.<fmt>`, `Stability Path.<fmt>`, `Selected Features/Selected features.csv`, and `Selected Features/Feature distributions.<fmt>` when the relevant diagnostics and selected features are available.
+`export_stabl_to_csv()` writes stability-score tables for a single-omic fit. `save_stabl_results()` bundles scores, diagnostics, selected-feature tables, and feature-distribution figures for a full analysis folder. It writes `STABL scores.csv`, `Max STABL scores.csv`, `FDR Graph.<fmt>`, `Stability Path.<fmt>`, `Selected Features/Selected features.csv`, and `Selected Features/Feature distributions.<fmt>` when the relevant diagnostics and selected features are available.
+
+The following commands write the score tables and the full results bundle to a temporary directory.
 
 ```{r export, eval = FALSE}
 # File-writing path; exercised by tests/testthat/test-phase7.R.
@@ -269,14 +277,13 @@ save_stabl_results(
 )
 ```
 
----
+The chunk is not evaluated during the vignette build, so no files are written when the package is checked.
 
-## 7. Outer cross-validation for multi-omic workflows
+# 8 Outer cross-validation for multi-omic workflows
 
-When no fixed validation split exists, `stabl_multiomic_cv()` runs STABL (and
-optional fusion branches) on rotating outer folds. Cooperative fusion is
-supported here; nested CV (`stabl_multiomic_nested_cv()`) does not forward
-cooperative mode.
+When no fixed validation split exists, `stabl_multiomic_cv()` runs STABL, and optional fusion branches, on rotating outer folds. Cooperative fusion is supported in this function; nested CV (`stabl_multiomic_nested_cv()`) does not forward cooperative mode.
+
+A two-omic Gaussian fit with cooperative fusion and three outer folds is specified as follows.
 
 ```{r outer-cv}
 n <- 50
@@ -310,13 +317,13 @@ if (!is.null(cv_fit$fold_results[[1]]$cooperative_fusion)) {
 }
 ```
 
----
+The head of the diagnostics data frame summarises each omic and fold. When the first fold contains a cooperative branch, `get_cooperative_features()` prints the features selected by the cooperative model in that fold.
 
-## 8. Cooperative coefficient paths (native engine)
+# 9 Cooperative coefficient paths
 
-The built-in cooperative engine registers `plot.multiview()` for fitted
-cooperative models. After a cooperative workflow, the selected fit object lives
-in `$cooperative_fusion$fit`.
+The built-in cooperative engine registers `plot.multiview()` for fitted cooperative models. After a cooperative workflow, the selected fit object lives in `$cooperative_fusion$fit`.
+
+A cooperative fit on the OOL training data is run and plotted as follows.
 
 ```{r cooperative-plot, fig.alt = "Cooperative coefficient paths by view"}
 ool <- load_ool_data(split = "train")
@@ -343,12 +350,13 @@ get_cooperative_diagnostics(coop_fit)
 plot(cf$fit)
 ```
 
----
+The printed diagnostics summarise the cooperative fit, and the plot displays the coefficient paths of the fitted multiview model. Features whose paths persist over a wide range of lambda values are the candidates for stable cross-view selection.
 
-## Related vignettes
+# 10 Related vignettes
+
+The following vignettes and documents cover the remaining workflows.
 
 - `vignette("stablr-intro")` — single-omic STABL, learners, diagnostic plots.
 - `vignette("stablr-multiomic")` — early and late fusion on OOL data.
-- `vignette("stablr-cooperative")` — cooperation strength `rho`, validation vs
-  CV tuning, binomial cooperative fusion.
+- `vignette("stablr-cooperative")` — cooperation strength `rho`, validation vs CV tuning, binomial cooperative fusion.
 - `docs/PYTHON_TO_R_MAPPING.md` — mapping to the Python tutorial API.
