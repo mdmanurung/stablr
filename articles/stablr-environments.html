@@ -6,7 +6,8 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Environment Stability: Reliable AND Transportable Feature Sets • stablr</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="../katex-auto.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -16,7 +17,7 @@
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top bg-primary" data-bs-theme="dark" aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="../index.html">stablr</a>
 
@@ -74,30 +75,39 @@
     
     
 <div class="section level2">
-<h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
+<h2 id="contents">Contents<a class="anchor" aria-label="anchor" href="#contents"></a>
 </h2>
-<p>The core STABL workflow answers one question: <em>which features are
-stably selected across bootstrap resamples of my data?</em> But
-bootstrap resamples all come from the same pool of samples. A second,
-equally practical question is:</p>
-<blockquote>
-<p>Which features are selected stably <strong>in every
-environment</strong> — every batch, cohort, or site — and not just in
-one lucky subset?</p>
-</blockquote>
+<ul>
+<li>1 Introduction</li>
+<li>2 A synthetic multi-batch example</li>
+<li>3 The environment-stability workflow</li>
+<li>4 Interpretation of the aggregated scores</li>
+<li>5 Relation to invariant causal prediction</li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="introduction">1 Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
+</h2>
+<p>The core STABL workflow answers one question: which features are
+stably selected across bootstrap resamples of a given dataset. All
+bootstrap resamples, however, come from the same pool of samples. A
+second, equally practical question is which features are selected stably
+<strong>in every environment</strong> — every batch, cohort, or site —
+and not only in one favourable subset.</p>
 <p>This vignette introduces <code><a href="../reference/stabl_environment_stability.html">stabl_environment_stability()</a></code>,
-a workflow that answers that question. It is inspired by invariant
+a workflow that addresses this question. It is inspired by invariant
 causal prediction (ICP; Peters, Bühlmann &amp; Meinshausen, 2016), whose
-user-facing appeal is exactly this kind of cross-environment stability —
+user-facing appeal is exactly this kind of cross-environment stability,
 but it makes <strong>no causal claims</strong> and requires nothing
 beyond environment <em>labels</em>.</p>
+<p>The package is attached as follows.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mdmanurung.github.io/stablr/">stablr</a></span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="a-synthetic-multi-batch-example">A synthetic multi-batch example<a class="anchor" aria-label="anchor" href="#a-synthetic-multi-batch-example"></a>
+<h2 id="a-synthetic-multi-batch-example">2 A synthetic multi-batch example<a class="anchor" aria-label="anchor" href="#a-synthetic-multi-batch-example"></a>
 </h2>
-<p>We simulate 150 samples measured in three batches
+<p>The simulation comprises 150 samples measured in three batches
 (<code>batchA</code>, <code>batchB</code>, <code>batchC</code>, 50
 samples each) with 10 features:</p>
 <ul>
@@ -130,14 +140,14 @@ measurement artifact or a population-specific effect);</li>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="running-the-environment-stability-workflow">Running the environment-stability workflow<a class="anchor" aria-label="anchor" href="#running-the-environment-stability-workflow"></a>
+<h2 id="the-environment-stability-workflow">3 The environment-stability workflow<a class="anchor" aria-label="anchor" href="#the-environment-stability-workflow"></a>
 </h2>
 <p><code><a href="../reference/stabl_environment_stability.html">stabl_environment_stability()</a></code> fits
 <code><a href="../reference/stabl_fit.html">stabl_fit()</a></code> <strong>separately within each
 environment</strong> and aggregates the per-feature stability scores.
 All arguments beyond <code>x</code>, <code>y</code>,
 <code>environments</code>, <code>lambda_grid</code>, and
-<code>random_state</code> are forwarded to <code><a href="../reference/stabl_fit.html">stabl_fit()</a></code>:</p>
+<code>random_state</code> are forwarded to <code><a href="../reference/stabl_fit.html">stabl_fit()</a></code>.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stabl_environment_stability.html">stabl_environment_stability</a></span><span class="op">(</span></span>
 <span>  <span class="va">x</span>, <span class="va">y</span>, <span class="va">environments</span>,</span>
@@ -152,9 +162,10 @@ All arguments beyond <code>x</code>, <code>y</code>,
 <span><span class="co">#&gt;   Features in:      10 </span></span>
 <span><span class="co">#&gt;   Min score &gt;= 0.5: 2 feature(s)</span></span>
 <span><span class="co">#&gt;   Top by min score: f1, f2, f3, f4, f5</span></span></code></pre></div>
-<p>The object carries one full <code>stabl_fit</code> per environment
-(<code>res$env_fits</code>), the feature × environment score matrix
-(<code>res$env_scores</code>), and two summaries:</p>
+<p>The result object carries one full <code>stabl_fit</code> per
+environment (<code>res$env_fits</code>), the feature × environment score
+matrix (<code>res$env_scores</code>), and two summaries, which are
+inspected below.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">env_scores</span>, <span class="fl">2</span><span class="op">)</span></span>
 <span><span class="co">#&gt;     batchA batchB batchC</span></span>
@@ -171,9 +182,14 @@ All arguments beyond <code>x</code>, <code>y</code>,
 <span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">min_scores</span>, <span class="fl">2</span><span class="op">)</span></span>
 <span><span class="co">#&gt;  f1  f2  f3  f4  f5  f6  f7  f8  f9 f10 </span></span>
 <span><span class="co">#&gt;   1   1   0   0   0   0   0   0   0   0</span></span></code></pre></div>
+<p>In <code>res$env_scores</code>, the transportable features
+<code>f1</code> and <code>f2</code> hold high scores in all three
+batches, whereas <code>f3</code> scores highly in <code>batchA</code>
+only. The <code>res$min_scores</code> summary reduces each feature to
+its weakest environment and is the quantity used for reporting.</p>
 </div>
 <div class="section level2">
-<h2 id="interpretation-reliable-and-transportable-feature-sets">Interpretation: reliable AND transportable feature sets<a class="anchor" aria-label="anchor" href="#interpretation-reliable-and-transportable-feature-sets"></a>
+<h2 id="interpretation-of-the-aggregated-scores">4 Interpretation of the aggregated scores<a class="anchor" aria-label="anchor" href="#interpretation-of-the-aggregated-scores"></a>
 </h2>
 <p>The aggregation rule is the <strong>minimum across
 environments</strong> of each feature’s max-over-lambda stability score
@@ -181,23 +197,23 @@ environments</strong> of each feature’s max-over-lambda stability score
 <ul>
 <li>
 <code>f1</code> and <code>f2</code> score high in every batch, so
-their minimum stays high. These are the features you can transport: they
-would survive a new batch, a new site, a new cohort.</li>
+their minimum stays high. These are the transportable features: they
+would survive a new batch, a new site, or a new cohort.</li>
 <li>
 <code>f3</code> is perfectly stable <em>within</em>
 <code>batchA</code> — a plain single-cohort STABL run on the pooled data
-(or on <code>batchA</code> alone) would happily select it — but its
-score collapses to null level in
-<code>batchB</code>/<code>batchC</code>, so its minimum score is low.
-The minimum flags it as <strong>not transportable</strong>.</li>
+(or on <code>batchA</code> alone) would select it — but its score
+collapses to null level in <code>batchB</code>/<code>batchC</code>, so
+its minimum score is low. The minimum flags it as <strong>not
+transportable</strong>.</li>
 <li>The null features never accumulate a high minimum.</li>
 </ul>
-<p>A practical reporting pattern is therefore: rank features by
-<code>res$min_scores</code>, and treat a high <code>mean_scores</code>
-but low <code>min_scores</code> combination as a
-<em>batch-dependent</em> candidate worth investigating rather than
-shipping. The <code>pairwise_adjusted_similarity</code> matrix
-additionally summarizes how much agreement there is between the
+<p>A practical reporting pattern is therefore to rank features by
+<code>res$min_scores</code> and to treat a combination of high
+<code>mean_scores</code> with low <code>min_scores</code> as a
+<em>batch-dependent</em> candidate that warrants investigation rather
+than export. The <code>pairwise_adjusted_similarity</code> matrix
+additionally summarises how much agreement there is between the
 <em>selected sets</em> of any two environments (chance-corrected via
 <code><a href="../reference/adjusted_similarity.html">adjusted_similarity()</a></code>).</p>
 <p>Two practical notes:</p>
@@ -214,17 +230,17 @@ with this leniency in mind.</li>
 </ol>
 </li>
 <li>
-<strong>Environment-aware resampling is complementary.</strong> If
-you prefer a single pooled fit whose bootstrap <em>respects</em>
-environment structure, pass your labels as <code>groups</code> to
-<code><a href="../reference/stabl_fit.html">stabl_fit()</a></code> (group bootstrap keeps whole environments
+<strong>Environment-aware resampling is complementary.</strong> For
+a single pooled fit whose bootstrap <em>respects</em> environment
+structure, pass the labels as <code>groups</code> to
+<code><a href="../reference/stabl_fit.html">stabl_fit()</a></code> (the group bootstrap keeps whole environments
 intact) or use <code>bootstrap_strata</code>. The workflow shown here
-answers a different question: not “is selection stable under
-resampling?”, but “is selection the same everywhere?”</li>
+answers a different question: not whether selection is stable under
+resampling, but whether selection is the same everywhere.</li>
 </ol>
 </div>
 <div class="section level2">
-<h2 id="how-this-differs-from-invariant-causal-prediction">How this differs from invariant causal prediction<a class="anchor" aria-label="anchor" href="#how-this-differs-from-invariant-causal-prediction"></a>
+<h2 id="relation-to-invariant-causal-prediction">5 Relation to invariant causal prediction<a class="anchor" aria-label="anchor" href="#relation-to-invariant-causal-prediction"></a>
 </h2>
 <p>Invariant causal prediction (Peters, Bühlmann &amp; Meinshausen,
 2016) uses environments to <em>test</em> invariance of the outcome
@@ -246,9 +262,9 @@ what multi-batch omic studies actually have;</li>
 <code><a href="../reference/stabl_fit.html">stabl_fit()</a></code> and the existing <code>stablr</code> accessors
 and metrics.</li>
 </ul>
-<p>Use it when the operational question is “which biomarkers hold up
-<em>everywhere</em> I measured them?” — reliable <strong>and</strong>
-transportable feature sets.</p>
+<p>The workflow is appropriate when the operational question is which
+biomarkers hold up in every environment in which they were measured:
+reliable <strong>and</strong> transportable feature sets.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
@@ -257,7 +273,7 @@ transportable feature sets.</p>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Mikaël Manurung.</p>
+  <p>Developed by <a href="https://github.com/mdmanurung" class="external-link">Mikaël Manurung</a>.</p>
 </div>
 
 <div class="pkgdown-footer-right">

@@ -6,7 +6,8 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>stablr • stablr</title>
-<script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="katex-auto.js"></script><script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -20,7 +21,7 @@
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top bg-primary" data-bs-theme="dark" aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="index.html">stablr</a>
 
@@ -65,29 +66,72 @@
   <main id="main" class="col-md-9"><div class="section level1">
 <div class="page-header"><h1 id="stablr-sparse-and-reliable-biomarker-discovery-in-r">stablr: Sparse and Reliable Biomarker Discovery in R<a class="anchor" aria-label="anchor" href="#stablr-sparse-and-reliable-biomarker-discovery-in-r"></a>
 </h1></div>
-<p><code>stablr</code> is an R-native implementation of STABL for sparse, stable biomarker selection in high-dimensional clinical and omic data. It ports the parity-critical STABL semantics from the Python implementation while exposing R-native S3 objects, <code>glmnet</code>-ecosystem learners, multi-omic workflows, visualization helpers, and CSV/disk export utilities.</p>
-<p>The package compiles C++ but has no Python or tidymodels runtime dependency.</p>
-<div class="section level2">
-<h2 id="feature-summary">Feature Summary<a class="anchor" aria-label="anchor" href="#feature-summary"></a>
-</h2>
+<div class="section level3">
+<h3 id="r-native-stabl-sparse-stable-biomarker-selection-with-false-discovery-calibration">R-native STABL: sparse, stable biomarker selection with false-discovery calibration<a class="anchor" aria-label="anchor" href="#r-native-stabl-sparse-stable-biomarker-selection-with-false-discovery-calibration"></a>
+</h3>
+<p>The <code>stablr</code> package implements STABL (Stability-based Thresholding and Aggregation for Biomarker discovery via LASSO) for high-dimensional clinical and omic data. It resamples the data, fits a sparse learner across a penalty grid, records how often each feature is selected, and calibrates those selection frequencies against artificial decoy features. The package ports the parity-critical STABL semantics from the Python implementation while exposing R-native S3 objects, <code>glmnet</code>-ecosystem learners, multi-omic workflows, visualization helpers, and CSV/disk export utilities. It compiles C++ but has no Python or tidymodels runtime dependency.</p>
+<p>Major functionality of <code>stablr</code>:</p>
 <ul>
-<li>Core STABL selector: <code><a href="reference/stabl_fit.html">stabl_fit()</a></code>
-</li>
-<li>FDP+ thresholding with random-permutation and knockoff artificial features</li>
-<li>Lasso, elastic net, adaptive lasso, and optional sparse group lasso learners</li>
-<li>Gaussian, binomial, multinomial, and Cox outcome support where the backend supports the family</li>
-<li>Classic and group-aware bootstrap sampling with reproducible seeds</li>
-<li>Multi-omic train/validation and outer-CV workflows</li>
-<li>Early fusion, late fusion, and optional cooperative fusion</li>
-<li>S3 accessors, plotting helpers, export helpers, and reproducibility metrics</li>
+<li>
+<a href="reference/stabl.html"><code>stabl()</code></a>                     One-stop-shop selector: a data.frame in, a plain-language selection out</li>
+<li>
+<a href="reference/stabl_fit.html"><code>stabl_fit()</code></a>                    Expert interface: full control of lambda grid, bootstrap design, thresholds, and learners</li>
+<li>
+<a href="reference/compute_fdp_plus.html"><code>compute_fdp_plus()</code></a>               FDP+ thresholding with random-permutation and knockoff artificial features</li>
+<li>
+<a href="reference/stabl_multiomic_train_validate.html"><code>stabl_multiomic_train_validate()</code></a> Multi-omic train/validation with early, late, and cooperative fusion</li>
+<li>
+<a href="reference/stabl_multiomic_nested_cv.html"><code>stabl_multiomic_nested_cv()</code></a>     Outer CV with sample-i.i.d., grouped, or study-disjoint folds</li>
+<li>
+<a href="reference/stabl_multiomic_scheme_comparison.html"><code>stabl_multiomic_scheme_comparison()</code></a> Compare CV schemes arm-by-arm on held-out error</li>
+<li>
+<a href="reference/stabl_environment_stability.html"><code>stabl_environment_stability()</code></a> Transportable selections across environments (experimental)</li>
+<li>
+<a href="reference/jaccard_similarity_matrix.html"><code>jaccard_similarity_matrix()</code></a>    Selection-reproducibility metrics</li>
 </ul>
 </div>
 <div class="section level2">
-<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
+<h2 id="resources">Resources<a class="anchor" aria-label="anchor" href="#resources"></a>
 </h2>
-<div class="section level3">
-<h3 id="system-requirements">System requirements<a class="anchor" aria-label="anchor" href="#system-requirements"></a>
-</h3>
+<ul>
+<li>Hédou, J., Marić, I., Bellan, G. et al. Discovery of sparse, reliable omic biomarkers with Stabl. <u>Nat Biotechnol</u> (2024). <a href="https://doi.org/10.1038/s41587-023-02033-x" class="external-link">doi:10.1038/s41587-023-02033-x</a>
+</li>
+<li>Ding, Y. D., Li, S., Narasimhan, B., Tibshirani, R. J. Cooperative learning for multi-view analysis. <u>PNAS</u> (2022). <a href="https://doi.org/10.1073/pnas.2202113119" class="external-link">doi:10.1073/pnas.2202113119</a>
+</li>
+<li>
+<a href="https://mdmanurung.github.io/stablr/">Documentation website</a> and the Vignettes menu above for executable tutorials</li>
+<li><a href="https://github.com/mdmanurung/stablr/blob/main/docs/RELEASE_STATUS.md" class="external-link">Release governance and review status</a></li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="motivation">Motivation<a class="anchor" aria-label="anchor" href="#motivation"></a>
+</h2>
+<p>A high-dimensional biomarker screen begins with an uncomfortable fact: there are many more tempting variables than there are samples. A sparse model can still choose a short list, but a single fit does not tell whether the list is sturdy or merely lucky, and a selection that reproduces only inside the sampling scheme that produced it has little value for a new cohort or a new lab.</p>
+<p>STABL turns the one-shot question into a repeated experiment. Bootstrap resampling paired with artificial decoy features converts selection frequency into a calibrated decision: a feature is retained only when it out-competes decoys that carry no signal, and the fitted threshold is the first minimizer of the observed FDP+ diagnostic curve. <code>stablr</code> extends the same discipline across omic views (early, late, and cooperative fusion) and across environments and studies (grouped and study-disjoint resampling), so that reliability and transportability are measured rather than assumed.</p>
+</div>
+<div class="section level2">
+<h2 id="stablr-workflow">stablr workflow<a class="anchor" aria-label="anchor" href="#stablr-workflow"></a>
+</h2>
+<p><img src="reference/figures/workflow.png" align="center" alt="stablr workflow" style="padding-left:10px;"></p>
+</div>
+<div class="section level2">
+<h2 id="technical-intro">Technical intro<a class="anchor" aria-label="anchor" href="#technical-intro"></a>
+</h2>
+<p><code>stablr</code> is R-native without a Python runtime. The core STABL method is parity-tested against the Python STABL implementation (Hédou et al. 2024); cross-language solver validation uses ranking/support contracts and does not claim bit-identical coefficients. The cooperative-learning backend is compiled C++17 (vendored multiview engine), and learners come from the <code>glmnet</code> ecosystem: lasso, elastic net, adaptive lasso, and optional sparse group lasso, with gaussian, binomial, multinomial, and Cox outcomes where the backend supports the family.</p>
+<p>The interface is two-tier. <code><a href="reference/stabl.html">stabl()</a></code> runs STABL with statistically safe defaults — model-X knockoff artificial features, FDP+ calibration, strict fallback, automatic lambda grid — and prints a plain-language answer:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mdmanurung.github.io/stablr/">stablr</a></span><span class="op">)</span></span>
+<span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/stabl.html">stabl</a></span><span class="op">(</span><span class="va">df</span>, y <span class="op">=</span> <span class="st">"response"</span>, n_bootstraps <span class="op">=</span> <span class="fl">1000L</span>, random_state <span class="op">=</span> <span class="fl">42L</span><span class="op">)</span></span>
+<span><span class="va">fit</span>                    <span class="co"># plain-language answer</span></span>
+<span><span class="fu"><a href="reference/support.html">feature_names</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span>     <span class="co"># the selected features</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span>              <span class="co"># stability paths + FDP+ curve</span></span></code></pre></div>
+<p><code><a href="reference/stabl_fit.html">stabl_fit()</a></code> exposes every argument — lambda grids, bootstrap design, thresholds, learner adapters, sample grouping — and every accessor and workflow applies to both objects. See <code><a href="reference/stabl_fit.html">?stabl_fit</a></code> and the vignettes.</p>
+<p>Everything beyond core STABL is labelled as an extension: cooperative fusion (Ding et al. 2022) ships on the vendored multiview engine for gaussian and binomial families (Cox deferred); the random-forest learner is experimental until its FDP+ calibration study completes; the environment-stability workflow aggregates per-environment selections by their minimum frequency.</p>
+<p>Interpretation limits are part of the contract. The fitted threshold is the first minimizer of the observed FDP+ curve; a plotted <code>fdr_target</code> is a visual reference, not a fitting target, and neither is a universal false-discovery guarantee. Knockoff modes fail closed above 3,000 predictors because a globally valid chunked construction has not been established; random-permutation controls remain available at larger dimensions.</p>
+</div>
+<div class="section level2">
+<h2 id="install">Install<a class="anchor" aria-label="anchor" href="#install"></a>
+</h2>
 <p><code>stablr</code> compiles a C++17 native cooperative-learning backend at install time. You need a C++17-capable compiler toolchain:</p>
 <ul>
 <li>
@@ -97,26 +141,22 @@
 <li>
 <strong>Linux:</strong> GCC ≥ 7 or Clang ≥ 5 (usually pre-installed; install via <code>apt install r-base-dev</code> or equivalent)</li>
 </ul>
-</div>
 <div class="section level3">
-<h3 id="install-from-github">Install from GitHub<a class="anchor" aria-label="anchor" href="#install-from-github"></a>
+<h3 id="install-1">Install<a class="anchor" aria-label="anchor" href="#install-1"></a>
 </h3>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"mdmanurung/stablr"</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="install-from-a-local-clone">Install from a local clone<a class="anchor" aria-label="anchor" href="#install-from-a-local-clone"></a>
-</h3>
-<p>From the repository root:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"devtools"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="co"># Install from GitHub</span></span>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"mdmanurung/stablr"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Or from a local clone, from the repository root:</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_local</span><span class="op">(</span><span class="st">"."</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="optional-packages">Optional packages<a class="anchor" aria-label="anchor" href="#optional-packages"></a>
+<h3 id="dependencies">Dependencies<a class="anchor" aria-label="anchor" href="#dependencies"></a>
 </h3>
-<p>Optional functionality uses optional packages:</p>
+<p>Optional functionality uses optional packages, in case these aren’t installed automatically:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ggplot2"</span>, <span class="st">"knockoff"</span>, <span class="st">"future"</span>, <span class="st">"furrr"</span>, <span class="st">"sparsegl"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <ul>
 <li>
 <code>ggplot2</code>: plotting helpers and saved result figures</li>
@@ -132,241 +172,6 @@
 <code>mixOmics</code>: TCGA vignette dataset</li>
 </ul>
 </div>
-</div>
-<div class="section level2">
-<h2 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
-</h2>
-<p><strong>New to stablr? Use <code><a href="reference/stabl.html">stabl()</a></code>.</strong> Give it a table of features and an outcome; it runs STABL with statistically safe defaults (model-X knockoff artificial features, FDP+ calibration, strict fallback, automatic lambda grid) and prints a plain-language answer:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mdmanurung.github.io/stablr/">stablr</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
-<span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>m1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">80</span><span class="op">)</span>, m2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">80</span><span class="op">)</span>, m3 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">80</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">df</span><span class="op">$</span><span class="va">response</span> <span class="op">&lt;-</span> <span class="fl">1.2</span> <span class="op">*</span> <span class="va">df</span><span class="op">$</span><span class="va">m1</span> <span class="op">-</span> <span class="fl">0.8</span> <span class="op">*</span> <span class="va">df</span><span class="op">$</span><span class="va">m2</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">80</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/stabl.html">stabl</a></span><span class="op">(</span><span class="va">df</span>, y <span class="op">=</span> <span class="st">"response"</span>, n_bootstraps <span class="op">=</span> <span class="fl">1000L</span>, random_state <span class="op">=</span> <span class="fl">42L</span><span class="op">)</span></span>
-<span><span class="va">fit</span>                    <span class="co"># plain-language answer</span></span>
-<span><span class="fu"><a href="reference/support.html">feature_names</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span>     <span class="co"># the selected features</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span>              <span class="co"># stability paths + FDP+ curve</span></span></code></pre></div>
-<p><strong>Need full control? Use <code><a href="reference/stabl_fit.html">stabl_fit()</a></code>.</strong> The expert interface exposes all arguments — lambda grids, bootstrap design, thresholds, learner adapters, sample grouping — and every accessor and workflow applies to both <code>stabl</code> and <code>stabl_fit</code> objects. See <code><a href="reference/stabl_fit.html">?stabl_fit</a></code> and the vignettes.</p>
-</div>
-<div class="section level2">
-<h2 id="five-minute-example-expert-interface">Five-minute example (expert interface)<a class="anchor" aria-label="anchor" href="#five-minute-example-expert-interface"></a>
-</h2>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mdmanurung.github.io/stablr/">stablr</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
-<span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">80</span></span>
-<span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fl">20</span></span>
-<span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span> <span class="op">*</span> <span class="va">p</span><span class="op">)</span>,</span>
-<span>  nrow <span class="op">=</span> <span class="va">n</span>,</span>
-<span>  dimnames <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"s"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"f"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">p</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span><span class="va">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/setNames.html" class="external-link">setNames</a></span><span class="op">(</span><span class="fl">1.2</span> <span class="op">*</span> <span class="va">x</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span> <span class="op">-</span> <span class="fl">0.8</span> <span class="op">*</span> <span class="va">x</span><span class="op">[</span>, <span class="fl">2</span><span class="op">]</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">lambda_grid</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/auto_lambda_grid.html">auto_lambda_grid</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, family <span class="op">=</span> <span class="st">"gaussian"</span>, n_lambda <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/stabl_fit.html">stabl_fit</a></span><span class="op">(</span></span>
-<span>  x <span class="op">=</span> <span class="va">x</span>,</span>
-<span>  y <span class="op">=</span> <span class="va">y</span>,</span>
-<span>  lambda_grid <span class="op">=</span> <span class="va">lambda_grid</span>,</span>
-<span>  family <span class="op">=</span> <span class="st">"gaussian"</span>,</span>
-<span>  n_bootstraps <span class="op">=</span> <span class="fl">50L</span>,</span>
-<span>  artificial_type <span class="op">=</span> <span class="st">"random_permutation"</span>,</span>
-<span>  random_state <span class="op">=</span> <span class="fl">42L</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="reference/get_feature_names.html">get_feature_names</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="fu"><a href="reference/get_importances.html">get_importances</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span>, decreasing <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p>This is an executable orientation example, not release or publication evidence. Use larger bootstrap counts and broader lambda grids for a predeclared final analysis, and inspect the FDP+ diagnostic rather than interpreting the selected set alone.</p>
-</div>
-<div class="section level2">
-<h2 id="main-workflows">Main Workflows<a class="anchor" aria-label="anchor" href="#main-workflows"></a>
-</h2>
-<div class="section level3">
-<h3 id="single-omic-stabl">Single-Omic STABL<a class="anchor" aria-label="anchor" href="#single-omic-stabl"></a>
-</h3>
-<p>Use <code><a href="reference/stabl_fit.html">stabl_fit()</a></code> for one feature matrix. Inputs are aligned by sample names, not position, so <code>rownames(x)</code> must match the names or row names of <code>y</code>.</p>
-<p>Important arguments:</p>
-<ul>
-<li>
-<code>lambda_grid</code>: a data frame with a <code>lambda</code> column, or <code>"auto"</code>
-</li>
-<li>
-<code>base_learner</code>: <code>"lasso"</code>, <code>"elastic_net"</code>, <code>"adaptive_lasso"</code>, or <code>"sparse_group_lasso"</code>
-</li>
-<li>
-<code>family</code>: <code>"gaussian"</code>, <code>"binomial"</code>, <code>"multinomial"</code>, or <code>"cox"</code>
-</li>
-<li>
-<code>artificial_type</code>: <code>"random_permutation"</code>, <code>"knockoff"</code>, <code>"knockoff_equi"</code>, <code>"knockoff_mvr"</code>, or <code>NULL</code>
-</li>
-<li>
-<code>groups</code>: optional named group vector for grouped bootstrap sampling</li>
-<li>
-<code>random_state</code>: top-level seed for reproducible artificial features, bootstrap indices, and learner calls</li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="multi-omic-workflows">Multi-Omic Workflows<a class="anchor" aria-label="anchor" href="#multi-omic-workflows"></a>
-</h3>
-<p>Use <code><a href="reference/stabl_multiomic_train_validate.html">stabl_multiomic_train_validate()</a></code> for named omic lists with optional validation data. Enable <code>early_fusion</code>, <code>late_fusion</code>, and <code>cooperative_fusion</code> independently. Use <code><a href="reference/stabl_multiomic_cv.html">stabl_multiomic_cv()</a></code> when no fixed validation split is available.</p>
-<p>Cooperative-fusion results can be inspected with:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/get_cooperative_features.html">get_cooperative_features</a></span><span class="op">(</span><span class="va">multi_fit</span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/get_cooperative_diagnostics.html">get_cooperative_diagnostics</a></span><span class="op">(</span><span class="va">multi_fit</span><span class="op">)</span></span></code></pre></div>
-<p>Cooperative fusion is built into <code>stablr</code> (gaussian and binomial families in native v1). Validation-based cooperative tuning is not supported for Cox models; Cox cooperative fusion is deferred to a future release.</p>
-</div>
-</div>
-<div class="section level2">
-<h2 id="extensions-beyond-python-stabl">Extensions beyond Python STABL<a class="anchor" aria-label="anchor" href="#extensions-beyond-python-stabl"></a>
-</h2>
-<p>The core STABL method remains parity-tested against the Python STABL implementation (Hédou et al. 2024, Nat Biotechnol). Everything below is an R-native extension and is labelled as such.</p>
-<ul>
-<li>
-<strong>Cooperative fusion</strong> (Ding et al. 2022, PNAS): multi-view learning that encourages omic blocks measured on shared samples to agree, useful when views are complementary rather than redundant; shipped on the vendored multiview engine (gaussian and binomial families).</li>
-<li>
-<strong>Experimental random-forest learner</strong> (stablr extension, validation pending): a <code>ranger</code>-based base learner candidate for non-linear signals; results are exploratory until its FDP+ calibration study completes.</li>
-<li>
-<strong>Environment-stability workflow</strong>: fit STABL per environment and aggregate selection frequencies by their minimum across environments, for feature sets that are both reliable and transportable.</li>
-</ul>
-</div>
-<div class="section level2">
-<h2 id="api-reference">API Reference<a class="anchor" aria-label="anchor" href="#api-reference"></a>
-</h2>
-<p>Beginner entry point:</p>
-<ul>
-<li>
-<code><a href="reference/stabl.html">stabl()</a></code> — one-stop-shop wrapper with safe defaults; <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code>, <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>, <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code>, <code><a href="reference/support.html">support()</a></code>, <code><a href="reference/support.html">feature_names()</a></code> methods</li>
-</ul>
-<p>Core fitting:</p>
-<ul>
-<li>
-<code><a href="reference/stabl_fit.html">stabl_fit()</a></code>, <code><a href="reference/auto_lambda_grid.html">auto_lambda_grid()</a></code>
-</li>
-<li>
-<code><a href="reference/make_glmnet_adapter.html">make_glmnet_adapter()</a></code>, <code><a href="reference/make_adaptive_lasso_adapter.html">make_adaptive_lasso_adapter()</a></code>, <code><a href="reference/make_sgl_adapter.html">make_sgl_adapter()</a></code>
-</li>
-</ul>
-<p>Input validation and bootstrapping:</p>
-<ul>
-<li>
-<code><a href="reference/validate_sample_alignment.html">validate_sample_alignment()</a></code>, <code><a href="reference/validate_multiomic_inputs.html">validate_multiomic_inputs()</a></code>
-</li>
-<li>
-<code><a href="reference/sample_bootstrap_indices.html">sample_bootstrap_indices()</a></code>, <code><a href="reference/group_bootstrap_indices.html">group_bootstrap_indices()</a></code>
-</li>
-</ul>
-<p>Artificial features and FDP+:</p>
-<ul>
-<li>
-<code><a href="reference/make_artificial_features.html">make_artificial_features()</a></code> with <code>"random_permutation"</code>, <code>"knockoff"</code>, <code>"knockoff_equi"</code>, or <code>"knockoff_mvr"</code>; <code><a href="reference/compute_fdp_plus.html">compute_fdp_plus()</a></code>
-</li>
-</ul>
-<p>Accessors:</p>
-<ul>
-<li>
-<code><a href="reference/get_support.html">get_support()</a></code>, <code><a href="reference/get_feature_names.html">get_feature_names()</a></code>, <code><a href="reference/transform_stabl.html">transform_stabl()</a></code>, <code><a href="reference/get_stabl_scores.html">get_stabl_scores()</a></code>, <code><a href="reference/get_importances.html">get_importances()</a></code>
-</li>
-<li>
-<code><a href="reference/get_cooperative_features.html">get_cooperative_features()</a></code>, <code><a href="reference/get_cooperative_diagnostics.html">get_cooperative_diagnostics()</a></code>
-</li>
-</ul>
-<p>Multi-omic workflows:</p>
-<ul>
-<li>
-<code><a href="reference/stabl_multiomic_train_validate.html">stabl_multiomic_train_validate()</a></code>, <code><a href="reference/stabl_multiomic_cv.html">stabl_multiomic_cv()</a></code>
-</li>
-<li>
-<code><a href="reference/stabl_multiomic_stacked.html">stabl_multiomic_stacked()</a></code>, <code><a href="reference/load_ool_data.html">load_ool_data()</a></code>
-</li>
-</ul>
-<p>Visualization and export:</p>
-<ul>
-<li>
-<code><a href="reference/plot_stabl_path.html">plot_stabl_path()</a></code>, <code><a href="reference/plot_fdr_graph.html">plot_fdr_graph()</a></code>, <code><a href="reference/plot_roc.html">plot_roc()</a></code>, <code><a href="reference/plot_prc.html">plot_prc()</a></code>
-</li>
-<li>
-<code><a href="reference/boxplot_features.html">boxplot_features()</a></code>, <code><a href="reference/scatterplot_features.html">scatterplot_features()</a></code>
-</li>
-<li>
-<code><a href="reference/export_stabl_to_csv.html">export_stabl_to_csv()</a></code>, <code><a href="reference/save_stabl_results.html">save_stabl_results()</a></code>
-</li>
-</ul>
-<p>Selection reproducibility metrics:</p>
-<ul>
-<li>
-<code><a href="reference/jaccard_similarity.html">jaccard_similarity()</a></code>, <code><a href="reference/jaccard_similarity_matrix.html">jaccard_similarity_matrix()</a></code>
-</li>
-<li>
-<code><a href="reference/adjusted_similarity.html">adjusted_similarity()</a></code>, <code><a href="reference/adjusted_similarity_pairwise.html">adjusted_similarity_pairwise()</a></code>, <code><a href="reference/adjusted_similarity_summary.html">adjusted_similarity_summary()</a></code>
-</li>
-<li>
-<code><a href="reference/pearson_similarity.html">pearson_similarity()</a></code>, <code><a href="reference/pearson_similarity_pairwise.html">pearson_similarity_pairwise()</a></code>, <code><a href="reference/pearson_similarity_summary.html">pearson_similarity_summary()</a></code>
-</li>
-<li>
-<code><a href="reference/fdr_similarity.html">fdr_similarity()</a></code>, <code><a href="reference/tpr_similarity.html">tpr_similarity()</a></code>, <code><a href="reference/fscore_similarity.html">fscore_similarity()</a></code>
-</li>
-</ul>
-<p>Deprecated names (still work; warn once and delegate): <code><a href="reference/get_feature_names_out.html">get_feature_names_out()</a></code>, <code><a href="reference/stacked_multi_omic.html">stacked_multi_omic()</a></code>, <code><a href="reference/jaccard_matrix.html">jaccard_matrix()</a></code>, <code><a href="reference/classic_bootstrap_indices.html">classic_bootstrap_indices()</a></code>, <code><a href="reference/adjusted_similarity_values.html">adjusted_similarity_values()</a></code>, <code><a href="reference/adjusted_similarity_measure.html">adjusted_similarity_measure()</a></code>, <code><a href="reference/pearson_similarity_values.html">pearson_similarity_values()</a></code>, <code><a href="reference/pearson_similarity_measure.html">pearson_similarity_measure()</a></code> — see <code>NEWS.md</code> for the full rename table.</p>
-</div>
-<div class="section level2">
-<h2 id="interpretation-limits">Interpretation limits<a class="anchor" aria-label="anchor" href="#interpretation-limits"></a>
-</h2>
-<p>The fitted threshold is the first minimizer of the observed FDP+ diagnostic curve. A plotted <code>fdr_target</code> is a visual reference, not a fitting target, and neither is a universal false-discovery guarantee. Interpretation depends on the artificial-feature assumptions. Knockoff modes fail closed above 3,000 predictors because a globally valid chunked construction has not been established; random-permutation controls remain available at larger dimensions.</p>
-<p>Late-fusion weights default to leakage-safe OOF training. Empty selections or downstream fit failures use fold-training means/event priors/class priors and record the reason. The historical in-sample algorithm is available only through <code>late_fusion_training = "python_legacy"</code>. Read <code>oof_predictions</code>/<code>oof_score</code> in OOF mode and <code>in_sample_predictions</code>/<code>in_sample_score</code> in legacy mode; <code>train_predictions</code> and <code>score</code> are exact 0.1.x compatibility aliases. Cross-language solver validation uses ranking/support contracts; it does not claim bit-identical coefficients.</p>
-</div>
-<div class="section level2">
-<h2 id="vignettes">Vignettes<a class="anchor" aria-label="anchor" href="#vignettes"></a>
-</h2>
-<p>Canonical source vignettes live in <code>vignettes/</code>:</p>
-<ul>
-<li>
-<code>stablr-intro.Rmd</code>: quick simulated-data start</li>
-<li>
-<code>stablr-multiomic.Rmd</code>: executable OOL workflow tutorial using 150 training samples, 21 aligned validation samples, and 100 features per assay</li>
-<li>
-<code>stablr-tcga.Rmd</code>: non-executable TCGA workflow research protocol</li>
-<li>
-<code>stablr-tcga-nestedcv.Rmd</code>: non-executable TCGA/DIABLO benchmark protocol; no external results are bundled</li>
-<li>
-<code>stablr-cooperative.Rmd</code>: cooperative fusion with the built-in multiview engine</li>
-<li>
-<code>stablr-advanced.Rmd</code>: Cox, multinomial, knockoffs, grouped bootstrap, metrics, export, outer CV</li>
-</ul>
-<p>The machine-readable audit of all 42 exports and 19 registered S3 methods is maintained in <code>inst/release/public-interface-audit.csv</code>.</p>
-<p>The Python-to-R API mapping is maintained as developer documentation in <code>docs/PYTHON_TO_R_MAPPING.md</code>, not as a source vignette.</p>
-<p>Contributor documentation: the release-evidence glossary and validation vocabulary live in <a href="docs/CONTEXT.html">docs/CONTEXT.md</a>.</p>
-<p>The <code>doc/</code> directory is generated by <code>R CMD build</code> or <code>devtools::build_vignettes()</code> and is ignored in this source tree; edit <code>vignettes/</code> as the canonical source.</p>
-</div>
-<div class="section level2">
-<h2 id="documentation-website">Documentation Website<a class="anchor" aria-label="anchor" href="#documentation-website"></a>
-</h2>
-<p>Build the pkgdown site from the repository root:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="ex">conda</span> run <span class="at">-n</span> R4_51 Rscript <span class="at">-e</span> <span class="st">"pkgdown::build_site('.', install = FALSE)"</span></span></code></pre></div>
-<p>The site reference index is configured in <code>_pkgdown.yml</code>.</p>
-</div>
-<div class="section level2">
-<h2 id="application-workflow-status">Application workflow status<a class="anchor" aria-label="anchor" href="#application-workflow-status"></a>
-</h2>
-<p>The bundled OOL vignette is a workflow tutorial. It is not application-note evidence. Release claims require a separate run from an exact, hashed candidate source tarball and the predeclared full OOL inputs and gates; mutable-checkout execution does not qualify.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># From stablr-experiments/ after building the candidate tarball. The output</span></span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co"># directory must not exist.</span></span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="va">RUNTIME</span><span class="op">=</span>/exports/archive/hg-funcgenom-research/mdmanurung/conda/envs/R4_51/lib/R/bin/Rscript</span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="st">"</span><span class="va">$RUNTIME</span><span class="st">"</span> <span class="at">--vanilla</span> analysis/generate_publication_parity_table.R <span class="dt">\</span></span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>  <span class="at">--candidate-tarball</span> /absolute/path/to/stablr_0.1.1.tar.gz <span class="dt">\</span></span>
-<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>  <span class="at">--runtime</span> <span class="st">"</span><span class="va">$RUNTIME</span><span class="st">"</span> <span class="dt">\</span></span>
-<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>  <span class="at">--outdir</span> /absolute/new/path/ool-candidate-evidence <span class="dt">\</span></span>
-<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>  <span class="at">--profile</span> full</span></code></pre></div>
-<p>The frozen full-candidate protocol currently produces a negative result: support Jaccard 0.778 (required 0.80), score Spearman 0.785 (required 0.90), and FDP-threshold delta 0.08 (maximum 0.05). The lambda and training-only preprocessing gates pass. The requested fixed knockoff construction is infeasible for the 150-by-1,317 matrix (<code>n &gt; p</code> is required), so the typed, recorded fallback is <code>random_permutation</code> and the actual-generator gate also fails. The sealed negative artifact is retained; <code>stablr</code> 0.1.1 is therefore not ready for release review.</p>
-</div>
-<div class="section level2">
-<h2 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
-</h2>
-<p>If you use STABL, cite:</p>
-<p>Hédou, J., Marić, I., Bellan, G. et al. Discovery of sparse, reliable omic biomarkers with Stabl. Nat Biotechnol (2024). <a href="https://doi.org/10.1038/s41587-023-02033-x" class="external-link uri">https://doi.org/10.1038/s41587-023-02033-x</a></p>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">
@@ -396,7 +201,8 @@
 <div class="developers">
 <h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
-<li>Mikaël Manurung <br><small class="roles"> Author, maintainer, copyright holder </small>   </li>
+<li>
+<a href="https://github.com/mdmanurung" class="external-link">Mikaël Manurung</a> <br><small class="roles"> Author, maintainer, copyright holder </small>   </li>
 <li><a href="authors.html">More about authors...</a></li>
 </ul>
 </div>
@@ -408,7 +214,7 @@
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Mikaël Manurung.</p>
+  <p>Developed by <a href="https://github.com/mdmanurung" class="external-link">Mikaël Manurung</a>.</p>
 </div>
 
 <div class="pkgdown-footer-right">

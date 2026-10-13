@@ -1,14 +1,23 @@
 # Getting started with stabl
 
-## One function, one answer
+## Contents
+
+- 1 Introduction
+- 2 A worked example
+- 3 Defaults chosen by
+  [`stabl()`](https://mdmanurung.github.io/stablr/reference/stabl.md)
+- 4 The expert interface
+- 5 Compatibility with versions before 0.3.0
+
+## 1 Introduction
 
 [`stabl()`](https://mdmanurung.github.io/stablr/reference/stabl.md) is
-the one-stop-shop entry point to **stablr**. You give it a table of
-features and an outcome; it runs STABL with statistically safe defaults
-and returns an object that tells you, in plain language, which features
-were selected and how reliable the selection is estimated to be.
+the high-level entry point to **stablr**. Given a table of features and
+an outcome, it runs STABL with statistically safe defaults and returns
+an object that states, in plain language, which features were selected
+and how reliable the selection is estimated to be.
 
-That is the whole contract:
+The full contract is as follows.
 
 ``` r
 
@@ -16,13 +25,13 @@ fit <- stabl(my_data, y = "response")
 fit
 ```
 
-Everything else in the package is available when you need more control —
-see “The expert layer” below.
+Everything else in the package is available when more control is
+required; see Section 4, The expert interface.
 
-## A worked example
+## 2 A worked example
 
-We simulate a small proteomic-style dataset: 60 samples, 8 features, of
-which two truly drive the outcome.
+The example uses a small simulated proteomic-style dataset: 60 samples
+and 8 features, of which two truly drive the outcome.
 
 ``` r
 
@@ -34,8 +43,8 @@ df <- data.frame(
 df$response <- 0.9 * df$m1 + 0.9 * df$m2 + rnorm(60, sd = 0.4)
 ```
 
-Fit STABL. Here we lower the number of bootstraps so the vignette knits
-quickly; the default (`n_bootstraps = 1000`) is what you should use in
+STABL is fitted with a reduced number of bootstraps so that the vignette
+knits quickly; the default (`n_bootstraps = 1000`) should be used in
 practice.
 
 ``` r
@@ -44,7 +53,7 @@ library(stablr)
 fit <- stabl(df, y = "response", n_bootstraps = 200L, random_state = 1L)
 ```
 
-Printing the fit gives the plain-language answer:
+Printing the fit gives the plain-language answer.
 
 ``` r
 
@@ -58,7 +67,10 @@ fit
 #>   FDP+ curve.
 ```
 
-The selected features, as a character vector:
+The printed output reports the selected features together with the
+estimated reliability of the selection.
+
+The selected features are also available as a character vector.
 
 ``` r
 
@@ -67,9 +79,7 @@ feature_names(fit)
 ```
 
 [`summary()`](https://rdrr.io/r/base/summary.html) adds the stability
-threshold and the FDP+ estimate;
-[`plot()`](https://rdrr.io/r/graphics/plot.default.html) draws the
-stability paths and the FDP+ curve:
+threshold and the FDP+ estimate.
 
 ``` r
 
@@ -82,12 +92,18 @@ summary(fit)
 #>   selected (3)       : m1, m2, n3
 ```
 
+The [`plot()`](https://rdrr.io/r/graphics/plot.default.html) method
+draws the stability paths and the FDP+ curve.
+
 ``` r
 
 plot(fit)
 ```
 
-## What `stabl()` does for you
+The figure shows the stability paths of the features across the lambda
+grid together with the FDP+ curve used for calibration.
+
+## 3 Defaults chosen by `stabl()`
 
 | Decision | Default chosen | Why |
 |----|----|----|
@@ -97,7 +113,7 @@ plot(fit)
 | Lambda grid | automatic | a sensible grid is derived from the data |
 
 Any expert argument — `artificial_proportion`, `sample_fraction`,
-`sample_groups`, a custom adapter — is one `...` away:
+`sample_groups`, a custom adapter — is passed through `...`.
 
 ``` r
 
@@ -105,16 +121,16 @@ fit <- stabl(df, y = "response", base_learner = "elastic_net",
              artificial_proportion = 0.5)
 ```
 
-## The expert layer
+## 4 The expert interface
 
 [`stabl()`](https://mdmanurung.github.io/stablr/reference/stabl.md) is a
-thin, opinionated wrapper around
+thin wrapper around
 [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md),
 the expert interface with full control over all arguments (lambda grids,
 bootstrap design, thresholds, learner adapters, grouping). Every
 [`stabl()`](https://mdmanurung.github.io/stablr/reference/stabl.md)
-result is also a valid `stabl_fit` object, so the whole expert toolkit
-applies unchanged:
+result is also a valid `stabl_fit` object, so the entire expert toolkit
+applies unchanged.
 
 ``` r
 
@@ -168,14 +184,17 @@ class(fit)
 #> [1] "stabl"     "stabl_fit"
 ```
 
-Read
+The printed accessors show the stability scores, the FDP+ summary, and
+the class of the fitted object, which confirms that a
+[`stabl()`](https://mdmanurung.github.io/stablr/reference/stabl.md)
+result can be treated as a `stabl_fit` object. Read
 [`?stabl_fit`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
 for the full expert interface, and the other vignettes for multi-omic
 workflows, nested cross-validation, and environment stability.
 
-## If you used the package before 0.3.0
+## 5 Compatibility with versions before 0.3.0
 
-Nothing is removed. A handful of ambiguous names were renamed
+Nothing is removed. A number of ambiguous names were renamed
 ([`get_feature_names_out()`](https://mdmanurung.github.io/stablr/reference/get_feature_names_out.md)
 is now
 [`get_feature_names()`](https://mdmanurung.github.io/stablr/reference/get_feature_names.md),
@@ -185,5 +204,5 @@ is now
 [`jaccard_matrix()`](https://mdmanurung.github.io/stablr/reference/jaccard_matrix.md)
 is now
 [`jaccard_similarity_matrix()`](https://mdmanurung.github.io/stablr/reference/jaccard_similarity_matrix.md),
-and so on — see `NEWS.md` for the full table). The old names still work:
-each warns once and delegates to the new name.
+and so on; see `NEWS.md` for the full table). The old names continue to
+work: each warns once and delegates to the new name.

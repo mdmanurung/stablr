@@ -6,7 +6,8 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Research protocol: TCGA multi-omic biomarker discovery • stablr</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="../katex-auto.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -16,7 +17,7 @@
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top bg-primary" data-bs-theme="dark" aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="../index.html">stablr</a>
 
@@ -73,6 +74,24 @@
 
     
     
+<div class="section level2">
+<h2 id="contents">Contents<a class="anchor" aria-label="anchor" href="#contents"></a>
+</h2>
+<ul>
+<li>1 Scope and status of this protocol</li>
+<li>2 Prerequisites</li>
+<li>3 Loading and preparing the data</li>
+<li>4 Per-omic STABL</li>
+<li>5 Integrated multi-omic pipeline</li>
+<li>6 Validation performance</li>
+<li>7 Exporting results</li>
+<li>8 Comparison with mixOmics (sgccaDA and DIABLO)</li>
+<li>9 Session information</li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="scope-and-status-of-this-protocol">1 Scope and status of this protocol<a class="anchor" aria-label="anchor" href="#scope-and-status-of-this-protocol"></a>
+</h2>
 <blockquote>
 <p><strong>Non-executable research protocol.</strong> No TCGA result in
 this page is package or release evidence. Code chunks are set to
@@ -80,9 +99,6 @@ this page is package or release evidence. Code chunks are set to
 long-running. Execute the protocol only after pinning the dataset,
 candidate tarball, settings, and output manifest.</p>
 </blockquote>
-<div class="section level2">
-<h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
-</h2>
 <p>Breast cancer subtype is a molecular label, but it is also a test of
 integration. The same tumour is measured by mRNA and miRNA assays. Some
 signals should be visible in one view, some in the other, and some only
@@ -90,9 +106,9 @@ when the views are allowed to compete or cooperate.</p>
 <p>This vignette translates the <strong>mixOmics N-Integration Chapter
 6</strong> case study into the <code>stablr</code> idiom. The original
 mixOmics workflow uses sparse multi-block Discriminant Analysis
-(sgccaDA) to classify breast cancer subtypes. Here we ask a narrower
-question: which mRNA and miRNA features robustly distinguish Basal-like
-tumours from all other subtypes?</p>
+(sgccaDA) to classify breast cancer subtypes. The question addressed
+here is narrower: which mRNA and miRNA features robustly distinguish
+Basal-like tumours from all other subtypes.</p>
 <p>The proposed analysis uses the <code>breast.TCGA</code> train/test
 split from <code>mixOmics</code>, with compact settings shown only to
 specify the workflow. No result is reported here. A publication analysis
@@ -110,8 +126,10 @@ vs. non-Basal</strong>.</li>
 </ul>
 </div>
 <div class="section level2">
-<h2 id="prerequisites">Prerequisites<a class="anchor" aria-label="anchor" href="#prerequisites"></a>
+<h2 id="prerequisites">2 Prerequisites<a class="anchor" aria-label="anchor" href="#prerequisites"></a>
 </h2>
+<p>The <code>mixOmics</code> package is required. The following chunk
+stops with an installation hint when it is unavailable.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"mixOmics"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="kw"><a href="https://rdrr.io/r/base/stop.html" class="external-link">stop</a></span><span class="op">(</span></span>
@@ -123,11 +141,13 @@ vs. non-Basal</strong>.</li>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://www.mixOmics.org" class="external-link">mixOmics</a></span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="load-and-prepare-data">1. Load and prepare data<a class="anchor" aria-label="anchor" href="#load-and-prepare-data"></a>
+<h2 id="loading-and-preparing-the-data">3 Loading and preparing the data<a class="anchor" aria-label="anchor" href="#loading-and-preparing-the-data"></a>
 </h2>
 <p>The train and test matrices are already aligned within the
-<code>mixOmics</code> object. We extract mRNA and miRNA, then turn the
-PAM50 subtype into a binary Basal vs non-Basal outcome.</p>
+<code>mixOmics</code> object. The mRNA and miRNA matrices are extracted,
+and the PAM50 subtype is turned into a binary Basal vs non-Basal
+outcome.</p>
+<p>The four matrices are extracted as follows.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">breast.TCGA</span><span class="op">)</span></span>
 <span></span>
@@ -140,6 +160,9 @@ PAM50 subtype into a binary Basal vs non-Basal outcome.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Training miRNA: "</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">X_train_mirna</span><span class="op">)</span>, <span class="st">"x"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">X_train_mirna</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Test mRNA:      "</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">X_test_mrna</span><span class="op">)</span>,   <span class="st">"x"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">X_test_mrna</span><span class="op">)</span>,   <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Test miRNA:     "</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">X_test_mirna</span><span class="op">)</span>,  <span class="st">"x"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">X_test_mirna</span><span class="op">)</span>,  <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
+<p>The output reports the number of samples and features in each of the
+four matrices.</p>
+<p>The outcome is then binarised.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">subtype_train</span> <span class="op">&lt;-</span> <span class="va">breast.TCGA</span><span class="op">$</span><span class="va">data.train</span><span class="op">$</span><span class="va">subtype</span></span>
 <span><span class="va">subtype_test</span>  <span class="op">&lt;-</span> <span class="va">breast.TCGA</span><span class="op">$</span><span class="va">data.test</span><span class="op">$</span><span class="va">subtype</span></span>
@@ -152,15 +175,18 @@ PAM50 subtype into a binary Basal vs non-Basal outcome.</p>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Training: "</span>, <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">y_train</span><span class="op">)</span>, <span class="st">"Basal /"</span>, <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">y_train</span> <span class="op">==</span> <span class="fl">0</span><span class="op">)</span>, <span class="st">"non-Basal\n"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Test:     "</span>, <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">y_test</span><span class="op">)</span>,  <span class="st">"Basal /"</span>, <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">y_test</span> <span class="op">==</span> <span class="fl">0</span><span class="op">)</span>,  <span class="st">"non-Basal\n"</span><span class="op">)</span></span></code></pre></div>
+<p>The output reports the number of Basal and non-Basal tumours in the
+training and test splits.</p>
 </div>
 <div class="section level2">
-<h2 id="per-omic-stabl">2. Per-omic STABL<a class="anchor" aria-label="anchor" href="#per-omic-stabl"></a>
+<h2 id="per-omic-stabl">4 Per-omic STABL<a class="anchor" aria-label="anchor" href="#per-omic-stabl"></a>
 </h2>
-<p>The first pass treats each assay as its own experiment. This tells us
-whether mRNA and miRNA each contain stable Basal signal before the
-integrated model is allowed to mix them. The vignette uses 30 bootstraps
-and 12 lambda values to keep runtime bounded; use 500-1000 bootstraps
-for final reporting.</p>
+<p>The first pass treats each assay as its own experiment. This
+establishes whether mRNA and miRNA each contain stable Basal signal
+before the integrated model is allowed to mix them. The vignette uses 30
+bootstraps and 12 lambda values to keep runtime bounded; 500-1000
+bootstraps should be used for final reporting.</p>
+<p>The mRNA fit is run first.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lambda_mrna</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/auto_lambda_grid.html">auto_lambda_grid</a></span><span class="op">(</span></span>
 <span>  <span class="va">X_train_mrna</span>, <span class="va">y_train</span>,</span>
@@ -178,6 +204,9 @@ for final reporting.</p>
 <span>  random_state    <span class="op">=</span> <span class="fl">42L</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">fit_mrna</span></span></code></pre></div>
+<p>The printed summary reports the selected features and the stability
+diagnostics of the mRNA fit.</p>
+<p>The miRNA fit is run with the same settings.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lambda_mirna</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/auto_lambda_grid.html">auto_lambda_grid</a></span><span class="op">(</span></span>
 <span>  <span class="va">X_train_mirna</span>, <span class="va">y_train</span>,</span>
@@ -195,25 +224,36 @@ for final reporting.</p>
 <span>  random_state    <span class="op">=</span> <span class="fl">42L</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">fit_mirna</span></span></code></pre></div>
+<p>The printed summary reports the corresponding results for miRNA.</p>
+<p>The selected feature names are printed for both assays.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"mRNA selected feature names:\n"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_feature_names_out.html">get_feature_names_out</a></span><span class="op">(</span><span class="va">fit_mrna</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\nmiRNA selected feature names:\n"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_feature_names_out.html">get_feature_names_out</a></span><span class="op">(</span><span class="va">fit_mirna</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>The two lists show which features survive stability selection in each
+assay. Features selected in both assays are candidates for cross-omic
+markers, whereas features specific to one assay reflect view-specific
+signal.</p>
+<p>The stability paths are plotted for both assays.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="../reference/plot_stabl_path.html">plot_stabl_path</a></span><span class="op">(</span><span class="va">fit_mrna</span>,  title <span class="op">=</span> <span class="st">"mRNA - stability path"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="../reference/plot_stabl_path.html">plot_stabl_path</a></span><span class="op">(</span><span class="va">fit_mirna</span>, title <span class="op">=</span> <span class="st">"miRNA - stability path"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>Each plot shows the stability of every feature across the lambda grid
+and should be inspected for features that remain stable over a wide
+range of lambda values.</p>
 </div>
 <div class="section level2">
-<h2 id="integrated-multi-omic-pipeline">3. Integrated multi-omic pipeline<a class="anchor" aria-label="anchor" href="#integrated-multi-omic-pipeline"></a>
+<h2 id="integrated-multi-omic-pipeline">5 Integrated multi-omic pipeline<a class="anchor" aria-label="anchor" href="#integrated-multi-omic-pipeline"></a>
 </h2>
 <p>The integrated workflow repeats the per-omic fits inside a common
 pipeline, adds early fusion on the concatenated matrix, and learns a
 late-fusion validation predictor. In other words, it asks three related
 questions: what is stable in each view, what is stable when all features
-compete, and how much does each view help prediction on held-out
-tumours?</p>
+compete, and how much each view helps prediction on held-out
+tumours.</p>
+<p>The integrated fit is run with early and late fusion enabled.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lambda_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  mrna  <span class="op">=</span> <span class="va">lambda_mrna</span>,</span>
@@ -235,6 +275,10 @@ tumours?</p>
 <span>  n_iter_lf       <span class="op">=</span> <span class="fl">500L</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">multi_fit</span></span></code></pre></div>
+<p>The printed object summarises the per-omic fits and the fusion
+branches.</p>
+<p>The selected features and the late-fusion weights are printed as
+follows.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"mRNA (integrated):\n"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_feature_names_out.html">get_feature_names_out</a></span><span class="op">(</span><span class="va">multi_fit</span><span class="op">$</span><span class="va">fits</span><span class="op">$</span><span class="va">mrna</span><span class="op">)</span><span class="op">)</span></span>
@@ -247,16 +291,25 @@ tumours?</p>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\nLate fusion omic weights:\n"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">multi_fit</span><span class="op">$</span><span class="va">late_fusion</span><span class="op">$</span><span class="va">weights</span><span class="op">)</span></span></code></pre></div>
+<p>The output lists the features selected in each view under the
+integrated pipeline, the features selected by early fusion, and the
+weights that the late fusion assigns to the two omics.</p>
+<p>The stability paths of the integrated per-omic fits are plotted as
+follows.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="../reference/plot_stabl_path.html">plot_stabl_path</a></span><span class="op">(</span><span class="va">multi_fit</span><span class="op">$</span><span class="va">fits</span><span class="op">$</span><span class="va">mrna</span>,  title <span class="op">=</span> <span class="st">"Integrated - mRNA"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="../reference/plot_stabl_path.html">plot_stabl_path</a></span><span class="op">(</span><span class="va">multi_fit</span><span class="op">$</span><span class="va">fits</span><span class="op">$</span><span class="va">mirna</span>, title <span class="op">=</span> <span class="st">"Integrated - miRNA"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>These paths can be compared with the per-omic paths in Section 4 to
+determine whether integration changes the stable feature sets.</p>
 </div>
 <div class="section level2">
-<h2 id="validation-performance">4. Validation performance<a class="anchor" aria-label="anchor" href="#validation-performance"></a>
+<h2 id="validation-performance">6 Validation performance<a class="anchor" aria-label="anchor" href="#validation-performance"></a>
 </h2>
 <p>Feature stability is only one axis of evidence. The held-out test set
 asks whether the selected feature names and fusion weights carry
 predictive information outside the training data.</p>
+<p>The late-fusion predictions are evaluated on the test set with ROC
+and PRC curves, a confusion matrix, and derived error rates.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lf_preds</span> <span class="op">&lt;-</span> <span class="va">multi_fit</span><span class="op">$</span><span class="va">late_fusion</span><span class="op">$</span><span class="va">valid_predictions</span></span>
 <span></span>
@@ -279,6 +332,11 @@ predictive information outside the training data.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"\nSensitivity (Basal):     %.3f\n"</span>, <span class="va">sensitivity</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"Specificity (non-Basal): %.3f\n"</span>, <span class="va">specificity</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"Balanced Error Rate:     %.3f\n"</span>, <span class="va">ber</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>The ROC and PRC curves summarise the discrimination of Basal against
+non-Basal tumours. The printed sensitivity, specificity, and balanced
+error rate quantify performance at the 0.5 prediction threshold.</p>
+<p>The distributions of the selected mRNA features are plotted by
+outcome class.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mrna_feats</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_feature_names_out.html">get_feature_names_out</a></span><span class="op">(</span><span class="va">multi_fit</span><span class="op">$</span><span class="va">fits</span><span class="op">$</span><span class="va">mrna</span><span class="op">)</span></span>
 <span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">mrna_feats</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span> <span class="op">{</span></span>
@@ -290,22 +348,28 @@ predictive information outside the training data.</p>
 <span>    ncol     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="fl">3L</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">mrna_feats</span><span class="op">)</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
+<p>The boxplots show the separation of Basal and non-Basal tumours for
+each selected mRNA feature in the training set.</p>
 </div>
 <div class="section level2">
-<h2 id="export-results">5. Export results<a class="anchor" aria-label="anchor" href="#export-results"></a>
+<h2 id="exporting-results">7 Exporting results<a class="anchor" aria-label="anchor" href="#exporting-results"></a>
 </h2>
-<p>For a vignette, exports go to <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code> so rendering
-does not leave generated files in the package source tree. In a real
-analysis, these CSVs are the bridge to notebooks, review tables, and
-downstream biological interpretation.</p>
+<p>For a vignette, exports go to <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code> so that
+rendering does not leave generated files in the package source tree. In
+a real analysis, these CSVs are the bridge to notebooks, review tables,
+and downstream biological interpretation.</p>
+<p>The stability-score tables of both integrated per-omic fits are
+exported as follows.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tcga_out_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"stablr_tcga_results"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/export_stabl_to_csv.html">export_stabl_to_csv</a></span><span class="op">(</span><span class="va">multi_fit</span><span class="op">$</span><span class="va">fits</span><span class="op">$</span><span class="va">mrna</span>,  path <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">tcga_out_dir</span>, <span class="st">"mrna"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/export_stabl_to_csv.html">export_stabl_to_csv</a></span><span class="op">(</span><span class="va">multi_fit</span><span class="op">$</span><span class="va">fits</span><span class="op">$</span><span class="va">mirna</span>, path <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">tcga_out_dir</span>, <span class="st">"mirna"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.files</a></span><span class="op">(</span><span class="va">tcga_out_dir</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<p>The file listing confirms that the CSV files were written under the
+temporary output directory.</p>
 </div>
 <div class="section level2">
-<h2 id="comparison-with-mixomics-sgccada-and-diablo">6. Comparison with mixOmics (sgccaDA and DIABLO)<a class="anchor" aria-label="anchor" href="#comparison-with-mixomics-sgccada-and-diablo"></a>
+<h2 id="comparison-with-mixomics-sgccada-and-diablo">8 Comparison with mixOmics (sgccaDA and DIABLO)<a class="anchor" aria-label="anchor" href="#comparison-with-mixomics-sgccada-and-diablo"></a>
 </h2>
 <p>The mixOmics ecosystem and <code>stablr</code> both address
 multi-omic classification, but they optimise <strong>different
@@ -314,7 +378,7 @@ the point: one searches for sparse latent factors that separate classes;
 the other searches for <strong>named features whose selection frequency
 survives resampling and passes an FDP-aware threshold</strong>.</p>
 <div class="section level3">
-<h3 id="scientific-question">Scientific question<a class="anchor" aria-label="anchor" href="#scientific-question"></a>
+<h3 id="scientific-question">8.1 Scientific question<a class="anchor" aria-label="anchor" href="#scientific-question"></a>
 </h3>
 <table class="table">
 <colgroup>
@@ -363,31 +427,30 @@ knockoff FDP+</td>
 </table>
 </div>
 <div class="section level3">
-<h3 id="objective-strengths-and-limitations">Objective strengths and limitations<a class="anchor" aria-label="anchor" href="#objective-strengths-and-limitations"></a>
+<h3 id="objective-strengths-and-limitations">8.2 Objective strengths and limitations<a class="anchor" aria-label="anchor" href="#objective-strengths-and-limitations"></a>
 </h3>
-<p><strong>Choose mixOmics DIABLO when:</strong></p>
+<p><strong>mixOmics DIABLO is preferred when:</strong></p>
 <ul>
 <li>The goal is <strong>integrative discrimination</strong> with
 interpretable latent structure across correlated blocks.</li>
-<li>You want a mature tuning workflow (<code>tune.block.splsda</code>,
+<li>A mature tuning workflow (<code>tune.block.splsda</code>,
 design-matrix priors) and rich visualisation (<code>plotIndiv</code>,
-<code>plotVar</code>, circos plots).</li>
+<code>plotVar</code>, circos plots) are desired.</li>
 <li>Classification (or block-supervised reduction) is the primary
 endpoint and component loadings are an acceptable feature
 representation.</li>
 </ul>
-<p><strong>Choose stablr when:</strong></p>
+<p><strong>stablr is preferred when:</strong></p>
 <ul>
 <li>The goal is a <strong>reproducible sparse biomarker list</strong>
 with an FDP+ diagnostic under the artificial-feature assumptions. The
 fitted threshold minimises the diagnostic curve; it is not a universal
 false-discovery guarantee.</li>
-<li>You need gaussian, binomial, multinomial, or Cox STABL on the same
+<li>Gaussian, binomial, multinomial, or Cox STABL are needed on the same
 API, with grouped bootstrap for repeated measures.</li>
-<li>You want to compare integration strategies (per-omic, early, late,
-cooperative) under one stability-selection framework.</li>
-<li>You prefer staying in the glmnet / resampling idiom rather than PLS
-components.</li>
+<li>Integration strategies (per-omic, early, late, cooperative) are to
+be compared under one stability-selection framework.</li>
+<li>The glmnet / resampling idiom is preferred over PLS components.</li>
 </ul>
 <p><strong>Neither replaces the other.</strong> On TCGA, DIABLO may win
 on outer-fold BER when blocks share strong latent structure; stablr may
@@ -450,9 +513,14 @@ protocol is documented in
 subtype classification. STABL’s distinctive contribution is FDP-aware
 stability selection without assuming that omics must share a single
 latent space.</p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="session-information">9 Session information<a class="anchor" aria-label="anchor" href="#session-information"></a>
+</h2>
+<p>The session information is recorded for reproducibility.</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-</div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
@@ -461,7 +529,7 @@ latent space.</p>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Mikaël Manurung.</p>
+  <p>Developed by <a href="https://github.com/mdmanurung" class="external-link">Mikaël Manurung</a>.</p>
 </div>
 
 <div class="pkgdown-footer-right">

@@ -1,12 +1,24 @@
 # Research protocol: TCGA nested-CV stablr-DIABLO comparison
 
+## Contents
+
+- 1 Scope and status of this protocol
+- 2 Methodological audit
+- 3 Running the benchmark on SLURM
+- 4 Analysis design
+- 5 Predictive performance
+- 6 Feature comparison
+- 7 Exported artifacts
+- 8 Interpreting stablr vs DIABLO results
+- 9 Session information
+
+## 1 Scope and status of this protocol
+
 > **Non-executable research protocol.** This page specifies the
 > benchmark and cache-reading contract. No TCGA head-to-head result is
 > bundled or counted as release evidence. The external dataset,
 > long-running fits, exact candidate, and output cache must be pinned
 > before execution.
-
-## Overview
 
 The compact TCGA vignette shows the workflow. This vignette defines the
 evidence-generating benchmark and reports results only when an external
@@ -30,7 +42,7 @@ executed outside the package through SLURM and cached as an RDS file.
 Until that cache is present, the vignette is a methodological protocol
 rather than bundled empirical evidence.
 
-## Methodological Audit
+## 2 Methodological audit
 
 This workflow was checked against the `nestedcv` vignette guidance for p
 \>\> n biomedical prediction. No filter or feature-selection result is
@@ -56,7 +68,9 @@ include external cohort validation and refitting unpenalised subtype
 models on only the most recurrent features, with explicit post-selection
 qualification.
 
-## Run on SLURM
+## 3 Running the benchmark on SLURM
+
+The cache setup is configured as follows.
 
 ``` r
 
@@ -94,6 +108,12 @@ cat("Submit command:", slurm_cmd, "\n")
 #> Submit command: Set STABLR_USE_EXTERNAL_TCGA_CACHE=true before using external artifacts.
 ```
 
+The output reports the expected cache path and the SLURM submit command.
+When the external cache is not enabled, both entries are replaced by the
+corresponding placeholder messages.
+
+The cache status is then checked.
+
 ``` r
 
 has_results <- tcga_cache_complete(cache_path)
@@ -110,15 +130,23 @@ if (!has_results) {
 #> Opt in to external artifacts, submit the SLURM job above, then render this notebook again.
 ```
 
-## Analysis Design
+When the cache is absent, the chunk prints a notice that no TCGA
+head-to-head benchmark results are bundled in the render and that the
+SLURM job must be submitted before the notebook is rendered again.
 
-The cache records the exact settings used by the SLURM runner:
+## 4 Analysis design
+
+The cache records the exact settings used by the SLURM runner.
+
+The settings are printed when the cache is available.
 
 ``` r
 
 res <- readRDS(cache_path)
 str(res$settings)
 ```
+
+The output shows the pinned settings of the cached run.
 
 `stablr` uses multinomial stability selection with knockoff artificial
 features. The candidate workflows are mRNA-only, miRNA-only, and early
@@ -130,17 +158,23 @@ and `perf()` choose the number of components, `tune.block.splsda()`
 tunes `keepX`, and the locked outer-fold model is evaluated with
 weighted-vote `centroids.dist` predictions.
 
-## Predictive Performance
+## 5 Predictive performance
 
 When the cache is present, the performance table is the first readout.
 The confusion matrices show where the methods make their mistakes, which
 is often more informative than a single accuracy number. Without the
 cache, this section intentionally produces no numeric claim.
 
+The overall performance table is printed as follows.
+
 ``` r
 
 res$performance
 ```
+
+The table reports the outer-fold performance of both methods.
+
+The confusion matrices are printed for both methods.
 
 ``` r
 
@@ -158,6 +192,12 @@ print(stabl_conf)
 cat("\nDIABLO confusion matrix:\n")
 print(diablo_conf)
 ```
+
+Each matrix cross-tabulates truth and prediction over the pooled
+outer-fold predictions. The off-diagonal counts identify the classes
+that each method confuses.
+
+Per-fold metrics are computed and paired across methods as follows.
 
 ``` r
 
@@ -179,22 +219,37 @@ paired$delta_accuracy <- paired$accuracy_stablr - paired$accuracy_DIABLO
 summary(paired[, c("delta_BER", "delta_accuracy")])
 ```
 
-## Feature Comparison
+The output summarises the paired per-fold differences in balanced error
+rate and accuracy between the two methods.
+
+## 6 Feature comparison
 
 Feature recurrence is the biomarker-side counterpart to predictive
 performance. A recurrent feature is not merely selected once; it
 survives across many outer training splits.
+
+The overlap table is printed as follows.
 
 ``` r
 
 res$feature_comparison$overlap
 ```
 
+The table summarises the agreement between the feature sets of the two
+methods.
+
+The most recurrent features per block are listed as follows.
+
 ``` r
 
 recurrence <- res$feature_comparison$recurrence
 head(recurrence[order(recurrence$block, -recurrence$recurrence), ], 30)
 ```
+
+The output shows the 30 most recurrent feature-block combinations,
+ordered by block and by decreasing recurrence.
+
+The features selected by both methods are extracted as follows.
 
 ``` r
 
@@ -206,26 +261,32 @@ shared <- do.call(rbind, lapply(split(recurrence, recurrence$block), function(ta
 shared[order(shared$block, shared$feature, shared$method), ]
 ```
 
-## Exported Artifacts
+The output lists the features that appear in both the stablr and the
+DIABLO selections, ordered by block, feature, and method.
 
-The SLURM runner writes these files next to the cache:
+## 7 Exported artifacts
+
+The SLURM runner writes these files next to the cache.
+
+The exported files are listed when the cache is available.
 
 ``` r
 
 list.files(dirname(cache_path), pattern = "tcga_nestedcv", full.names = TRUE)
 ```
 
-The CSV files are intended for manuscript tables and supplement
-material: performance, feature recurrence, and feature overlap by omic
-block.
+The listing contains the cache file and the CSV exports whose names
+match `tcga_nestedcv`. The CSV files are intended for manuscript tables
+and supplement material: performance, feature recurrence, and feature
+overlap by omic block.
 
-## Interpreting stablr vs DIABLO results
+## 8 Interpreting stablr vs DIABLO results
 
-Read predictive and feature-level outputs together. A method that wins
-on balanced error rate (BER) is not automatically preferable for
-biomarker discovery, and vice versa.
+Predictive and feature-level outputs should be read together. A method
+that wins on balanced error rate (BER) is not automatically preferable
+for biomarker discovery, and vice versa.
 
-### Predictive layer
+### 8.1 Predictive layer
 
 | Observation | Interpretation |
 |----|----|
@@ -235,10 +296,10 @@ biomarker discovery, and vice versa.
 | Large fold-to-fold BER variance | Dataset is small (220 samples); treat point estimates as exploratory. |
 
 Negative `delta_BER` (stablr − DIABLO) favours DIABLO; positive favours
-stablr. Report paired fold deltas with bootstrap confidence intervals
-(see `inst/analysis/BENCHMARK_PLAN.md`, Phase 2).
+stablr. Paired fold deltas should be reported with bootstrap confidence
+intervals (see `inst/analysis/BENCHMARK_PLAN.md`, Phase 2).
 
-### Feature / biomarker layer
+### 8.2 Feature and biomarker layer
 
 | Observation | Interpretation |
 |----|----|
@@ -247,7 +308,7 @@ stablr. Report paired fold deltas with bootstrap confidence intervals
 | DIABLO `selectVar` features absent from stablr support | May load strongly on components without surviving FDP+ thresholding across bootstraps. |
 | stablr selects more features per fold | FDP threshold and lambda grid control sparsity; DIABLO sparsity is governed by `keepX`. |
 
-### When each method is the better tool
+### 8.3 When each method is the better tool
 
 | Criterion | Prefer stablr | Prefer DIABLO |
 |----|----|----|
@@ -261,7 +322,10 @@ stablr. Report paired fold deltas with bootstrap confidence intervals
 For Python STABL parity (selection semantics, not prediction contests),
 see `docs/PYTHON_TO_R_MAPPING.md`.
 
-## Session Info
+## 9 Session information
+
+The session information of the cached run is printed when the cache is
+available.
 
 ``` r
 

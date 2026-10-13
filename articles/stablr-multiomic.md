@@ -1,5 +1,29 @@
 # Multi-Omic Biomarker Discovery with stablr
 
+## Contents
+
+- 1 Introduction
+- 2 Learning objectives
+- 3 Loading the data
+- 4 Per-omic STABL
+  - 4.1 Rationale
+  - 4.2 Model fitting
+  - 4.3 Selected features and stability paths
+- 5 Integrated multi-omic workflow
+  - 5.1 Fusion strategies
+  - 5.2 Function arguments
+  - 5.3 Fitting the joint workflow
+- 6 Exploring the results
+  - 6.1 Elements of the result list
+  - 6.2 Per-omic selected features
+  - 6.3 Early fusion
+  - 6.4 Late fusion
+  - 6.5 Stability paths
+- 7 Exporting results
+- 8 Next steps
+
+## 1 Introduction
+
 > **Workflow tutorial, not publication evidence.** This executable
 > vignette uses 150 training samples, 21 aligned validation samples, and
 > the first 100 features from each of the CyTOF and Proteomics assays.
@@ -7,13 +31,11 @@
 > decoys keep package builds bounded and catch API drift without
 > optional knockoff dependencies.
 
-## Overview
-
-A multi-omic dataset is a set of partial views. One assay sees
-immune-cell state, another sees circulating proteins, and the phenotype
-is the same person seen through both. The statistical question is not
-only “which features are stable?” but also “does a feature remain useful
-when another view is allowed to speak?”
+A multi-omic dataset is a set of partial views. One assay captures
+immune-cell state, another captures circulating proteins, and the
+phenotype is the same individual seen through both. The statistical
+question is not only which features are stable, but also whether a
+feature remains useful when another view is allowed to contribute.
 
 This vignette uses a real Onset of Labor (OOL) dataset bundled with
 `stablr`. It contains two omic layers, CyTOF and Proteomics, measured in
@@ -22,7 +44,7 @@ continuous regression target. The settings are intentionally bounded for
 package builds while preserving the shape of a real train/validation
 analysis.
 
-We will:
+The workflow is as follows:
 
 1.  Load the bundled example data with
     [`load_ool_data()`](https://mdmanurung.github.io/stablr/reference/load_ool_data.md).
@@ -32,9 +54,9 @@ We will:
 4.  Compare selected feature names across strategies.
 5.  Export results.
 
-## Learning objectives
+## 2 Learning objectives
 
-By the end, you should be able to:
+After working through this vignette the reader should be able to:
 
 1.  Understand the data structure returned by
     [`load_ool_data()`](https://mdmanurung.github.io/stablr/reference/load_ool_data.md).
@@ -46,17 +68,17 @@ By the end, you should be able to:
 5.  Compare which features appear across integration strategies.
 6.  Export results for downstream use.
 
+The package is attached as follows.
+
 ``` r
 
 library(stablr)
 ```
 
-------------------------------------------------------------------------
-
-## 1. Load the data
+## 3 Loading the data
 
 [`load_ool_data()`](https://mdmanurung.github.io/stablr/reference/load_ool_data.md)
-reads the bundled OOL subset directly from the package. No file paths
+reads the bundled OOL subset directly from the package; no file paths
 are needed. It returns a named list with two elements:
 
 - **`$x_list`**: a named list of feature matrices, one per omic layer.
@@ -65,7 +87,7 @@ are needed. It returns a named list with two elements:
 - **`$y`**: a named numeric vector of outcomes (DOS in days), aligned to
   the rows of every matrix in `$x_list`.
 
-**Relation to the Python tutorial notebook:** this is a bounded package
+**Relation to the Python tutorial notebook.** This is a bounded package
 example, not a full reproduction of
 `Notebook examples/Tutorial Notebook.ipynb`. The notebook uses the full
 OOL-CV training files (`CyTOF`, `Proteomics`, and `Metabolomics`) and
@@ -80,6 +102,9 @@ already aligned and without missing values. These are quick-build
 settings, not the predeclared full OOL parity analysis. Use
 `docs/PYTHON_TO_R_MAPPING.md` when the goal is to mirror the tutorial
 notebook’s datasets and preprocessing choices.
+
+The training and validation splits are loaded and their dimensions
+inspected as follows.
 
 ``` r
 
@@ -109,6 +134,8 @@ The `lapply(..., dim)` output confirms the basic geometry: the omics
 share rows but differ in columns. Row names must match across views.
 `stablr` checks this alignment and stops early if it detects a mismatch.
 
+The outcome distribution is summarised next.
+
 ``` r
 
 # Outcome distribution (DOS = days before onset of labor)
@@ -122,26 +149,31 @@ spread of DOS. A wide range is expected; a strong skew or narrow range
 changes how much prediction signal one should expect from molecular
 measurements.
 
-------------------------------------------------------------------------
+## 4 Per-omic STABL
 
-## 2. Per-omic STABL
+### 4.1 Rationale
 
-Before integrating views, it is worth listening to each one alone. A
-per-omic fit is both a sanity check and a baseline:
+Before integrating views, each view is analysed separately. A per-omic
+fit serves as both a sanity check and a baseline:
 
-1.  **Sanity check** — does each omic contain any signal at all? If
+1.  **Sanity check** — whether each omic contains any signal at all. If
     STABL selects zero features from an omic, that layer may not
     contribute useful information to the integrated analysis.
-2.  **Baseline** — the per-omic biomarker lists can be compared to the
+2.  **Baseline** — the per-omic biomarker lists can be compared with the
     integrated results to see which features survive the joint analysis.
 
-We use compact 6-point lambda grids and small bootstrap counts
-throughout this vignette. Increase to 500-1000 bootstraps and broader
-grids for publication-quality results.
+Compact 6-point lambda grids and small bootstrap counts are used
+throughout this vignette. For publication-quality results, 500-1000
+bootstraps and broader grids are recommended.
 
-When each fit prints, look first at the number of selected feature names
-and the FDP estimate. The ideal result is not simply a long list. It is
-a compact list whose stability is difficult for decoys to explain.
+In each printed fit, the number of selected feature names and the FDP
+estimate deserve first attention. The ideal result is not simply a long
+list; it is a compact list whose stability is difficult for decoys to
+explain.
+
+### 4.2 Model fitting
+
+A compact lambda grid is built for the CyTOF view.
 
 ``` r
 
@@ -150,6 +182,8 @@ lambda_cytof <- auto_lambda_grid(
   family = "gaussian", n_lambda = 6
 )
 ```
+
+STABL is fitted to the CyTOF view with 10 bootstrap replicates.
 
 ``` r
 
@@ -170,6 +204,10 @@ fit_cytof
 #>   FDP+ threshold:   1 
 #>   Artificial:       random_permutation
 ```
+
+The Proteomics matrix is standardised with
+[`scale()`](https://rdrr.io/r/base/scale.html) before its lambda grid
+and fit are computed.
 
 ``` r
 
@@ -197,14 +235,9 @@ fit_prot
 #>   Artificial:       random_permutation
 ```
 
-[`get_feature_names_out()`](https://mdmanurung.github.io/stablr/reference/get_feature_names_out.md)
-returns the feature names that passed the stability threshold in each
-omic. Use
-[`get_support()`](https://mdmanurung.github.io/stablr/reference/get_support.md)
-when you need the named logical mask for subsetting. Non-overlapping
-lists suggest view-specific information. Overlap, when the same molecule
-is measured in both layers, is stronger evidence because the signal has
-appeared twice through different measurement systems.
+### 4.3 Selected features and stability paths
+
+The selected feature names of each omic are printed below.
 
 ``` r
 
@@ -223,6 +256,16 @@ print(get_feature_names_out(fit_prot))
 #> instead.
 #> character(0)
 ```
+
+[`get_feature_names_out()`](https://mdmanurung.github.io/stablr/reference/get_feature_names_out.md)
+returns the feature names that passed the stability threshold in each
+omic.
+[`get_support()`](https://mdmanurung.github.io/stablr/reference/get_support.md)
+returns the named logical mask when subsetting is required.
+Non-overlapping lists suggest view-specific information. Overlap, when
+the same molecule is measured in both layers, is stronger evidence,
+because the signal has appeared twice through different measurement
+systems.
 
 In the stability path, each line is one feature. Features that hold high
 selection frequencies across a moderate penalty range are the most
@@ -245,12 +288,12 @@ plot_stabl_path(fit_prot,      title = "Proteomics - stability path")
 ![Stability paths for CyTOF and
 Proteomics](stablr-multiomic_files/figure-html/plot-per-omic-2.png)
 
-------------------------------------------------------------------------
+## 5 Integrated multi-omic workflow
 
-## 3. Integrated multi-omic workflow
+### 5.1 Fusion strategies
 
 [`stabl_multiomic_train_validate()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_train_validate.md)
-puts the train/validation analysis into one call. It accepts matched
+performs the train/validation analysis in one call. It accepts matched
 omic matrices and evaluates two complementary ways to let the views
 interact:
 
@@ -259,7 +302,7 @@ interact:
 | **Early fusion** | Concatenates all omic matrices into one wide matrix, then runs a *single* STABL fit across all features jointly. | Omics are measured on the same samples; you want a unified biomarker list. |
 | **Late fusion** | Fits one STABL + downstream model per omic separately, learns stacking weights from OOF predictions by default, and applies the weighted blend to full-refit validation predictions. | You want a held-out evaluation of an omic-weighted prediction rule. |
 
-Key arguments:
+### 5.2 Function arguments
 
 | Argument | Purpose |
 |----|----|
@@ -282,6 +325,10 @@ and regression late fusion use parity-preserving batched stacking;
 multiclass stacking remains scalar by design to preserve
 probability-normalisation and tie behavior.
 
+### 5.3 Fitting the joint workflow
+
+Per-omic lambda grids are built from the training data.
+
 ``` r
 
 # Build per-omic lambda grids
@@ -293,12 +340,14 @@ lambda_list <- list(
 )
 ```
 
-When you plan to cross-validate with
-[`stabl_multiomic_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_cv.md),
-prefer `lambda_grid = "auto"` or derive grids from training data only. A
-grid computed on the full dataset leaks mild information into the
-cross-validated estimates; `"auto"` sidesteps this by building each
-fold’s grid from its training data alone.
+When cross-validation with
+[`stabl_multiomic_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_cv.md)
+is planned, prefer `lambda_grid = "auto"` or derive grids from training
+data only. A grid computed on the full dataset leaks mild information
+into the cross-validated estimates; `"auto"` avoids this by building
+each fold’s grid from its training data alone.
+
+The integrated workflow is run with both fusion strategies enabled.
 
 ``` r
 
@@ -328,9 +377,12 @@ multi_fit
 #>   Late fusion:      yes (score = 0.1901)
 ```
 
-------------------------------------------------------------------------
+The printed summary lists the active branches of the workflow together
+with their selected-feature counts and the late-fusion score.
 
-## 4. Exploring results
+## 6 Exploring the results
+
+### 6.1 Elements of the result list
 
 `multi_fit` is a list because the workflow has several branches. The
 main elements are:
@@ -343,6 +395,11 @@ main elements are:
 - **`$late_fusion`**: result of the late-fusion step (if
   `late_fusion = TRUE`), containing `$valid_predictions` (validation
   predictions) and `$weights` (training-stack model weights).
+
+### 6.2 Per-omic selected features
+
+The per-omic selected feature names from the joint pipeline are printed
+below.
 
 ``` r
 
@@ -363,6 +420,14 @@ print(get_feature_names_out(multi_fit$fits$proteomics))
 #> character(0)
 ```
 
+These lists come from the fits produced within the joint pipeline and
+can be compared with the standalone per-omic results of Section 4.
+
+### 6.3 Early fusion
+
+The early-fusion selected feature names are printed when the branch is
+active.
+
 ``` r
 
 # Early fusion: joint selection across all omics simultaneously
@@ -378,8 +443,12 @@ if (!is.null(multi_fit$early_fusion)) {
 
 Early fusion can disagree with the per-omic lists because the joint
 model sees all features at once. A feature that is useful alone may
-become redundant when another omic carries the same information. That is
+become redundant when another omic carries the same information. This is
 a property of the joint question, not a failure of the method.
+
+### 6.4 Late fusion
+
+The late-fusion validation predictions are inspected below.
 
 ``` r
 
@@ -394,12 +463,17 @@ if (!is.null(multi_fit$late_fusion)) {
 ```
 
 `$valid_predictions` is a numeric vector of predicted DOS values for the
-held-out validation set, one prediction per sample. Compare these to
-`ool_valid$y` to assess predictive performance. The `$weights` element
-records the omic weights chosen by the training-prediction stacking
-objective; a small weight means that view received little weight in this
-fitted prediction rule, not that the assay is biologically
-uninformative.
+held-out validation set, one prediction per sample. These values can be
+compared with `ool_valid$y` to assess predictive performance. The
+`$weights` element records the omic weights chosen by the
+training-prediction stacking objective; a small weight means that a view
+received little weight in this fitted prediction rule, not that the
+assay is biologically uninformative.
+
+### 6.5 Stability paths
+
+The stability paths of the per-omic fits from the joint pipeline are
+plotted below.
 
 ``` r
 
@@ -419,9 +493,10 @@ plot_stabl_path(multi_fit$fits$proteomics,
 ![CyTOF stability path from multi-omic
 fit](stablr-multiomic_files/figure-html/stability-paths-2.png)
 
-------------------------------------------------------------------------
+These paths correspond to the per-omic fits produced within the joint
+pipeline.
 
-## 5. Export results
+## 7 Exporting results
 
 [`save_stabl_results()`](https://mdmanurung.github.io/stablr/reference/save_stabl_results.md)
 writes the result of a single `stabl_fit` object to disk:
@@ -438,6 +513,9 @@ writes the result of a single `stabl_fit` object to disk:
 Set `override = TRUE` to overwrite an existing directory, which is
 useful when an analysis is being rerun with more bootstraps or a revised
 grid.
+
+The CyTOF fit from the joint pipeline is exported to a temporary
+directory.
 
 ``` r
 
@@ -463,9 +541,10 @@ list.files(out_dir, recursive = TRUE)
 #> [7] "STABL scores.csv"
 ```
 
-------------------------------------------------------------------------
+The file listing shows the exported score tables, the stability path,
+and the selected-feature table.
 
-## Next steps
+## 8 Next steps
 
 - Use
   [`stabl_multiomic_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_cv.md)

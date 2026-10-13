@@ -2,7 +2,8 @@
 
 ## Authors
 
-- **Mikaël Manurung**. Author, maintainer, copyright holder.
+- **[Mikaël Manurung](https://github.com/mdmanurung)**. Author,
+  maintainer, copyright holder.
 
 - **Jean Hédou**. Contributor.  
   Original STABL method (Hédou et al., Nat Biotechnol 2024)
@@ -77,7 +78,7 @@ Cooperative fusion method implemented in the native stablr engine.
     }
 
 Manurung M (2026). stablr: Sparse and Reliable Biomarker Discovery in R.
-R package version 0.1.1. https://github.com/mdmanurung/stablr
+R package version 0.3.0. https://github.com/mdmanurung/stablr
 
     @Manual{,
       title = {stablr: Sparse and Reliable Biomarker Discovery in R},

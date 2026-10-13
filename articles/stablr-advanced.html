@@ -6,7 +6,8 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Advanced stablr Workflows • stablr</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="../katex-auto.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -16,7 +17,7 @@
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top bg-primary" data-bs-theme="dark" aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="../index.html">stablr</a>
 
@@ -74,12 +75,29 @@
     
     
 <div class="section level2">
-<h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
+<h2 id="contents">Contents<a class="anchor" aria-label="anchor" href="#contents"></a>
 </h2>
-<p>The introductory and multi-omic vignettes focus on the core Gaussian
-and binomial workflows. This vignette covers additional
+<ul>
+<li>1 Scope of this vignette</li>
+<li>2 Cox proportional-hazards STABL</li>
+<li>3 Multinomial STABL</li>
+<li>4 Knockoff artificial features</li>
+<li>5 Grouped bootstrap for repeated measures</li>
+<li>6 Reproducibility across repeated fits</li>
+<li>7 Exporting results to disk</li>
+<li>8 Outer cross-validation for multi-omic workflows</li>
+<li>9 Cooperative coefficient paths</li>
+<li>10 Related vignettes</li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="scope-of-this-vignette">1 Scope of this vignette<a class="anchor" aria-label="anchor" href="#scope-of-this-vignette"></a>
+</h2>
+<p>The introductory and multi-omic vignettes describe the core Gaussian
+and binomial workflows. This vignette documents additional
 <code>stablr</code> capabilities that are easy to miss when reading only
-the quick-start paths:</p>
+the quick-start paths. The topics and the corresponding functions are
+listed in the table below.</p>
 <table class="table">
 <colgroup>
 <col width="38%">
@@ -138,18 +156,20 @@ native fits</td>
 </tr>
 </tbody>
 </table>
-<p>Examples use small simulated data so the vignette remains fast during
-<code>R CMD check</code>.</p>
+<p>The examples use small simulated data so that the vignette remains
+fast during <code>R CMD check</code>. The package is loaded as
+follows.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mdmanurung.github.io/stablr/">stablr</a></span><span class="op">)</span></span></code></pre></div>
-<hr>
 </div>
 <div class="section level2">
-<h2 id="cox-proportional-hazards-stabl">1. Cox proportional-hazards STABL<a class="anchor" aria-label="anchor" href="#cox-proportional-hazards-stabl"></a>
+<h2 id="cox-proportional-hazards-stabl">2 Cox proportional-hazards STABL<a class="anchor" aria-label="anchor" href="#cox-proportional-hazards-stabl"></a>
 </h2>
-<p>For time-to-event outcomes, pass a <code><a href="https://rdrr.io/pkg/survival/man/Surv.html" class="external-link">survival::Surv</a></code> object
-as <code>y</code> and set <code>family = "cox"</code>. Row names of
-<code>y</code> must match <code>rownames(x)</code>.</p>
+<p>For time-to-event outcomes, a <code><a href="https://rdrr.io/pkg/survival/man/Surv.html" class="external-link">survival::Surv</a></code> object is
+passed as <code>y</code> and <code>family = "cox"</code> is set. Row
+names of <code>y</code> must match <code>rownames(x)</code>.</p>
+<p>The following commands simulate a small survival dataset with signal
+in the first two features and construct the lambda grid.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/therneau/survival" class="external-link">survival</a></span><span class="op">)</span></span>
 <span></span>
@@ -166,6 +186,10 @@ as <code>y</code> and set <code>family = "cox"</code>. Row names of
 <span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">y_cox</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">ids</span></span>
 <span></span>
 <span><span class="va">lambda_cox</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/auto_lambda_grid.html">auto_lambda_grid</a></span><span class="op">(</span><span class="va">x_cox</span>, <span class="va">y_cox</span>, family <span class="op">=</span> <span class="st">"cox"</span>, n_lambda <span class="op">=</span> <span class="fl">8</span><span class="op">)</span></span></code></pre></div>
+<p>The linear predictor involves the first two features only, so a
+stable selection procedure is expected to recover them.</p>
+<p>The model is fitted with 40 bootstrap replicates and
+random-permutation artificial features.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_cox</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stabl_fit.html">stabl_fit</a></span><span class="op">(</span></span>
 <span>  x               <span class="op">=</span> <span class="va">x_cox</span>,</span>
@@ -214,14 +238,19 @@ as <code>y</code> and set <code>family = "cox"</code>. Row names of
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_importances.html">get_importances</a></span><span class="op">(</span><span class="va">fit_cox</span><span class="op">)</span>, decreasing <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, <span class="fl">6</span><span class="op">)</span></span>
 <span><span class="co">#&gt; g1 g2 g3 g4 g5 g6 </span></span>
 <span><span class="co">#&gt;  1  1  1  1  1  1</span></span></code></pre></div>
-<hr>
+<p>The output lists the selected feature names, followed by the six
+features with the largest stability importances. The planted features
+<code>g1</code> and <code>g2</code> are expected to rank at the top of
+the sorted importances.</p>
 </div>
 <div class="section level2">
-<h2 id="multinomial-stabl">2. Multinomial STABL<a class="anchor" aria-label="anchor" href="#multinomial-stabl"></a>
+<h2 id="multinomial-stabl">3 Multinomial STABL<a class="anchor" aria-label="anchor" href="#multinomial-stabl"></a>
 </h2>
 <p>Multinomial outcomes use a named factor <code>y</code>. The stability
-matrix has one row per feature; importances aggregate across
+matrix has one row per feature, and importances aggregate across
 classes.</p>
+<p>The following commands simulate a three-class problem with weak class
+signal in the first feature and fit the multinomial model.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">90</span></span>
 <span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fl">12</span></span>
@@ -258,20 +287,26 @@ classes.</p>
 <span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
 <span><span class="co">#&gt; instead.</span></span>
 <span><span class="co">#&gt; [1] "m1"  "m2"  "m3"  "m5"  "m9"  "m10"</span></span></code></pre></div>
-<hr>
+<p>The printed vector contains the features selected by the multinomial
+fit. Because the class signal is confined to feature <code>m1</code>,
+that feature is expected to appear among the selections.</p>
 </div>
 <div class="section level2">
-<h2 id="knockoff-artificial-features">3. Knockoff artificial features<a class="anchor" aria-label="anchor" href="#knockoff-artificial-features"></a>
+<h2 id="knockoff-artificial-features">4 Knockoff artificial features<a class="anchor" aria-label="anchor" href="#knockoff-artificial-features"></a>
 </h2>
-<p>Supported artificial-feature settings are
+<p>The supported artificial-feature settings are
 <code>"random_permutation"</code>, <code>"knockoff"</code>,
 <code>"knockoff_equi"</code>, <code>"knockoff_mvr"</code>, and
-<code>NULL</code>. Use <code>artificial_type = "knockoff"</code> for
-fixed-X knockoffs. Use <code>artificial_type = "knockoff_equi"</code> or
-<code>"knockoff_mvr"</code> for Model-X Gaussian knockoffs when the
+<code>NULL</code>. <code>artificial_type = "knockoff"</code> requests
+fixed-X knockoffs. <code>artificial_type = "knockoff_equi"</code> and
+<code>"knockoff_mvr"</code> request Model-X Gaussian knockoffs when the
 optional <code>knockoff</code> package is installed. All three knockoff
 modes support at most 3,000 predictors and fail closed above that limit;
 no chunked construction is claimed to be scientifically valid.</p>
+<p>The availability of the <code>knockoff</code> package is checked
+before fitting.</p>
+<p>When the package is available, a binomial fit with equicorrelated
+Model-X knockoffs is evaluated.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">60</span></span>
 <span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fl">20</span></span>
@@ -298,14 +333,19 @@ no chunked construction is claimed to be scientifically valid.</p>
 <span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
 <span><span class="co">#&gt; instead.</span></span>
 <span><span class="co">#&gt; [1] "k1"  "k7"  "k18"</span></span></code></pre></div>
-<hr>
+<p>The printed vector contains the features selected by the knockoff
+fit. Feature <code>k1</code>, on which the outcome depends, is expected
+to appear among the selections.</p>
 </div>
 <div class="section level2">
-<h2 id="grouped-bootstrap-repeated-measures">4. Grouped bootstrap (repeated measures)<a class="anchor" aria-label="anchor" href="#grouped-bootstrap-repeated-measures"></a>
+<h2 id="grouped-bootstrap-for-repeated-measures">5 Grouped bootstrap for repeated measures<a class="anchor" aria-label="anchor" href="#grouped-bootstrap-for-repeated-measures"></a>
 </h2>
-<p>When several rows belong to the same subject or batch, pass a
-<code>groups</code> vector so bootstrap resampling keeps whole groups
-together. This prevents leakage across related samples.</p>
+<p>When several rows belong to the same subject or batch, a
+<code>groups</code> vector is passed so that bootstrap resampling keeps
+whole groups together. This prevents leakage across related samples.</p>
+<p>The following commands simulate four repeated measurements per
+subject, inspect one grouped subsample draw, and fit the grouped
+model.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">48</span></span>
 <span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fl">10</span></span>
@@ -341,21 +381,26 @@ together. This prevents leakage across related samples.</p>
 <span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
 <span><span class="co">#&gt; instead.</span></span>
 <span><span class="co">#&gt; [1] 10</span></span></code></pre></div>
+<p>The call to <code>unique(groups[idx])</code> prints the subjects
+entering one subsample; each subject appears either with all four of its
+rows or not at all. The final line reports the number of features
+selected by the grouped Gaussian fit.</p>
 <p>The same <code>groups</code> argument is forwarded by
 <code><a href="../reference/stabl_multiomic_train_validate.html">stabl_multiomic_train_validate()</a></code> and
 <code><a href="../reference/stabl_multiomic_cv.html">stabl_multiomic_cv()</a></code> for outer fold construction.</p>
-<p>Note that classification bootstraps redraw subsamples until at least
-two observations per class are present, which slightly biases the
-subsample distribution relative to vanilla STABL; this is a deliberate,
-documented deviation that buys class-diverse subsamples.</p>
-<hr>
+<p>Classification bootstraps redraw subsamples until at least two
+observations per class are present. This slightly biases the subsample
+distribution relative to vanilla STABL; the deviation is deliberate and
+documented, and it buys class-diverse subsamples.</p>
 </div>
 <div class="section level2">
-<h2 id="reproducibility-across-repeated-fits">5. Reproducibility across repeated fits<a class="anchor" aria-label="anchor" href="#reproducibility-across-repeated-fits"></a>
+<h2 id="reproducibility-across-repeated-fits">6 Reproducibility across repeated fits<a class="anchor" aria-label="anchor" href="#reproducibility-across-repeated-fits"></a>
 </h2>
 <p>Selection-stability metrics compare feature lists from repeated STABL
-runs. Jaccard similarity is the simplest overlap measure; adjusted
+runs. Jaccard similarity is the simplest overlap measure, and adjusted
 similarity corrects for chance overlap when set sizes differ.</p>
+<p>Two fits with different random states are compared first, and a
+pairwise similarity matrix across four seeds is computed afterwards.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">run_once</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">seed</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="../reference/stabl_fit.html">stabl_fit</a></span><span class="op">(</span></span>
@@ -409,10 +454,14 @@ similarity corrects for chance overlap when set sizes differ.</p>
 <span><span class="co">#&gt; [2,]    0    0    0</span></span>
 <span><span class="co">#&gt; [3,]    0    0    0</span></span>
 <span><span class="co">#&gt; [4,]    0    0    0</span></span></code></pre></div>
-<hr>
+<p>The first two printed values are the Jaccard and the adjusted
+similarity between the selections from seeds 11 and 22. The matrix at
+the end gives the pairwise Jaccard similarities for the fits with seeds
+11 to 14; off-diagonal values close to 1 indicate selections that are
+robust to the random state.</p>
 </div>
 <div class="section level2">
-<h2 id="export-results-to-disk">6. Export results to disk<a class="anchor" aria-label="anchor" href="#export-results-to-disk"></a>
+<h2 id="exporting-results-to-disk">7 Exporting results to disk<a class="anchor" aria-label="anchor" href="#exporting-results-to-disk"></a>
 </h2>
 <p><code><a href="../reference/export_stabl_to_csv.html">export_stabl_to_csv()</a></code> writes stability-score tables for
 a single-omic fit. <code><a href="../reference/save_stabl_results.html">save_stabl_results()</a></code> bundles scores,
@@ -423,6 +472,8 @@ for a full analysis folder. It writes <code>STABL scores.csv</code>,
 <code>Selected Features/Selected features.csv</code>, and
 <code>Selected Features/Feature distributions.&lt;fmt&gt;</code> when
 the relevant diagnostics and selected features are available.</p>
+<p>The following commands write the score tables and the full results
+bundle to a temporary directory.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># File-writing path; exercised by tests/testthat/test-phase7.R.</span></span>
 <span><span class="va">tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="st">"stablr_export"</span><span class="op">)</span></span>
@@ -440,16 +491,19 @@ the relevant diagnostics and selected features are available.</p>
 <span>  figure_fmt <span class="op">=</span> <span class="st">"png"</span>,</span>
 <span>  override   <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<hr>
+<p>The chunk is not evaluated during the vignette build, so no files are
+written when the package is checked.</p>
 </div>
 <div class="section level2">
-<h2 id="outer-cross-validation-for-multi-omic-workflows">7. Outer cross-validation for multi-omic workflows<a class="anchor" aria-label="anchor" href="#outer-cross-validation-for-multi-omic-workflows"></a>
+<h2 id="outer-cross-validation-for-multi-omic-workflows">8 Outer cross-validation for multi-omic workflows<a class="anchor" aria-label="anchor" href="#outer-cross-validation-for-multi-omic-workflows"></a>
 </h2>
 <p>When no fixed validation split exists,
-<code><a href="../reference/stabl_multiomic_cv.html">stabl_multiomic_cv()</a></code> runs STABL (and optional fusion
-branches) on rotating outer folds. Cooperative fusion is supported here;
-nested CV (<code><a href="../reference/stabl_multiomic_nested_cv.html">stabl_multiomic_nested_cv()</a></code>) does not forward
-cooperative mode.</p>
+<code><a href="../reference/stabl_multiomic_cv.html">stabl_multiomic_cv()</a></code> runs STABL, and optional fusion
+branches, on rotating outer folds. Cooperative fusion is supported in
+this function; nested CV (<code><a href="../reference/stabl_multiomic_nested_cv.html">stabl_multiomic_nested_cv()</a></code>) does
+not forward cooperative mode.</p>
+<p>A two-omic Gaussian fit with cooperative fusion and three outer folds
+is specified as follows.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">50</span></span>
 <span><span class="va">ids</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"s"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span><span class="op">)</span></span>
@@ -513,15 +567,20 @@ cooperative mode.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $omic_b</span></span>
 <span><span class="co">#&gt; [1] "b1" "b2" "b7" "b8"</span></span></code></pre></div>
-<hr>
+<p>The head of the diagnostics data frame summarises each omic and fold.
+When the first fold contains a cooperative branch,
+<code><a href="../reference/get_cooperative_features.html">get_cooperative_features()</a></code> prints the features selected by
+the cooperative model in that fold.</p>
 </div>
 <div class="section level2">
-<h2 id="cooperative-coefficient-paths-native-engine">8. Cooperative coefficient paths (native engine)<a class="anchor" aria-label="anchor" href="#cooperative-coefficient-paths-native-engine"></a>
+<h2 id="cooperative-coefficient-paths">9 Cooperative coefficient paths<a class="anchor" aria-label="anchor" href="#cooperative-coefficient-paths"></a>
 </h2>
 <p>The built-in cooperative engine registers
 <code>plot.multiview()</code> for fitted cooperative models. After a
 cooperative workflow, the selected fit object lives in
 <code>$cooperative_fusion$fit</code>.</p>
+<p>A cooperative fit on the OOL training data is run and plotted as
+follows.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ool</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/load_ool_data.html">load_ool_data</a></span><span class="op">(</span>split <span class="op">=</span> <span class="st">"train"</span><span class="op">)</span></span>
 <span><span class="va">lambda_ool</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
@@ -548,11 +607,16 @@ cooperative workflow, the selected fit object lives in
 <span><span class="co">#&gt; 1 0.3 1.837652     822.1126     TRUE</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">cf</span><span class="op">$</span><span class="va">fit</span><span class="op">)</span></span></code></pre></div>
 <p><img src="stablr-advanced_files/figure-html/cooperative-plot-1.png" class="r-plt" alt="Cooperative coefficient paths by view" width="576"></p>
-<hr>
+<p>The printed diagnostics summarise the cooperative fit, and the plot
+displays the coefficient paths of the fitted multiview model. Features
+whose paths persist over a wide range of lambda values are the
+candidates for stable cross-view selection.</p>
 </div>
 <div class="section level2">
-<h2 id="related-vignettes">Related vignettes<a class="anchor" aria-label="anchor" href="#related-vignettes"></a>
+<h2 id="related-vignettes">10 Related vignettes<a class="anchor" aria-label="anchor" href="#related-vignettes"></a>
 </h2>
+<p>The following vignettes and documents cover the remaining
+workflows.</p>
 <ul>
 <li>
 <code><a href="../articles/stablr-intro.html">vignette("stablr-intro")</a></code> — single-omic STABL, learners,
@@ -576,7 +640,7 @@ tutorial API.</li>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Mikaël Manurung.</p>
+  <p>Developed by <a href="https://github.com/mdmanurung" class="external-link">Mikaël Manurung</a>.</p>
 </div>
 
 <div class="pkgdown-footer-right">

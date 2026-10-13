@@ -6,7 +6,8 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Research protocol: TCGA nested-CV stablr-DIABLO comparison • stablr</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="../katex-auto.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -16,7 +17,7 @@
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top bg-primary" data-bs-theme="dark" aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="../index.html">stablr</a>
 
@@ -73,6 +74,24 @@
 
     
     
+<div class="section level2">
+<h2 id="contents">Contents<a class="anchor" aria-label="anchor" href="#contents"></a>
+</h2>
+<ul>
+<li>1 Scope and status of this protocol</li>
+<li>2 Methodological audit</li>
+<li>3 Running the benchmark on SLURM</li>
+<li>4 Analysis design</li>
+<li>5 Predictive performance</li>
+<li>6 Feature comparison</li>
+<li>7 Exported artifacts</li>
+<li>8 Interpreting stablr vs DIABLO results</li>
+<li>9 Session information</li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="scope-and-status-of-this-protocol">1 Scope and status of this protocol<a class="anchor" aria-label="anchor" href="#scope-and-status-of-this-protocol"></a>
+</h2>
 <blockquote>
 <p><strong>Non-executable research protocol.</strong> This page
 specifies the benchmark and cache-reading contract. No TCGA head-to-head
@@ -80,9 +99,6 @@ result is bundled or counted as release evidence. The external dataset,
 long-running fits, exact candidate, and output cache must be pinned
 before execution.</p>
 </blockquote>
-<div class="section level2">
-<h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
-</h2>
 <p>The compact TCGA vignette shows the workflow. This vignette defines
 the evidence-generating benchmark and reports results only when an
 external cache is available. It compares <code>stablr</code> and
@@ -103,7 +119,7 @@ Until that cache is present, the vignette is a methodological protocol
 rather than bundled empirical evidence.</p>
 </div>
 <div class="section level2">
-<h2 id="methodological-audit">Methodological Audit<a class="anchor" aria-label="anchor" href="#methodological-audit"></a>
+<h2 id="methodological-audit">2 Methodological audit<a class="anchor" aria-label="anchor" href="#methodological-audit"></a>
 </h2>
 <p>This workflow was checked against the <code>nestedcv</code> vignette
 guidance for p &gt;&gt; n biomedical prediction. No filter or
@@ -131,8 +147,9 @@ models on only the most recurrent features, with explicit post-selection
 qualification.</p>
 </div>
 <div class="section level2">
-<h2 id="run-on-slurm">Run on SLURM<a class="anchor" aria-label="anchor" href="#run-on-slurm"></a>
+<h2 id="running-the-benchmark-on-slurm">3 Running the benchmark on SLURM<a class="anchor" aria-label="anchor" href="#running-the-benchmark-on-slurm"></a>
 </h2>
+<p>The cache setup is configured as follows.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">use_external_cache</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/chartr.html" class="external-link">tolower</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"STABLR_USE_EXTERNAL_TCGA_CACHE"</span>, unset <span class="op">=</span> <span class="st">"false"</span><span class="op">)</span><span class="op">)</span>,</span>
@@ -166,6 +183,10 @@ qualification.</p>
 <span><span class="co">#&gt; Expected cache: &lt;external TCGA cache disabled&gt;</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Submit command:"</span>, <span class="va">slurm_cmd</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Submit command: Set STABLR_USE_EXTERNAL_TCGA_CACHE=true before using external artifacts.</span></span></code></pre></div>
+<p>The output reports the expected cache path and the SLURM submit
+command. When the external cache is not enabled, both entries are
+replaced by the corresponding placeholder messages.</p>
+<p>The cache status is then checked.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">has_results</span> <span class="op">&lt;-</span> <span class="fu">tcga_cache_complete</span><span class="op">(</span><span class="va">cache_path</span><span class="op">)</span></span>
 <span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="va">has_results</span><span class="op">)</span> <span class="op">{</span></span>
@@ -179,14 +200,19 @@ qualification.</p>
 <span><span class="co">#&gt; Nested-CV cache is not available yet.</span></span>
 <span><span class="co">#&gt; No TCGA head-to-head benchmark results are bundled in this render.</span></span>
 <span><span class="co">#&gt; Opt in to external artifacts, submit the SLURM job above, then render this notebook again.</span></span></code></pre></div>
+<p>When the cache is absent, the chunk prints a notice that no TCGA
+head-to-head benchmark results are bundled in the render and that the
+SLURM job must be submitted before the notebook is rendered again.</p>
 </div>
 <div class="section level2">
-<h2 id="analysis-design">Analysis Design<a class="anchor" aria-label="anchor" href="#analysis-design"></a>
+<h2 id="analysis-design">4 Analysis design<a class="anchor" aria-label="anchor" href="#analysis-design"></a>
 </h2>
-<p>The cache records the exact settings used by the SLURM runner:</p>
+<p>The cache records the exact settings used by the SLURM runner.</p>
+<p>The settings are printed when the cache is available.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="va">cache_path</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">settings</span><span class="op">)</span></span></code></pre></div>
+<p>The output shows the pinned settings of the cached run.</p>
 <p><code>stablr</code> uses multinomial stability selection with
 knockoff artificial features. The candidate workflows are mRNA-only,
 miRNA-only, and early fusion across mRNA and miRNA. Candidate choice is
@@ -198,15 +224,18 @@ and the locked outer-fold model is evaluated with weighted-vote
 <code>centroids.dist</code> predictions.</p>
 </div>
 <div class="section level2">
-<h2 id="predictive-performance">Predictive Performance<a class="anchor" aria-label="anchor" href="#predictive-performance"></a>
+<h2 id="predictive-performance">5 Predictive performance<a class="anchor" aria-label="anchor" href="#predictive-performance"></a>
 </h2>
 <p>When the cache is present, the performance table is the first
 readout. The confusion matrices show where the methods make their
 mistakes, which is often more informative than a single accuracy number.
 Without the cache, this section intentionally produces no numeric
 claim.</p>
+<p>The overall performance table is printed as follows.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">res</span><span class="op">$</span><span class="va">performance</span></span></code></pre></div>
+<p>The table reports the outer-fold performance of both methods.</p>
+<p>The confusion matrices are printed for both methods.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">stabl_conf</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span></span>
 <span>  Truth <span class="op">=</span> <span class="va">res</span><span class="op">$</span><span class="va">stablr</span><span class="op">$</span><span class="va">outer_predictions</span><span class="op">$</span><span class="va">truth</span>,</span>
@@ -221,6 +250,11 @@ claim.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">stabl_conf</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\nDIABLO confusion matrix:\n"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">diablo_conf</span><span class="op">)</span></span></code></pre></div>
+<p>Each matrix cross-tabulates truth and prediction over the pooled
+outer-fold predictions. The off-diagonal counts identify the classes
+that each method confuses.</p>
+<p>Per-fold metrics are computed and paired across methods as
+follows.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fold_metric</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">pred</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">by_fold</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/split.html" class="external-link">split</a></span><span class="op">(</span><span class="va">pred</span>, <span class="va">pred</span><span class="op">$</span><span class="va">fold_id</span><span class="op">)</span></span>
@@ -238,18 +272,27 @@ claim.</p>
 <span>  <span class="va">paired</span><span class="op">$</span><span class="va">balanced_error_rate_DIABLO</span></span>
 <span><span class="va">paired</span><span class="op">$</span><span class="va">delta_accuracy</span> <span class="op">&lt;-</span> <span class="va">paired</span><span class="op">$</span><span class="va">accuracy_stablr</span> <span class="op">-</span> <span class="va">paired</span><span class="op">$</span><span class="va">accuracy_DIABLO</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">paired</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"delta_BER"</span>, <span class="st">"delta_accuracy"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
+<p>The output summarises the paired per-fold differences in balanced
+error rate and accuracy between the two methods.</p>
 </div>
 <div class="section level2">
-<h2 id="feature-comparison">Feature Comparison<a class="anchor" aria-label="anchor" href="#feature-comparison"></a>
+<h2 id="feature-comparison">6 Feature comparison<a class="anchor" aria-label="anchor" href="#feature-comparison"></a>
 </h2>
 <p>Feature recurrence is the biomarker-side counterpart to predictive
 performance. A recurrent feature is not merely selected once; it
 survives across many outer training splits.</p>
+<p>The overlap table is printed as follows.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">res</span><span class="op">$</span><span class="va">feature_comparison</span><span class="op">$</span><span class="va">overlap</span></span></code></pre></div>
+<p>The table summarises the agreement between the feature sets of the
+two methods.</p>
+<p>The most recurrent features per block are listed as follows.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">recurrence</span> <span class="op">&lt;-</span> <span class="va">res</span><span class="op">$</span><span class="va">feature_comparison</span><span class="op">$</span><span class="va">recurrence</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">recurrence</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/order.html" class="external-link">order</a></span><span class="op">(</span><span class="va">recurrence</span><span class="op">$</span><span class="va">block</span>, <span class="op">-</span><span class="va">recurrence</span><span class="op">$</span><span class="va">recurrence</span><span class="op">)</span>, <span class="op">]</span>, <span class="fl">30</span><span class="op">)</span></span></code></pre></div>
+<p>The output shows the 30 most recurrent feature-block combinations,
+ordered by block and by decreasing recurrence.</p>
+<p>The features selected by both methods are extracted as follows.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">shared</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/split.html" class="external-link">split</a></span><span class="op">(</span><span class="va">recurrence</span>, <span class="va">recurrence</span><span class="op">$</span><span class="va">block</span><span class="op">)</span>, <span class="kw">function</span><span class="op">(</span><span class="va">tab</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">stabl_feats</span> <span class="op">&lt;-</span> <span class="va">tab</span><span class="op">$</span><span class="va">feature</span><span class="op">[</span><span class="va">tab</span><span class="op">$</span><span class="va">method</span> <span class="op">==</span> <span class="st">"stablr"</span><span class="op">]</span></span>
@@ -257,25 +300,29 @@ survives across many outer training splits.</p>
 <span>  <span class="va">tab</span><span class="op">[</span><span class="va">tab</span><span class="op">$</span><span class="va">feature</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/sets.html" class="external-link">intersect</a></span><span class="op">(</span><span class="va">stabl_feats</span>, <span class="va">diablo_feats</span><span class="op">)</span>, <span class="op">]</span></span>
 <span><span class="op">}</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">shared</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/order.html" class="external-link">order</a></span><span class="op">(</span><span class="va">shared</span><span class="op">$</span><span class="va">block</span>, <span class="va">shared</span><span class="op">$</span><span class="va">feature</span>, <span class="va">shared</span><span class="op">$</span><span class="va">method</span><span class="op">)</span>, <span class="op">]</span></span></code></pre></div>
+<p>The output lists the features that appear in both the stablr and the
+DIABLO selections, ordered by block, feature, and method.</p>
 </div>
 <div class="section level2">
-<h2 id="exported-artifacts">Exported Artifacts<a class="anchor" aria-label="anchor" href="#exported-artifacts"></a>
+<h2 id="exported-artifacts">7 Exported artifacts<a class="anchor" aria-label="anchor" href="#exported-artifacts"></a>
 </h2>
-<p>The SLURM runner writes these files next to the cache:</p>
+<p>The SLURM runner writes these files next to the cache.</p>
+<p>The exported files are listed when the cache is available.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.files</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/basename.html" class="external-link">dirname</a></span><span class="op">(</span><span class="va">cache_path</span><span class="op">)</span>, pattern <span class="op">=</span> <span class="st">"tcga_nestedcv"</span>, full.names <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<p>The CSV files are intended for manuscript tables and supplement
-material: performance, feature recurrence, and feature overlap by omic
-block.</p>
+<p>The listing contains the cache file and the CSV exports whose names
+match <code>tcga_nestedcv</code>. The CSV files are intended for
+manuscript tables and supplement material: performance, feature
+recurrence, and feature overlap by omic block.</p>
 </div>
 <div class="section level2">
-<h2 id="interpreting-stablr-vs-diablo-results">Interpreting stablr vs DIABLO results<a class="anchor" aria-label="anchor" href="#interpreting-stablr-vs-diablo-results"></a>
+<h2 id="interpreting-stablr-vs-diablo-results">8 Interpreting stablr vs DIABLO results<a class="anchor" aria-label="anchor" href="#interpreting-stablr-vs-diablo-results"></a>
 </h2>
-<p>Read predictive and feature-level outputs together. A method that
-wins on balanced error rate (BER) is not automatically preferable for
-biomarker discovery, and vice versa.</p>
+<p>Predictive and feature-level outputs should be read together. A
+method that wins on balanced error rate (BER) is not automatically
+preferable for biomarker discovery, and vice versa.</p>
 <div class="section level3">
-<h3 id="predictive-layer">Predictive layer<a class="anchor" aria-label="anchor" href="#predictive-layer"></a>
+<h3 id="predictive-layer">8.1 Predictive layer<a class="anchor" aria-label="anchor" href="#predictive-layer"></a>
 </h3>
 <table class="table">
 <colgroup>
@@ -311,12 +358,12 @@ exploratory.</td>
 </tbody>
 </table>
 <p>Negative <code>delta_BER</code> (stablr − DIABLO) favours DIABLO;
-positive favours stablr. Report paired fold deltas with bootstrap
-confidence intervals (see <code>inst/analysis/BENCHMARK_PLAN.md</code>,
-Phase 2).</p>
+positive favours stablr. Paired fold deltas should be reported with
+bootstrap confidence intervals (see
+<code>inst/analysis/BENCHMARK_PLAN.md</code>, Phase 2).</p>
 </div>
 <div class="section level3">
-<h3 id="feature-biomarker-layer">Feature / biomarker layer<a class="anchor" aria-label="anchor" href="#feature-biomarker-layer"></a>
+<h3 id="feature-and-biomarker-layer">8.2 Feature and biomarker layer<a class="anchor" aria-label="anchor" href="#feature-and-biomarker-layer"></a>
 </h3>
 <table class="table">
 <colgroup>
@@ -353,7 +400,7 @@ governed by <code>keepX</code>.</td>
 </table>
 </div>
 <div class="section level3">
-<h3 id="when-each-method-is-the-better-tool">When each method is the better tool<a class="anchor" aria-label="anchor" href="#when-each-method-is-the-better-tool"></a>
+<h3 id="when-each-method-is-the-better-tool">8.3 When each method is the better tool<a class="anchor" aria-label="anchor" href="#when-each-method-is-the-better-tool"></a>
 </h3>
 <table class="table">
 <colgroup>
@@ -405,8 +452,10 @@ contests), see <code>docs/PYTHON_TO_R_MAPPING.md</code>.</p>
 </div>
 </div>
 <div class="section level2">
-<h2 id="session-info">Session Info<a class="anchor" aria-label="anchor" href="#session-info"></a>
+<h2 id="session-information">9 Session information<a class="anchor" aria-label="anchor" href="#session-information"></a>
 </h2>
+<p>The session information of the cached run is printed when the cache
+is available.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">res</span><span class="op">$</span><span class="va">session_info</span></span></code></pre></div>
 </div>
@@ -417,7 +466,7 @@ contests), see <code>docs/PYTHON_TO_R_MAPPING.md</code>.</p>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Mikaël Manurung.</p>
+  <p>Developed by <a href="https://github.com/mdmanurung" class="external-link">Mikaël Manurung</a>.</p>
 </div>
 
 <div class="pkgdown-footer-right">

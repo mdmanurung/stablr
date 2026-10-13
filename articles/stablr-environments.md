@@ -1,32 +1,41 @@
 # Environment Stability: Reliable AND Transportable Feature Sets
 
-## Overview
+## Contents
 
-The core STABL workflow answers one question: *which features are stably
-selected across bootstrap resamples of my data?* But bootstrap resamples
-all come from the same pool of samples. A second, equally practical
-question is:
+- 1 Introduction
+- 2 A synthetic multi-batch example
+- 3 The environment-stability workflow
+- 4 Interpretation of the aggregated scores
+- 5 Relation to invariant causal prediction
 
-> Which features are selected stably **in every environment** — every
-> batch, cohort, or site — and not just in one lucky subset?
+## 1 Introduction
+
+The core STABL workflow answers one question: which features are stably
+selected across bootstrap resamples of a given dataset. All bootstrap
+resamples, however, come from the same pool of samples. A second,
+equally practical question is which features are selected stably **in
+every environment** — every batch, cohort, or site — and not only in one
+favourable subset.
 
 This vignette introduces
 [`stabl_environment_stability()`](https://mdmanurung.github.io/stablr/reference/stabl_environment_stability.md),
-a workflow that answers that question. It is inspired by invariant
+a workflow that addresses this question. It is inspired by invariant
 causal prediction (ICP; Peters, Bühlmann & Meinshausen, 2016), whose
-user-facing appeal is exactly this kind of cross-environment stability —
+user-facing appeal is exactly this kind of cross-environment stability,
 but it makes **no causal claims** and requires nothing beyond
 environment *labels*.
+
+The package is attached as follows.
 
 ``` r
 
 library(stablr)
 ```
 
-## A synthetic multi-batch example
+## 2 A synthetic multi-batch example
 
-We simulate 150 samples measured in three batches (`batchA`, `batchB`,
-`batchC`, 50 samples each) with 10 features:
+The simulation comprises 150 samples measured in three batches
+(`batchA`, `batchB`, `batchC`, 50 samples each) with 10 features:
 
 - `f1` and `f2` are associated with the outcome with the **same effect
   in all three batches** — genuinely transportable signal;
@@ -54,7 +63,7 @@ y <- setNames(
 )
 ```
 
-## Running the environment-stability workflow
+## 3 The environment-stability workflow
 
 [`stabl_environment_stability()`](https://mdmanurung.github.io/stablr/reference/stabl_environment_stability.md)
 fits
@@ -62,7 +71,7 @@ fits
 **separately within each environment** and aggregates the per-feature
 stability scores. All arguments beyond `x`, `y`, `environments`,
 `lambda_grid`, and `random_state` are forwarded to
-[`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md):
+[`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md).
 
 ``` r
 
@@ -81,9 +90,9 @@ res
 #>   Top by min score: f1, f2, f3, f4, f5
 ```
 
-The object carries one full `stabl_fit` per environment
+The result object carries one full `stabl_fit` per environment
 (`res$env_fits`), the feature × environment score matrix
-(`res$env_scores`), and two summaries:
+(`res$env_scores`), and two summaries, which are inspected below.
 
 ``` r
 
@@ -104,28 +113,32 @@ round(res$min_scores, 2)
 #>   1   1   0   0   0   0   0   0   0   0
 ```
 
-## Interpretation: reliable AND transportable feature sets
+In `res$env_scores`, the transportable features `f1` and `f2` hold high
+scores in all three batches, whereas `f3` scores highly in `batchA`
+only. The `res$min_scores` summary reduces each feature to its weakest
+environment and is the quantity used for reporting.
+
+## 4 Interpretation of the aggregated scores
 
 The aggregation rule is the **minimum across environments** of each
 feature’s max-over-lambda stability score — a feature is only as
 reliable as its *weakest* environment:
 
 - `f1` and `f2` score high in every batch, so their minimum stays high.
-  These are the features you can transport: they would survive a new
-  batch, a new site, a new cohort.
+  These are the transportable features: they would survive a new batch,
+  a new site, or a new cohort.
 - `f3` is perfectly stable *within* `batchA` — a plain single-cohort
-  STABL run on the pooled data (or on `batchA` alone) would happily
-  select it — but its score collapses to null level in
-  `batchB`/`batchC`, so its minimum score is low. The minimum flags it
-  as **not transportable**.
+  STABL run on the pooled data (or on `batchA` alone) would select it —
+  but its score collapses to null level in `batchB`/`batchC`, so its
+  minimum score is low. The minimum flags it as **not transportable**.
 - The null features never accumulate a high minimum.
 
-A practical reporting pattern is therefore: rank features by
-`res$min_scores`, and treat a high `mean_scores` but low `min_scores`
-combination as a *batch-dependent* candidate worth investigating rather
-than shipping. The `pairwise_adjusted_similarity` matrix additionally
-summarizes how much agreement there is between the *selected sets* of
-any two environments (chance-corrected via
+A practical reporting pattern is therefore to rank features by
+`res$min_scores` and to treat a combination of high `mean_scores` with
+low `min_scores` as a *batch-dependent* candidate that warrants
+investigation rather than export. The `pairwise_adjusted_similarity`
+matrix additionally summarises how much agreement there is between the
+*selected sets* of any two environments (chance-corrected via
 [`adjusted_similarity()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity.md)).
 
 Two practical notes:
@@ -137,16 +150,16 @@ Two practical notes:
     1.  Prefer an explicit, top-heavy grid as above, or interpret
         `lambda_grid = "auto"` (computed separately per environment)
         with this leniency in mind.
-2.  **Environment-aware resampling is complementary.** If you prefer a
-    single pooled fit whose bootstrap *respects* environment structure,
-    pass your labels as `groups` to
+2.  **Environment-aware resampling is complementary.** For a single
+    pooled fit whose bootstrap *respects* environment structure, pass
+    the labels as `groups` to
     [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
-    (group bootstrap keeps whole environments intact) or use
+    (the group bootstrap keeps whole environments intact) or use
     `bootstrap_strata`. The workflow shown here answers a different
-    question: not “is selection stable under resampling?”, but “is
-    selection the same everywhere?”
+    question: not whether selection is stable under resampling, but
+    whether selection is the same everywhere.
 
-## How this differs from invariant causal prediction
+## 5 Relation to invariant causal prediction
 
 Invariant causal prediction (Peters, Bühlmann & Meinshausen, 2016) uses
 environments to *test* invariance of the outcome mechanism and returns
@@ -165,6 +178,6 @@ borrows only the *stability-across-environments* idea:
   [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
   and the existing `stablr` accessors and metrics.
 
-Use it when the operational question is “which biomarkers hold up
-*everywhere* I measured them?” — reliable **and** transportable feature
-sets.
+The workflow is appropriate when the operational question is which
+biomarkers hold up in every environment in which they were measured:
+reliable **and** transportable feature sets.
