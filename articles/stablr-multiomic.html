@@ -7,8 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Multi-Omic Biomarker Discovery with stablr • stablr</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Multi-Omic Biomarker Discovery with stablr">
 </head>
@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">stablr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,11 +34,13 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-vignettes" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Vignettes</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-vignettes">
-<li><a class="dropdown-item" href="../articles/stablr-intro.html">Quick start</a></li>
+<li><a class="dropdown-item" href="../articles/stablr-getting-started.html">Getting started with stabl</a></li>
+    <li><a class="dropdown-item" href="../articles/stablr-intro.html">Quick start (expert interface)</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-multiomic.html">Multi-omic OOL workflow</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-tcga.html">TCGA Breast Cancer workflow</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-tcga-nestedcv.html">TCGA nested CV and DIABLO</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-cooperative.html">Cooperative fusion</a></li>
+    <li><a class="dropdown-item" href="../articles/stablr-environments.html">Environment stability</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-advanced.html">Advanced workflows</a></li>
   </ul>
 </li>
@@ -56,33 +58,52 @@
   </div>
 </nav><div class="container template-article">
 
+
+
+
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Multi-Omic Biomarker Discovery with stablr</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/mdmanurung/stablr/blob/HEAD/vignettes/stablr-multiomic.Rmd" class="external-link"><code>vignettes/stablr-multiomic.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/mdmanurung/stablr/blob/main/vignettes/stablr-multiomic.Rmd" class="external-link"><code>vignettes/stablr-multiomic.Rmd</code></a></small>
       <div class="d-none name"><code>stablr-multiomic.Rmd</code></div>
     </div>
 
     
     
 <blockquote>
-<p><strong>Note:</strong> This vignette is executable. It uses the bundled OOL subset, compact lambda grids, small bootstrap counts, and random-permutation decoys so package renders catch API drift without requiring optional knockoff dependencies.</p>
+<p><strong>Workflow tutorial, not publication evidence.</strong> This
+executable vignette uses 150 training samples, 21 aligned validation
+samples, and the first 100 features from each of the CyTOF and
+Proteomics assays. Compact lambda grids, small bootstrap counts, and
+random-permutation decoys keep package builds bounded and catch API
+drift without optional knockoff dependencies.</p>
 </blockquote>
 <div class="section level2">
 <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
-<p>A multi-omic dataset is a set of partial views. One assay sees immune-cell state, another sees circulating proteins, and the phenotype is the same person seen through both. The statistical question is not only “which features are stable?” but also “does a feature remain useful when another view is allowed to speak?”</p>
-<p>This vignette uses a real Onset of Labor (OOL) dataset bundled with <code>stablr</code>. It contains two omic layers, CyTOF and Proteomics, measured in pregnant women. The outcome is days-to-onset-of-labor (DOS), a continuous regression target. The settings are intentionally bounded for package builds while preserving the shape of a real train/validation analysis.</p>
+<p>A multi-omic dataset is a set of partial views. One assay sees
+immune-cell state, another sees circulating proteins, and the phenotype
+is the same person seen through both. The statistical question is not
+only “which features are stable?” but also “does a feature remain useful
+when another view is allowed to speak?”</p>
+<p>This vignette uses a real Onset of Labor (OOL) dataset bundled with
+<code>stablr</code>. It contains two omic layers, CyTOF and Proteomics,
+measured in pregnant women. The outcome is days-to-onset-of-labor (DOS),
+a continuous regression target. The settings are intentionally bounded
+for package builds while preserving the shape of a real train/validation
+analysis.</p>
 <p>We will:</p>
 <ol style="list-style-type: decimal">
-<li>Loading the bundled example data with <code><a href="../reference/load_ool_data.html">load_ool_data()</a></code>.</li>
-<li>Running per-omic STABL — a useful baseline before integration.</li>
-<li>Running the integrated multi-omic workflow with <strong>early fusion</strong> and <strong>late fusion</strong>.</li>
-<li>Comparing selected feature names across strategies.</li>
-<li>Exporting results.</li>
+<li>Load the bundled example data with
+<code><a href="../reference/load_ool_data.html">load_ool_data()</a></code>.</li>
+<li>Run per-omic STABL — a useful baseline before integration.</li>
+<li>Run the integrated multi-omic workflow with <strong>early
+fusion</strong> and <strong>late fusion</strong>.</li>
+<li>Compare selected feature names across strategies.</li>
+<li>Export results.</li>
 </ol>
 </div>
 <div class="section level2">
@@ -90,10 +111,12 @@
 </h2>
 <p>By the end, you should be able to:</p>
 <ol style="list-style-type: decimal">
-<li>Understand the data structure returned by <code><a href="../reference/load_ool_data.html">load_ool_data()</a></code>.</li>
+<li>Understand the data structure returned by
+<code><a href="../reference/load_ool_data.html">load_ool_data()</a></code>.</li>
 <li>Run STABL independently on each omic and interpret the outputs.</li>
 <li>Explain the difference between early fusion and late fusion.</li>
-<li>Run <code><a href="../reference/stabl_multiomic_train_validate.html">stabl_multiomic_train_validate()</a></code> and navigate its result list.</li>
+<li>Run <code><a href="../reference/stabl_multiomic_train_validate.html">stabl_multiomic_train_validate()</a></code> and navigate its
+result list.</li>
 <li>Compare which features appear across integration strategies.</li>
 <li>Export results for downstream use.</li>
 </ol>
@@ -104,14 +127,34 @@
 <div class="section level2">
 <h2 id="load-the-data">1. Load the data<a class="anchor" aria-label="anchor" href="#load-the-data"></a>
 </h2>
-<p><code><a href="../reference/load_ool_data.html">load_ool_data()</a></code> reads the bundled OOL subset directly from the package. No file paths are needed. It returns a named list with two elements:</p>
+<p><code><a href="../reference/load_ool_data.html">load_ool_data()</a></code> reads the bundled OOL subset directly
+from the package. No file paths are needed. It returns a named list with
+two elements:</p>
 <ul>
 <li>
-<strong><code>$x_list</code></strong>: a named list of feature matrices, one per omic layer. Each matrix has samples in rows and features in columns, with matching row names.</li>
+<strong><code>$x_list</code></strong>: a named list of feature
+matrices, one per omic layer. Each matrix has samples in rows and
+features in columns, with matching row names.</li>
 <li>
-<strong><code>$y</code></strong>: a named numeric vector of outcomes (DOS in days), aligned to the rows of every matrix in <code>$x_list</code>.</li>
+<strong><code>$y</code></strong>: a named numeric vector of outcomes
+(DOS in days), aligned to the rows of every matrix in
+<code>$x_list</code>.</li>
 </ul>
-<p><strong>Relation to the Python tutorial notebook:</strong> this is a bounded package example, not a full reproduction of <code>Notebook examples/Tutorial Notebook.ipynb</code>. The notebook uses the full OOL-CV training files (<code>CyTOF</code>, <code>Proteomics</code>, and <code>Metabolomics</code>) and the COVID-19 proteomics classification dataset. It also applies a preprocessing pipeline before STABL: zero-variance filtering, high-missingness feature filtering, median imputation, and standardisation. Here, <code><a href="../reference/load_ool_data.html">load_ool_data()</a></code> ships a compact 100-feature OOL subset for <code>CyTOF</code> and <code>Proteomics</code> only, already aligned and without missing values. Use <code>docs/PYTHON_TO_R_MAPPING.md</code> when the goal is to mirror the tutorial notebook’s datasets and preprocessing choices.</p>
+<p><strong>Relation to the Python tutorial notebook:</strong> this is a
+bounded package example, not a full reproduction of
+<code>Notebook examples/Tutorial Notebook.ipynb</code>. The notebook
+uses the full OOL-CV training files (<code>CyTOF</code>,
+<code>Proteomics</code>, and <code>Metabolomics</code>) and the COVID-19
+proteomics classification dataset. It also applies a preprocessing
+pipeline before STABL: zero-variance filtering, high-missingness feature
+filtering, median imputation, and standardisation. Here,
+<code><a href="../reference/load_ool_data.html">load_ool_data()</a></code> ships 150 training samples and 21 aligned
+validation samples for <code>CyTOF</code> and <code>Proteomics</code>
+only, with the first 100 features from each assay, already aligned and
+without missing values. These are quick-build settings, not the
+predeclared full OOL parity analysis. Use
+<code>docs/PYTHON_TO_R_MAPPING.md</code> when the goal is to mirror the
+tutorial notebook’s datasets and preprocessing choices.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ool_train</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/load_ool_data.html">load_ool_data</a></span><span class="op">(</span>split <span class="op">=</span> <span class="st">"train"</span><span class="op">)</span></span>
 <span><span class="va">ool_valid</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/load_ool_data.html">load_ool_data</a></span><span class="op">(</span>split <span class="op">=</span> <span class="st">"valid"</span><span class="op">)</span></span>
@@ -133,27 +176,42 @@
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $proteomics</span></span>
 <span><span class="co">#&gt; [1]  21 100</span></span></code></pre></div>
-<p>The <code>lapply(..., dim)</code> output confirms the basic geometry: the omics share rows but differ in columns. Row names must match across views. <code>stablr</code> checks this alignment and stops early if it detects a mismatch.</p>
+<p>The <code>lapply(..., dim)</code> output confirms the basic geometry:
+the omics share rows but differ in columns. Row names must match across
+views. <code>stablr</code> checks this alignment and stops early if it
+detects a mismatch.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Outcome distribution (DOS = days before onset of labor)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">ool_train</span><span class="op">$</span><span class="va">y</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
 <span><span class="co">#&gt; -113.00  -70.75  -35.50  -43.39  -15.00    0.00</span></span></code></pre></div>
-<p>The <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> output shows the spread of DOS. A wide range is expected; a strong skew or narrow range changes how much prediction signal one should expect from molecular measurements.</p>
+<p>The <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> output shows the spread of DOS. A wide
+range is expected; a strong skew or narrow range changes how much
+prediction signal one should expect from molecular measurements.</p>
 <hr>
 </div>
 <div class="section level2">
 <h2 id="per-omic-stabl">2. Per-omic STABL<a class="anchor" aria-label="anchor" href="#per-omic-stabl"></a>
 </h2>
-<p>Before integrating views, it is worth listening to each one alone. A per-omic fit is both a sanity check and a baseline:</p>
+<p>Before integrating views, it is worth listening to each one alone. A
+per-omic fit is both a sanity check and a baseline:</p>
 <ol style="list-style-type: decimal">
 <li>
-<strong>Sanity check</strong> — does each omic contain any signal at all? If STABL selects zero features from an omic, that layer may not contribute useful information to the integrated analysis.</li>
+<strong>Sanity check</strong> — does each omic contain any signal at
+all? If STABL selects zero features from an omic, that layer may not
+contribute useful information to the integrated analysis.</li>
 <li>
-<strong>Baseline</strong> — the per-omic biomarker lists can be compared to the integrated results to see which features survive the joint analysis.</li>
+<strong>Baseline</strong> — the per-omic biomarker lists can be
+compared to the integrated results to see which features survive the
+joint analysis.</li>
 </ol>
-<p>We use compact 6-point lambda grids and small bootstrap counts throughout this vignette. Increase to 500-1000 bootstraps and broader grids for publication-quality results.</p>
-<p>When each fit prints, look first at the number of selected feature names and the FDP estimate. The ideal result is not simply a long list. It is a compact list whose stability is difficult for decoys to explain.</p>
+<p>We use compact 6-point lambda grids and small bootstrap counts
+throughout this vignette. Increase to 500-1000 bootstraps and broader
+grids for publication-quality results.</p>
+<p>When each fit prints, look first at the number of selected feature
+names and the FDP estimate. The ideal result is not simply a long list.
+It is a compact list whose stability is difficult for decoys to
+explain.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lambda_cytof</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/auto_lambda_grid.html">auto_lambda_grid</a></span><span class="op">(</span></span>
 <span>  <span class="va">ool_train</span><span class="op">$</span><span class="va">x_list</span><span class="op">$</span><span class="va">cytof</span>, <span class="va">ool_train</span><span class="op">$</span><span class="va">y</span>,</span>
@@ -177,13 +235,14 @@
 <span><span class="co">#&gt;   FDP+ threshold:   1 </span></span>
 <span><span class="co">#&gt;   Artificial:       random_permutation</span></span></code></pre></div>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">lambda_prot</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/auto_lambda_grid.html">auto_lambda_grid</a></span><span class="op">(</span></span>
-<span>  <span class="va">ool_train</span><span class="op">$</span><span class="va">x_list</span><span class="op">$</span><span class="va">proteomics</span>, <span class="va">ool_train</span><span class="op">$</span><span class="va">y</span>,</span>
+<code class="sourceCode R"><span><span class="va">proteomics_train_scaled</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/scale.html" class="external-link">scale</a></span><span class="op">(</span><span class="va">ool_train</span><span class="op">$</span><span class="va">x_list</span><span class="op">$</span><span class="va">proteomics</span><span class="op">)</span></span>
+<span><span class="va">lambda_prot</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/auto_lambda_grid.html">auto_lambda_grid</a></span><span class="op">(</span></span>
+<span>  <span class="va">proteomics_train_scaled</span>, <span class="va">ool_train</span><span class="op">$</span><span class="va">y</span>,</span>
 <span>  family <span class="op">=</span> <span class="st">"gaussian"</span>, n_lambda <span class="op">=</span> <span class="fl">6</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">fit_prot</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stabl_fit.html">stabl_fit</a></span><span class="op">(</span></span>
-<span>  x               <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/scale.html" class="external-link">scale</a></span><span class="op">(</span><span class="va">ool_train</span><span class="op">$</span><span class="va">x_list</span><span class="op">$</span><span class="va">proteomics</span><span class="op">)</span>,</span>
+<span>  x               <span class="op">=</span> <span class="va">proteomics_train_scaled</span>,</span>
 <span>  y               <span class="op">=</span> <span class="va">ool_train</span><span class="op">$</span><span class="va">y</span>,</span>
 <span>  lambda_grid     <span class="op">=</span> <span class="va">lambda_prot</span>,</span>
 <span>  family          <span class="op">=</span> <span class="st">"gaussian"</span>,</span>
@@ -198,22 +257,32 @@
 <span><span class="co">#&gt;   Min FDP+:         1.01 </span></span>
 <span><span class="co">#&gt;   FDP+ threshold:   1 </span></span>
 <span><span class="co">#&gt;   Artificial:       random_permutation</span></span></code></pre></div>
-<p><code><a href="../reference/get_feature_names_out.html">get_feature_names_out()</a></code> returns the feature names that passed the stability threshold in each omic. Use <code><a href="../reference/get_support.html">get_support()</a></code> when you need the named logical mask for subsetting. Non-overlapping lists suggest view-specific information. Overlap, when the same molecule is measured in both layers, is stronger evidence because the signal has appeared twice through different measurement systems.</p>
+<p><code><a href="../reference/get_feature_names_out.html">get_feature_names_out()</a></code> returns the feature names that
+passed the stability threshold in each omic. Use
+<code><a href="../reference/get_support.html">get_support()</a></code> when you need the named logical mask for
+subsetting. Non-overlapping lists suggest view-specific information.
+Overlap, when the same molecule is measured in both layers, is stronger
+evidence because the signal has appeared twice through different
+measurement systems.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"CyTOF selected feature names:</span></span>
-<span><span class="st">"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"CyTOF selected feature names:\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; CyTOF selected feature names:</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_feature_names_out.html">get_feature_names_out</a></span><span class="op">(</span><span class="va">fit_cytof</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
+<span><span class="co">#&gt; instead.</span></span>
 <span><span class="co">#&gt; character(0)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"</span></span>
-<span><span class="st">Proteomics selected feature names:</span></span>
-<span><span class="st">"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\nProteomics selected feature names:\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Proteomics selected feature names:</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_feature_names_out.html">get_feature_names_out</a></span><span class="op">(</span><span class="va">fit_prot</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
+<span><span class="co">#&gt; instead.</span></span>
 <span><span class="co">#&gt; character(0)</span></span></code></pre></div>
-<p>In the stability path, each line is one feature. Features that hold high selection frequencies across a moderate penalty range are the most convincing. Features that appear only when the penalty is very weak are easier to dismiss as opportunistic.</p>
+<p>In the stability path, each line is one feature. Features that hold
+high selection frequencies across a moderate penalty range are the most
+convincing. Features that appear only when the penalty is very weak are
+easier to dismiss as opportunistic.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_stabl_path.html">plot_stabl_path</a></span><span class="op">(</span><span class="va">fit_cytof</span>,     title <span class="op">=</span> <span class="st">"CyTOF - stability path"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="stablr-multiomic_files/figure-html/plot-per-omic-1.png" class="r-plt" alt="Stability paths for CyTOF and Proteomics" width="576"></p>
@@ -225,7 +294,10 @@
 <div class="section level2">
 <h2 id="integrated-multi-omic-workflow">3. Integrated multi-omic workflow<a class="anchor" aria-label="anchor" href="#integrated-multi-omic-workflow"></a>
 </h2>
-<p><code><a href="../reference/stabl_multiomic_train_validate.html">stabl_multiomic_train_validate()</a></code> puts the train/validation analysis into one call. It accepts matched omic matrices and evaluates two complementary ways to let the views interact:</p>
+<p><code><a href="../reference/stabl_multiomic_train_validate.html">stabl_multiomic_train_validate()</a></code> puts the
+train/validation analysis into one call. It accepts matched omic
+matrices and evaluates two complementary ways to let the views
+interact:</p>
 <table class="table">
 <colgroup>
 <col width="33%">
@@ -240,13 +312,18 @@
 <tbody>
 <tr class="odd">
 <td><strong>Early fusion</strong></td>
-<td>Concatenates all omic matrices into one wide matrix, then runs a <em>single</em> STABL fit across all features jointly.</td>
-<td>Omics are measured on the same samples; you want a unified biomarker list.</td>
+<td>Concatenates all omic matrices into one wide matrix, then runs a
+<em>single</em> STABL fit across all features jointly.</td>
+<td>Omics are measured on the same samples; you want a unified biomarker
+list.</td>
 </tr>
 <tr class="even">
 <td><strong>Late fusion</strong></td>
-<td>Fits one STABL + downstream model per omic separately, then learns the optimal weighted combination of predictions on the validation set.</td>
-<td>You want to know each omic’s independent predictive contribution.</td>
+<td>Fits one STABL + downstream model per omic separately, learns
+stacking weights from OOF predictions by default, and applies the
+weighted blend to full-refit validation predictions.</td>
+<td>You want a held-out evaluation of an omic-weighted prediction
+rule.</td>
 </tr>
 </tbody>
 </table>
@@ -265,11 +342,13 @@
 <td>
 <code>x_train_list</code> / <code>x_valid_list</code>
 </td>
-<td>Named lists of feature matrices; names must match between train and valid.</td>
+<td>Named lists of feature matrices; names must match between train and
+valid.</td>
 </tr>
 <tr class="even">
 <td><code>lambda_grid</code></td>
-<td>Named list of lambda grids, one per omic (names must match <code>x_train_list</code>).</td>
+<td>Named list of lambda grids, one per omic (names must match
+<code>x_train_list</code>).</td>
 </tr>
 <tr class="odd">
 <td>
@@ -278,12 +357,34 @@
 <td>Toggle each strategy on or off independently.</td>
 </tr>
 <tr class="even">
+<td><code>late_fusion_training</code></td>
+<td>Use leakage-safe <code>"oof"</code> (default), or explicit
+<code>"python_legacy"</code> compatibility mode.</td>
+</tr>
+<tr class="odd">
+<td><code>late_fusion_nfolds</code></td>
+<td>Number of stacking folds; five folds plus the full refit cost
+roughly six complete fits.</td>
+</tr>
+<tr class="even">
 <td><code>n_iter_lf</code></td>
-<td>Number of optimisation iterations for the late-fusion weight search.</td>
+<td>Number of optimisation iterations for the late-fusion weight
+search.</td>
 </tr>
 </tbody>
 </table>
-<p>The printed <code>multi_fit</code> object summarises every active branch: per-omic selected-feature counts, whether validation data are present, early-fusion branch presence, and the late-fusion score. Binary and regression late fusion use parity-preserving batched stacking; multiclass stacking remains scalar by design to preserve probability-normalisation and tie behavior.</p>
+<p>The printed <code>multi_fit</code> object summarises every active
+branch: per-omic selected-feature counts, whether validation data are
+present, early-fusion branch presence, and the late-fusion score. In OOF
+mode, assessment samples and their groups never enter selector or
+downstream-model fitting; use <code>$oof_predictions</code> and
+<code>$oof_score</code>. Explicit <code>"python_legacy"</code> mode
+instead exposes <code>$in_sample_predictions</code> and
+<code>$in_sample_score</code>. The older <code>$train_predictions</code>
+and <code>$score</code> fields are exact 0.1.x compatibility aliases for
+the active mode. Binary and regression late fusion use parity-preserving
+batched stacking; multiclass stacking remains scalar by design to
+preserve probability-normalisation and tie behavior.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Build per-omic lambda grids</span></span>
 <span><span class="va">lambda_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
@@ -292,6 +393,12 @@
 <span>  proteomics <span class="op">=</span> <span class="fu"><a href="../reference/auto_lambda_grid.html">auto_lambda_grid</a></span><span class="op">(</span><span class="va">ool_train</span><span class="op">$</span><span class="va">x_list</span><span class="op">$</span><span class="va">proteomics</span>,</span>
 <span>                                <span class="va">ool_train</span><span class="op">$</span><span class="va">y</span>, family <span class="op">=</span> <span class="st">"gaussian"</span>, n_lambda <span class="op">=</span> <span class="fl">6</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
+<p>When you plan to cross-validate with
+<code><a href="../reference/stabl_multiomic_cv.html">stabl_multiomic_cv()</a></code>, prefer
+<code>lambda_grid = "auto"</code> or derive grids from training data
+only. A grid computed on the full dataset leaks mild information into
+the cross-validated estimates; <code>"auto"</code> sidesteps this by
+building each fold’s grid from its training data alone.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">multi_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stabl_multiomic_train_validate.html">stabl_multiomic_train_validate</a></span><span class="op">(</span></span>
 <span>  x_train_list    <span class="op">=</span> <span class="va">ool_train</span><span class="op">$</span><span class="va">x_list</span>,</span>
@@ -316,35 +423,45 @@
 <span><span class="co">#&gt;     proteomics: 0</span></span>
 <span><span class="co">#&gt;   Validation data:  yes </span></span>
 <span><span class="co">#&gt;   Early fusion:     yes (0 features selected) </span></span>
-<span><span class="co">#&gt;   Late fusion:      yes (score = 0)</span></span></code></pre></div>
+<span><span class="co">#&gt;   Late fusion:      yes (score = 0.1901)</span></span></code></pre></div>
 <hr>
 </div>
 <div class="section level2">
 <h2 id="exploring-results">4. Exploring results<a class="anchor" aria-label="anchor" href="#exploring-results"></a>
 </h2>
-<p><code>multi_fit</code> is a list because the workflow has several branches. The main elements are:</p>
+<p><code>multi_fit</code> is a list because the workflow has several
+branches. The main elements are:</p>
 <ul>
 <li>
-<strong><code>$fits</code></strong>: named list of <code>stabl_fit</code> objects, one per omic. These are the per-omic STABL results produced <em>within</em> the joint pipeline.</li>
+<strong><code>$fits</code></strong>: named list of
+<code>stabl_fit</code> objects, one per omic. These are the per-omic
+STABL results produced <em>within</em> the joint pipeline.</li>
 <li>
-<strong><code>$early_fusion</code></strong>: result of the early-fusion step (if <code>early_fusion = TRUE</code>), containing <code>$fit</code> (a <code>stabl_fit</code> on the concatenated matrix).</li>
+<strong><code>$early_fusion</code></strong>: result of the
+early-fusion step (if <code>early_fusion = TRUE</code>), containing
+<code>$fit</code> (a <code>stabl_fit</code> on the concatenated
+matrix).</li>
 <li>
-<strong><code>$late_fusion</code></strong>: result of the late-fusion step (if <code>late_fusion = TRUE</code>), containing <code>$valid_predictions</code> (validation predictions) and <code>$weights</code> (per-omic importance weights).</li>
+<strong><code>$late_fusion</code></strong>: result of the
+late-fusion step (if <code>late_fusion = TRUE</code>), containing
+<code>$valid_predictions</code> (validation predictions) and
+<code>$weights</code> (training-stack model weights).</li>
 </ul>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Per-omic selected feature names from the joint pipeline</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"CyTOF (from multi-omic pipeline):</span></span>
-<span><span class="st">"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"CyTOF (from multi-omic pipeline):\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; CyTOF (from multi-omic pipeline):</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_feature_names_out.html">get_feature_names_out</a></span><span class="op">(</span><span class="va">multi_fit</span><span class="op">$</span><span class="va">fits</span><span class="op">$</span><span class="va">cytof</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
+<span><span class="co">#&gt; instead.</span></span>
 <span><span class="co">#&gt; character(0)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"</span></span>
-<span><span class="st">Proteomics (from multi-omic pipeline):</span></span>
-<span><span class="st">"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\nProteomics (from multi-omic pipeline):\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Proteomics (from multi-omic pipeline):</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_feature_names_out.html">get_feature_names_out</a></span><span class="op">(</span><span class="va">multi_fit</span><span class="op">$</span><span class="va">fits</span><span class="op">$</span><span class="va">proteomics</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
+<span><span class="co">#&gt; instead.</span></span>
 <span><span class="co">#&gt; character(0)</span></span></code></pre></div>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Early fusion: joint selection across all omics simultaneously</span></span>
@@ -353,10 +470,15 @@
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_feature_names_out.html">get_feature_names_out</a></span><span class="op">(</span><span class="va">multi_fit</span><span class="op">$</span><span class="va">early_fusion</span><span class="op">$</span><span class="va">fit</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span><span class="co">#&gt; Early fusion selected feature names:</span></span>
+<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
+<span><span class="co">#&gt; instead.</span></span>
 <span><span class="co">#&gt; character(0)</span></span></code></pre></div>
-<p>Early fusion can disagree with the per-omic lists because the joint model sees all features at once. A feature that is useful alone may become redundant when another omic carries the same information. That is a property of the joint question, not a failure of the method.</p>
+<p>Early fusion can disagree with the per-omic lists because the joint
+model sees all features at once. A feature that is useful alone may
+become redundant when another omic carries the same information. That is
+a property of the joint question, not a failure of the method.</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Late fusion: optimal linear combination of per-omic predictions</span></span>
+<code class="sourceCode R"><span><span class="co"># Late fusion: weighted blend learned on training predictions and applied to validation samples</span></span>
 <span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NULL.html" class="external-link">is.null</a></span><span class="op">(</span><span class="va">multi_fit</span><span class="op">$</span><span class="va">late_fusion</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Late fusion validation predictions (first 6):\n"</span><span class="op">)</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">multi_fit</span><span class="op">$</span><span class="va">late_fusion</span><span class="op">$</span><span class="va">valid_predictions</span><span class="op">)</span><span class="op">)</span></span>
@@ -364,7 +486,13 @@
 <span><span class="co">#&gt; Late fusion validation predictions (first 6):</span></span>
 <span><span class="co">#&gt;  004_31_A  004_34_B  015_30_A  015_34_B  015_36_C  047_26_A </span></span>
 <span><span class="co">#&gt; -43.39333 -43.39333 -43.39333 -43.39333 -43.39333 -43.39333</span></span></code></pre></div>
-<p><code>$valid_predictions</code> is a numeric vector of predicted DOS values for the held-out validation set, one prediction per sample. Compare these to <code>ool_valid$y</code> to assess predictive performance. The <code>$weights</code> element shows how much each omic contributed to the combined prediction; a weight near zero means that view added little beyond the other view.</p>
+<p><code>$valid_predictions</code> is a numeric vector of predicted DOS
+values for the held-out validation set, one prediction per sample.
+Compare these to <code>ool_valid$y</code> to assess predictive
+performance. The <code>$weights</code> element records the omic weights
+chosen by the training-prediction stacking objective; a small weight
+means that view received little weight in this fitted prediction rule,
+not that the assay is biologically uninformative.</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_stabl_path.html">plot_stabl_path</a></span><span class="op">(</span><span class="va">multi_fit</span><span class="op">$</span><span class="va">fits</span><span class="op">$</span><span class="va">cytof</span>,</span>
 <span>                title <span class="op">=</span> <span class="st">"CyTOF (multi-omic pipeline)"</span><span class="op">)</span></span></code></pre></div>
@@ -378,7 +506,8 @@
 <div class="section level2">
 <h2 id="export-results">5. Export results<a class="anchor" aria-label="anchor" href="#export-results"></a>
 </h2>
-<p><code><a href="../reference/save_stabl_results.html">save_stabl_results()</a></code> writes the result of a single <code>stabl_fit</code> object to disk:</p>
+<p><code><a href="../reference/save_stabl_results.html">save_stabl_results()</a></code> writes the result of a single
+<code>stabl_fit</code> object to disk:</p>
 <table class="table">
 <colgroup>
 <col width="50%">
@@ -415,7 +544,9 @@
 </tr>
 </tbody>
 </table>
-<p>Set <code>override = TRUE</code> to overwrite an existing directory, which is useful when an analysis is being rerun with more bootstraps or a revised grid.</p>
+<p>Set <code>override = TRUE</code> to overwrite an existing directory,
+which is useful when an analysis is being rerun with more bootstraps or
+a revised grid.</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">out_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"stablr_ool_cytof"</span><span class="op">)</span></span>
 <span></span>
@@ -443,12 +574,21 @@
 <h2 id="next-steps">Next steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
 </h2>
 <ul>
-<li>Use <code><a href="../reference/stabl_multiomic_cv.html">stabl_multiomic_cv()</a></code> for a fully cross-validated evaluation when no pre-defined validation split is available.</li>
-<li>Pass <code>groups</code> to respect subject-level grouping in bootstrap resampling and CV fold construction.</li>
-<li>See <code><a href="../articles/stablr-intro.html">vignette("stablr-intro")</a></code> for single-omic usage and alternative learners.</li>
-<li>See <code><a href="../articles/stablr-cooperative.html">vignette("stablr-cooperative")</a></code> for cross-view cooperative fusion (<code>rho</code> tuning) when blocks should agree without full concatenation.</li>
-<li>For integrative <strong>classification</strong> benchmarks against mixOmics DIABLO on TCGA, see <code><a href="../articles/stablr-tcga-nestedcv.html">vignette("stablr-tcga-nestedcv")</a></code> and <code>inst/analysis/BENCHMARK_PLAN.md</code>.</li>
-<li>For <strong>selection parity</strong> with the original Python STABL implementation, see <code>docs/PYTHON_TO_R_MAPPING.md</code>.</li>
+<li>Use <code><a href="../reference/stabl_multiomic_cv.html">stabl_multiomic_cv()</a></code> for a fully cross-validated
+evaluation when no pre-defined validation split is available.</li>
+<li>Pass <code>groups</code> to respect subject-level grouping in
+bootstrap resampling and CV fold construction.</li>
+<li>See <code><a href="../articles/stablr-intro.html">vignette("stablr-intro")</a></code> for single-omic usage and
+alternative learners.</li>
+<li>See <code><a href="../articles/stablr-cooperative.html">vignette("stablr-cooperative")</a></code> for cross-view
+cooperative fusion (<code>rho</code> tuning) when blocks should agree
+without full concatenation.</li>
+<li>For integrative <strong>classification</strong> benchmarks against
+mixOmics DIABLO on TCGA, see
+<code><a href="../articles/stablr-tcga-nestedcv.html">vignette("stablr-tcga-nestedcv")</a></code> and
+<code>inst/analysis/BENCHMARK_PLAN.md</code>.</li>
+<li>For <strong>selection parity</strong> with the original Python STABL
+implementation, see <code>docs/PYTHON_TO_R_MAPPING.md</code>.</li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
@@ -462,7 +602,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

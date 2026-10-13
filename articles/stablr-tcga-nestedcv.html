@@ -5,12 +5,12 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>TCGA Breast Cancer Nested-CV Head-to-Head: stablr vs DIABLO • stablr</title>
+<title>Research protocol: TCGA nested-CV stablr-DIABLO comparison • stablr</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="TCGA Breast Cancer Nested-CV Head-to-Head: stablr vs DIABLO">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Research protocol: TCGA nested-CV stablr-DIABLO comparison">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">stablr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,11 +34,13 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-vignettes" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Vignettes</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-vignettes">
-<li><a class="dropdown-item" href="../articles/stablr-intro.html">Quick start</a></li>
+<li><a class="dropdown-item" href="../articles/stablr-getting-started.html">Getting started with stabl</a></li>
+    <li><a class="dropdown-item" href="../articles/stablr-intro.html">Quick start (expert interface)</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-multiomic.html">Multi-omic OOL workflow</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-tcga.html">TCGA Breast Cancer workflow</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-tcga-nestedcv.html">TCGA nested CV and DIABLO</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-cooperative.html">Cooperative fusion</a></li>
+    <li><a class="dropdown-item" href="../articles/stablr-environments.html">Environment stability</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-advanced.html">Advanced workflows</a></li>
   </ul>
 </li>
@@ -56,77 +58,127 @@
   </div>
 </nav><div class="container template-article">
 
+
+
+
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
-      <h1>TCGA Breast Cancer Nested-CV Head-to-Head: stablr vs DIABLO</h1>
+      <h1>Research protocol: TCGA nested-CV stablr-DIABLO comparison</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/mdmanurung/stablr/blob/HEAD/vignettes/stablr-tcga-nestedcv.Rmd" class="external-link"><code>vignettes/stablr-tcga-nestedcv.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/mdmanurung/stablr/blob/main/vignettes/stablr-tcga-nestedcv.Rmd" class="external-link"><code>vignettes/stablr-tcga-nestedcv.Rmd</code></a></small>
       <div class="d-none name"><code>stablr-tcga-nestedcv.Rmd</code></div>
     </div>
 
     
     
 <blockquote>
-<p><strong>Note:</strong> This vignette is illustrative — code chunks are set to <code>eval = FALSE</code> because the nested-CV comparison against DIABLO requires the TCGA dataset and runs for several hours. To run it interactively, set <code>eval = TRUE</code> in the setup chunk above and supply the TCGA data (available via the <code>mixOmics</code> package), or rebuild via <code><a href="https://pkgdown.r-lib.org/reference/build_site.html" class="external-link">pkgdown::build_site()</a></code> with the data in place.</p>
+<p><strong>Non-executable research protocol.</strong> This page
+specifies the benchmark and cache-reading contract. No TCGA head-to-head
+result is bundled or counted as release evidence. The external dataset,
+long-running fits, exact candidate, and output cache must be pinned
+before execution.</p>
 </blockquote>
 <div class="section level2">
 <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
-<p>The compact TCGA vignette shows the workflow. This vignette asks for evidence. It compares <code>stablr</code> and mixOmics DIABLO on the same three-class PAM50 breast cancer task: Basal, Her2, and LumA.</p>
-<p>The design is nested cross-validation. Outer folds estimate generalisation. Inner folds tune the models. Feature selection is repeated inside each training split, rather than performed once on the full dataset before validation. That distinction is the difference between a benchmark and an optimistic story.</p>
-<p>The head-to-head uses mRNA and miRNA only. The protein block in <code><a href="https://rdrr.io/pkg/mixOmics/man/breast.TCGA.html" class="external-link">mixOmics::breast.TCGA</a></code> is available only for the original training samples, while all 220 samples have mRNA and miRNA. Excluding protein keeps both methods on the same samples and blocks.</p>
-<p>The heavy computation is not run while rendering this vignette. It is executed through SLURM and cached as an RDS file.</p>
+<p>The compact TCGA vignette shows the workflow. This vignette defines
+the evidence-generating benchmark and reports results only when an
+external cache is available. It compares <code>stablr</code> and
+mixOmics DIABLO on the same three-class PAM50 breast cancer task: Basal,
+Her2, and LumA.</p>
+<p>The design is nested cross-validation. Outer folds estimate
+generalisation. Inner folds tune the models. Feature selection is
+repeated inside each training split, rather than performed once on the
+full dataset before validation. That distinction is the difference
+between a benchmark and an optimistic story.</p>
+<p>The head-to-head uses mRNA and miRNA only. The protein block in
+<code><a href="https://rdrr.io/pkg/mixOmics/man/breast.TCGA.html" class="external-link">mixOmics::breast.TCGA</a></code> is available only for the original
+training samples, while all 220 samples have mRNA and miRNA. Excluding
+protein keeps both methods on the same samples and blocks.</p>
+<p>The heavy computation is not run while rendering this vignette. It is
+executed outside the package through SLURM and cached as an RDS file.
+Until that cache is present, the vignette is a methodological protocol
+rather than bundled empirical evidence.</p>
 </div>
 <div class="section level2">
 <h2 id="methodological-audit">Methodological Audit<a class="anchor" aria-label="anchor" href="#methodological-audit"></a>
 </h2>
-<p>This workflow was checked against the <code>nestedcv</code> vignette guidance for p &gt;&gt; n biomedical prediction. No filter or feature-selection result is computed on the full dataset before cross-validation. STABL selection, downstream multinomial refitting, DIABLO component tuning, and DIABLO <code>keepX</code> tuning all occur inside the relevant training split before a held-out outer fold is predicted.</p>
+<p>This workflow was checked against the <code>nestedcv</code> vignette
+guidance for p &gt;&gt; n biomedical prediction. No filter or
+feature-selection result is computed on the full dataset before
+cross-validation. STABL selection, downstream multinomial refitting,
+DIABLO component tuning, and DIABLO <code>keepX</code> tuning all occur
+inside the relevant training split before a held-out outer fold is
+predicted.</p>
 <p>The design also follows p &gt;&gt; n variable-selection practice:</p>
 <ul>
-<li>predictors are passed as numeric matrices and model scaling is left inside the fitting procedures rather than learned globally before CV;</li>
-<li>the outer loop estimates performance, while the inner loop selects candidates and tuning parameters;</li>
-<li>stablr uses knockoff artificial features for FDP-aware stability selection;</li>
-<li>the deliverable is a recurrence profile over outer folds, not a single definitive biomarker list;</li>
+<li>predictors are passed as numeric matrices and model scaling is left
+inside the fitting procedures rather than learned globally before
+CV;</li>
+<li>the outer loop estimates performance, while the inner loop selects
+candidates and tuning parameters;</li>
+<li>stablr uses knockoff artificial features for FDP-aware stability
+selection;</li>
+<li>the deliverable is a recurrence profile over outer folds, not a
+single definitive biomarker list;</li>
 <li>no naive post-selection p-values are reported.</li>
 </ul>
-<p>The benchmark is still exploratory. Confirmatory extensions would include external cohort validation and refitting unpenalised subtype models on only the most recurrent features, with explicit post-selection qualification.</p>
+<p>The benchmark is still exploratory. Confirmatory extensions would
+include external cohort validation and refitting unpenalised subtype
+models on only the most recurrent features, with explicit post-selection
+qualification.</p>
 </div>
 <div class="section level2">
 <h2 id="run-on-slurm">Run on SLURM<a class="anchor" aria-label="anchor" href="#run-on-slurm"></a>
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">experiments_root</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">use_external_cache</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/chartr.html" class="external-link">tolower</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"STABLR_USE_EXTERNAL_TCGA_CACHE"</span>, unset <span class="op">=</span> <span class="st">"false"</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  <span class="st">"true"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">experiments_root</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span></span>
 <span>  <span class="st">"STABLR_EXPERIMENTS_ROOT"</span>,</span>
 <span>  unset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/basename.html" class="external-link">dirname</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/getwd.html" class="external-link">getwd</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span>, <span class="st">"stablr-experiments"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">analysis_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">experiments_root</span>, <span class="st">"analysis"</span><span class="op">)</span></span>
 <span><span class="va">analysis_script</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">analysis_dir</span>, <span class="st">"run_tcga_nestedcv.R"</span><span class="op">)</span></span>
-<span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.exists</a></span><span class="op">(</span><span class="va">analysis_script</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span><span class="va">tcga_cache_complete</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">path</span><span class="op">)</span> <span class="cn">FALSE</span></span>
+<span><span class="kw">if</span> <span class="op">(</span><span class="va">use_external_cache</span> <span class="op">&amp;&amp;</span> <span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.exists</a></span><span class="op">(</span><span class="va">analysis_script</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="kw"><a href="https://rdrr.io/r/base/source.html" class="external-link">source</a></span><span class="op">(</span><span class="va">analysis_script</span><span class="op">)</span></span>
-<span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
+<span><span class="op">}</span> <span class="kw">else</span> <span class="kw">if</span> <span class="op">(</span><span class="va">use_external_cache</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">tcga_cache_complete</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">path</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.exists</a></span><span class="op">(</span><span class="va">path</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span></span>
-<span><span class="va">cache_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">analysis_dir</span>, <span class="st">"cache"</span>, <span class="st">"tcga_nestedcv_results.rds"</span><span class="op">)</span></span>
-<span><span class="va">slurm_cmd</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"sbatch"</span>, <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">analysis_dir</span>, <span class="st">"tcga_nestedcv.slurm"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">cache_path</span> <span class="op">&lt;-</span> <span class="kw">if</span> <span class="op">(</span><span class="va">use_external_cache</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">analysis_dir</span>, <span class="st">"cache"</span>, <span class="st">"tcga_nestedcv_results.rds"</span><span class="op">)</span></span>
+<span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
+<span>  <span class="st">"&lt;external TCGA cache disabled&gt;"</span></span>
+<span><span class="op">}</span></span>
+<span><span class="va">slurm_cmd</span> <span class="op">&lt;-</span> <span class="kw">if</span> <span class="op">(</span><span class="va">use_external_cache</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"sbatch"</span>, <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">analysis_dir</span>, <span class="st">"tcga_nestedcv.slurm"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
+<span>  <span class="st">"Set STABLR_USE_EXTERNAL_TCGA_CACHE=true before using external artifacts."</span></span>
+<span><span class="op">}</span></span>
 <span><span class="va">has_results</span> <span class="op">&lt;-</span> <span class="cn">FALSE</span>  <span class="co"># updated by cache-status chunk below</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Expected cache:"</span>, <span class="va">cache_path</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Expected cache: /exports/para-lipg-hpc/mdmanurung/stablr/stablr-experiments/analysis/cache/tcga_nestedcv_results.rds</span></span>
+<span><span class="co">#&gt; Expected cache: &lt;external TCGA cache disabled&gt;</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Submit command:"</span>, <span class="va">slurm_cmd</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Submit command: sbatch /exports/para-lipg-hpc/mdmanurung/stablr/stablr-experiments/analysis/tcga_nestedcv.slurm</span></span></code></pre></div>
+<span><span class="co">#&gt; Submit command: Set STABLR_USE_EXTERNAL_TCGA_CACHE=true before using external artifacts.</span></span></code></pre></div>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">has_results</span> <span class="op">&lt;-</span> <span class="fu">tcga_cache_complete</span><span class="op">(</span><span class="va">cache_path</span><span class="op">)</span></span>
 <span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="va">has_results</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span></span>
 <span>    <span class="st">"Nested-CV cache is not available yet.\n"</span>,</span>
-<span>    <span class="st">"Submit the SLURM job above, then render this notebook again.\n"</span>,</span>
+<span>    <span class="st">"No TCGA head-to-head benchmark results are bundled in this render.\n"</span>,</span>
+<span>    <span class="st">"Opt in to external artifacts, submit the SLURM job above, then render this notebook again.\n"</span>,</span>
 <span>    sep <span class="op">=</span> <span class="st">""</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span><span class="co">#&gt; Nested-CV cache is not available yet.</span></span>
-<span><span class="co">#&gt; Submit the SLURM job above, then render this notebook again.</span></span></code></pre></div>
+<span><span class="co">#&gt; No TCGA head-to-head benchmark results are bundled in this render.</span></span>
+<span><span class="co">#&gt; Opt in to external artifacts, submit the SLURM job above, then render this notebook again.</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="analysis-design">Analysis Design<a class="anchor" aria-label="anchor" href="#analysis-design"></a>
@@ -135,13 +187,24 @@
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="va">cache_path</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">settings</span><span class="op">)</span></span></code></pre></div>
-<p><code>stablr</code> uses multinomial stability selection with knockoff artificial features. The candidate workflows are mRNA-only, miRNA-only, and early fusion across mRNA and miRNA. Candidate choice is based on inner-CV balanced error rate.</p>
-<p>DIABLO uses the mixOmics multiblock sPLS-DA workflow: <code>block.plsda()</code> and <code>perf()</code> choose the number of components, <code>tune.block.splsda()</code> tunes <code>keepX</code>, and the locked outer-fold model is evaluated with weighted-vote <code>centroids.dist</code> predictions.</p>
+<p><code>stablr</code> uses multinomial stability selection with
+knockoff artificial features. The candidate workflows are mRNA-only,
+miRNA-only, and early fusion across mRNA and miRNA. Candidate choice is
+based on inner-CV balanced error rate.</p>
+<p>DIABLO uses the mixOmics multiblock sPLS-DA workflow:
+<code>block.plsda()</code> and <code>perf()</code> choose the number of
+components, <code>tune.block.splsda()</code> tunes <code>keepX</code>,
+and the locked outer-fold model is evaluated with weighted-vote
+<code>centroids.dist</code> predictions.</p>
 </div>
 <div class="section level2">
 <h2 id="predictive-performance">Predictive Performance<a class="anchor" aria-label="anchor" href="#predictive-performance"></a>
 </h2>
-<p>The performance table is the first readout. The confusion matrices show where the methods make their mistakes, which is often more informative than a single accuracy number.</p>
+<p>When the cache is present, the performance table is the first
+readout. The confusion matrices show where the methods make their
+mistakes, which is often more informative than a single accuracy number.
+Without the cache, this section intentionally produces no numeric
+claim.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">res</span><span class="op">$</span><span class="va">performance</span></span></code></pre></div>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
@@ -179,7 +242,9 @@
 <div class="section level2">
 <h2 id="feature-comparison">Feature Comparison<a class="anchor" aria-label="anchor" href="#feature-comparison"></a>
 </h2>
-<p>Feature recurrence is the biomarker-side counterpart to predictive performance. A recurrent feature is not merely selected once; it survives across many outer training splits.</p>
+<p>Feature recurrence is the biomarker-side counterpart to predictive
+performance. A recurrent feature is not merely selected once; it
+survives across many outer training splits.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">res</span><span class="op">$</span><span class="va">feature_comparison</span><span class="op">$</span><span class="va">overlap</span></span></code></pre></div>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
@@ -199,12 +264,16 @@
 <p>The SLURM runner writes these files next to the cache:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.files</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/basename.html" class="external-link">dirname</a></span><span class="op">(</span><span class="va">cache_path</span><span class="op">)</span>, pattern <span class="op">=</span> <span class="st">"tcga_nestedcv"</span>, full.names <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<p>The CSV files are intended for manuscript tables and supplement material: performance, feature recurrence, and feature overlap by omic block.</p>
+<p>The CSV files are intended for manuscript tables and supplement
+material: performance, feature recurrence, and feature overlap by omic
+block.</p>
 </div>
 <div class="section level2">
 <h2 id="interpreting-stablr-vs-diablo-results">Interpreting stablr vs DIABLO results<a class="anchor" aria-label="anchor" href="#interpreting-stablr-vs-diablo-results"></a>
 </h2>
-<p>Read predictive and feature-level outputs together. A method that wins on balanced error rate (BER) is not automatically preferable for biomarker discovery, and vice versa.</p>
+<p>Read predictive and feature-level outputs together. A method that
+wins on balanced error rate (BER) is not automatically preferable for
+biomarker discovery, and vice versa.</p>
 <div class="section level3">
 <h3 id="predictive-layer">Predictive layer<a class="anchor" aria-label="anchor" href="#predictive-layer"></a>
 </h3>
@@ -220,23 +289,31 @@
 <tbody>
 <tr class="odd">
 <td>Lower outer-fold BER for DIABLO</td>
-<td>Latent multiblock structure may explain class separation better than sparse per-feature STABL + refit on this cohort.</td>
+<td>Latent multiblock structure may explain class separation better than
+sparse per-feature STABL + refit on this cohort.</td>
 </tr>
 <tr class="even">
 <td>Lower outer-fold BER for stablr</td>
-<td>Inner-CV candidate choice (mRNA / miRNA / early fusion) plus multinomial refit may capture signal DIABLO’s fixed component budget misses.</td>
+<td>Inner-CV candidate choice (mRNA / miRNA / early fusion) plus
+multinomial refit may capture signal DIABLO’s fixed component budget
+misses.</td>
 </tr>
 <tr class="odd">
 <td>Similar BER, different confusion patterns</td>
-<td>Methods trade errors across classes; inspect per-class recall before declaring a winner.</td>
+<td>Methods trade errors across classes; inspect per-class recall before
+declaring a winner.</td>
 </tr>
 <tr class="even">
 <td>Large fold-to-fold BER variance</td>
-<td>Dataset is small (220 samples); treat point estimates as exploratory.</td>
+<td>Dataset is small (220 samples); treat point estimates as
+exploratory.</td>
 </tr>
 </tbody>
 </table>
-<p>Negative <code>delta_BER</code> (stablr − DIABLO) favours DIABLO; positive favours stablr. Report paired fold deltas with bootstrap confidence intervals (see <code>inst/analysis/BENCHMARK_PLAN.md</code>, Phase 2).</p>
+<p>Negative <code>delta_BER</code> (stablr − DIABLO) favours DIABLO;
+positive favours stablr. Report paired fold deltas with bootstrap
+confidence intervals (see <code>inst/analysis/BENCHMARK_PLAN.md</code>,
+Phase 2).</p>
 </div>
 <div class="section level3">
 <h3 id="feature-biomarker-layer">Feature / biomarker layer<a class="anchor" aria-label="anchor" href="#feature-biomarker-layer"></a>
@@ -253,19 +330,24 @@
 <tbody>
 <tr class="odd">
 <td>High recurrence, modest overlap with DIABLO</td>
-<td>Stability selection and component sparsity surface partially complementary feature sets.</td>
+<td>Stability selection and component sparsity surface partially
+complementary feature sets.</td>
 </tr>
 <tr class="even">
 <td>stablr features recurrent, absent from DIABLO loadings</td>
-<td>May reflect block-specific marginal signal stabilised by resampling, not captured in shared latent factors.</td>
+<td>May reflect block-specific marginal signal stabilised by resampling,
+not captured in shared latent factors.</td>
 </tr>
 <tr class="odd">
-<td>DIABLO <code>selectVar</code> features absent from stablr support</td>
-<td>May load strongly on components without surviving FDP+ thresholding across bootstraps.</td>
+<td>DIABLO <code>selectVar</code> features absent from stablr
+support</td>
+<td>May load strongly on components without surviving FDP+ thresholding
+across bootstraps.</td>
 </tr>
 <tr class="even">
 <td>stablr selects more features per fold</td>
-<td>FDP threshold and lambda grid control sparsity; DIABLO sparsity is governed by <code>keepX</code>.</td>
+<td>FDP threshold and lambda grid control sparsity; DIABLO sparsity is
+governed by <code>keepX</code>.</td>
 </tr>
 </tbody>
 </table>
@@ -291,8 +373,8 @@
 <td>Integrative classification + component visualisation</td>
 </tr>
 <tr class="even">
-<td>False-discovery control</td>
-<td>Knockoff / FDP+ built in</td>
+<td>False-discovery diagnostic</td>
+<td>Knockoff / FDP+ estimate built in</td>
 <td>Not part of the default workflow</td>
 </tr>
 <tr class="odd">
@@ -313,11 +395,13 @@
 <tr class="even">
 <td>Compute profile</td>
 <td>Many bootstraps × lambda grid</td>
-<td>Component + <code>keepX</code> tuning (typically faster per fold)</td>
+<td>Component + <code>keepX</code> tuning (typically faster per
+fold)</td>
 </tr>
 </tbody>
 </table>
-<p>For Python STABL parity (selection semantics, not prediction contests), see <code>docs/PYTHON_TO_R_MAPPING.md</code>.</p>
+<p>For Python STABL parity (selection semantics, not prediction
+contests), see <code>docs/PYTHON_TO_R_MAPPING.md</code>.</p>
 </div>
 </div>
 <div class="section level2">
@@ -337,7 +421,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

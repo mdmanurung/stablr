@@ -15,9 +15,10 @@ get_stabl_scores(object)
 
 ## Arguments
 
-  - object:
-    
-    A fitted `"stabl_fit"` object returned by `stabl_fit()`.
+- object:
+
+  A fitted `"stabl_fit"` object returned by
+  [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md).
 
 ## Value
 
@@ -28,15 +29,17 @@ training matrix; column names are not set (use
 
 ## Details
 
-The stability score for feature \\(j\\) at regularisation strength
-\\(\\lambda\_k\\) is defined as the fraction of bootstrap subsamples in
-which feature \\(j\\) received a non-zero coefficient when the model was
-fitted at \\(\\lambda\_k\\). Values lie in \\(\[0, 1\]\\).
+The stability score for feature \\j\\ at regularisation strength
+\\\lambda_k\\ is defined as the fraction of bootstrap subsamples in
+which feature \\j\\ received a non-zero coefficient when the model was
+fitted at \\\lambda_k\\. Values lie in \\\[0, 1\]\\.
 
 ## See also
 
-`get_importances()` for the per-feature maximum score (scalar summary),
-`get_support()` for the binary selection mask.
+[`get_importances()`](https://mdmanurung.github.io/stablr/reference/get_importances.md)
+for the per-feature maximum score (scalar summary),
+[`get_support()`](https://mdmanurung.github.io/stablr/reference/get_support.md)
+for the binary selection mask.
 
 ## Examples
 
@@ -52,4 +55,5 @@ fit <- stabl_fit(x, y,
                  random_state   = 1L)
 scores <- get_stabl_scores(fit)  # features x lambdas matrix
 dim(scores)
+#> [1] 5 3
 ```

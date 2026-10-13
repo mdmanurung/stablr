@@ -7,8 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Cooperative Fusion for Multi-Omic Biomarker Discovery • stablr</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Cooperative Fusion for Multi-Omic Biomarker Discovery">
 </head>
@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">stablr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,11 +34,13 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-vignettes" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Vignettes</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-vignettes">
-<li><a class="dropdown-item" href="../articles/stablr-intro.html">Quick start</a></li>
+<li><a class="dropdown-item" href="../articles/stablr-getting-started.html">Getting started with stabl</a></li>
+    <li><a class="dropdown-item" href="../articles/stablr-intro.html">Quick start (expert interface)</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-multiomic.html">Multi-omic OOL workflow</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-tcga.html">TCGA Breast Cancer workflow</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-tcga-nestedcv.html">TCGA nested CV and DIABLO</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-cooperative.html">Cooperative fusion</a></li>
+    <li><a class="dropdown-item" href="../articles/stablr-environments.html">Environment stability</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-advanced.html">Advanced workflows</a></li>
   </ul>
 </li>
@@ -56,13 +58,16 @@
   </div>
 </nav><div class="container template-article">
 
+
+
+
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Cooperative Fusion for Multi-Omic Biomarker Discovery</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/mdmanurung/stablr/blob/HEAD/vignettes/stablr-cooperative.Rmd" class="external-link"><code>vignettes/stablr-cooperative.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/mdmanurung/stablr/blob/main/vignettes/stablr-cooperative.Rmd" class="external-link"><code>vignettes/stablr-cooperative.Rmd</code></a></small>
       <div class="d-none name"><code>stablr-cooperative.Rmd</code></div>
     </div>
 
@@ -71,8 +76,17 @@
 <div class="section level2">
 <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
-<p>Early fusion asks all features to compete in one wide matrix. Late fusion lets each omic make its own prediction and combines the answers afterward. Cooperative fusion asks a subtler question: can the views be fitted together without erasing their identities?</p>
-<p>In <code>stablr</code>, cooperative fusion is built in natively (vendored from the <a href="https://cran.r-project.org/package=multiview" class="external-link">multiview</a> cooperative-learning engine). Each view keeps its own coefficient path, but the paths are encouraged to agree through a cooperation strength <code>rho</code>. The omics are neither fully pooled nor fully isolated. Native v1 supports <strong>gaussian</strong> and <strong>binomial</strong> families.</p>
+<p>Early fusion asks all features to compete in one wide matrix. Late
+fusion lets each omic make its own prediction and combines the answers
+afterward. Cooperative fusion asks a subtler question: can the views be
+fitted together without erasing their identities?</p>
+<p>In <code>stablr</code>, cooperative fusion is built in natively
+(vendored from the <a href="https://cran.r-project.org/package=multiview" class="external-link">multiview</a>
+cooperative-learning engine). Each view keeps its own coefficient path,
+but the paths are encouraged to agree through a cooperation strength
+<code>rho</code>. The omics are neither fully pooled nor fully isolated.
+Native v1 supports <strong>gaussian</strong> and
+<strong>binomial</strong> families.</p>
 <p><strong>When should you use cooperative fusion?</strong></p>
 <table class="table">
 <colgroup>
@@ -103,31 +117,50 @@
 </tr>
 <tr class="even">
 <td><strong>Cooperative fusion</strong></td>
-<td>Joint multiview fit with cooperation strength <code>rho</code>; each view has its own coefficient path.</td>
-<td>Omics share some signal structure; you want cross-view feature selection to be coherent.</td>
+<td>Joint multiview fit with cooperation strength <code>rho</code>; each
+view has its own coefficient path.</td>
+<td>Omics share some signal structure; you want cross-view feature
+selection to be coherent.</td>
 </tr>
 </tbody>
 </table>
-<p>The cooperation strength <code>rho</code> controls how much the views are encouraged to share signal. At <code>rho = 0</code>, cooperative fusion reduces to independent fits. As <code>rho</code> grows, the views are penalised toward a common prediction. <code>stablr</code> tunes <code>rho</code> over a user-supplied grid.</p>
+<p>The cooperation strength <code>rho</code> controls how much the views
+are encouraged to share signal. At <code>rho = 0</code>, cooperative
+fusion reduces to independent fits. As <code>rho</code> grows, the views
+are penalised toward a common prediction. <code>stablr</code> tunes
+<code>rho</code> over a user-supplied grid.</p>
 </div>
 <div class="section level2">
 <h2 id="learning-objectives">Learning objectives<a class="anchor" aria-label="anchor" href="#learning-objectives"></a>
 </h2>
 <p>By the end, you should be able to:</p>
 <ol style="list-style-type: decimal">
-<li>Explain what <code>rho</code> controls in cooperative fusion and how to choose a grid.</li>
-<li>Run <code><a href="../reference/stabl_multiomic_train_validate.html">stabl_multiomic_train_validate()</a></code> with <code>cooperative_fusion = TRUE</code> and navigate the <code>$cooperative_fusion</code> result element.</li>
-<li>Read the <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> output for cooperative fusion details.</li>
-<li>Understand which <code>cooperation_selection</code> and <code>cooperation_selector</code> combinations are supported and why.</li>
-<li>Compare cooperative fusion feature selections to early and late fusion on the same dataset.</li>
-<li>Use <code><a href="../reference/stabl_multiomic_cv.html">stabl_multiomic_cv()</a></code> to evaluate cooperative fusion across outer folds.</li>
+<li>Explain what <code>rho</code> controls in cooperative fusion and how
+to choose a grid.</li>
+<li>Run <code><a href="../reference/stabl_multiomic_train_validate.html">stabl_multiomic_train_validate()</a></code> with
+<code>cooperative_fusion = TRUE</code> and navigate the
+<code>$cooperative_fusion</code> result element.</li>
+<li>Read the <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> output for cooperative fusion
+details.</li>
+<li>Understand which <code>cooperation_selection</code> and
+<code>cooperation_selector</code> combinations are supported and
+why.</li>
+<li>Compare cooperative fusion feature selections to early and late
+fusion on the same dataset.</li>
+<li>Use <code><a href="../reference/stabl_multiomic_cv.html">stabl_multiomic_cv()</a></code> to evaluate cooperative fusion
+across outer folds.</li>
 </ol>
 <hr>
 </div>
 <div class="section level2">
 <h2 id="load-the-data">1. Load the data<a class="anchor" aria-label="anchor" href="#load-the-data"></a>
 </h2>
-<p>We use the same Onset of Labor (OOL) dataset as <code><a href="../articles/stablr-multiomic.html">vignette("stablr-multiomic")</a></code>: CyTOF immune profiling and Proteomics measured on the same women, with days-to-onset-of-labor (DOS) as the continuous outcome. The examples use compact grids so the vignette remains buildable; enlarge the bootstrap count and <code>rho</code> grid for a final analysis.</p>
+<p>We use the same Onset of Labor (OOL) dataset as
+<code><a href="../articles/stablr-multiomic.html">vignette("stablr-multiomic")</a></code>: CyTOF immune profiling and
+Proteomics measured on the same women, with days-to-onset-of-labor (DOS)
+as the continuous outcome. The examples use compact grids so the
+vignette remains buildable; enlarge the bootstrap count and
+<code>rho</code> grid for a final analysis.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mdmanurung.github.io/stablr/">stablr</a></span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
@@ -146,7 +179,10 @@
 <div class="section level2">
 <h2 id="build-lambda-grids">2. Build lambda grids<a class="anchor" aria-label="anchor" href="#build-lambda-grids"></a>
 </h2>
-<p>Cooperative fusion still needs a lambda grid for each omic. We build one grid per view with <code><a href="../reference/auto_lambda_grid.html">auto_lambda_grid()</a></code> and pass the grids as a named list. Twelve lambda values are enough to demonstrate the workflow without making each cooperative fit too expensive.</p>
+<p>Cooperative fusion still needs a lambda grid for each omic. We build
+one grid per view with <code><a href="../reference/auto_lambda_grid.html">auto_lambda_grid()</a></code> and pass the
+grids as a named list. Twelve lambda values are enough to demonstrate
+the workflow without making each cooperative fit too expensive.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lambda_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  cytof      <span class="op">=</span> <span class="fu"><a href="../reference/auto_lambda_grid.html">auto_lambda_grid</a></span><span class="op">(</span></span>
@@ -168,7 +204,14 @@
 <div class="section level2">
 <h2 id="running-cooperative-fusion">3. Running cooperative fusion<a class="anchor" aria-label="anchor" href="#running-cooperative-fusion"></a>
 </h2>
-<p>Activate cooperative fusion with <code>cooperative_fusion = TRUE</code> and a <code>rho</code> grid. <code>stablr</code> fits one multiview model per <code>rho</code> value using shared inner CV folds, then picks the best <code>rho</code> by the chosen <code>cooperation_type_measure</code>. This is <strong>sequential</strong> tuning over <code>rho</code> (one full CV path per value), not a single joint CV over <code>(rho, lambda)</code> pairs.</p>
+<p>Activate cooperative fusion with
+<code>cooperative_fusion = TRUE</code> and a <code>rho</code> grid.
+<code>stablr</code> fits one multiview model per <code>rho</code> value
+using shared inner CV folds, then picks the best <code>rho</code> by the
+chosen <code>cooperation_type_measure</code>. This is
+<strong>sequential</strong> tuning over <code>rho</code> (one full CV
+path per value), not a single joint CV over <code>(rho, lambda)</code>
+pairs.</p>
 <p>Key arguments:</p>
 <table class="table">
 <colgroup>
@@ -191,12 +234,14 @@
 <td><code>cooperation_selection</code></td>
 <td><code>"cv"</code></td>
 <td>
-<code>"cv"</code> (inner CV) or <code>"validation"</code> (held-out set).</td>
+<code>"cv"</code> (inner CV) or <code>"validation"</code> (held-out
+set).</td>
 </tr>
 <tr class="odd">
 <td><code>cooperation_selector</code></td>
 <td><code>"lambda.min"</code></td>
-<td>Which lambda to pick: <code>"lambda.min"</code> or <code>"lambda.1se"</code> (CV only).</td>
+<td>Which lambda to pick: <code>"lambda.min"</code> or
+<code>"lambda.1se"</code> (CV only).</td>
 </tr>
 <tr class="even">
 <td><code>cooperation_type_measure</code></td>
@@ -206,7 +251,8 @@
 <tr class="odd">
 <td><code>cooperation_nfolds</code></td>
 <td><code>5L</code></td>
-<td>Number of inner CV folds when <code>cooperation_selection = "cv"</code>.</td>
+<td>Number of inner CV folds when
+<code>cooperation_selection = "cv"</code>.</td>
 </tr>
 </tbody>
 </table>
@@ -227,7 +273,9 @@
 <span>  cooperation_selector  <span class="op">=</span> <span class="st">"lambda.min"</span>,</span>
 <span>  cooperation_nfolds    <span class="op">=</span> <span class="fl">3L</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p><code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> shows every active branch. When cooperative fusion is present, a <code>Cooperative fusion:</code> block appears at the bottom:</p>
+<p><code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> shows every active branch. When cooperative
+fusion is present, a <code>Cooperative fusion:</code> block appears at
+the bottom:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cf_fit</span></span>
 <span><span class="co">#&gt; &lt;stabl_multiomic_fit&gt;</span></span>
@@ -248,24 +296,35 @@
 <p><strong>Reading the cooperative fusion block:</strong></p>
 <ul>
 <li>
-<strong><code>selection</code></strong> — how <code>rho</code> was tuned: <code>"cv"</code> here.</li>
+<strong><code>selection</code></strong> — how <code>rho</code> was
+tuned: <code>"cv"</code> here.</li>
 <li>
-<strong><code>rho (chosen)</code></strong> — the <code>rho</code> value selected by cross-validation. A value of <code>0</code> means the data did not benefit from cross-view cooperation; a larger value means views actively helped each other.</li>
+<strong><code>rho (chosen)</code></strong> — the <code>rho</code>
+value selected by cross-validation. A value of <code>0</code> means the
+specified metric and folds preferred independent fits within the
+supplied grid. A larger value means that the same tuning surface
+preferred some coupling between views; it is not by itself evidence of
+biological cooperation.</li>
 <li>
-<strong><code>selector</code></strong> — which lambda rule was applied (<code>lambda.min</code>).</li>
+<strong><code>selector</code></strong> — which lambda rule was
+applied (<code>lambda.min</code>).</li>
 <li>
-<strong><code>type.measure</code></strong> — the CV metric used for tuning (e.g., <code>mse</code>).</li>
+<strong><code>type.measure</code></strong> — the CV metric used for
+tuning (e.g., <code>mse</code>).</li>
 <li>
-<strong><code>score</code></strong> — the CV score at the chosen <code>rho</code> and <code>lambda</code>.</li>
+<strong><code>score</code></strong> — the CV score at the chosen
+<code>rho</code> and <code>lambda</code>.</li>
 <li>
-<strong><code>selected feats</code></strong> — total number of features selected across all views.</li>
+<strong><code>selected feats</code></strong> — total number of
+features selected across all views.</li>
 </ul>
 <hr>
 </div>
 <div class="section level2">
 <h2 id="navigating-cooperative_fusion">4. Navigating <code>$cooperative_fusion</code><a class="anchor" aria-label="anchor" href="#navigating-cooperative_fusion"></a>
 </h2>
-<p>The <code>cooperative_fusion</code> element contains the selected model and the tuning surface that led to it.</p>
+<p>The <code>cooperative_fusion</code> element contains the selected
+model and the tuning surface that led to it.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cf</span> <span class="op">&lt;-</span> <span class="va">cf_fit</span><span class="op">$</span><span class="va">cooperative_fusion</span></span>
 <span></span>
@@ -281,7 +340,8 @@
 <div class="section level3">
 <h3 id="selected-features-per-view">Selected features per view<a class="anchor" aria-label="anchor" href="#selected-features-per-view"></a>
 </h3>
-<p><code>$selected_features</code> is a named list with one character vector per omic:</p>
+<p><code>$selected_features</code> is a named list with one character
+vector per omic:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"CyTOF features selected by cooperative fusion:\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; CyTOF features selected by cooperative fusion:</span></span>
@@ -305,7 +365,8 @@
 <div class="section level3">
 <h3 id="predictions">Predictions<a class="anchor" aria-label="anchor" href="#predictions"></a>
 </h3>
-<p><code>$train_predictions</code> and <code>$valid_predictions</code> hold the multiview predictions from the chosen model:</p>
+<p><code>$train_predictions</code> and <code>$valid_predictions</code>
+hold the multiview predictions from the chosen model:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"First 6 training predictions:\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; First 6 training predictions:</span></span>
@@ -323,7 +384,9 @@
 <div class="section level3">
 <h3 id="tuning-diagnostics">Tuning diagnostics<a class="anchor" aria-label="anchor" href="#tuning-diagnostics"></a>
 </h3>
-<p><code>$diagnostics</code> records the CV score at every <code>rho</code> in the grid, so the tuning choice can be inspected rather than treated as a black box:</p>
+<p><code>$diagnostics</code> records the CV score at every
+<code>rho</code> in the grid, so the tuning choice can be inspected
+rather than treated as a black box:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># One row per rho value</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">cf</span><span class="op">$</span><span class="va">diagnostics</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"rho"</span>, <span class="st">"lambda"</span>, <span class="st">"metric_value"</span>, <span class="st">"selected"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
@@ -331,18 +394,26 @@
 <span><span class="co">#&gt; 1 0.00 2.429267     812.1337     TRUE</span></span>
 <span><span class="co">#&gt; 2 0.25 1.754128     816.5125    FALSE</span></span>
 <span><span class="co">#&gt; 3 0.50 2.016820     842.6442    FALSE</span></span></code></pre></div>
-<p>The <code>selected</code> column marks the winning <code>rho</code>. If the surface is flat, with similar <code>metric_value</code> across <code>rho</code>, the omics are not gaining much from cooperation and <code>rho = 0</code> is a defensible choice.</p>
+<p>The <code>selected</code> column marks the winning <code>rho</code>.
+If the surface is flat, with similar <code>metric_value</code> across
+<code>rho</code>, the omics are not gaining much from cooperation and
+<code>rho = 0</code> is a defensible choice.</p>
 <hr>
 </div>
 </div>
 <div class="section level2">
 <h2 id="policy-constraints">5. Policy constraints<a class="anchor" aria-label="anchor" href="#policy-constraints"></a>
 </h2>
-<p>Some combinations are rejected on purpose. These guards prevent analyses that look reasonable in code but do not have a valid tuning interpretation.</p>
+<p>Some combinations are rejected on purpose. These guards prevent
+analyses that look reasonable in code but do not have a valid tuning
+interpretation.</p>
 <div class="section level3">
 <h3 id="constraint-1---lambda-1se-requires-cv-mode">Constraint 1 - <code>lambda.1se</code> requires CV mode<a class="anchor" aria-label="anchor" href="#constraint-1---lambda-1se-requires-cv-mode"></a>
 </h3>
-<p><code>lambda.1se</code> applies the “one-standard-error” rule and is only well-defined when cross-validation is used to estimate the error surface. Requesting it with <code>cooperation_selection = "validation"</code> raises an error:</p>
+<p><code>lambda.1se</code> applies the “one-standard-error” rule and is
+only well-defined when cross-validation is used to estimate the error
+surface. Requesting it with
+<code>cooperation_selection = "validation"</code> raises an error:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/stabl_multiomic_train_validate.html">stabl_multiomic_train_validate</a></span><span class="op">(</span></span>
 <span>  x_train_list          <span class="op">=</span> <span class="va">ool_train</span><span class="op">$</span><span class="va">x_list</span>,</span>
@@ -362,12 +433,14 @@
 <span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> `cooperation_selector = 'lambda.1se'` is only available when `cooperation_selection = 'cv'`.</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="constraint-2---cox-and-poisson-families-are-not-supported-in-native-v1">Constraint 2 - Cox and Poisson families are not supported in native v1<a class="anchor" aria-label="anchor" href="#constraint-2---cox-and-poisson-families-are-not-supported-in-native-v1"></a>
+<h3 id="constraint-2---cox-and-poisson-families-are-not-supported-in-native-v1">Constraint 2 - Cox and Poisson families are not supported in native
+v1<a class="anchor" aria-label="anchor" href="#constraint-2---cox-and-poisson-families-are-not-supported-in-native-v1"></a>
 </h3>
-<p>Native cooperative fusion in <code>stablr</code> currently supports <strong>gaussian</strong> and <strong>binomial</strong> families only. Poisson and Cox cooperative paths are deferred to a future release:</p>
+<p>Native cooperative fusion in <code>stablr</code> currently supports
+<strong>gaussian</strong> and <strong>binomial</strong> families only.
+Poisson and Cox cooperative paths are deferred to a future release:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/therneau/survival" class="external-link">survival</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: package 'survival' was built under R version 4.5.2</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
 <span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">20L</span></span>
@@ -397,14 +470,21 @@
 <div class="section level2">
 <h2 id="built-in-cooperative-engine">6. Built-in cooperative engine<a class="anchor" aria-label="anchor" href="#built-in-cooperative-engine"></a>
 </h2>
-<p>Cooperative fusion is built into <code>stablr</code>; no separate <code>multiview</code> install is required. The engine is vendored from CRAN <code>multiview</code> v1.0 (GPL-2; see <code>inst/COPYING.cooperative</code>) and is enabled with <code>cooperative_fusion = TRUE</code>.</p>
-<p>Setting <code>cooperative_fusion = FALSE</code>, the default, runs only the per-omic STABL paths and never invokes the cooperative engine.</p>
+<p>Cooperative fusion is built into <code>stablr</code>; no separate
+<code>multiview</code> install is required. The engine is vendored from
+CRAN <code>multiview</code> v1.0 (GPL-2; see
+<code>inst/COPYING.cooperative</code>) and is enabled with
+<code>cooperative_fusion = TRUE</code>.</p>
+<p>Setting <code>cooperative_fusion = FALSE</code>, the default, runs
+only the per-omic STABL paths and never invokes the cooperative
+engine.</p>
 <hr>
 </div>
 <div class="section level2">
 <h2 id="comparing-cooperative-early-and-late-fusion">7. Comparing cooperative, early, and late fusion<a class="anchor" aria-label="anchor" href="#comparing-cooperative-early-and-late-fusion"></a>
 </h2>
-<p>The most useful comparison is often side by side. Run all three strategies in one call, then compare the selected features:</p>
+<p>The most useful comparison is often side by side. Run all three
+strategies in one call, then compare the selected features:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">all_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stabl_multiomic_train_validate.html">stabl_multiomic_train_validate</a></span><span class="op">(</span></span>
 <span>  x_train_list          <span class="op">=</span> <span class="va">ool_train</span><span class="op">$</span><span class="va">x_list</span>,</span>
@@ -435,7 +515,7 @@
 <span><span class="co">#&gt;     proteomics: 2</span></span>
 <span><span class="co">#&gt;   Validation data:  yes </span></span>
 <span><span class="co">#&gt;   Early fusion:     yes (2 features selected) </span></span>
-<span><span class="co">#&gt;   Late fusion:      yes (score = 0.3607) </span></span>
+<span><span class="co">#&gt;   Late fusion:      yes (score = 0.1867) </span></span>
 <span><span class="co">#&gt;   Cooperative fusion:</span></span>
 <span><span class="co">#&gt;     selection:     cv</span></span>
 <span><span class="co">#&gt;     rho (chosen):  0</span></span>
@@ -476,11 +556,17 @@
 <span><span class="co">#&gt; In early fusion but not cooperative:</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sets.html" class="external-link">setdiff</a></span><span class="op">(</span><span class="va">ef_features</span>, <span class="va">cf_features</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; character(0)</span></span></code></pre></div>
-<p><strong>Interpreting differences:</strong> early fusion sees all features simultaneously in one penalised model; cooperative fusion fits per-view paths that are encouraged to agree. Features unique to cooperative fusion may carry cross-view signal that is diluted in the concatenated early-fusion space.</p>
+<p><strong>Interpreting differences:</strong> early fusion sees all
+features simultaneously in one penalised model; cooperative fusion fits
+per-view paths that are encouraged to agree. Features unique to
+cooperative fusion may carry cross-view signal that is diluted in the
+concatenated early-fusion space.</p>
 <div class="section level3">
 <h3 id="relation-to-mixomics-diablo">Relation to mixOmics DIABLO<a class="anchor" aria-label="anchor" href="#relation-to-mixomics-diablo"></a>
 </h3>
-<p>Cooperative fusion is the closest <code>stablr</code> analogue to multiblock integration, but it is <strong>not</strong> equivalent to DIABLO:</p>
+<p>Cooperative fusion is the closest <code>stablr</code> analogue to
+multiblock integration, but it is <strong>not</strong> equivalent to
+DIABLO:</p>
 <table class="table">
 <colgroup>
 <col width="7%">
@@ -495,7 +581,8 @@
 <tbody>
 <tr class="odd">
 <td>Optimisation</td>
-<td>Penalised regression paths per view, coupled by cooperation penalty</td>
+<td>Penalised regression paths per view, coupled by cooperation
+penalty</td>
 <td>Sparse PLS components with block design matrix</td>
 </tr>
 <tr class="even">
@@ -506,7 +593,8 @@
 <tr class="odd">
 <td>Tuning</td>
 <td>
-<code>rho</code>, <code>lambda</code>, <code>cooperation_nfolds</code>
+<code>rho</code>, <code>lambda</code>,
+<code>cooperation_nfolds</code>
 </td>
 <td>
 <code>ncomp</code>, <code>keepX</code>, design matrix entries</td>
@@ -523,16 +611,26 @@
 </tr>
 </tbody>
 </table>
-<p>Use cooperative fusion when you want <strong>stable sparse features per omic</strong> with cross-view agreement. Use DIABLO when you want <strong>joint latent factors</strong> for classification and mixOmics visualisation. Head-to-head TCGA benchmarks that include early fusion (and future cooperative arms) are described in <code>inst/analysis/BENCHMARK_PLAN.md</code>.</p>
+<p>Use cooperative fusion when you want <strong>stable sparse features
+per omic</strong> with cross-view agreement. Use DIABLO when you want
+<strong>joint latent factors</strong> for classification and mixOmics
+visualisation. Head-to-head TCGA benchmarks that include early fusion
+(and future cooperative arms) are described in
+<code>inst/analysis/BENCHMARK_PLAN.md</code>.</p>
 <hr>
 </div>
 </div>
 <div class="section level2">
 <h2 id="cross-validation-with-cooperative-fusion">8. Cross-validation with cooperative fusion<a class="anchor" aria-label="anchor" href="#cross-validation-with-cooperative-fusion"></a>
 </h2>
-<p>Use <code><a href="../reference/stabl_multiomic_cv.html">stabl_multiomic_cv()</a></code> when no predefined validation split is available. Cooperative fusion parameters propagate to every outer fold. This is a realistic analysis pattern, but it multiplies cost by the number of outer folds, so the code is shown but not evaluated during vignette builds:</p>
+<p>Use <code><a href="../reference/stabl_multiomic_cv.html">stabl_multiomic_cv()</a></code> when no predefined validation
+split is available. Cooperative fusion parameters propagate to every
+outer fold. This is a realistic analysis pattern, but it multiplies cost
+by the number of outer folds, so the code is shown but not evaluated
+during vignette builds:</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">cv_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stabl_multiomic_cv.html">stabl_multiomic_cv</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="co"># Long-running vignette branch; exercised by test-multiomic-workflows.R.</span></span>
+<span><span class="va">cv_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stabl_multiomic_cv.html">stabl_multiomic_cv</a></span><span class="op">(</span></span>
 <span>  x_list                <span class="op">=</span> <span class="va">ool_train</span><span class="op">$</span><span class="va">x_list</span>,</span>
 <span>  y                     <span class="op">=</span> <span class="va">ool_train</span><span class="op">$</span><span class="va">y</span>,</span>
 <span>  lambda_grid           <span class="op">=</span> <span class="va">lambda_list</span>,</span>
@@ -549,16 +647,23 @@
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">cv_fit</span></span></code></pre></div>
-<p>The <code>$diagnostics</code> data frame includes cooperative-specific columns (<code>cooperative_rho</code>, <code>cooperative_lambda</code>, <code>cooperative_score</code>, etc.), making it possible to inspect how <code>rho</code> was selected in each outer fold:</p>
+<p>The <code>$diagnostics</code> data frame includes
+cooperative-specific columns (<code>cooperative_rho</code>,
+<code>cooperative_lambda</code>, <code>cooperative_score</code>, etc.),
+making it possible to inspect how <code>rho</code> was selected in each
+outer fold:</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">cv_fit</span><span class="op">$</span><span class="va">diagnostics</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"fold"</span>, <span class="st">"omic"</span>, <span class="st">"n_selected"</span>,</span>
+<code class="sourceCode R"><span><span class="co"># Output contract exercised by test-multiomic-workflows.R.</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">cv_fit</span><span class="op">$</span><span class="va">diagnostics</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"fold"</span>, <span class="st">"omic"</span>, <span class="st">"n_selected"</span>,</span>
 <span>                              <span class="st">"cooperative_rho"</span>, <span class="st">"cooperative_score"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
 <hr>
 </div>
 <div class="section level2">
 <h2 id="choosing-rho-and-design-guidance">9. Choosing <code>rho</code> and design guidance<a class="anchor" aria-label="anchor" href="#choosing-rho-and-design-guidance"></a>
 </h2>
-<p>The useful <code>rho</code> grid is usually modest. Treat it as a scientific sensitivity analysis: did the views need to cooperate, and if so, how strongly?</p>
+<p>The useful <code>rho</code> grid is usually modest. Treat it as a
+scientific sensitivity analysis: did the views need to cooperate, and if
+so, how strongly?</p>
 <table class="table">
 <colgroup>
 <col width="50%">
@@ -571,36 +676,48 @@
 <tbody>
 <tr class="odd">
 <td><strong>Grid density</strong></td>
-<td>Start with <code>c(0, 0.1, 0.3, 0.5)</code>. Add finer points only if the CV surface has a clear non-zero minimum.</td>
+<td>Start with <code>c(0, 0.1, 0.3, 0.5)</code>. Add finer points only
+if the CV surface has a clear non-zero minimum.</td>
 </tr>
 <tr class="even">
 <td><strong>Grid upper bound</strong></td>
-<td>Values &gt; 0.5 can over-penalise disagreement between views; rarely beneficial unless views are near-identical.</td>
+<td>Values &gt; 0.5 can over-penalise disagreement between views; rarely
+beneficial unless views are near-identical.</td>
 </tr>
 <tr class="odd">
-<td><strong><code>lambda.min</code> vs <code>lambda.1se</code></strong></td>
+<td><strong><code>lambda.min</code> vs
+<code>lambda.1se</code></strong></td>
 <td>
-<code>lambda.1se</code> gives a sparser model at the cost of a higher CV error; prefer <code>lambda.min</code> when prediction is the goal.</td>
+<code>lambda.1se</code> gives a sparser model at the cost of a
+higher CV error; prefer <code>lambda.min</code> when prediction is the
+goal.</td>
 </tr>
 <tr class="even">
 <td><strong><code>cooperation_nfolds</code></strong></td>
-<td>5 (default) is suitable for n &gt;= 50. Use 3 for smaller datasets. Must be &gt;= 3.</td>
+<td>5 (default) is suitable for n &gt;= 50. Use 3 for smaller datasets.
+Must be &gt;= 3.</td>
 </tr>
 <tr class="odd">
 <td><strong><code>cooperation_selection = "validation"</code></strong></td>
-<td>Use when you have a true held-out set and want to tune <code>rho</code> and <code>lambda</code> together on it.</td>
+<td>Use when you have a true held-out set and want to tune
+<code>rho</code> and <code>lambda</code> together on it.</td>
 </tr>
 <tr class="even">
 <td><strong>Native v1 families</strong></td>
-<td>Cooperative fusion supports <code>family = "gaussian"</code> and <code>"binomial"</code> only.</td>
+<td>Cooperative fusion supports <code>family = "gaussian"</code> and
+<code>"binomial"</code> only.</td>
 </tr>
 <tr class="odd">
 <td><strong>Binomial tuning metrics</strong></td>
-<td>Try <code>cooperation_type_measure = "auc"</code> or <code>"class"</code> when the outcome is binary.</td>
+<td>Try <code>cooperation_type_measure = "auc"</code> or
+<code>"class"</code> when the outcome is binary.</td>
 </tr>
 <tr class="even">
 <td><strong>rho = 0 wins</strong></td>
-<td>If the chosen <code>rho</code> is always 0, the views are not benefiting from cooperation. Consider whether the omics share any biological pathway.</td>
+<td>If the chosen <code>rho</code> is always 0, the chosen metric
+prefers independent fits under this grid and fold design. Treat that as
+a prompt for sensitivity analysis, not proof that the omics share no
+useful structure.</td>
 </tr>
 </tbody>
 </table>
@@ -610,12 +727,23 @@
 <h2 id="next-steps">Next steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
 </h2>
 <ul>
-<li>See <code><a href="../articles/stablr-multiomic.html">vignette("stablr-multiomic")</a></code> for per-omic, early, and late fusion on the same OOL dataset.</li>
-<li>See <code><a href="../articles/stablr-intro.html">vignette("stablr-intro")</a></code> for single-omic STABL and learner options.</li>
-<li>Pass <code>groups</code> to <code><a href="../reference/stabl_multiomic_train_validate.html">stabl_multiomic_train_validate()</a></code> to prevent leakage in longitudinal designs; grouped bootstrapping and outer-fold construction both respect this argument.</li>
-<li>For binomial cooperative fusion, set <code>family = "binomial"</code> and consider <code>cooperation_type_measure = "auc"</code> or <code>"class"</code>.</li>
-<li>See <code><a href="../articles/stablr-advanced.html">vignette("stablr-advanced")</a></code> for Cox survival STABL, knockoffs, grouped bootstrap, reproducibility metrics, export helpers, and outer CV.</li>
-<li>For mixOmics DIABLO comparison on TCGA, see <code><a href="../articles/stablr-tcga-nestedcv.html">vignette("stablr-tcga-nestedcv")</a></code>.</li>
+<li>See <code><a href="../articles/stablr-multiomic.html">vignette("stablr-multiomic")</a></code> for per-omic, early,
+and late fusion on the same OOL dataset.</li>
+<li>See <code><a href="../articles/stablr-intro.html">vignette("stablr-intro")</a></code> for single-omic STABL and
+learner options.</li>
+<li>Pass <code>groups</code> to
+<code><a href="../reference/stabl_multiomic_train_validate.html">stabl_multiomic_train_validate()</a></code> to prevent leakage in
+longitudinal designs; grouped bootstrapping and outer-fold construction
+both respect this argument.</li>
+<li>For binomial cooperative fusion, set
+<code>family = "binomial"</code> and consider
+<code>cooperation_type_measure = "auc"</code> or
+<code>"class"</code>.</li>
+<li>See <code><a href="../articles/stablr-advanced.html">vignette("stablr-advanced")</a></code> for Cox survival STABL,
+knockoffs, grouped bootstrap, reproducibility metrics, export helpers,
+and outer CV.</li>
+<li>For mixOmics DIABLO comparison on TCGA, see
+<code><a href="../articles/stablr-tcga-nestedcv.html">vignette("stablr-tcga-nestedcv")</a></code>.</li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
@@ -629,7 +757,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

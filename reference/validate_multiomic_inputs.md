@@ -13,21 +13,21 @@ validate_multiomic_inputs(x_list, y, groups = NULL)
 
 ## Arguments
 
-  - x\_list:
-    
-    Named list of `data.frame` or numeric matrix omic tables. Each table
-    must have non-empty row names identifying samples. All tables must
-    have the same set of row names **in the same order**.
+- x_list:
 
-  - y:
-    
-    Named outcome vector aligned to the samples in `x_list`. The name
-    set must match the row names of every omic table.
+  Named list of `data.frame` or numeric matrix omic tables. Each table
+  must have non-empty row names identifying samples. All tables must
+  have the same set of row names **in the same order**.
 
-  - groups:
-    
-    Optional named group vector. When supplied its names must match the
-    sample IDs in `x_list`. Pass `NULL` to skip group validation.
+- y:
+
+  Named outcome vector aligned to the samples in `x_list`. The name set
+  must match the row names of every omic table.
+
+- groups:
+
+  Optional named group vector. When supplied its names must match the
+  sample IDs in `x_list`. Pass `NULL` to skip group validation.
 
 ## Value
 
@@ -45,5 +45,21 @@ misalignment detected later in the modelling pipeline.
 
 ## See also
 
-`validate_sample_alignment()` for single-omic inputs,
-`stabl_multiomic_train_validate()` which calls this automatically.
+[`validate_sample_alignment()`](https://mdmanurung.github.io/stablr/reference/validate_sample_alignment.md)
+for single-omic inputs,
+[`stabl_multiomic_train_validate()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_train_validate.md)
+which calls this automatically.
+
+## Examples
+
+``` r
+ids <- paste0("s", 1:4)
+x_list <- list(
+  rna = matrix(1:12, 4, 3, dimnames = list(ids, paste0("g", 1:3))),
+  protein = matrix(1:8, 4, 2, dimnames = list(ids, paste0("p", 1:2)))
+)
+y <- setNames(c(0, 1, 0, 1), ids)
+validate_multiomic_inputs(x_list, y)
+try(validate_multiomic_inputs(x_list[c("rna", "rna")], y))
+#> Error : omic names must not contain duplicate values.
+```

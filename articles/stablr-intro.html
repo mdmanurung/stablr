@@ -7,8 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Introduction to stablr • stablr</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Introduction to stablr">
 </head>
@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">stablr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,11 +34,13 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-vignettes" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Vignettes</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-vignettes">
-<li><a class="dropdown-item" href="../articles/stablr-intro.html">Quick start</a></li>
+<li><a class="dropdown-item" href="../articles/stablr-getting-started.html">Getting started with stabl</a></li>
+    <li><a class="dropdown-item" href="../articles/stablr-intro.html">Quick start (expert interface)</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-multiomic.html">Multi-omic OOL workflow</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-tcga.html">TCGA Breast Cancer workflow</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-tcga-nestedcv.html">TCGA nested CV and DIABLO</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-cooperative.html">Cooperative fusion</a></li>
+    <li><a class="dropdown-item" href="../articles/stablr-environments.html">Environment stability</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-advanced.html">Advanced workflows</a></li>
   </ul>
 </li>
@@ -56,13 +58,16 @@
   </div>
 </nav><div class="container template-article">
 
+
+
+
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Introduction to stablr</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/mdmanurung/stablr/blob/HEAD/vignettes/stablr-intro.Rmd" class="external-link"><code>vignettes/stablr-intro.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/mdmanurung/stablr/blob/main/vignettes/stablr-intro.Rmd" class="external-link"><code>vignettes/stablr-intro.Rmd</code></a></small>
       <div class="d-none name"><code>stablr-intro.Rmd</code></div>
     </div>
 
@@ -71,44 +76,72 @@
 <div class="section level2">
 <h2 id="what-is-stabl">What is STABL?<a class="anchor" aria-label="anchor" href="#what-is-stabl"></a>
 </h2>
-<p>A high-dimensional biomarker screen begins with an uncomfortable fact: there are many more tempting variables than there are samples. A sparse model can still choose a short list, but a single fit does not tell us whether the list is sturdy or merely lucky.</p>
-<p>STABL (Stability-based Thresholding and Aggregation for Biomarker discovery via LASSO) turns that one-shot question into a repeated experiment. It resamples the data, fits a sparse learner across a penalty grid, records how often each feature appears, and calibrates the result against artificial decoy features. The central object is therefore not one coefficient vector. It is a frequency: how often does this feature survive when the data are perturbed?</p>
-<p>The <code>stablr</code> package is a pure-R implementation built around the <code>glmnet</code> ecosystem. This introductory vignette uses small simulated datasets, random-permutation decoys, and modest bootstrap counts so the examples remain quick enough for routine package builds.</p>
+<p>A high-dimensional biomarker screen begins with an uncomfortable
+fact: there are many more tempting variables than there are samples. A
+sparse model can still choose a short list, but a single fit does not
+tell us whether the list is sturdy or merely lucky.</p>
+<p>STABL (Stability-based Thresholding and Aggregation for Biomarker
+discovery via LASSO) turns that one-shot question into a repeated
+experiment. It resamples the data, fits a sparse learner across a
+penalty grid, records how often each feature appears, and calibrates the
+result against artificial decoy features. The central object is
+therefore not one coefficient vector. It is a frequency: how often does
+this feature survive when the data are perturbed?</p>
+<p>The <code>stablr</code> package is R-native without a Python runtime
+and built around the <code>glmnet</code> ecosystem. This introductory
+vignette uses small simulated datasets, random-permutation decoys, and
+modest bootstrap counts so the examples remain quick enough for routine
+package builds.</p>
 <p>The workflow is deliberately simple:</p>
 <ol style="list-style-type: decimal">
-<li>Prepare a numeric feature matrix <code>x</code> and an outcome vector <code>y</code>.</li>
+<li>Prepare a numeric feature matrix <code>x</code> and an outcome
+vector <code>y</code>.</li>
 <li>Build a lambda grid with <code><a href="../reference/auto_lambda_grid.html">auto_lambda_grid()</a></code>.</li>
 <li>Fit STABL with <code><a href="../reference/stabl_fit.html">stabl_fit()</a></code>.</li>
-<li>Inspect selected features, stability scores, and diagnostic plots.</li>
+<li>Inspect selected features, stability scores, and diagnostic
+plots.</li>
 </ol>
-<p>The fitted object is a ranked feature-selection result rather than a final prediction model. It records which features cross the stability threshold, how often each feature was selected, and how those selections compare with the decoys.</p>
+<p>The fitted object is a ranked feature-selection result rather than a
+final prediction model. It records which features cross the stability
+threshold, how often each feature was selected, and how those selections
+compare with the decoys.</p>
 </div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># From the repository root after cloning:</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/install.html" class="external-link">install</a></span><span class="op">(</span><span class="st">"."</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># Interactive installation protocol; not a package API example.</span></span>
+<span><span class="co"># From the repository root after cloning:</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install</span><span class="op">(</span><span class="st">"."</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mdmanurung.github.io/stablr/">stablr</a></span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="scope">Scope<a class="anchor" aria-label="anchor" href="#scope"></a>
 </h2>
-<p>This vignette is the small door into the package. It covers the single-omic case:</p>
+<p>This vignette is the small door into the package. It covers the
+single-omic case:</p>
 <ol style="list-style-type: decimal">
-<li>preparing the input objects expected by <code><a href="../reference/stabl_fit.html">stabl_fit()</a></code>;</li>
-<li>building a compact penalty grid with <code><a href="../reference/auto_lambda_grid.html">auto_lambda_grid()</a></code>;</li>
+<li>preparing the input objects expected by
+<code><a href="../reference/stabl_fit.html">stabl_fit()</a></code>;</li>
+<li>building a compact penalty grid with
+<code><a href="../reference/auto_lambda_grid.html">auto_lambda_grid()</a></code>;</li>
 <li>fitting a small binary or regression example;</li>
-<li>extracting selected feature names (<code><a href="../reference/get_feature_names_out.html">get_feature_names_out()</a></code>), logical support masks (<code><a href="../reference/get_support.html">get_support()</a></code>), and stability scores (<code><a href="../reference/get_importances.html">get_importances()</a></code>).</li>
+<li>extracting selected feature names
+(<code><a href="../reference/get_feature_names_out.html">get_feature_names_out()</a></code>), logical support masks
+(<code><a href="../reference/get_support.html">get_support()</a></code>), and stability scores
+(<code><a href="../reference/get_importances.html">get_importances()</a></code>).</li>
 <li>reading the stability-path and FDP diagnostic plots;</li>
-<li>switching between lasso, adaptive lasso, and elastic-net base learners.</li>
+<li>switching between lasso, adaptive lasso, and elastic-net base
+learners.</li>
 </ol>
 </div>
 <div class="section level2">
 <h2 id="basic-input-shape">Basic input shape<a class="anchor" aria-label="anchor" href="#basic-input-shape"></a>
 </h2>
-<p>The method expects ordinary R objects. The important convention is not exotic: samples are rows, features are columns, and the outcome is aligned to the same sample order.</p>
+<p>The method expects ordinary R objects. The important convention is
+not exotic: samples are rows, features are columns, and the outcome is
+aligned to the same sample order.</p>
 <table class="table">
 <colgroup>
 <col width="33%">
@@ -123,24 +156,32 @@
 <tbody>
 <tr class="odd">
 <td><code>x</code></td>
-<td>numeric matrix or matrix-like object, samples in rows and features in columns</td>
+<td>numeric matrix or matrix-like object, samples in rows and features
+in columns</td>
 <td>Column names become feature names in output.</td>
 </tr>
 <tr class="even">
 <td><code>y</code></td>
 <td>outcome vector with one value per row of <code>x</code>
 </td>
-<td>Use <code>0</code>/<code>1</code> or a factor-like outcome for <code>family = "binomial"</code>; use numeric values for <code>family = "gaussian"</code>.</td>
+<td>Use <code>0</code>/<code>1</code> or a factor-like outcome for
+<code>family = "binomial"</code>; use numeric values for
+<code>family = "gaussian"</code>.</td>
 </tr>
 <tr class="odd">
 <td><code>lambda_grid</code></td>
 <td>data frame returned by <code><a href="../reference/auto_lambda_grid.html">auto_lambda_grid()</a></code>
 </td>
-<td>Each row defines a sparse model setting evaluated during bootstrapping.</td>
+<td>Each row defines a sparse model setting evaluated during
+bootstrapping.</td>
 </tr>
 </tbody>
 </table>
-<p>If <code>x</code> has row names and <code>y</code> has names, they should refer to the same samples in the same order. In biomarker work, a silent sample mismatch is worse than a model error because it can look perfectly plausible.</p>
+<p>If <code>x</code> has row names and <code>y</code> has names, both
+must contain the same unique sample IDs. Their order may differ:
+<code>stablr</code> aligns the outcome to predictor rows by ID. In
+biomarker work, a silent sample mismatch is worse than a model error
+because it can look perfectly plausible.</p>
 <hr>
 </div>
 <div class="section level2">
@@ -149,7 +190,12 @@
 <div class="section level3">
 <h3 id="simulated-data">Simulated data<a class="anchor" aria-label="anchor" href="#simulated-data"></a>
 </h3>
-<p>The first experiment is binary classification. We build a small world in which the truth is known: 120 samples, 24 candidate features, and only five real signals (<code>B1</code> to <code>B5</code>). The remaining features are noise. This lets us ask the cleanest possible question: does stability selection recover the features that were planted?</p>
+<p>The first experiment is binary classification. We build a small world
+in which the truth is known: 120 samples, 24 candidate features, and
+only five real signals (<code>B1</code> to <code>B5</code>). The
+remaining features are noise. This lets us ask the cleanest possible
+question: does stability selection recover the features that were
+planted?</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">n_bin</span> <span class="op">&lt;-</span> <span class="fl">120</span>; <span class="va">p_bin</span> <span class="op">&lt;-</span> <span class="fl">24</span>; <span class="va">n_signal_bin</span> <span class="op">&lt;-</span> <span class="fl">5</span></span>
 <span><span class="va">signal_features_bin</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"B"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">n_signal_bin</span><span class="op">)</span><span class="op">)</span></span>
@@ -170,12 +216,18 @@
 <span></span>
 <span><span class="va">signal_features_bin</span></span>
 <span><span class="co">#&gt; [1] "B1" "B2" "B3" "B4" "B5"</span></span></code></pre></div>
-<p>The <code><a href="https://rdrr.io/r/base/table.html" class="external-link">table()</a></code> output is a quick check on class balance. A badly imbalanced screen can still be useful, but its selected features need more care in interpretation.</p>
+<p>The <code><a href="https://rdrr.io/r/base/table.html" class="external-link">table()</a></code> output is a quick check on class balance. A
+badly imbalanced screen can still be useful, but its selected features
+need more care in interpretation.</p>
 </div>
 <div class="section level3">
 <h3 id="fitting-stabl">Fitting STABL<a class="anchor" aria-label="anchor" href="#fitting-stabl"></a>
 </h3>
-<p>There are two moving parts. First, <code><a href="../reference/auto_lambda_grid.html">auto_lambda_grid()</a></code> asks <code>glmnet</code> for a data-dependent penalty path. Each row of the grid becomes one sparse model configuration. Second, <code><a href="../reference/stabl_fit.html">stabl_fit()</a></code> repeats the fit across bootstrap samples and counts feature selections.</p>
+<p>There are two moving parts. First, <code><a href="../reference/auto_lambda_grid.html">auto_lambda_grid()</a></code>
+asks <code>glmnet</code> for a data-dependent penalty path. Each row of
+the grid becomes one sparse model configuration. Second,
+<code><a href="../reference/stabl_fit.html">stabl_fit()</a></code> repeats the fit across bootstrap samples and
+counts feature selections.</p>
 <p>The main arguments are:</p>
 <table class="table">
 <colgroup>
@@ -189,11 +241,13 @@
 <tbody>
 <tr class="odd">
 <td><code>family</code></td>
-<td>Passed to <code>glmnet</code>; <code>"binomial"</code> for 0/1 outcome, <code>"gaussian"</code> for continuous.</td>
+<td>Passed to <code>glmnet</code>; <code>"binomial"</code> for 0/1
+outcome, <code>"gaussian"</code> for continuous.</td>
 </tr>
 <tr class="even">
 <td><code>n_bootstraps</code></td>
-<td>Number of bootstrap resamples. The examples use 40-50; final analyses usually need hundreds.</td>
+<td>Number of bootstrap resamples. The examples use 40-50; final
+analyses usually need hundreds.</td>
 </tr>
 <tr class="odd">
 <td><code>artificial_type</code></td>
@@ -207,6 +261,10 @@
 </table>
 <p>Supported artificial-feature settings are:</p>
 <table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
 <thead><tr class="header">
 <th>Value</th>
 <th>Meaning</th>
@@ -218,7 +276,8 @@
 </tr>
 <tr class="even">
 <td><code>"knockoff"</code></td>
-<td>Fixed-X knockoffs via the optional <code>knockoff</code> package.</td>
+<td>Fixed-X knockoffs via the optional <code>knockoff</code>
+package.</td>
 </tr>
 <tr class="odd">
 <td><code>"knockoff_equi"</code></td>
@@ -234,8 +293,21 @@
 </tr>
 </tbody>
 </table>
-<p>Scalar tuning arguments such as <code>n_bootstraps</code> and <code>random_state</code> must be finite integer-like scalars. Plot titles, output paths, and file-format arguments must be non-empty character scalars.</p>
-<p>The example uses <code>n_bootstraps = 50</code> and keeps the strong-penalty end of a 20-point lambda path. This keeps the runtime short and the selected set compact. Lower penalties admit more features, which can be useful for diagnostics but can hide a small planted signal in a short introductory run. Final analyses should use more bootstrap resamples and should check that the selected features are not an artifact of one narrow grid choice.</p>
+<p>All knockoff modes fail closed above 3,000 predictors because the
+package does not claim a globally valid chunked construction.
+Random-permutation controls do not have that dimensional
+restriction.</p>
+<p>Scalar tuning arguments such as <code>n_bootstraps</code> and
+<code>random_state</code> must be finite integer-like scalars. Plot
+titles, output paths, and file-format arguments must be non-empty
+character scalars.</p>
+<p>The example uses <code>n_bootstraps = 50</code> and keeps the
+strong-penalty end of a 20-point lambda path. This keeps the runtime
+short and the selected set compact. Lower penalties admit more features,
+which can be useful for diagnostics but can hide a small planted signal
+in a short introductory run. Final analyses should use more bootstrap
+resamples and should check that the selected features are not an
+artifact of one narrow grid choice.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lambda_bin_full</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/auto_lambda_grid.html">auto_lambda_grid</a></span><span class="op">(</span></span>
 <span>  <span class="va">X_bin</span>, <span class="va">y_bin</span>, family <span class="op">=</span> <span class="st">"binomial"</span>, n_lambda <span class="op">=</span> <span class="fl">20</span></span>
@@ -259,25 +331,47 @@
 <span><span class="co">#&gt;   Min FDP+:         0.2 </span></span>
 <span><span class="co">#&gt;   FDP+ threshold:   0.74 </span></span>
 <span><span class="co">#&gt;   Artificial:       random_permutation</span></span></code></pre></div>
-<p><strong>Reading the printed summary.</strong> The output reports three key numbers:</p>
+<p><strong>Reading the printed summary.</strong> The output reports
+three key numbers:</p>
 <ul>
 <li>
-<strong>Stability threshold</strong> — the minimum selection frequency a feature must reach to be called a biomarker (e.g. <code>0.7</code> means selected in &gt;= 70% of bootstraps).</li>
+<strong>Stability threshold</strong> — the minimum selection
+frequency a feature must reach to be called a biomarker
+(e.g. <code>0.7</code> means selected in &gt;= 70% of bootstraps).</li>
 <li>
-<strong>n selected</strong> — features passing the threshold; for our 5-signal data you expect a small number close to 5.</li>
+<strong>n selected</strong> — features passing the threshold; for
+our 5-signal data you expect a small number close to 5.</li>
 <li>
-<strong>FDP+ estimate</strong> — estimated upper bound on the false-discovery proportion among selected features. With only five planted signals and the additive <code>+1</code> FDP+ correction, the best possible value for a perfect five-feature selection is <code>1 / 5 = 0.2</code>; larger real analyses can support smaller values.</li>
+<strong>FDP+ estimate</strong> — estimated upper bound on the
+false-discovery proportion among selected features. With only five
+planted signals and the additive <code>+1</code> FDP+ correction, the
+best possible value for a perfect five-feature selection is
+<code>1 / 5 = 0.2</code>; larger real analyses can support smaller
+values.</li>
 </ul>
-<p>In real data, these numbers are a screening summary, not a verdict. The most convincing fits have a selected set of plausible size, a visible gap between selected and unselected stability scores, and features that survive domain review.</p>
+<p>In real data, these numbers are a screening summary, not a verdict.
+The most convincing fits have a selected set of plausible size, a
+visible gap between selected and unselected stability scores, and
+features that survive domain review.</p>
 </div>
 <div class="section level3">
 <h3 id="inspecting-results">Inspecting results<a class="anchor" aria-label="anchor" href="#inspecting-results"></a>
 </h3>
-<p><code><a href="../reference/get_feature_names_out.html">get_feature_names_out()</a></code> gives the selected biomarker names. <code><a href="../reference/get_support.html">get_support()</a></code> returns the same decision as a named logical vector, which is useful when the original matrix needs to be subset. <code><a href="../reference/get_importances.html">get_importances()</a></code> keeps the fuller story: a stability score for every feature, sorted from most to least persistent.</p>
-<p>Because this is a simulation, we can compare the selected set with the planted truth. In a real experiment, the analogous evidence comes from independent validation, mechanism, and the shape of the stability-score gap.</p>
+<p><code><a href="../reference/get_feature_names_out.html">get_feature_names_out()</a></code> gives the selected biomarker
+names. <code><a href="../reference/get_support.html">get_support()</a></code> returns the same decision as a named
+logical vector, which is useful when the original matrix needs to be
+subset. <code><a href="../reference/get_importances.html">get_importances()</a></code> keeps the fuller story: a
+stability score for every feature, sorted from most to least
+persistent.</p>
+<p>Because this is a simulation, we can compare the selected set with
+the planted truth. In a real experiment, the analogous evidence comes
+from independent validation, mechanism, and the shape of the
+stability-score gap.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Features selected at the STABL threshold</span></span>
 <span><span class="va">selected_bin</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_feature_names_out.html">get_feature_names_out</a></span><span class="op">(</span><span class="va">fit_bin</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
+<span><span class="co">#&gt; instead.</span></span>
 <span><span class="va">selected_bin</span></span>
 <span><span class="co">#&gt; [1] "B1" "B2" "B3" "B4" "B5"</span></span>
 <span></span>
@@ -296,25 +390,45 @@
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_importances.html">get_importances</a></span><span class="op">(</span><span class="va">fit_bin</span><span class="op">)</span>, <span class="fl">10</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   B1   B2   B3   B4   B5   B6   B7   B8   B9  B10 </span></span>
 <span><span class="co">#&gt; 1.00 0.88 0.98 1.00 1.00 0.72 0.30 0.22 0.68 0.52</span></span></code></pre></div>
-<p>The two <code><a href="https://rdrr.io/r/base/sets.html" class="external-link">setdiff()</a></code> calls are a luxury of simulation. They show what STABL is being asked to do: separate repeatable signal from features that only look good once.</p>
+<p>The two <code><a href="https://rdrr.io/r/base/sets.html" class="external-link">setdiff()</a></code> calls are a luxury of simulation. They
+show what STABL is being asked to do: separate repeatable signal from
+features that only look good once.</p>
 </div>
 <div class="section level3">
 <h3 id="visualisation">Visualisation<a class="anchor" aria-label="anchor" href="#visualisation"></a>
 </h3>
-<p><strong>Stability path.</strong> Each curve is one feature’s selection frequency along the lambda path. A useful fit usually has a small group of curves that lift away from the background. In this simulation, <code>B1</code> to <code>B5</code> should form that upper band.</p>
+<p><strong>Stability path.</strong> Each curve is one feature’s
+selection frequency along the lambda path. A useful fit usually has a
+small group of curves that lift away from the background. In this
+simulation, <code>B1</code> to <code>B5</code> should form that upper
+band.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_stabl_path.html">plot_stabl_path</a></span><span class="op">(</span><span class="va">fit_bin</span>, title <span class="op">=</span> <span class="st">"Binary classification - stability path"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="stablr-intro_files/figure-html/plot-binary-1.png" class="r-plt" alt="Stability path for binary classification" width="576"></p>
-<p>The plotting helpers return ordinary <code>ggplot</code> objects, so the same figure can be displayed, modified, or saved.</p>
+<p>The plotting helpers return ordinary <code>ggplot</code> objects, so
+the same figure can be displayed, modified, or saved.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">path_plot</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_stabl_path.html">plot_stabl_path</a></span><span class="op">(</span><span class="va">fit_bin</span>, title <span class="op">=</span> <span class="st">"Binary classification - stability path"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="co"># Optional file writing; plot contract exercised by test-phase7.R.</span></span>
+<span><span class="va">path_plot</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_stabl_path.html">plot_stabl_path</a></span><span class="op">(</span><span class="va">fit_bin</span>, title <span class="op">=</span> <span class="st">"Binary classification - stability path"</span><span class="op">)</span></span>
 <span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsave.html" class="external-link">ggsave</a></span><span class="op">(</span><span class="st">"stability-path.png"</span>, <span class="va">path_plot</span>, width <span class="op">=</span> <span class="fl">7</span>, height <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></code></pre></div>
-<p><strong>FDR graph.</strong> The x-axis sweeps candidate stability thresholds. The y-axis shows the estimated FDP at each threshold. The vertical dashed line marks the chosen threshold, and the horizontal dashed line marks the default FDP target. In this tiny five-signal simulation the FDP+ lower bound is <code>1 / 5 = 0.2</code>, so the graph is best read as a threshold diagnostic rather than a promise that the curve will fall below 0.05.</p>
+<p><strong>FDP+ diagnostic (<code><a href="../reference/plot_fdr_graph.html">plot_fdr_graph()</a></code>).</strong> The
+function retains its historical name, but the plotted quantity is FDP+.
+At threshold
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>,
+the numerator is the artificial-feature exceedance count adjusted for
+the injected proportion, plus one; the denominator is the real-feature
+exceedance count, bounded below by one. The fitted threshold is the
+first grid value attaining the minimum FDP+. The vertical dashed line
+marks that threshold, while the horizontal line is a visual target only.
+In this tiny five-signal simulation the FDP+ lower bound is
+<code>1 / 5 = 0.2</code>, so the graph is a calibration diagnostic, not
+a universal false-discovery guarantee.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_fdr_graph.html">plot_fdr_graph</a></span><span class="op">(</span><span class="va">fit_bin</span>, title <span class="op">=</span> <span class="st">"Binary classification - FDR estimate"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="stablr-intro_files/figure-html/fdr-binary-1.png" class="r-plt" alt="FDR estimate graph for binary classification" width="576"></p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">fdr_plot</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_fdr_graph.html">plot_fdr_graph</a></span><span class="op">(</span><span class="va">fit_bin</span>, title <span class="op">=</span> <span class="st">"Binary classification - FDR estimate"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="co"># Optional file writing; plot contract exercised by test-phase7.R.</span></span>
+<span><span class="va">fdr_plot</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_fdr_graph.html">plot_fdr_graph</a></span><span class="op">(</span><span class="va">fit_bin</span>, title <span class="op">=</span> <span class="st">"Binary classification - FDR estimate"</span><span class="op">)</span></span>
 <span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsave.html" class="external-link">ggsave</a></span><span class="op">(</span><span class="st">"fdr-graph.png"</span>, <span class="va">fdr_plot</span>, width <span class="op">=</span> <span class="fl">7</span>, height <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></code></pre></div>
 <hr>
 </div>
@@ -325,7 +439,10 @@
 <div class="section level3">
 <h3 id="simulated-data-1">Simulated data<a class="anchor" aria-label="anchor" href="#simulated-data-1"></a>
 </h3>
-<p>Regression changes the question from class membership to a continuous outcome. The structure stays the same: a known signal is planted, noise is added, and STABL is asked to find the features that keep reappearing. Here the true features are <code>R1</code> to <code>R5</code>.</p>
+<p>Regression changes the question from class membership to a continuous
+outcome. The structure stays the same: a known signal is planted, noise
+is added, and STABL is asked to find the features that keep reappearing.
+Here the true features are <code>R1</code> to <code>R5</code>.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">n_reg</span> <span class="op">&lt;-</span> <span class="fl">160</span>; <span class="va">p_reg</span> <span class="op">&lt;-</span> <span class="fl">24</span>; <span class="va">n_signal_reg</span> <span class="op">&lt;-</span> <span class="fl">5</span></span>
 <span><span class="va">signal_features_reg</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"R"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">n_signal_reg</span><span class="op">)</span><span class="op">)</span></span>
@@ -344,7 +461,9 @@
 <div class="section level3">
 <h3 id="fitting-stabl-1">Fitting STABL<a class="anchor" aria-label="anchor" href="#fitting-stabl-1"></a>
 </h3>
-<p>The code mirrors the binary example. Moving from classification to regression requires changing <code>family</code>, rebuilding the lambda grid for the new outcome, and refitting.</p>
+<p>The code mirrors the binary example. Moving from classification to
+regression requires changing <code>family</code>, rebuilding the lambda
+grid for the new outcome, and refitting.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lambda_reg_full</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/auto_lambda_grid.html">auto_lambda_grid</a></span><span class="op">(</span></span>
 <span>  <span class="va">X_reg</span>, <span class="va">y_reg</span>, family <span class="op">=</span> <span class="st">"gaussian"</span>, n_lambda <span class="op">=</span> <span class="fl">20</span></span>
@@ -372,9 +491,14 @@
 <div class="section level3">
 <h3 id="results">Results<a class="anchor" aria-label="anchor" href="#results"></a>
 </h3>
-<p>The strongest scores should concentrate on <code>R1</code> to <code>R5</code>. Their exact scores need not match the binary example because the Gaussian loss changes the effective sparsity of each bootstrap model.</p>
+<p>The strongest scores should concentrate on <code>R1</code> to
+<code>R5</code>. Their exact scores need not match the binary example
+because the Gaussian loss changes the effective sparsity of each
+bootstrap model.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">selected_reg</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_feature_names_out.html">get_feature_names_out</a></span><span class="op">(</span><span class="va">fit_reg</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
+<span><span class="co">#&gt; instead.</span></span>
 <span><span class="va">selected_reg</span></span>
 <span><span class="co">#&gt; [1] "R1" "R2" "R3" "R4" "R5"</span></span>
 <span></span>
@@ -386,12 +510,17 @@
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_importances.html">get_importances</a></span><span class="op">(</span><span class="va">fit_reg</span><span class="op">)</span>, <span class="fl">10</span><span class="op">)</span></span>
 <span><span class="co">#&gt;  R1  R2  R3  R4  R5  R6  R7  R8  R9 R10 </span></span>
 <span><span class="co">#&gt;   1   1   1   1   1   0   0   0   0   0</span></span></code></pre></div>
-<p>The selected feature names are the thresholded screening result. The full importance vector is often just as useful, because features just below the threshold may suggest a continuum rather than a sharp boundary.</p>
+<p>The selected feature names are the thresholded screening result. The
+full importance vector is often just as useful, because features just
+below the threshold may suggest a continuum rather than a sharp
+boundary.</p>
 </div>
 <div class="section level3">
 <h3 id="visualisation-1">Visualisation<a class="anchor" aria-label="anchor" href="#visualisation-1"></a>
 </h3>
-<p>The stability path should echo the binary case: the planted features lift away from the background. Differences in curve height reflect the model family, not a change in the definition of stability.</p>
+<p>The stability path should echo the binary case: the planted features
+lift away from the background. Differences in curve height reflect the
+model family, not a change in the definition of stability.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_stabl_path.html">plot_stabl_path</a></span><span class="op">(</span><span class="va">fit_reg</span>, title <span class="op">=</span> <span class="st">"Regression - stability path"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="stablr-intro_files/figure-html/plot-reg-1.png" class="r-plt" alt="Stability path for regression" width="576"></p>
@@ -401,13 +530,24 @@
 <div class="section level2">
 <h2 id="learner-variants">3. Learner variants<a class="anchor" aria-label="anchor" href="#learner-variants"></a>
 </h2>
-<p>The default base learner is lasso. Other sparse learners are useful when the geometry of the feature space changes. The examples below reuse the binary simulation so the learner choice is the only moving part.</p>
+<p>The default base learner is lasso. Other sparse learners are useful
+when the geometry of the feature space changes. The examples below reuse
+the binary simulation so the learner choice is the only moving part.</p>
 <div class="section level3">
 <h3 id="adaptive-lasso">Adaptive lasso<a class="anchor" aria-label="anchor" href="#adaptive-lasso"></a>
 </h3>
-<p>The adaptive lasso re-weights the L1 penalty. Features with small coefficients in a preliminary ridge fit are penalised more heavily, which can sharpen the contrast between persistent signal and unstable noise.</p>
-<p><strong>When to use it:</strong> prefer adaptive lasso when you expect a sparse true signal and want a tighter biomarker list with fewer borderline features.</p>
-<p><strong>What to expect:</strong> B1-B5 should remain among the strongest-ranked features, and <code><a href="../reference/get_importances.html">get_importances()</a></code> will typically show higher scores for true features compared to plain lasso. Borderline noise features can still appear because this variant chunk uses a broader introductory lambda grid.</p>
+<p>The adaptive lasso re-weights the L1 penalty. Features with small
+coefficients in a preliminary ridge fit are penalised more heavily,
+which can sharpen the contrast between persistent signal and unstable
+noise.</p>
+<p><strong>When to use it:</strong> prefer adaptive lasso when you
+expect a sparse true signal and want a tighter biomarker list with fewer
+borderline features.</p>
+<p><strong>What to expect:</strong> B1-B5 should remain among the
+strongest-ranked features, and <code><a href="../reference/get_importances.html">get_importances()</a></code> will
+typically show higher scores for true features compared to plain lasso.
+Borderline noise features can still appear because this variant chunk
+uses a broader introductory lambda grid.</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lambda_ada</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/auto_lambda_grid.html">auto_lambda_grid</a></span><span class="op">(</span><span class="va">X_bin</span>, <span class="va">y_bin</span>, family <span class="op">=</span> <span class="st">"binomial"</span>, n_lambda <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
 <span></span>
@@ -423,17 +563,29 @@
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/get_feature_names_out.html">get_feature_names_out</a></span><span class="op">(</span><span class="va">fit_ada</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
+<span><span class="co">#&gt; instead.</span></span>
 <span><span class="co">#&gt; [1] "B1"  "B2"  "B3"  "B4"  "B5"  "B6"  "B9"  "B16"</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_support.html">get_support</a></span><span class="op">(</span><span class="va">fit_ada</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 8</span></span></code></pre></div>
-<p>The count from <code>sum(get_support(fit_ada))</code> shows how compact the selected set has become. <code>get_importances(fit_ada)</code> keeps the full ranking.</p>
+<p>The count from <code>sum(get_support(fit_ada))</code> shows how
+compact the selected set has become.
+<code>get_importances(fit_ada)</code> keeps the full ranking.</p>
 </div>
 <div class="section level3">
 <h3 id="elastic-net">Elastic net<a class="anchor" aria-label="anchor" href="#elastic-net"></a>
 </h3>
-<p>Elastic net interpolates between lasso (<code>alpha = 1</code>) and ridge (<code>alpha = 0</code>). The L2 component lets correlated features travel together, which is useful when biomarkers form modules rather than isolated hits.</p>
-<p>Passing multiple <code>l1_ratio</code> values to <code><a href="../reference/auto_lambda_grid.html">auto_lambda_grid()</a></code> makes STABL sweep the (lambda, alpha) grid jointly, exploring both the sparsity level and the L1/L2 mix in every bootstrap.</p>
-<p><strong>When to use it:</strong> prefer elastic net over plain lasso when features are highly correlated and you want to avoid arbitrarily picking one representative from a correlated group.</p>
+<p>Elastic net interpolates between lasso (<code>alpha = 1</code>) and
+ridge (<code>alpha = 0</code>). The L2 component lets correlated
+features travel together, which is useful when biomarkers form modules
+rather than isolated hits.</p>
+<p>Passing multiple <code>l1_ratio</code> values to
+<code><a href="../reference/auto_lambda_grid.html">auto_lambda_grid()</a></code> makes STABL sweep the (lambda, alpha)
+grid jointly, exploring both the sparsity level and the L1/L2 mix in
+every bootstrap.</p>
+<p><strong>When to use it:</strong> prefer elastic net over plain lasso
+when features are highly correlated and you want to avoid arbitrarily
+picking one representative from a correlated group.</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lambda_en</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/auto_lambda_grid.html">auto_lambda_grid</a></span><span class="op">(</span></span>
 <span>  <span class="va">X_bin</span>, <span class="va">y_bin</span>,</span>
@@ -453,18 +605,52 @@
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/get_feature_names_out.html">get_feature_names_out</a></span><span class="op">(</span><span class="va">fit_en</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
+<span><span class="co">#&gt; instead.</span></span>
 <span><span class="co">#&gt; [1] "B1"  "B3"  "B4"  "B5"  "B6"  "B22"</span></span></code></pre></div>
 <hr>
 </div>
 </div>
 <div class="section level2">
+<h2 id="what-fdp-is-and-is-not">What FDP+ is and is not<a class="anchor" aria-label="anchor" href="#what-fdp-is-and-is-not"></a>
+</h2>
+<p><code><a href="../reference/stabl_fit.html">stabl_fit()</a></code> chooses its stability threshold by
+minimizing an FDP+ surrogate: at each candidate threshold it estimates
+the false-discovery proportion among selected features from the
+artificial (decoy) features and keeps the first minimizer along the
+grid. Three caveats keep this honest:</p>
+<ul>
+<li>
+<strong>Not a universal FDR guarantee.</strong> The fitted threshold
+minimizes an observed diagnostic curve; neither it nor the plotted
+<code>fdr_target</code> line controls false discoveries by
+construction.</li>
+<li>
+<strong>Calibration depends on fair null competitors.</strong> The
+FDP+ estimate is only as good as the artificial features: they must
+behave as exchangeable nulls for the real features under the base
+learner. Poorly matched decoys distort the estimate.</li>
+<li>
+<strong><code>FDRs_</code> / <code>min_fdr_</code> are names, not
+promises.</strong> These fitted fields keep their historical
+Python-parity names; they contain FDP+ estimates, not guaranteed
+false-discovery rates.</li>
+</ul>
+<hr>
+</div>
+<div class="section level2">
 <h2 id="next-steps">Next steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
 </h2>
-<p>This vignette stays close to the core idea: repeat the sparse fit, count what survives, and calibrate that survival against decoys. From here:</p>
+<p>This vignette stays close to the core idea: repeat the sparse fit,
+count what survives, and calibrate that survival against decoys. From
+here:</p>
 <ul>
-<li>Use more bootstraps for final analyses, typically hundreds rather than the small values used here.</li>
-<li>Use <code><a href="../articles/stablr-multiomic.html">vignette("stablr-multiomic")</a></code> when your data contain multiple omics views.</li>
-<li>Use <code><a href="../reference/save_stabl_results.html">?save_stabl_results</a></code> when you are ready to export scores, plots, and selected-feature tables to disk.</li>
+<li>Use more bootstraps for final analyses, typically hundreds rather
+than the small values used here.</li>
+<li>Use <code><a href="../articles/stablr-multiomic.html">vignette("stablr-multiomic")</a></code> when your data contain
+multiple omics views.</li>
+<li>Use <code><a href="../reference/save_stabl_results.html">?save_stabl_results</a></code> when you are ready to export
+scores, plots, and selected-feature tables to disk.</li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
@@ -478,7 +664,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

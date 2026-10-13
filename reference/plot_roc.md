@@ -12,20 +12,22 @@ plot_roc(y_true, y_preds, title = "ROC Curve")
 
 ## Arguments
 
-  - y\_true:
-    
-    Integer or logical vector of binary outcomes (1/`TRUE` for the
-    positive class, 0/`FALSE` for the negative class). Must be the same
-    length as `y_preds`.
+- y_true:
 
-  - y\_preds:
-    
-    Numeric vector of predicted probabilities for the positive class.
-    Values must be in \\(\[0, 1\]\\) for interpretable results.
+  Numeric 0/1 or logical vector of binary outcomes (1/`TRUE` for the
+  positive class, 0/`FALSE` for the negative class). Must contain both
+  classes and be the same length as `y_preds`. Character or factor
+  labels should be recoded explicitly so the positive class is
+  unambiguous.
 
-  - title:
-    
-    Character scalar; plot title. Default `"ROC Curve"`.
+- y_preds:
+
+  Numeric vector of predicted probabilities for the positive class.
+  Values must be finite and in \\\[0, 1\]\\.
+
+- title:
+
+  Character scalar; plot title. Default `"ROC Curve"`.
 
 ## Value
 
@@ -37,12 +39,15 @@ ROC curves visualise the trade-off between sensitivity (TPR) and
 specificity (1 - FPR) across all possible classification thresholds. Use
 this plot to assess overall discriminative ability after applying STABL
 feature selection and fitting a downstream classifier on the selected
-features. The Area Under the Curve (AUC) is shown in the caption.
+features. Tied prediction scores are aggregated at a single threshold
+before AUC computation, making the result invariant to row order. The
+Area Under the Curve (AUC) is shown in the caption.
 
 ## See also
 
-`plot_prc()` for precision-recall curves (preferred when classes are
-severely imbalanced).
+[`plot_prc()`](https://mdmanurung.github.io/stablr/reference/plot_prc.md)
+for precision-recall curves (preferred when classes are severely
+imbalanced).
 
 ## Examples
 

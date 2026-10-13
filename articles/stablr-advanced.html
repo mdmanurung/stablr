@@ -7,8 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Advanced stablr Workflows • stablr</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Advanced stablr Workflows">
 </head>
@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">stablr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,11 +34,13 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-vignettes" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Vignettes</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-vignettes">
-<li><a class="dropdown-item" href="../articles/stablr-intro.html">Quick start</a></li>
+<li><a class="dropdown-item" href="../articles/stablr-getting-started.html">Getting started with stabl</a></li>
+    <li><a class="dropdown-item" href="../articles/stablr-intro.html">Quick start (expert interface)</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-multiomic.html">Multi-omic OOL workflow</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-tcga.html">TCGA Breast Cancer workflow</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-tcga-nestedcv.html">TCGA nested CV and DIABLO</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-cooperative.html">Cooperative fusion</a></li>
+    <li><a class="dropdown-item" href="../articles/stablr-environments.html">Environment stability</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-advanced.html">Advanced workflows</a></li>
   </ul>
 </li>
@@ -56,13 +58,16 @@
   </div>
 </nav><div class="container template-article">
 
+
+
+
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Advanced stablr Workflows</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/mdmanurung/stablr/blob/HEAD/vignettes/stablr-advanced.Rmd" class="external-link"><code>vignettes/stablr-advanced.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/mdmanurung/stablr/blob/main/vignettes/stablr-advanced.Rmd" class="external-link"><code>vignettes/stablr-advanced.Rmd</code></a></small>
       <div class="d-none name"><code>stablr-advanced.Rmd</code></div>
     </div>
 
@@ -71,7 +76,10 @@
 <div class="section level2">
 <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
-<p>The introductory and multi-omic vignettes focus on the core Gaussian and binomial workflows. This vignette covers additional <code>stablr</code> capabilities that are easy to miss when reading only the quick-start paths:</p>
+<p>The introductory and multi-omic vignettes focus on the core Gaussian
+and binomial workflows. This vignette covers additional
+<code>stablr</code> capabilities that are easy to miss when reading only
+the quick-start paths:</p>
 <table class="table">
 <colgroup>
 <col width="38%">
@@ -93,7 +101,9 @@
 <tr class="odd">
 <td>Artificial features</td>
 <td>
-<code>artificial_type = "random_permutation"</code>, <code>"knockoff"</code>, <code>"knockoff_equi"</code>, <code>"knockoff_mvr"</code>, or <code>NULL</code>
+<code>artificial_type = "random_permutation"</code>,
+<code>"knockoff"</code>, <code>"knockoff_equi"</code>,
+<code>"knockoff_mvr"</code>, or <code>NULL</code>
 </td>
 </tr>
 <tr class="even">
@@ -105,13 +115,15 @@
 <tr class="odd">
 <td>Reproducibility metrics</td>
 <td>
-<code><a href="../reference/jaccard_similarity.html">jaccard_similarity()</a></code>, <code><a href="../reference/adjusted_similarity.html">adjusted_similarity()</a></code>
+<code><a href="../reference/jaccard_similarity.html">jaccard_similarity()</a></code>,
+<code><a href="../reference/adjusted_similarity.html">adjusted_similarity()</a></code>
 </td>
 </tr>
 <tr class="even">
 <td>Disk export</td>
 <td>
-<code><a href="../reference/export_stabl_to_csv.html">export_stabl_to_csv()</a></code>, <code><a href="../reference/save_stabl_results.html">save_stabl_results()</a></code>
+<code><a href="../reference/export_stabl_to_csv.html">export_stabl_to_csv()</a></code>,
+<code><a href="../reference/save_stabl_results.html">save_stabl_results()</a></code>
 </td>
 </tr>
 <tr class="odd">
@@ -121,11 +133,13 @@
 <tr class="even">
 <td>Cooperative diagnostics</td>
 <td>
-<code><a href="../reference/get_cooperative_features.html">get_cooperative_features()</a></code>, <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> on native fits</td>
+<code><a href="../reference/get_cooperative_features.html">get_cooperative_features()</a></code>, <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> on
+native fits</td>
 </tr>
 </tbody>
 </table>
-<p>Examples use small simulated data so the vignette remains fast during <code>R CMD check</code>.</p>
+<p>Examples use small simulated data so the vignette remains fast during
+<code>R CMD check</code>.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mdmanurung.github.io/stablr/">stablr</a></span><span class="op">)</span></span></code></pre></div>
 <hr>
@@ -133,10 +147,11 @@
 <div class="section level2">
 <h2 id="cox-proportional-hazards-stabl">1. Cox proportional-hazards STABL<a class="anchor" aria-label="anchor" href="#cox-proportional-hazards-stabl"></a>
 </h2>
-<p>For time-to-event outcomes, pass a <code><a href="https://rdrr.io/pkg/survival/man/Surv.html" class="external-link">survival::Surv</a></code> object as <code>y</code> and set <code>family = "cox"</code>. Row names of <code>y</code> must match <code>rownames(x)</code>.</p>
+<p>For time-to-event outcomes, pass a <code><a href="https://rdrr.io/pkg/survival/man/Surv.html" class="external-link">survival::Surv</a></code> object
+as <code>y</code> and set <code>family = "cox"</code>. Row names of
+<code>y</code> must match <code>rownames(x)</code>.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/therneau/survival" class="external-link">survival</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: package 'survival' was built under R version 4.5.2</span></span>
 <span></span>
 <span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">80</span></span>
 <span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fl">15</span></span>
@@ -193,6 +208,8 @@
 <span><span class="co">#&gt; returned</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/get_feature_names_out.html">get_feature_names_out</a></span><span class="op">(</span><span class="va">fit_cox</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
+<span><span class="co">#&gt; instead.</span></span>
 <span><span class="co">#&gt; character(0)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_importances.html">get_importances</a></span><span class="op">(</span><span class="va">fit_cox</span><span class="op">)</span>, decreasing <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, <span class="fl">6</span><span class="op">)</span></span>
 <span><span class="co">#&gt; g1 g2 g3 g4 g5 g6 </span></span>
@@ -202,7 +219,9 @@
 <div class="section level2">
 <h2 id="multinomial-stabl">2. Multinomial STABL<a class="anchor" aria-label="anchor" href="#multinomial-stabl"></a>
 </h2>
-<p>Multinomial outcomes use a named factor <code>y</code>. The stability matrix has one row per feature; importances aggregate across classes.</p>
+<p>Multinomial outcomes use a named factor <code>y</code>. The stability
+matrix has one row per feature; importances aggregate across
+classes.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">90</span></span>
 <span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fl">12</span></span>
@@ -236,13 +255,23 @@
 <span><span class="co">#&gt; multinomial or binomial class has fewer than 8 observations; dangerous ground</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/get_feature_names_out.html">get_feature_names_out</a></span><span class="op">(</span><span class="va">fit_multi</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
+<span><span class="co">#&gt; instead.</span></span>
 <span><span class="co">#&gt; [1] "m1"  "m2"  "m3"  "m5"  "m9"  "m10"</span></span></code></pre></div>
 <hr>
 </div>
 <div class="section level2">
 <h2 id="knockoff-artificial-features">3. Knockoff artificial features<a class="anchor" aria-label="anchor" href="#knockoff-artificial-features"></a>
 </h2>
-<p>Supported artificial-feature settings are <code>"random_permutation"</code>, <code>"knockoff"</code>, <code>"knockoff_equi"</code>, <code>"knockoff_mvr"</code>, and <code>NULL</code>. Model-X knockoffs (<code>artificial_type = "knockoff"</code>) provide stronger FDP control than random permutations when the optional <code>knockoff</code> package is installed.</p>
+<p>Supported artificial-feature settings are
+<code>"random_permutation"</code>, <code>"knockoff"</code>,
+<code>"knockoff_equi"</code>, <code>"knockoff_mvr"</code>, and
+<code>NULL</code>. Use <code>artificial_type = "knockoff"</code> for
+fixed-X knockoffs. Use <code>artificial_type = "knockoff_equi"</code> or
+<code>"knockoff_mvr"</code> for Model-X Gaussian knockoffs when the
+optional <code>knockoff</code> package is installed. All three knockoff
+modes support at most 3,000 predictors and fail closed above that limit;
+no chunked construction is claimed to be scientifically valid.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">60</span></span>
 <span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fl">20</span></span>
@@ -261,18 +290,22 @@
 <span>  lambda_grid     <span class="op">=</span> <span class="va">lambda_ko</span>,</span>
 <span>  family          <span class="op">=</span> <span class="st">"binomial"</span>,</span>
 <span>  n_bootstraps    <span class="op">=</span> <span class="fl">30L</span>,</span>
-<span>  artificial_type <span class="op">=</span> <span class="st">"knockoff"</span>,</span>
+<span>  artificial_type <span class="op">=</span> <span class="st">"knockoff_equi"</span>,</span>
 <span>  random_state    <span class="op">=</span> <span class="fl">7L</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/get_feature_names_out.html">get_feature_names_out</a></span><span class="op">(</span><span class="va">fit_ko</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "k1"  "k5"  "k7"  "k9"  "k15" "k17" "k18"</span></span></code></pre></div>
+<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
+<span><span class="co">#&gt; instead.</span></span>
+<span><span class="co">#&gt; [1] "k1"  "k7"  "k18"</span></span></code></pre></div>
 <hr>
 </div>
 <div class="section level2">
 <h2 id="grouped-bootstrap-repeated-measures">4. Grouped bootstrap (repeated measures)<a class="anchor" aria-label="anchor" href="#grouped-bootstrap-repeated-measures"></a>
 </h2>
-<p>When several rows belong to the same subject or batch, pass a <code>groups</code> vector so bootstrap resampling keeps whole groups together. This prevents leakage across related samples.</p>
+<p>When several rows belong to the same subject or batch, pass a
+<code>groups</code> vector so bootstrap resampling keeps whole groups
+together. This prevents leakage across related samples.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">48</span></span>
 <span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fl">10</span></span>
@@ -286,6 +319,7 @@
 <span></span>
 <span><span class="co"># Inspect one grouped draw (whole subjects only)</span></span>
 <span><span class="va">idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/group_bootstrap_indices.html">group_bootstrap_indices</a></span><span class="op">(</span><span class="va">y_grp</span>, groups <span class="op">=</span> <span class="va">groups</span>, n_subsamples <span class="op">=</span> <span class="fl">24L</span>, seed <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: `seed` is deprecated; use `random_state` instead.</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">groups</span><span class="op">[</span><span class="va">idx</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "subj9"  "subj4"  "subj8"  "subj1"  "subj3"  "subj10"</span></span>
 <span></span>
@@ -301,16 +335,27 @@
 <span>  artificial_type <span class="op">=</span> <span class="st">"random_permutation"</span>,</span>
 <span>  random_state    <span class="op">=</span> <span class="fl">3L</span></span>
 <span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: `groups` is deprecated; use `sample_groups` instead.</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_feature_names_out.html">get_feature_names_out</a></span><span class="op">(</span><span class="va">fit_grp</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
+<span><span class="co">#&gt; instead.</span></span>
 <span><span class="co">#&gt; [1] 10</span></span></code></pre></div>
-<p>The same <code>groups</code> argument is forwarded by <code><a href="../reference/stabl_multiomic_train_validate.html">stabl_multiomic_train_validate()</a></code> and <code><a href="../reference/stabl_multiomic_cv.html">stabl_multiomic_cv()</a></code> for outer fold construction.</p>
+<p>The same <code>groups</code> argument is forwarded by
+<code><a href="../reference/stabl_multiomic_train_validate.html">stabl_multiomic_train_validate()</a></code> and
+<code><a href="../reference/stabl_multiomic_cv.html">stabl_multiomic_cv()</a></code> for outer fold construction.</p>
+<p>Note that classification bootstraps redraw subsamples until at least
+two observations per class are present, which slightly biases the
+subsample distribution relative to vanilla STABL; this is a deliberate,
+documented deviation that buys class-diverse subsamples.</p>
 <hr>
 </div>
 <div class="section level2">
 <h2 id="reproducibility-across-repeated-fits">5. Reproducibility across repeated fits<a class="anchor" aria-label="anchor" href="#reproducibility-across-repeated-fits"></a>
 </h2>
-<p>Selection-stability metrics compare feature lists from repeated STABL runs. Jaccard similarity is the simplest overlap measure; adjusted similarity corrects for chance overlap when set sizes differ.</p>
+<p>Selection-stability metrics compare feature lists from repeated STABL
+runs. Jaccard similarity is the simplest overlap measure; adjusted
+similarity corrects for chance overlap when set sizes differ.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">run_once</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">seed</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="../reference/stabl_fit.html">stabl_fit</a></span><span class="op">(</span></span>
@@ -324,19 +369,41 @@
 <span><span class="op">}</span></span>
 <span></span>
 <span><span class="va">fit_a</span> <span class="op">&lt;-</span> <span class="fu">run_once</span><span class="op">(</span><span class="fl">11L</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: `groups` is deprecated; use `sample_groups` instead.</span></span>
 <span><span class="va">fit_b</span> <span class="op">&lt;-</span> <span class="fu">run_once</span><span class="op">(</span><span class="fl">22L</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: `groups` is deprecated; use `sample_groups` instead.</span></span>
 <span><span class="va">sel_a</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_feature_names_out.html">get_feature_names_out</a></span><span class="op">(</span><span class="va">fit_a</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
+<span><span class="co">#&gt; instead.</span></span>
 <span><span class="va">sel_b</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_feature_names_out.html">get_feature_names_out</a></span><span class="op">(</span><span class="va">fit_b</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
+<span><span class="co">#&gt; instead.</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/jaccard_similarity.html">jaccard_similarity</a></span><span class="op">(</span><span class="va">sel_a</span>, <span class="va">sel_b</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 0</span></span>
 <span><span class="fu"><a href="../reference/adjusted_similarity.html">adjusted_similarity</a></span><span class="op">(</span><span class="va">sel_a</span>, <span class="va">sel_b</span>, nb_total_elements <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">x_grp</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: `list1`, `list2` and `nb_total_elements` are deprecated; use `set1`,</span></span>
+<span><span class="co">#&gt; `set2` and `n_universe` instead.</span></span>
 <span><span class="co">#&gt; [1] 0</span></span>
 <span></span>
 <span><span class="co"># Pairwise matrix across several seeds</span></span>
 <span><span class="va">fits</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fl">11</span><span class="op">:</span><span class="fl">14</span>, <span class="va">run_once</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: `groups` is deprecated; use `sample_groups` instead.</span></span>
+<span><span class="co">#&gt; Warning: `groups` is deprecated; use `sample_groups` instead.</span></span>
+<span><span class="co">#&gt; Warning: `groups` is deprecated; use `sample_groups` instead.</span></span>
+<span><span class="co">#&gt; Warning: `groups` is deprecated; use `sample_groups` instead.</span></span>
 <span><span class="va">sels</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">fits</span>, <span class="va">get_feature_names_out</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
+<span><span class="co">#&gt; instead.</span></span>
+<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
+<span><span class="co">#&gt; instead.</span></span>
+<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
+<span><span class="co">#&gt; instead.</span></span>
+<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
+<span><span class="co">#&gt; instead.</span></span>
 <span><span class="fu"><a href="../reference/jaccard_matrix.html">jaccard_matrix</a></span><span class="op">(</span><span class="va">sels</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: `jaccard_matrix()` is deprecated; use `jaccard_similarity_matrix()`</span></span>
+<span><span class="co">#&gt; instead.</span></span>
 <span><span class="co">#&gt;      [,1] [,2] [,3]</span></span>
 <span><span class="co">#&gt; [1,]    0    0    0</span></span>
 <span><span class="co">#&gt; [2,]    0    0    0</span></span>
@@ -347,9 +414,18 @@
 <div class="section level2">
 <h2 id="export-results-to-disk">6. Export results to disk<a class="anchor" aria-label="anchor" href="#export-results-to-disk"></a>
 </h2>
-<p><code><a href="../reference/export_stabl_to_csv.html">export_stabl_to_csv()</a></code> writes stability-score tables for a single-omic fit. <code><a href="../reference/save_stabl_results.html">save_stabl_results()</a></code> bundles scores, diagnostics, selected-feature tables, and feature-distribution figures for a full analysis folder. It writes <code>STABL scores.csv</code>, <code>Max STABL scores.csv</code>, <code>FDR Graph.&lt;fmt&gt;</code>, <code>Stability Path.&lt;fmt&gt;</code>, <code>Selected Features/Selected features.csv</code>, and <code>Selected Features/Feature distributions.&lt;fmt&gt;</code> when the relevant diagnostics and selected features are available.</p>
+<p><code><a href="../reference/export_stabl_to_csv.html">export_stabl_to_csv()</a></code> writes stability-score tables for
+a single-omic fit. <code><a href="../reference/save_stabl_results.html">save_stabl_results()</a></code> bundles scores,
+diagnostics, selected-feature tables, and feature-distribution figures
+for a full analysis folder. It writes <code>STABL scores.csv</code>,
+<code>Max STABL scores.csv</code>, <code>FDR Graph.&lt;fmt&gt;</code>,
+<code>Stability Path.&lt;fmt&gt;</code>,
+<code>Selected Features/Selected features.csv</code>, and
+<code>Selected Features/Feature distributions.&lt;fmt&gt;</code> when
+the relevant diagnostics and selected features are available.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="st">"stablr_export"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="co"># File-writing path; exercised by tests/testthat/test-phase7.R.</span></span>
+<span><span class="va">tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="st">"stablr_export"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">tmp</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/export_stabl_to_csv.html">export_stabl_to_csv</a></span><span class="op">(</span><span class="va">fit_grp</span>, path <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">tmp</span>, <span class="st">"grp"</span><span class="op">)</span><span class="op">)</span></span>
@@ -369,7 +445,11 @@
 <div class="section level2">
 <h2 id="outer-cross-validation-for-multi-omic-workflows">7. Outer cross-validation for multi-omic workflows<a class="anchor" aria-label="anchor" href="#outer-cross-validation-for-multi-omic-workflows"></a>
 </h2>
-<p>When no fixed validation split exists, <code><a href="../reference/stabl_multiomic_cv.html">stabl_multiomic_cv()</a></code> runs STABL (and optional fusion branches) on rotating outer folds. Cooperative fusion is supported here; nested CV (<code><a href="../reference/stabl_multiomic_nested_cv.html">stabl_multiomic_nested_cv()</a></code>) does not forward cooperative mode.</p>
+<p>When no fixed validation split exists,
+<code><a href="../reference/stabl_multiomic_cv.html">stabl_multiomic_cv()</a></code> runs STABL (and optional fusion
+branches) on rotating outer folds. Cooperative fusion is supported here;
+nested CV (<code><a href="../reference/stabl_multiomic_nested_cv.html">stabl_multiomic_nested_cv()</a></code>) does not forward
+cooperative mode.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">50</span></span>
 <span><span class="va">ids</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"s"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span><span class="op">)</span></span>
@@ -438,7 +518,10 @@
 <div class="section level2">
 <h2 id="cooperative-coefficient-paths-native-engine">8. Cooperative coefficient paths (native engine)<a class="anchor" aria-label="anchor" href="#cooperative-coefficient-paths-native-engine"></a>
 </h2>
-<p>The built-in cooperative engine registers <code>plot.multiview()</code> for fitted cooperative models. After a cooperative workflow, the selected fit object lives in <code>$cooperative_fusion$fit</code>.</p>
+<p>The built-in cooperative engine registers
+<code>plot.multiview()</code> for fitted cooperative models. After a
+cooperative workflow, the selected fit object lives in
+<code>$cooperative_fusion$fit</code>.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ool</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/load_ool_data.html">load_ool_data</a></span><span class="op">(</span>split <span class="op">=</span> <span class="st">"train"</span><span class="op">)</span></span>
 <span><span class="va">lambda_ool</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
@@ -472,13 +555,18 @@
 </h2>
 <ul>
 <li>
-<code><a href="../articles/stablr-intro.html">vignette("stablr-intro")</a></code> — single-omic STABL, learners, diagnostic plots.</li>
+<code><a href="../articles/stablr-intro.html">vignette("stablr-intro")</a></code> — single-omic STABL, learners,
+diagnostic plots.</li>
 <li>
-<code><a href="../articles/stablr-multiomic.html">vignette("stablr-multiomic")</a></code> — early and late fusion on OOL data.</li>
+<code><a href="../articles/stablr-multiomic.html">vignette("stablr-multiomic")</a></code> — early and late fusion on
+OOL data.</li>
 <li>
-<code><a href="../articles/stablr-cooperative.html">vignette("stablr-cooperative")</a></code> — cooperation strength <code>rho</code>, validation vs CV tuning, binomial cooperative fusion.</li>
+<code><a href="../articles/stablr-cooperative.html">vignette("stablr-cooperative")</a></code> — cooperation strength
+<code>rho</code>, validation vs CV tuning, binomial cooperative
+fusion.</li>
 <li>
-<code>docs/PYTHON_TO_R_MAPPING.md</code> — mapping to the Python tutorial API.</li>
+<code>docs/PYTHON_TO_R_MAPPING.md</code> — mapping to the Python
+tutorial API.</li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
@@ -492,7 +580,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

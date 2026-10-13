@@ -1,11 +1,10 @@
-# TCGA Breast Cancer: Multi-Omic Biomarker Discovery with stablr
+# Research protocol: TCGA multi-omic biomarker discovery
 
-> **Note:** This vignette is illustrative — code chunks are set to `eval
-> = FALSE` because the TCGA dataset is large and the fits take
-> significant time. To run it interactively, set `eval = TRUE` in the
-> setup chunk above and supply the TCGA data (available via the
-> `mixOmics` package), or rebuild via `pkgdown::build_site()` with the
-> data in place.
+> **Non-executable research protocol.** No TCGA result in this page is
+> package or release evidence. Code chunks are set to `eval = FALSE`
+> because the data are external and the fits are long-running. Execute
+> the protocol only after pinning the dataset, candidate tarball,
+> settings, and output manifest.
 
 ## Overview
 
@@ -21,22 +20,22 @@ cancer subtypes. Here we ask a narrower question: which mRNA and miRNA
 features robustly distinguish Basal-like tumours from all other
 subtypes?
 
-The analysis uses the real `breast.TCGA` train/test split from
-`mixOmics`, with compact STABL settings so the vignette stays practical.
-Increase the bootstrap count and lambda-grid size before treating the
-result as publication evidence.
+The proposed analysis uses the `breast.TCGA` train/test split from
+`mixOmics`, with compact settings shown only to specify the workflow. No
+result is reported here. A publication analysis requires a separately
+predeclared and hashed run.
 
 **Dataset:** `breast.TCGA` from the `mixOmics` package.
 
-  - Training: mRNA and miRNA measurements on the same tumour samples.
-  - Test: held-out mRNA and miRNA measurements with matching feature
-    sets.
-  - Outcome: PAM50 subtype binarised to **Basal vs. non-Basal**.
-  - Protein data is excluded to match the two-omic scope used here.
+- Training: mRNA and miRNA measurements on the same tumour samples.
+- Test: held-out mRNA and miRNA measurements with matching feature sets.
+- Outcome: PAM50 subtype binarised to **Basal vs. non-Basal**.
+- Protein data is excluded to match the two-omic scope used here.
 
 ## Prerequisites
 
 ``` r
+
 if (!requireNamespace("mixOmics", quietly = TRUE)) {
   stop(
     "This vignette requires mixOmics (Bioconductor). ",
@@ -47,13 +46,14 @@ library(stablr)
 library(mixOmics)
 ```
 
-## 1\. Load and prepare data
+## 1. Load and prepare data
 
 The train and test matrices are already aligned within the `mixOmics`
 object. We extract mRNA and miRNA, then turn the PAM50 subtype into a
 binary Basal vs non-Basal outcome.
 
 ``` r
+
 data(breast.TCGA)
 
 X_train_mrna  <- breast.TCGA$data.train$mrna
@@ -68,6 +68,7 @@ cat("Test miRNA:     ", nrow(X_test_mirna),  "x", ncol(X_test_mirna),  "\n")
 ```
 
 ``` r
+
 subtype_train <- breast.TCGA$data.train$subtype
 subtype_test  <- breast.TCGA$data.test$subtype
 
@@ -81,7 +82,7 @@ cat("Training: ", sum(y_train), "Basal /", sum(y_train == 0), "non-Basal\n")
 cat("Test:     ", sum(y_test),  "Basal /", sum(y_test == 0),  "non-Basal\n")
 ```
 
-## 2\. Per-omic STABL
+## 2. Per-omic STABL
 
 The first pass treats each assay as its own experiment. This tells us
 whether mRNA and miRNA each contain stable Basal signal before the
@@ -90,6 +91,7 @@ and 12 lambda values to keep runtime bounded; use 500-1000 bootstraps
 for final reporting.
 
 ``` r
+
 lambda_mrna <- auto_lambda_grid(
   X_train_mrna, y_train,
   family   = "binomial",
@@ -109,6 +111,7 @@ fit_mrna
 ```
 
 ``` r
+
 lambda_mirna <- auto_lambda_grid(
   X_train_mirna, y_train,
   family   = "binomial",
@@ -128,6 +131,7 @@ fit_mirna
 ```
 
 ``` r
+
 cat("mRNA selected feature names:\n")
 print(get_feature_names_out(fit_mrna))
 
@@ -136,11 +140,12 @@ print(get_feature_names_out(fit_mirna))
 ```
 
 ``` r
+
 print(plot_stabl_path(fit_mrna,  title = "mRNA - stability path"))
 print(plot_stabl_path(fit_mirna, title = "miRNA - stability path"))
 ```
 
-## 3\. Integrated multi-omic pipeline
+## 3. Integrated multi-omic pipeline
 
 The integrated workflow repeats the per-omic fits inside a common
 pipeline, adds early fusion on the concatenated matrix, and learns a
@@ -150,6 +155,7 @@ compete, and how much does each view help prediction on held-out
 tumours?
 
 ``` r
+
 lambda_list <- list(
   mrna  = lambda_mrna,
   mirna = lambda_mirna
@@ -173,6 +179,7 @@ multi_fit
 ```
 
 ``` r
+
 cat("mRNA (integrated):\n")
 print(get_feature_names_out(multi_fit$fits$mrna))
 
@@ -187,17 +194,19 @@ print(multi_fit$late_fusion$weights)
 ```
 
 ``` r
+
 print(plot_stabl_path(multi_fit$fits$mrna,  title = "Integrated - mRNA"))
 print(plot_stabl_path(multi_fit$fits$mirna, title = "Integrated - miRNA"))
 ```
 
-## 4\. Validation performance
+## 4. Validation performance
 
 Feature stability is only one axis of evidence. The held-out test set
 asks whether the selected feature names and fusion weights carry
 predictive information outside the training data.
 
 ``` r
+
 lf_preds <- multi_fit$late_fusion$valid_predictions
 
 plot_roc(y_true = y_test, y_preds = lf_preds,
@@ -206,7 +215,10 @@ plot_prc(y_true = y_test, y_preds = lf_preds,
          title = "Late fusion - PRC curve (test set)")
 
 pred_class <- as.integer(lf_preds >= 0.5)
-conf_mat   <- table(Predicted = pred_class, Actual = y_test)
+conf_mat <- table(
+  Predicted = factor(pred_class, levels = c(0, 1)),
+  Actual    = factor(y_test, levels = c(0, 1))
+)
 print(conf_mat)
 
 sensitivity <- conf_mat["1", "1"] / sum(conf_mat[, "1"])
@@ -219,6 +231,7 @@ cat(sprintf("Balanced Error Rate:     %.3f\n", ber))
 ```
 
 ``` r
+
 mrna_feats <- get_feature_names_out(multi_fit$fits$mrna)
 if (length(mrna_feats) > 0) {
   boxplot_features(
@@ -231,21 +244,23 @@ if (length(mrna_feats) > 0) {
 }
 ```
 
-## 5\. Export results
+## 5. Export results
 
-For a vignette, exports go to `tempdir()` so rendering does not leave
-generated files in the package source tree. In a real analysis, these
-CSVs are the bridge to notebooks, review tables, and downstream
-biological interpretation.
+For a vignette, exports go to
+[`tempdir()`](https://rdrr.io/r/base/tempfile.html) so rendering does
+not leave generated files in the package source tree. In a real
+analysis, these CSVs are the bridge to notebooks, review tables, and
+downstream biological interpretation.
 
 ``` r
+
 tcga_out_dir <- file.path(tempdir(), "stablr_tcga_results")
 export_stabl_to_csv(multi_fit$fits$mrna,  path = file.path(tcga_out_dir, "mrna"))
 export_stabl_to_csv(multi_fit$fits$mirna, path = file.path(tcga_out_dir, "mirna"))
 list.files(tcga_out_dir, recursive = TRUE)
 ```
 
-## 6\. Comparison with mixOmics (sgccaDA and DIABLO)
+## 6. Comparison with mixOmics (sgccaDA and DIABLO)
 
 The mixOmics ecosystem and `stablr` both address multi-omic
 classification, but they optimise **different objectives**. Treating
@@ -256,52 +271,53 @@ passes an FDP-aware threshold**.
 
 ### Scientific question
 
-| Question                    | mixOmics (sgccaDA / DIABLO)                                                               | stablr                                                                          |
-| --------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| What is optimised?          | Sparse loadings on latent components that maximise block-wise covariance with the outcome | Resampling stability of individual feature coefficients                         |
-| What is the deliverable?    | Components, block loadings, `selectVar()` lists tied to components                        | Explicit feature names, stability scores, FDP+ threshold                        |
-| Integration mechanism       | Joint multiblock PLS / sGCCA with a design matrix coupling blocks                         | Per-omic STABL, early/late fusion, or cooperative fusion (`rho`)                |
-| FDR / stability calibration | Sparsity via `keepX` tuning; no bootstrap stability or knockoff FDP+                      | Knockoffs or random artificial features; FDP+ threshold sweep                   |
-| Prediction                  | Native (`predict`, `centroids.dist`)                                                      | Requires a downstream refit on selected feature names (e.g. multinomial glmnet) |
+| Question | mixOmics (sgccaDA / DIABLO) | stablr |
+|----|----|----|
+| What is optimised? | Sparse loadings on latent components that maximise block-wise covariance with the outcome | Resampling stability of individual feature coefficients |
+| What is the deliverable? | Components, block loadings, [`selectVar()`](https://rdrr.io/pkg/mixOmics/man/selectVar.html) lists tied to components | Explicit feature names, stability scores, FDP+ threshold |
+| Integration mechanism | Joint multiblock PLS / sGCCA with a design matrix coupling blocks | Per-omic STABL, early/late fusion, or cooperative fusion (`rho`) |
+| FDR / stability calibration | Sparsity via `keepX` tuning; no bootstrap stability or knockoff FDP+ | Knockoffs or random artificial features; FDP+ threshold sweep |
+| Prediction | Native (`predict`, `centroids.dist`) | Requires a downstream refit on selected feature names (e.g. multinomial glmnet) |
 
 ### Objective strengths and limitations
 
 **Choose mixOmics DIABLO when:**
 
-  - The goal is **integrative discrimination** with interpretable latent
-    structure across correlated blocks.
-  - You want a mature tuning workflow (`tune.block.splsda`,
-    design-matrix priors) and rich visualisation (`plotIndiv`,
-    `plotVar`, circos plots).
-  - Classification (or block-supervised reduction) is the primary
-    endpoint and component loadings are an acceptable feature
-    representation.
+- The goal is **integrative discrimination** with interpretable latent
+  structure across correlated blocks.
+- You want a mature tuning workflow (`tune.block.splsda`, design-matrix
+  priors) and rich visualisation (`plotIndiv`, `plotVar`, circos plots).
+- Classification (or block-supervised reduction) is the primary endpoint
+  and component loadings are an acceptable feature representation.
 
 **Choose stablr when:**
 
-  - The goal is a **reproducible sparse biomarker list** with explicit
-    control of false discovery in the stability-selection layer.
-  - You need gaussian, binomial, multinomial, or Cox STABL on the same
-    API, with grouped bootstrap for repeated measures.
-  - You want to compare integration strategies (per-omic, early, late,
-    cooperative) under one stability-selection framework.
-  - You prefer staying in the glmnet / resampling idiom rather than PLS
-    components.
+- The goal is a **reproducible sparse biomarker list** with an FDP+
+  diagnostic under the artificial-feature assumptions. The fitted
+  threshold minimises the diagnostic curve; it is not a universal
+  false-discovery guarantee.
+- You need gaussian, binomial, multinomial, or Cox STABL on the same
+  API, with grouped bootstrap for repeated measures.
+- You want to compare integration strategies (per-omic, early, late,
+  cooperative) under one stability-selection framework.
+- You prefer staying in the glmnet / resampling idiom rather than PLS
+  components.
 
 **Neither replaces the other.** On TCGA, DIABLO may win on outer-fold
 BER when blocks share strong latent structure; stablr may surface
 features with higher cross-fold recurrence that are not top DIABLO
 loadings. Quantitative head-to-head results live in
-`vignette("stablr-tcga-nestedcv")`; the full benchmark protocol is
-documented in `inst/analysis/BENCHMARK_PLAN.md`.
+[`vignette("stablr-tcga-nestedcv")`](https://mdmanurung.github.io/stablr/articles/stablr-tcga-nestedcv.md);
+the full benchmark protocol is documented in
+`inst/analysis/BENCHMARK_PLAN.md`.
 
-| Aspect            | sgccaDA (Ch. 6)        | DIABLO                         | stablr                             |
-| ----------------- | ---------------------- | ------------------------------ | ---------------------------------- |
-| Method            | Sparse CCA + LDA       | `block.splsda` + design matrix | Bootstrap-stability glmnet         |
-| Feature selection | L1 on components       | `keepX` per block              | FDP+ stability threshold           |
-| Integration       | Joint latent space     | Correlated latent components   | Early, late, or cooperative fusion |
-| Primary readout   | BER + loadings         | BER + `selectVar`              | Recurrence + stability scores      |
-| Survival / Cox    | Other mixOmics modules | Classification focus           | Native `family = "cox"`            |
+| Aspect | sgccaDA (Ch. 6) | DIABLO | stablr |
+|----|----|----|----|
+| Method | Sparse CCA + LDA | `block.splsda` + design matrix | Bootstrap-stability glmnet |
+| Feature selection | L1 on components | `keepX` per block | FDP+ stability threshold |
+| Integration | Joint latent space | Correlated latent components | Early, late, or cooperative fusion |
+| Primary readout | BER + loadings | BER + `selectVar` | Recurrence + stability scores |
+| Survival / Cox | Other mixOmics modules | Classification focus | Native `family = "cox"` |
 
 Both sgccaDA and DIABLO target compact mRNA and miRNA signatures for
 subtype classification. STABL’s distinctive contribution is FDP-aware
@@ -309,5 +325,6 @@ stability selection without assuming that omics must share a single
 latent space.
 
 ``` r
+
 sessionInfo()
 ```

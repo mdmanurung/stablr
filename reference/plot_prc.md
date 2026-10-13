@@ -12,27 +12,31 @@ plot_prc(y_true, y_preds, show_iso = TRUE, title = "Precision-Recall Curve")
 
 ## Arguments
 
-  - y\_true:
-    
-    Integer or logical vector of binary outcomes (1/`TRUE` for the
-    positive class). Must be the same length as `y_preds`.
+- y_true:
 
-  - y\_preds:
-    
-    Numeric vector of predicted probabilities for the positive class.
+  Numeric 0/1 or logical vector of binary outcomes (1/`TRUE` for the
+  positive class, 0/`FALSE` for the negative class). Must contain both
+  classes and be the same length as `y_preds`. Character or factor
+  labels should be recoded explicitly so the positive class is
+  unambiguous.
 
-  - show\_iso:
-    
-    Logical; if `TRUE` (default), four iso-F1 contour lines at F1 = 0.2,
-    0.4, 0.6, 0.8 are drawn as reference guides.
+- y_preds:
 
-  - title:
-    
-    Character scalar; plot title. Default `"Precision-Recall Curve"`.
+  Numeric vector of predicted probabilities for the positive class.
+  Values must be finite and in \\\[0, 1\]\\.
+
+- show_iso:
+
+  Logical; if `TRUE` (default), four iso-F1 contour lines at F1 = 0.2,
+  0.4, 0.6, 0.8 are drawn as reference guides.
+
+- title:
+
+  Character scalar; plot title. Default `"Precision-Recall Curve"`.
 
 ## Value
 
-A `ggplot` object. The AUPRC is shown as a caption.
+A `ggplot` object. Average precision is shown as a caption.
 
 ## Details
 
@@ -40,12 +44,16 @@ Precision-recall curves are preferred over ROC curves when the positive
 class is rare (class imbalance), because they focus on the model's
 performance on positive predictions without being diluted by the large
 number of true negatives. Use this plot after applying STABL feature
-selection and fitting a downstream binary classifier. The Area Under the
-PRC (AUPRC) is shown in the caption.
+selection and fitting a downstream binary classifier. Tied prediction
+scores are aggregated at a single threshold before stepwise average
+precision computation, making the result invariant to row order and
+avoiding optimistic linear interpolation across precision drops. Average
+precision is shown in the caption.
 
 ## See also
 
-`plot_roc()` for the ROC curve alternative.
+[`plot_roc()`](https://mdmanurung.github.io/stablr/reference/plot_roc.md)
+for the ROC curve alternative.
 
 ## Examples
 

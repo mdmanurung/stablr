@@ -7,34 +7,36 @@ binomial workflows. This vignette covers additional `stablr`
 capabilities that are easy to miss when reading only the quick-start
 paths:
 
-| Topic                      | Functions                                                                                              |
-| -------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Survival STABL             | `stabl_fit(family = "cox")`                                                                            |
-| Multinomial classification | `stabl_fit(family = "multinomial")`                                                                    |
-| Artificial features        | `artificial_type = "random_permutation"`, `"knockoff"`, `"knockoff_equi"`, `"knockoff_mvr"`, or `NULL` |
-| Grouped bootstrap          | `groups`, `group_bootstrap_indices()`                                                                  |
-| Reproducibility metrics    | `jaccard_similarity()`, `adjusted_similarity()`                                                        |
-| Disk export                | `export_stabl_to_csv()`, `save_stabl_results()`                                                        |
-| Outer multi-omic CV        | `stabl_multiomic_cv()`                                                                                 |
-| Cooperative diagnostics    | `get_cooperative_features()`, `plot()` on native fits                                                  |
+| Topic | Functions |
+|----|----|
+| Survival STABL | `stabl_fit(family = "cox")` |
+| Multinomial classification | `stabl_fit(family = "multinomial")` |
+| Artificial features | `artificial_type = "random_permutation"`, `"knockoff"`, `"knockoff_equi"`, `"knockoff_mvr"`, or `NULL` |
+| Grouped bootstrap | `groups`, [`group_bootstrap_indices()`](https://mdmanurung.github.io/stablr/reference/group_bootstrap_indices.md) |
+| Reproducibility metrics | [`jaccard_similarity()`](https://mdmanurung.github.io/stablr/reference/jaccard_similarity.md), [`adjusted_similarity()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity.md) |
+| Disk export | [`export_stabl_to_csv()`](https://mdmanurung.github.io/stablr/reference/export_stabl_to_csv.md), [`save_stabl_results()`](https://mdmanurung.github.io/stablr/reference/save_stabl_results.md) |
+| Outer multi-omic CV | [`stabl_multiomic_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_cv.md) |
+| Cooperative diagnostics | [`get_cooperative_features()`](https://mdmanurung.github.io/stablr/reference/get_cooperative_features.md), [`plot()`](https://rdrr.io/r/graphics/plot.default.html) on native fits |
 
-Examples use small simulated data so the vignette remains fast during `R
-CMD check`.
+Examples use small simulated data so the vignette remains fast during
+`R CMD check`.
 
 ``` r
+
 library(stablr)
 ```
 
------
+------------------------------------------------------------------------
 
-## 1\. Cox proportional-hazards STABL
+## 1. Cox proportional-hazards STABL
 
-For time-to-event outcomes, pass a `survival::Surv` object as `y` and
-set `family = "cox"`. Row names of `y` must match `rownames(x)`.
+For time-to-event outcomes, pass a
+[`survival::Surv`](https://rdrr.io/pkg/survival/man/Surv.html) object as
+`y` and set `family = "cox"`. Row names of `y` must match `rownames(x)`.
 
 ``` r
+
 library(survival)
-#> Warning: package 'survival' was built under R version 4.5.2
 
 n <- 80
 p <- 15
@@ -52,6 +54,7 @@ lambda_cox <- auto_lambda_grid(x_cox, y_cox, family = "cox", n_lambda = 8)
 ```
 
 ``` r
+
 fit_cox <- stabl_fit(
   x               = x_cox,
   y               = y_cox,
@@ -93,20 +96,23 @@ fit_cox <- stabl_fit(
 #> returned
 
 get_feature_names_out(fit_cox)
+#> Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`
+#> instead.
 #> character(0)
 head(sort(get_importances(fit_cox), decreasing = TRUE), 6)
 #> g1 g2 g3 g4 g5 g6 
 #>  1  1  1  1  1  1
 ```
 
------
+------------------------------------------------------------------------
 
-## 2\. Multinomial STABL
+## 2. Multinomial STABL
 
 Multinomial outcomes use a named factor `y`. The stability matrix has
 one row per feature; importances aggregate across classes.
 
 ``` r
+
 n <- 90
 p <- 12
 ids <- paste0("s", seq_len(n))
@@ -139,20 +145,26 @@ fit_multi <- stabl_fit(
 #> multinomial or binomial class has fewer than 8 observations; dangerous ground
 
 get_feature_names_out(fit_multi)
+#> Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`
+#> instead.
 #> [1] "m1"  "m2"  "m3"  "m5"  "m9"  "m10"
 ```
 
------
+------------------------------------------------------------------------
 
-## 3\. Knockoff artificial features
+## 3. Knockoff artificial features
 
 Supported artificial-feature settings are `"random_permutation"`,
-`"knockoff"`, `"knockoff_equi"`, `"knockoff_mvr"`, and `NULL`. Model-X
-knockoffs (`artificial_type = "knockoff"`) provide stronger FDP control
-than random permutations when the optional `knockoff` package is
-installed.
+`"knockoff"`, `"knockoff_equi"`, `"knockoff_mvr"`, and `NULL`. Use
+`artificial_type = "knockoff"` for fixed-X knockoffs. Use
+`artificial_type = "knockoff_equi"` or `"knockoff_mvr"` for Model-X
+Gaussian knockoffs when the optional `knockoff` package is installed.
+All three knockoff modes support at most 3,000 predictors and fail
+closed above that limit; no chunked construction is claimed to be
+scientifically valid.
 
 ``` r
+
 n <- 60
 p <- 20
 ids <- paste0("s", seq_len(n))
@@ -170,23 +182,26 @@ fit_ko <- stabl_fit(
   lambda_grid     = lambda_ko,
   family          = "binomial",
   n_bootstraps    = 30L,
-  artificial_type = "knockoff",
+  artificial_type = "knockoff_equi",
   random_state    = 7L
 )
 
 get_feature_names_out(fit_ko)
-#> [1] "k1"  "k5"  "k7"  "k9"  "k15" "k17" "k18"
+#> Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`
+#> instead.
+#> [1] "k1"  "k7"  "k18"
 ```
 
------
+------------------------------------------------------------------------
 
-## 4\. Grouped bootstrap (repeated measures)
+## 4. Grouped bootstrap (repeated measures)
 
 When several rows belong to the same subject or batch, pass a `groups`
 vector so bootstrap resampling keeps whole groups together. This
 prevents leakage across related samples.
 
 ``` r
+
 n <- 48
 p <- 10
 ids <- paste0("s", seq_len(n))
@@ -199,6 +214,7 @@ y_grp <- setNames(rnorm(n) + 0.5 * x_grp[, 1], ids)
 
 # Inspect one grouped draw (whole subjects only)
 idx <- group_bootstrap_indices(y_grp, groups = groups, n_subsamples = 24L, seed = 1L)
+#> Warning: `seed` is deprecated; use `random_state` instead.
 unique(groups[idx])
 #> [1] "subj9"  "subj4"  "subj8"  "subj1"  "subj3"  "subj10"
 
@@ -214,24 +230,35 @@ fit_grp <- stabl_fit(
   artificial_type = "random_permutation",
   random_state    = 3L
 )
+#> Warning: `groups` is deprecated; use `sample_groups` instead.
 
 length(get_feature_names_out(fit_grp))
+#> Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`
+#> instead.
 #> [1] 10
 ```
 
 The same `groups` argument is forwarded by
-`stabl_multiomic_train_validate()` and `stabl_multiomic_cv()` for outer
-fold construction.
+[`stabl_multiomic_train_validate()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_train_validate.md)
+and
+[`stabl_multiomic_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_cv.md)
+for outer fold construction.
 
------
+Note that classification bootstraps redraw subsamples until at least two
+observations per class are present, which slightly biases the subsample
+distribution relative to vanilla STABL; this is a deliberate, documented
+deviation that buys class-diverse subsamples.
 
-## 5\. Reproducibility across repeated fits
+------------------------------------------------------------------------
+
+## 5. Reproducibility across repeated fits
 
 Selection-stability metrics compare feature lists from repeated STABL
 runs. Jaccard similarity is the simplest overlap measure; adjusted
 similarity corrects for chance overlap when set sizes differ.
 
 ``` r
+
 run_once <- function(seed) {
   stabl_fit(
     x = x_grp, y = y_grp, groups = groups,
@@ -244,19 +271,41 @@ run_once <- function(seed) {
 }
 
 fit_a <- run_once(11L)
+#> Warning: `groups` is deprecated; use `sample_groups` instead.
 fit_b <- run_once(22L)
+#> Warning: `groups` is deprecated; use `sample_groups` instead.
 sel_a <- get_feature_names_out(fit_a)
+#> Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`
+#> instead.
 sel_b <- get_feature_names_out(fit_b)
+#> Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`
+#> instead.
 
 jaccard_similarity(sel_a, sel_b)
 #> [1] 0
 adjusted_similarity(sel_a, sel_b, nb_total_elements = ncol(x_grp))
+#> Warning: `list1`, `list2` and `nb_total_elements` are deprecated; use `set1`,
+#> `set2` and `n_universe` instead.
 #> [1] 0
 
 # Pairwise matrix across several seeds
 fits <- lapply(11:14, run_once)
+#> Warning: `groups` is deprecated; use `sample_groups` instead.
+#> Warning: `groups` is deprecated; use `sample_groups` instead.
+#> Warning: `groups` is deprecated; use `sample_groups` instead.
+#> Warning: `groups` is deprecated; use `sample_groups` instead.
 sels <- lapply(fits, get_feature_names_out)
+#> Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`
+#> instead.
+#> Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`
+#> instead.
+#> Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`
+#> instead.
+#> Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`
+#> instead.
 jaccard_matrix(sels)
+#> Warning: `jaccard_matrix()` is deprecated; use `jaccard_similarity_matrix()`
+#> instead.
 #>      [,1] [,2] [,3]
 #> [1,]    0    0    0
 #> [2,]    0    0    0
@@ -264,19 +313,23 @@ jaccard_matrix(sels)
 #> [4,]    0    0    0
 ```
 
------
+------------------------------------------------------------------------
 
-## 6\. Export results to disk
+## 6. Export results to disk
 
-`export_stabl_to_csv()` writes stability-score tables for a single-omic
-fit. `save_stabl_results()` bundles scores, diagnostics,
-selected-feature tables, and feature-distribution figures for a full
-analysis folder. It writes `STABL scores.csv`, `Max STABL scores.csv`,
-`FDR Graph.<fmt>`, `Stability Path.<fmt>`, `Selected Features/Selected
-features.csv`, and `Selected Features/Feature distributions.<fmt>` when
-the relevant diagnostics and selected features are available.
+[`export_stabl_to_csv()`](https://mdmanurung.github.io/stablr/reference/export_stabl_to_csv.md)
+writes stability-score tables for a single-omic fit.
+[`save_stabl_results()`](https://mdmanurung.github.io/stablr/reference/save_stabl_results.md)
+bundles scores, diagnostics, selected-feature tables, and
+feature-distribution figures for a full analysis folder. It writes
+`STABL scores.csv`, `Max STABL scores.csv`, `FDR Graph.<fmt>`,
+`Stability Path.<fmt>`, `Selected Features/Selected features.csv`, and
+`Selected Features/Feature distributions.<fmt>` when the relevant
+diagnostics and selected features are available.
 
 ``` r
+
+# File-writing path; exercised by tests/testthat/test-phase7.R.
 tmp <- tempfile("stablr_export")
 dir.create(tmp)
 
@@ -294,16 +347,19 @@ save_stabl_results(
 )
 ```
 
------
+------------------------------------------------------------------------
 
-## 7\. Outer cross-validation for multi-omic workflows
+## 7. Outer cross-validation for multi-omic workflows
 
-When no fixed validation split exists, `stabl_multiomic_cv()` runs STABL
-(and optional fusion branches) on rotating outer folds. Cooperative
-fusion is supported here; nested CV (`stabl_multiomic_nested_cv()`) does
-not forward cooperative mode.
+When no fixed validation split exists,
+[`stabl_multiomic_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_cv.md)
+runs STABL (and optional fusion branches) on rotating outer folds.
+Cooperative fusion is supported here; nested CV
+([`stabl_multiomic_nested_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_nested_cv.md))
+does not forward cooperative mode.
 
 ``` r
+
 n <- 50
 ids <- paste0("s", seq_len(n))
 x_a <- matrix(rnorm(n * 8), nrow = n, dimnames = list(ids, paste0("a", 1:8)))
@@ -368,15 +424,16 @@ if (!is.null(cv_fit$fold_results[[1]]$cooperative_fusion)) {
 #> [1] "b1" "b2" "b7" "b8"
 ```
 
------
+------------------------------------------------------------------------
 
-## 8\. Cooperative coefficient paths (native engine)
+## 8. Cooperative coefficient paths (native engine)
 
 The built-in cooperative engine registers `plot.multiview()` for fitted
 cooperative models. After a cooperative workflow, the selected fit
 object lives in `$cooperative_fusion$fit`.
 
 ``` r
+
 ool <- load_ool_data(split = "train")
 lambda_ool <- list(
   cytof = auto_lambda_grid(ool$x_list$cytof, ool$y, n_lambda = 6),
@@ -406,13 +463,15 @@ plot(cf$fit)
 ![Cooperative coefficient paths by
 view](stablr-advanced_files/figure-html/cooperative-plot-1.png)
 
------
+------------------------------------------------------------------------
 
 ## Related vignettes
 
-  - `vignette("stablr-intro")` — single-omic STABL, learners, diagnostic
-    plots.
-  - `vignette("stablr-multiomic")` — early and late fusion on OOL data.
-  - `vignette("stablr-cooperative")` — cooperation strength `rho`,
-    validation vs CV tuning, binomial cooperative fusion.
-  - `docs/PYTHON_TO_R_MAPPING.md` — mapping to the Python tutorial API.
+- [`vignette("stablr-intro")`](https://mdmanurung.github.io/stablr/articles/stablr-intro.md)
+  — single-omic STABL, learners, diagnostic plots.
+- [`vignette("stablr-multiomic")`](https://mdmanurung.github.io/stablr/articles/stablr-multiomic.md)
+  — early and late fusion on OOL data.
+- [`vignette("stablr-cooperative")`](https://mdmanurung.github.io/stablr/articles/stablr-cooperative.md)
+  — cooperation strength `rho`, validation vs CV tuning, binomial
+  cooperative fusion.
+- `docs/PYTHON_TO_R_MAPPING.md` — mapping to the Python tutorial API.

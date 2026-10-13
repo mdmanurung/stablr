@@ -13,23 +13,29 @@ make_rp_features(x, n_injected)
 
 ## Arguments
 
-  - x:
-    
-    Numeric matrix of predictors (samples \\(\\times\\) features).
+- x:
 
-  - n\_injected:
-    
-    Integer; number of artificial columns to generate.
+  Numeric matrix of predictors (samples \\\times\\ features).
+
+- n_injected:
+
+  Integer; number of artificial columns to generate.
 
 ## Value
 
 Named list:
 
-  - x\_augmented:
-    
-    Original matrix with artificial columns appended.
+- x_augmented:
 
-  - noise\_col\_indices:
-    
-    Integer vector (1-based) of original column indices selected as
-    sources for the artificial block.
+  Original matrix with artificial columns appended.
+
+- noise_col_indices:
+
+  Integer vector (1-based) of original column indices selected as
+  sources for the artificial block.
+
+- artificial_provenance:
+
+  List describing the requested generator, `actual_type` used by the
+  selected artificial columns, all `actual_types`, and the complete
+  ordered `fallback_history`.

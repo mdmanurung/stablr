@@ -13,22 +13,23 @@ fdr_similarity(list1, list2)
 
 ## Arguments
 
-  - list1:
-    
-    Predicted feature set (character or integer vector).
+- list1:
 
-  - list2:
-    
-    True feature set (ground truth).
+  Predicted feature set (character or integer vector).
+
+- list2:
+
+  True feature set (ground truth).
 
 ## Value
 
-Numeric scalar in \\(\[0, 1\]\\). Returns 0 when the predicted set is
+Numeric scalar in \\\[0, 1\]\\. Returns 0 when the predicted set is
 empty (no false discoveries possible).
 
 ## See also
 
-`tpr_similarity()`, `fscore_similarity()`
+[`tpr_similarity()`](https://mdmanurung.github.io/stablr/reference/tpr_similarity.md),
+[`fscore_similarity()`](https://mdmanurung.github.io/stablr/reference/fscore_similarity.md)
 
 ## Examples
 
@@ -36,5 +37,7 @@ empty (no false discoveries possible).
 true_signal <- c("f1", "f2", "f3")
 predicted   <- c("f1", "f2", "f4", "f5")  # f4, f5 are false discoveries
 fdr_similarity(predicted, true_signal)      # 2/4 = 0.5
+#> [1] 0.5
 fdr_similarity(character(0), true_signal)   # 0 (empty prediction)
+#> [1] 0
 ```

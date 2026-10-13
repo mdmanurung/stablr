@@ -12,18 +12,20 @@ get_cooperative_features(object, view = NULL)
 
 ## Arguments
 
-  - object:
-    
-    A fitted `"stabl_multiomic_fit"` object returned by
-    `stabl_multiomic_train_validate()` with `cooperative_fusion = TRUE`,
-    or a `"stabl_multiomic_cv"` object returned by
-    `stabl_multiomic_cv()` with `cooperative_fusion = TRUE`.
+- object:
 
-  - view:
-    
-    Optional character scalar naming one omic view. When supplied for a
-    `"stabl_multiomic_fit"`, only that view's cooperative feature names
-    are returned.
+  A fitted `"stabl_multiomic_fit"` object returned by
+  [`stabl_multiomic_train_validate()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_train_validate.md)
+  with `cooperative_fusion = TRUE`, or a `"stabl_multiomic_cv"` object
+  returned by
+  [`stabl_multiomic_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_cv.md)
+  with `cooperative_fusion = TRUE`.
+
+- view:
+
+  Optional character scalar naming one omic view. When supplied for a
+  `"stabl_multiomic_fit"`, only that view's cooperative feature names
+  are returned.
 
 ## Value
 
@@ -34,8 +36,9 @@ the `"stabl_multiomic_fit"` method.
 
 ## See also
 
-`get_cooperative_diagnostics()`, `stabl_multiomic_train_validate()`,
-`stabl_multiomic_cv()`
+[`get_cooperative_diagnostics()`](https://mdmanurung.github.io/stablr/reference/get_cooperative_diagnostics.md),
+[`stabl_multiomic_train_validate()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_train_validate.md),
+[`stabl_multiomic_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_cv.md)
 
 ## Examples
 
@@ -50,15 +53,27 @@ x_list <- list(
                  dimnames = list(paste0("s", 1:n), paste0("p", 1:4)))
 )
 y <- setNames(rnorm(n), paste0("s", 1:n))
+train <- 1:30
+valid <- 31:40
+x_train <- lapply(x_list, function(x) x[train, , drop = FALSE])
+x_valid <- lapply(x_list, function(x) x[valid, , drop = FALSE])
 lam <- data.frame(lambda = c(0.3, 0.1))
 fit <- stabl_multiomic_train_validate(
-  x_list, y, family = "gaussian",
-  train_idx = 1:30, valid_idx = 31:40,
-  lambda_grid = lam, n_bootstraps = 4L,
+  x_train, y[train], lambda_grid = lam,
+  x_valid_list = x_valid, y_valid = y[valid],
+  family = "gaussian",
+  n_bootstraps = 4L,
   hard_threshold = 0.2, cooperative_fusion = TRUE,
   random_state = 1L
 )
 get_cooperative_features(fit)           # named list of feature vectors
+#> $omic1
+#> character(0)
+#> 
+#> $omic2
+#> character(0)
+#> 
 get_cooperative_features(fit, "omic1") # one view only
+#> character(0)
 # }
 ```

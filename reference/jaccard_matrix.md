@@ -1,9 +1,9 @@
-# Pairwise Jaccard Matrix from a List of Feature Sets
+# Deprecated: use [`jaccard_similarity_matrix()`](https://mdmanurung.github.io/stablr/reference/jaccard_similarity_matrix.md)
 
-Computes all N\\(\\times\\)N pairwise Jaccard similarities in one call.
-Useful for visualising the reproducibility of STABL across multiple
-cross-validation folds or repeated runs: a boxplot of the off-diagonal
-values summarises how consistently the same features are selected.
+`jaccard_matrix()` is deprecated and will be removed in a future
+release; use
+[`jaccard_similarity_matrix()`](https://mdmanurung.github.io/stablr/reference/jaccard_similarity_matrix.md)
+instead.
 
 ## Usage
 
@@ -13,37 +13,19 @@ jaccard_matrix(list_of_lists, remove_diag = TRUE)
 
 ## Arguments
 
-  - list\_of\_lists:
-    
-    A list of character/integer vectors, one per STABL run (e.g. one per
-    cross-validation fold).
+- list_of_lists:
 
-  - remove\_diag:
-    
-    Logical; if `TRUE` (default) the diagonal column (self-similarity =
-    1) is removed from the output.
-
-## Value
-
-Numeric matrix of dimension N\\(\\times\\)N (or N\\(\\times\\)(N-1) when
-`remove_diag = TRUE`). Row/column order matches `list_of_lists`.
-
-## Details
-
-By default the self-similarity diagonal (always 1) is removed, so the
-returned matrix has \\(N \\times (N - 1)\\) columns and each row
-contains the \\(N - 1\\) similarities of run \\(i\\) with every other
-run.
-
-## See also
-
-`jaccard_similarity()`, `adjusted_similarity_values()`,
-`pearson_similarity_values()`
+  See
+  [`jaccard_similarity_matrix()`](https://mdmanurung.github.io/stablr/reference/jaccard_similarity_matrix.md).
 
 ## Examples
 
 ``` r
-sets <- list(c("A","B","C"), c("B","C","D"), c("A","C","E"))
-jaccard_matrix(sets)           # 3 x 2 (diagonal removed)
-jaccard_matrix(sets, remove_diag = FALSE)  # 3 x 3
+sets <- list(c("f1", "f2", "f3"), c("f2", "f3", "f4"), c("f1", "f3", "f5"))
+# warns; use jaccard_similarity_matrix()
+same <- suppressWarnings(identical(
+  jaccard_matrix(sets),
+  jaccard_similarity_matrix(sets)
+))
+stopifnot(same)
 ```

@@ -1,16 +1,16 @@
-# TCGA Breast Cancer Nested-CV Head-to-Head: stablr vs DIABLO
+# Research protocol: TCGA nested-CV stablr-DIABLO comparison
 
-> **Note:** This vignette is illustrative — code chunks are set to `eval
-> = FALSE` because the nested-CV comparison against DIABLO requires the
-> TCGA dataset and runs for several hours. To run it interactively, set
-> `eval = TRUE` in the setup chunk above and supply the TCGA data
-> (available via the `mixOmics` package), or rebuild via
-> `pkgdown::build_site()` with the data in place.
+> **Non-executable research protocol.** This page specifies the
+> benchmark and cache-reading contract. No TCGA head-to-head result is
+> bundled or counted as release evidence. The external dataset,
+> long-running fits, exact candidate, and output cache must be pinned
+> before execution.
 
 ## Overview
 
-The compact TCGA vignette shows the workflow. This vignette asks for
-evidence. It compares `stablr` and mixOmics DIABLO on the same
+The compact TCGA vignette shows the workflow. This vignette defines the
+evidence-generating benchmark and reports results only when an external
+cache is available. It compares `stablr` and mixOmics DIABLO on the same
 three-class PAM50 breast cancer task: Basal, Her2, and LumA.
 
 The design is nested cross-validation. Outer folds estimate
@@ -20,12 +20,15 @@ full dataset before validation. That distinction is the difference
 between a benchmark and an optimistic story.
 
 The head-to-head uses mRNA and miRNA only. The protein block in
-`mixOmics::breast.TCGA` is available only for the original training
-samples, while all 220 samples have mRNA and miRNA. Excluding protein
-keeps both methods on the same samples and blocks.
+[`mixOmics::breast.TCGA`](https://rdrr.io/pkg/mixOmics/man/breast.TCGA.html)
+is available only for the original training samples, while all 220
+samples have mRNA and miRNA. Excluding protein keeps both methods on the
+same samples and blocks.
 
 The heavy computation is not run while rendering this vignette. It is
-executed through SLURM and cached as an RDS file.
+executed outside the package through SLURM and cached as an RDS file.
+Until that cache is present, the vignette is a methodological protocol
+rather than bundled empirical evidence.
 
 ## Methodological Audit
 
@@ -38,16 +41,15 @@ held-out outer fold is predicted.
 
 The design also follows p \>\> n variable-selection practice:
 
-  - predictors are passed as numeric matrices and model scaling is left
-    inside the fitting procedures rather than learned globally before
-    CV;
-  - the outer loop estimates performance, while the inner loop selects
-    candidates and tuning parameters;
-  - stablr uses knockoff artificial features for FDP-aware stability
-    selection;
-  - the deliverable is a recurrence profile over outer folds, not a
-    single definitive biomarker list;
-  - no naive post-selection p-values are reported.
+- predictors are passed as numeric matrices and model scaling is left
+  inside the fitting procedures rather than learned globally before CV;
+- the outer loop estimates performance, while the inner loop selects
+  candidates and tuning parameters;
+- stablr uses knockoff artificial features for FDP-aware stability
+  selection;
+- the deliverable is a recurrence profile over outer folds, not a single
+  definitive biomarker list;
+- no naive post-selection p-values are reported.
 
 The benchmark is still exploratory. Confirmatory extensions would
 include external cohort validation and refitting unpenalised subtype
@@ -57,38 +59,55 @@ qualification.
 ## Run on SLURM
 
 ``` r
+
+use_external_cache <- identical(
+  tolower(Sys.getenv("STABLR_USE_EXTERNAL_TCGA_CACHE", unset = "false")),
+  "true"
+)
 experiments_root <- Sys.getenv(
   "STABLR_EXPERIMENTS_ROOT",
   unset = file.path(dirname(getwd()), "stablr-experiments")
 )
 analysis_dir <- file.path(experiments_root, "analysis")
 analysis_script <- file.path(analysis_dir, "run_tcga_nestedcv.R")
-if (file.exists(analysis_script)) {
+tcga_cache_complete <- function(path) FALSE
+if (use_external_cache && file.exists(analysis_script)) {
   source(analysis_script)
-} else {
+} else if (use_external_cache) {
   tcga_cache_complete <- function(path) file.exists(path)
 }
 
-cache_path <- file.path(analysis_dir, "cache", "tcga_nestedcv_results.rds")
-slurm_cmd <- paste("sbatch", file.path(analysis_dir, "tcga_nestedcv.slurm"))
+cache_path <- if (use_external_cache) {
+  file.path(analysis_dir, "cache", "tcga_nestedcv_results.rds")
+} else {
+  "<external TCGA cache disabled>"
+}
+slurm_cmd <- if (use_external_cache) {
+  paste("sbatch", file.path(analysis_dir, "tcga_nestedcv.slurm"))
+} else {
+  "Set STABLR_USE_EXTERNAL_TCGA_CACHE=true before using external artifacts."
+}
 has_results <- FALSE  # updated by cache-status chunk below
 cat("Expected cache:", cache_path, "\n")
-#> Expected cache: /exports/para-lipg-hpc/mdmanurung/stablr/stablr-experiments/analysis/cache/tcga_nestedcv_results.rds
+#> Expected cache: <external TCGA cache disabled>
 cat("Submit command:", slurm_cmd, "\n")
-#> Submit command: sbatch /exports/para-lipg-hpc/mdmanurung/stablr/stablr-experiments/analysis/tcga_nestedcv.slurm
+#> Submit command: Set STABLR_USE_EXTERNAL_TCGA_CACHE=true before using external artifacts.
 ```
 
 ``` r
+
 has_results <- tcga_cache_complete(cache_path)
 if (!has_results) {
   cat(
     "Nested-CV cache is not available yet.\n",
-    "Submit the SLURM job above, then render this notebook again.\n",
+    "No TCGA head-to-head benchmark results are bundled in this render.\n",
+    "Opt in to external artifacts, submit the SLURM job above, then render this notebook again.\n",
     sep = ""
   )
 }
 #> Nested-CV cache is not available yet.
-#> Submit the SLURM job above, then render this notebook again.
+#> No TCGA head-to-head benchmark results are bundled in this render.
+#> Opt in to external artifacts, submit the SLURM job above, then render this notebook again.
 ```
 
 ## Analysis Design
@@ -96,6 +115,7 @@ if (!has_results) {
 The cache records the exact settings used by the SLURM runner:
 
 ``` r
+
 res <- readRDS(cache_path)
 str(res$settings)
 ```
@@ -112,15 +132,18 @@ weighted-vote `centroids.dist` predictions.
 
 ## Predictive Performance
 
-The performance table is the first readout. The confusion matrices show
-where the methods make their mistakes, which is often more informative
-than a single accuracy number.
+When the cache is present, the performance table is the first readout.
+The confusion matrices show where the methods make their mistakes, which
+is often more informative than a single accuracy number. Without the
+cache, this section intentionally produces no numeric claim.
 
 ``` r
+
 res$performance
 ```
 
 ``` r
+
 stabl_conf <- table(
   Truth = res$stablr$outer_predictions$truth,
   Predicted = res$stablr$outer_predictions$predicted
@@ -137,6 +160,7 @@ print(diablo_conf)
 ```
 
 ``` r
+
 fold_metric <- function(pred) {
   by_fold <- split(pred, pred$fold_id)
   do.call(rbind, lapply(names(by_fold), function(id) {
@@ -162,15 +186,18 @@ performance. A recurrent feature is not merely selected once; it
 survives across many outer training splits.
 
 ``` r
+
 res$feature_comparison$overlap
 ```
 
 ``` r
+
 recurrence <- res$feature_comparison$recurrence
 head(recurrence[order(recurrence$block, -recurrence$recurrence), ], 30)
 ```
 
 ``` r
+
 shared <- do.call(rbind, lapply(split(recurrence, recurrence$block), function(tab) {
   stabl_feats <- tab$feature[tab$method == "stablr"]
   diablo_feats <- tab$feature[tab$method == "DIABLO"]
@@ -184,6 +211,7 @@ shared[order(shared$block, shared$feature, shared$method), ]
 The SLURM runner writes these files next to the cache:
 
 ``` r
+
 list.files(dirname(cache_path), pattern = "tcga_nestedcv", full.names = TRUE)
 ```
 
@@ -199,12 +227,12 @@ biomarker discovery, and vice versa.
 
 ### Predictive layer
 
-| Observation                               | Interpretation                                                                                                                            |
-| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| Lower outer-fold BER for DIABLO           | Latent multiblock structure may explain class separation better than sparse per-feature STABL + refit on this cohort.                     |
-| Lower outer-fold BER for stablr           | Inner-CV candidate choice (mRNA / miRNA / early fusion) plus multinomial refit may capture signal DIABLO’s fixed component budget misses. |
-| Similar BER, different confusion patterns | Methods trade errors across classes; inspect per-class recall before declaring a winner.                                                  |
-| Large fold-to-fold BER variance           | Dataset is small (220 samples); treat point estimates as exploratory.                                                                     |
+| Observation | Interpretation |
+|----|----|
+| Lower outer-fold BER for DIABLO | Latent multiblock structure may explain class separation better than sparse per-feature STABL + refit on this cohort. |
+| Lower outer-fold BER for stablr | Inner-CV candidate choice (mRNA / miRNA / early fusion) plus multinomial refit may capture signal DIABLO’s fixed component budget misses. |
+| Similar BER, different confusion patterns | Methods trade errors across classes; inspect per-class recall before declaring a winner. |
+| Large fold-to-fold BER variance | Dataset is small (220 samples); treat point estimates as exploratory. |
 
 Negative `delta_BER` (stablr − DIABLO) favours DIABLO; positive favours
 stablr. Report paired fold deltas with bootstrap confidence intervals
@@ -212,23 +240,23 @@ stablr. Report paired fold deltas with bootstrap confidence intervals
 
 ### Feature / biomarker layer
 
-| Observation                                            | Interpretation                                                                                              |
-| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
-| High recurrence, modest overlap with DIABLO            | Stability selection and component sparsity surface partially complementary feature sets.                    |
+| Observation | Interpretation |
+|----|----|
+| High recurrence, modest overlap with DIABLO | Stability selection and component sparsity surface partially complementary feature sets. |
 | stablr features recurrent, absent from DIABLO loadings | May reflect block-specific marginal signal stabilised by resampling, not captured in shared latent factors. |
-| DIABLO `selectVar` features absent from stablr support | May load strongly on components without surviving FDP+ thresholding across bootstraps.                      |
-| stablr selects more features per fold                  | FDP threshold and lambda grid control sparsity; DIABLO sparsity is governed by `keepX`.                     |
+| DIABLO `selectVar` features absent from stablr support | May load strongly on components without surviving FDP+ thresholding across bootstraps. |
+| stablr selects more features per fold | FDP threshold and lambda grid control sparsity; DIABLO sparsity is governed by `keepX`. |
 
 ### When each method is the better tool
 
-| Criterion               | Prefer stablr                                | Prefer DIABLO                                          |
-| ----------------------- | -------------------------------------------- | ------------------------------------------------------ |
-| Primary deliverable     | Named biomarker list with stability evidence | Integrative classification + component visualisation   |
-| False-discovery control | Knockoff / FDP+ built in                     | Not part of the default workflow                       |
-| Outcome types           | gaussian, binomial, multinomial, Cox         | Classification-centric multiblock sPLS-DA              |
-| Block coupling          | Cooperative `rho` or fusion modes            | Design matrix + shared latent space                    |
-| Ecosystem               | glmnet, native R, Python STABL parity        | mixOmics tutorials, circos, network plots              |
-| Compute profile         | Many bootstraps × lambda grid                | Component + `keepX` tuning (typically faster per fold) |
+| Criterion | Prefer stablr | Prefer DIABLO |
+|----|----|----|
+| Primary deliverable | Named biomarker list with stability evidence | Integrative classification + component visualisation |
+| False-discovery diagnostic | Knockoff / FDP+ estimate built in | Not part of the default workflow |
+| Outcome types | gaussian, binomial, multinomial, Cox | Classification-centric multiblock sPLS-DA |
+| Block coupling | Cooperative `rho` or fusion modes | Design matrix + shared latent space |
+| Ecosystem | glmnet, native R, Python STABL parity | mixOmics tutorials, circos, network plots |
+| Compute profile | Many bootstraps × lambda grid | Component + `keepX` tuning (typically faster per fold) |
 
 For Python STABL parity (selection semantics, not prediction contests),
 see `docs/PYTHON_TO_R_MAPPING.md`.
@@ -236,5 +264,6 @@ see `docs/PYTHON_TO_R_MAPPING.md`.
 ## Session Info
 
 ``` r
+
 res$session_info
 ```

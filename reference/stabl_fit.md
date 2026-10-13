@@ -2,8 +2,9 @@
 
 Performs the STABL bootstrap stability-selection procedure over a grid
 of regularisation parameters, optionally injecting artificial features
-for automatic FDP+ threshold control. This is the R counterpart of
-`Stabl.fit()` in the Python STABL library.
+for data-adaptive FDP+ threshold diagnostics. The fitting rule chooses
+the FDP+ minimizer; it is not a universal false-discovery guarantee.
+This is the R counterpart of `Stabl.fit()` in the Python STABL library.
 
 ## Usage
 
@@ -23,6 +24,7 @@ stabl_fit(
   fdr_threshold_range = seq(0, 0.99, by = 0.01),
   explore = FALSE,
   n_explore = 5L,
+  sample_groups = NULL,
   groups = NULL,
   stratify_bootstrap = FALSE,
   bootstrap_strata = NULL,
@@ -34,7 +36,8 @@ stabl_fit(
   adaptive_gamma = 1,
   adaptive_epsilon = 1e-06,
   feature_groups = NULL,
-  corr_group_threshold = NULL
+  corr_group_threshold = NULL,
+  knockoff_fallback = c("stop", "allow")
 )
 
 # S3 method for class 'stabl_fit'
@@ -43,219 +46,262 @@ print(x, ...)
 
 ## Arguments
 
-  - x:
-    
-    A numeric matrix or `data.frame` (samples \\(\\times\\) features)
-    with row names used as sample IDs.
+- x:
 
-  - y:
-    
-    A named numeric/factor vector whose names are sample IDs, or a
-    matrix-like outcome (for example `survival::Surv`) with row names as
-    sample IDs.
+  A numeric matrix or `data.frame` (samples \\\times\\ features) with
+  row names used as sample IDs.
 
-  - lambda\_grid:
-    
-    A pre-expanded `data.frame` (each row = one parameter combination)
-    with at least a `lambda` column. Pass `"auto"` to derive a
-    data-driven grid via `auto_lambda_grid()` (uses `family` and
-    `n_lambda`).
+- y:
 
-  - base\_learner:
-    
-    Character; `"lasso"` (alpha = 1), `"elastic_net"` (reads `alpha`
-    from the `lambda_grid` `alpha` column), or `"adaptive_lasso"`, or
-    `"sparse_group_lasso"`. Default: `"lasso"`.
+  A named numeric/factor vector whose names are sample IDs, or a
+  matrix-like outcome (for example
+  [`survival::Surv`](https://rdrr.io/pkg/survival/man/Surv.html)) with
+  row names as sample IDs.
 
-  - family:
-    
-    Character; `glmnet` response family (`"gaussian"`, `"binomial"`,
-    `"multinomial"`, or `"cox"`). Default: `"gaussian"`.
+- lambda_grid:
 
-  - n\_bootstraps:
-    
-    Positive integer; bootstrap iterations per lambda. Default: `1000L`.
+  A pre-expanded `data.frame` (each row = one parameter combination)
+  with at least a `lambda` column. Pass `"auto"` to derive a data-driven
+  grid via
+  [`auto_lambda_grid()`](https://mdmanurung.github.io/stablr/reference/auto_lambda_grid.md)
+  (uses `family` and `n_lambda`).
 
-  - artificial\_type:
-    
-    Character or `NULL`; `"random_permutation"`, `"knockoff"`, or `NULL`
-    (no artificial features — requires `hard_threshold`). Default:
-    `"random_permutation"`.
+- base_learner:
 
-  - artificial\_proportion:
-    
-    Numeric in `(0, 1]`; fraction of original features to inject as
-    artificial noise. Default: `1.0`.
+  Character; `"lasso"` (alpha = 1), `"elastic_net"` (reads `alpha` from
+  the `lambda_grid` `alpha` column), or `"adaptive_lasso"`, or
+  `"sparse_group_lasso"`, or `"rf"` (random forest via `ranger`;
+  requires `lambda_grid` from
+  [`auto_rf_threshold_grid()`](https://mdmanurung.github.io/stablr/reference/auto_rf_threshold_grid.md)
+  or `"auto"`), or `"oblique_rf"` (oblique random forest via `aorsf`;
+  requires `lambda_grid` from
+  [`auto_oblique_threshold_grid()`](https://mdmanurung.github.io/stablr/reference/auto_oblique_threshold_grid.md)
+  or `"auto"`). Default: `"lasso"`. `"rf"` and `"oblique_rf"` are
+  experimental extensions beyond Python STABL: FDP+ calibration for
+  (oblique) random forests is empirical, not guaranteed, and is
+  validated separately (see the package's RF validation study); they
+  must be paired with model-X knockoff artificial features. For
+  `"oblique_rf"` the per-feature selection frequencies are noisier than
+  for `"rf"` because importance is spread across the linear combinations
+  used in each split.
 
-  - sample\_fraction:
-    
-    Positive numeric; fraction of samples drawn per bootstrap. Default:
-    `0.5`.
+- family:
 
-  - replace:
-    
-    Logical; sample with replacement? Default: `FALSE`.
+  Character; `glmnet` response family (`"gaussian"`, `"binomial"`,
+  `"multinomial"`, or `"cox"`). Default: `"gaussian"`.
 
-  - hard\_threshold:
-    
-    Numeric in `(0, 1]` or `NULL`. When supplied, FDP+ control is
-    bypassed and this value is the stability-score cut-off. Default:
-    `NULL`.
+- n_bootstraps:
 
-  - fdr\_threshold\_range:
-    
-    Numeric vector swept when computing FDP+. Default: `seq(0, 0.99, by
-    = 0.01)`, matching Python STABL's `np.arange(0., 1., .01)`.
+  Positive integer; bootstrap iterations per lambda. Default: `1000L`.
 
-  - explore:
-    
-    Logical; if `TRUE` and no features pass the threshold, fall back to
-    the top `n_explore` features. Default: `FALSE`.
+- artificial_type:
 
-  - n\_explore:
-    
-    Positive integer; fallback feature count. Default: `5L`.
+  Character or `NULL`; `"random_permutation"`, `"knockoff"`,
+  `"knockoff_equi"`, `"knockoff_mvr"`, or `NULL` (no artificial features
+  — requires `hard_threshold`). Default: `"random_permutation"`.
 
-  - groups:
-    
-    Named vector of group IDs (same names as `rownames(x)`) or `NULL`.
-    When supplied, `group_bootstrap_indices()` is used instead of
-    `classic_bootstrap_indices()`. Default: `NULL`.
+- artificial_proportion:
 
-  - stratify\_bootstrap:
-    
-    Logical; if `TRUE`, bootstrap subsamples are stratified by the
-    outcome class. This is intended for classification tasks with small
-    or imbalanced classes. Default `FALSE` preserves the original STABL
-    sampling behavior.
+  Numeric in `(0, 1]`; fraction of original features to inject as
+  artificial noise. Default: `1.0`.
 
-  - bootstrap\_strata:
-    
-    Optional categorical stratification design for bootstrap sampling.
-    Provide a named vector, matrix, `data.frame`, or list with one
-    row/value per sample. Multiple columns are combined as a joint
-    interaction stratum, for example outcome class by study group. When
-    supplied, this overrides `stratify_bootstrap`.
+- sample_fraction:
 
-  - n\_lambda:
-    
-    Integer; number of lambda values when `lambda_grid = "auto"`.
-    Ignored otherwise. Default: `30L`.
+  Positive numeric; fraction of samples drawn per bootstrap. Default:
+  `0.5`.
 
-  - l1\_ratio:
-    
-    Numeric scalar, numeric vector, or `NULL`. Passed to
-    `auto_lambda_grid()` when `lambda_grid = "auto"`. Use this for
-    `base_learner = "elastic_net"` so the generated grid contains the
-    elastic-net `alpha` column. Default `NULL` preserves the lasso-like
-    auto grid used by existing workflows.
+- replace:
 
-  - verbose:
-    
-    Logical; emit progress messages. Default: `FALSE`.
+  Logical; sample with replacement? Default: `FALSE`.
 
-  - workers:
-    
-    Positive integer; parallel workers for `furrr::future_map()`. Actual
-    parallelism requires the caller to invoke
-    `future::plan(multisession, workers = N)` first. Default: `1L`.
+- hard_threshold:
 
-  - random\_state:
-    
-    Integer or `NULL`; top-level seed. Default: `NULL`.
+  Numeric in `(0, 1]` or `NULL`. When supplied, FDP+ control is bypassed
+  and this value is the stability-score cut-off. Default: `NULL`.
 
-  - adaptive\_gamma:
-    
-    Positive numeric scalar. Used only when `base_learner =
-    "adaptive_lasso"`.
+- fdr_threshold_range:
 
-  - adaptive\_epsilon:
-    
-    Positive numeric scalar. Used only when `base_learner =
-    "adaptive_lasso"`.
+  Numeric vector swept when computing FDP+. Default:
+  `seq(0, 0.99, by = 0.01)`, matching Python STABL's
+  `np.arange(0., 1., .01)`.
 
-  - feature\_groups:
-    
-    Optional feature-group definition for `base_learner =
-    "sparse_group_lasso"`. Provide a vector/factor of length `ncol(x)`
-    assigning each original feature to a group.
+- explore:
 
-  - corr\_group\_threshold:
-    
-    Optional numeric percentile in `(0, 100]` used to derive
-    sparse-group feature groups from pairwise correlations of original
-    features. Used only when `base_learner = "sparse_group_lasso"`.
+  Logical; if `TRUE` and no features pass the threshold, fall back to
+  the top `n_explore` features. Default: `FALSE`.
 
-  - ...:
-    
-    Ignored; present for S3 `print` method compatibility.
+- n_explore:
+
+  Positive integer; fallback feature count. Default: `5L`.
+
+- sample_groups:
+
+  Named vector of group IDs (same names as `rownames(x)`) or `NULL`.
+  When supplied,
+  [`group_bootstrap_indices()`](https://mdmanurung.github.io/stablr/reference/group_bootstrap_indices.md)
+  is used instead of
+  [`sample_bootstrap_indices()`](https://mdmanurung.github.io/stablr/reference/sample_bootstrap_indices.md)
+  – use this when samples are clustered (e.g., repeated measures,
+  multiple sites) and bootstrap resampling must keep clusters intact.
+  Default: `NULL`.
+
+- groups:
+
+  Deprecated; use `sample_groups` instead.
+
+- stratify_bootstrap:
+
+  Logical; if `TRUE`, bootstrap subsamples are stratified by the outcome
+  class. This is intended for classification tasks with small or
+  imbalanced classes. Default `FALSE` preserves the original STABL
+  sampling behavior.
+
+- bootstrap_strata:
+
+  Optional categorical stratification design for bootstrap sampling.
+  Provide a named vector, matrix, `data.frame`, or list with one
+  row/value per sample. Multiple columns are combined as a joint
+  interaction stratum, for example outcome class by study group. When
+  supplied, this overrides `stratify_bootstrap`.
+
+- n_lambda:
+
+  Integer; number of lambda values when `lambda_grid = "auto"`. Ignored
+  otherwise. Default: `30L`.
+
+- l1_ratio:
+
+  Numeric scalar, numeric vector, or `NULL`. Passed to
+  [`auto_lambda_grid()`](https://mdmanurung.github.io/stablr/reference/auto_lambda_grid.md)
+  when `lambda_grid = "auto"`. Use this for
+  `base_learner = "elastic_net"` so the generated grid contains the
+  elastic-net `alpha` column. Default `NULL` preserves the lasso-like
+  auto grid used by existing workflows.
+
+- verbose:
+
+  Logical; emit progress messages. Default: `FALSE`.
+
+- workers:
+
+  Positive integer; parallel workers for
+  [`furrr::future_map()`](https://furrr.futureverse.org/reference/future_map.html).
+  Actual parallelism requires the caller to invoke
+  `future::plan(multisession, workers = N)` first. Default: `1L`.
+
+- random_state:
+
+  Integer or `NULL`; top-level seed. Default: `NULL`.
+
+- adaptive_gamma:
+
+  Positive numeric scalar. Used only when
+  `base_learner = "adaptive_lasso"`.
+
+- adaptive_epsilon:
+
+  Positive numeric scalar. Used only when
+  `base_learner = "adaptive_lasso"`.
+
+- feature_groups:
+
+  Optional feature-group definition for
+  `base_learner = "sparse_group_lasso"`. Provide a vector/factor of
+  length `ncol(x)` assigning each original feature to a group.
+
+- corr_group_threshold:
+
+  Optional numeric percentile in `(0, 100]` used to derive sparse-group
+  feature groups from pairwise correlations of original features. Used
+  only when `base_learner = "sparse_group_lasso"`.
+
+- knockoff_fallback:
+
+  Character; policy when a knockoff constructor fails on a
+  supported-dimensional input (audit A1). `"stop"` (the default) raises
+  an error because a knockoff-to-random-permutation fallback silently
+  changes the FDP+ calibration target; `"allow"` restores the pre-0.2.2
+  warn-and-fall-back behavior (recorded in the artificial provenance's
+  `fallback_history`).
+
+- ...:
+
+  Ignored; present for S3 `print` method compatibility.
 
 ## Value
 
 An S3 object of class `"stabl_fit"` containing:
 
-  - `stabl_scores_`:
-    
-    Numeric matrix (features \\(\\times\\) lambdas) of per-bootstrap
-    selection frequencies (stability scores).
+- `stabl_scores_`:
 
-  - `stabl_scores_artificial_`:
-    
-    Analogous matrix for artificial features, or `NULL` when
-    `artificial_type = NULL`.
+  Numeric matrix (features \\\times\\ lambdas) of per-bootstrap
+  selection frequencies (stability scores).
 
-  - `fitted_lambda_grid`:
-    
-    The `data.frame` of lambda combinations actually used.
+- `stabl_scores_artificial_`:
 
-  - `fdr_min_threshold_`:
-    
-    FDP+-optimal stability threshold, or `NULL`.
+  Analogous matrix for artificial features, or `NULL` when
+  `artificial_type = NULL`.
 
-  - `FDRs_`:
-    
-    Numeric vector of FDP+ estimates per threshold, or `NULL`.
+- `fitted_lambda_grid`:
 
-  - `min_fdr_`:
-    
-    Minimum FDP+ achieved, or `NULL`.
+  The `data.frame` of lambda combinations actually used.
 
-  - `fdrs_table_`:
-    
-    Per-lambda FDP+ matrix, or `NULL`.
+- `fdr_min_threshold_`:
 
-  - `hard_threshold`:
-    
-    As supplied.
+  FDP+-optimal stability threshold, or `NULL`.
 
-  - `artificial_type`:
-    
-    As supplied.
+- `FDRs_`:
 
-  - `artificial_proportion`:
-    
-    As supplied.
+  Numeric vector of FDP+ estimates per threshold, or `NULL`.
 
-  - `explore`:
-    
-    As supplied.
+- `min_fdr_`:
 
-  - `n_explore`:
-    
-    As supplied.
+  Minimum FDP+ achieved, or `NULL`.
 
-  - `feature_names`:
-    
-    Character vector of original feature names.
+- `fdrs_table_`:
 
-  - `n_features_in_`:
-    
-    Integer number of original features.
+  Per-lambda FDP+ matrix, or `NULL`.
+
+- `hard_threshold`:
+
+  As supplied.
+
+- `artificial_type`:
+
+  As supplied.
+
+- `artificial_provenance`:
+
+  List returned by
+  [`make_artificial_features()`](https://mdmanurung.github.io/stablr/reference/make_artificial_features.md)
+  recording `actual_type`, all selected generator modes, and the
+  complete ordered fallback history. This is the scientific source of
+  truth for the generator used; or `NULL` when `artificial_type = NULL`.
+
+- `artificial_proportion`:
+
+  As supplied.
+
+- `explore`:
+
+  As supplied.
+
+- `n_explore`:
+
+  As supplied.
+
+- `feature_names`:
+
+  Character vector of original feature names.
+
+- `n_features_in_`:
+
+  Integer number of original features.
 
 ## Methods (by generic)
 
-  - `print(stabl_fit)`: Print a concise summary of a fitted `stabl_fit`
-    object; invisibly returns `x`.
+- `print(stabl_fit)`: Print a concise summary of a fitted `stabl_fit`
+  object; invisibly returns `x`.
 
 ## Examples
 
@@ -280,7 +326,8 @@ fit_lasso <- stabl_fit(
   artificial_type = "random_permutation",
   random_state = 1L
 )
-get_feature_names_out(fit_lasso)
+get_feature_names(fit_lasso)
+#> [1] "f1" "f2"
 
 # Adaptive lasso path
 fit_adaptive <- stabl_fit(
@@ -295,6 +342,10 @@ fit_adaptive <- stabl_fit(
   random_state = 2L
 )
 get_importances(fit_adaptive)
+#>        f1        f2        f3        f4        f5        f6        f7        f8 
+#> 1.0000000 1.0000000 0.5000000 0.8333333 0.8333333 0.3333333 0.6666667 0.6666667 
+#>        f9       f10 
+#> 0.3333333 0.5000000 
 
 # Sparse-group lasso path (optional dependency)
 if (requireNamespace("sparsegl", quietly = TRUE)) {
@@ -311,6 +362,8 @@ if (requireNamespace("sparsegl", quietly = TRUE)) {
   )
   get_support(fit_sgl)
 }
+#>    f1    f2    f3    f4    f5    f6    f7    f8    f9   f10 
+#>  TRUE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE 
 
 # Multinomial path with three classes
 y_multi <- setNames(
@@ -326,5 +379,6 @@ fit_multi <- suppressWarnings(stabl_fit(
   artificial_type = "random_permutation",
   random_state = 4L
 ))
-get_feature_names_out(fit_multi)
+get_feature_names(fit_multi)
+#>  [1] "f1"  "f2"  "f3"  "f4"  "f5"  "f6"  "f7"  "f8"  "f9"  "f10"
 ```

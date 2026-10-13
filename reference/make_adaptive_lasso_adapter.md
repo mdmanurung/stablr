@@ -18,33 +18,33 @@ make_adaptive_lasso_adapter(
 
 ## Arguments
 
-  - family:
-    
-    Character; the `glmnet` response family, for example `"gaussian"`,
-    `"binomial"`, `"multinomial"`, or `"cox"`.
+- family:
 
-  - gamma:
-    
-    Positive numeric scalar; controls how sharply the weights
-    down-penalise features with large ridge coefficients. Larger values
-    make the penalty more selective. Default `1.0` matches the Python
-    reference implementation.
+  Character; the `glmnet` response family, for example `"gaussian"`,
+  `"binomial"`, `"multinomial"`, or `"cox"`.
 
-  - epsilon:
-    
-    Positive numeric scalar; added to the denominator of the weight to
-    avoid division by zero. Default `1e-6`.
+- gamma:
 
-  - bootstrap\_threshold:
-    
-    Positive numeric; absolute-coefficient cutoff used to decide that a
-    feature is selected in a given bootstrap. Features with `|coef| >
-    bootstrap_threshold` are counted as selected.
+  Positive numeric scalar; controls how sharply the weights
+  down-penalise features with large ridge coefficients. Larger values
+  make the penalty more selective. Default `1.0` matches the Python
+  reference implementation.
+
+- epsilon:
+
+  Positive numeric scalar; added to the denominator of the weight to
+  avoid division by zero. Default `1e-6`.
+
+- bootstrap_threshold:
+
+  Positive numeric; absolute-coefficient cutoff used to decide that a
+  feature is selected in a given bootstrap. Features with
+  `|coef| > bootstrap_threshold` are counted as selected.
 
 ## Value
 
-A function with signature `function(x, y, lambda_val) -> logical vector
-of length ncol(x)`.
+A function with signature
+`function(x, y, lambda_val) -> logical vector of length ncol(x)`.
 
 ## Details
 
@@ -55,19 +55,22 @@ signal). This asymmetric penalisation achieves the oracle property under
 regularity conditions, selecting the true support more reliably than
 plain lasso when signal features have moderate to large effect sizes.
 
-Weights are defined as: $$w\_j = 1 / (|\\hat\\beta\_j^{\\mathrm{init}}|
-+ \\epsilon)^\\gamma$$ where \\(\\hat\\beta\_j^{\\mathrm{init}}\\) comes
-from a ridge regression on the same bootstrap subsample. The `epsilon`
-floor avoids division by zero for features with near-zero ridge
-coefficients.
+Weights are defined as: \$\$w_j = 1 / (\|\hat\beta_j^{\mathrm{init}}\| +
+\epsilon)^\gamma\$\$ where \\\hat\beta_j^{\mathrm{init}}\\ comes from a
+ridge regression on the same bootstrap subsample. The `epsilon` floor
+avoids division by zero for features with near-zero ridge coefficients.
 
 This adapter factory is primarily an internal backend used by
-`stabl_fit()`. For end-to-end feature selection workflows, prefer
-`base_learner = "adaptive_lasso"` in `stabl_fit()`.
+[`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md).
+For end-to-end feature selection workflows, prefer
+`base_learner = "adaptive_lasso"` in
+[`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md).
 
 ## See also
 
-`make_glmnet_adapter()`, `make_sgl_adapter()`, `stabl_fit()`
+[`make_glmnet_adapter()`](https://mdmanurung.github.io/stablr/reference/make_glmnet_adapter.md),
+[`make_sgl_adapter()`](https://mdmanurung.github.io/stablr/reference/make_sgl_adapter.md),
+[`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
 
 ## Examples
 
@@ -80,4 +83,5 @@ if (requireNamespace("glmnet", quietly = TRUE)) {
   mask <- adapter(x, y, data.frame(lambda = 0.1))
   cat("selected:", sum(mask), "of", ncol(x), "features\n")
 }
+#> selected: 7 of 10 features
 ```

@@ -4,7 +4,9 @@ Writes a complete set of STABL result artefacts — stability scores, the
 list of selected features, the FDR diagnostic graph, the stability path
 plot, and per-feature distribution plots — into a single output
 directory. This is the recommended way to persist and share results from
-a single `stabl_fit()` call.
+a single
+[`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
+call.
 
 ## Usage
 
@@ -23,47 +25,49 @@ save_stabl_results(
 
 ## Arguments
 
-  - object:
-    
-    A fitted `"stabl_fit"` object returned by `stabl_fit()`.
+- object:
 
-  - path:
-    
-    Character string; path to the output directory. Created recursively
-    if it does not already exist. Raises an error if the directory
-    exists and `override = FALSE`.
+  A fitted `"stabl_fit"` object returned by
+  [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md).
 
-  - x:
-    
-    Numeric matrix of predictors used to fit `object`. Required for
-    per-feature distribution plots; must contain at least the selected
-    feature columns.
+- path:
 
-  - y:
-    
-    Outcome vector, factor, or `survival::Surv` object used to fit
-    `object`. Required for per-feature distribution plots.
+  Character string; path to the output directory. Created recursively if
+  it does not already exist. Raises an error if the directory exists and
+  `override = FALSE`.
 
-  - figure\_fmt:
-    
-    Character; graphics device extension used when saving plots. Common
-    choices: `"pdf"` (default, publication quality), `"png"`, `"svg"`.
+- x:
 
-  - new\_hard\_threshold:
-    
-    Numeric in `(0, 1]` or `NULL`. When supplied, overrides the stored
-    threshold for support extraction and stability-path plotting.
+  Numeric matrix of predictors used to fit `object`. Required for
+  per-feature distribution plots; must contain at least the selected
+  feature columns.
 
-  - task\_type:
-    
-    Character; one of `"binary"` (default), `"multiclass"`, or
-    `"regression"`. Determines which per-feature plot is generated:
-    grouped boxplots for classification, LOESS scatter for regression.
+- y:
 
-  - override:
-    
-    Logical; if `TRUE`, an existing directory with the same path is
-    accepted and its contents may be overwritten. Default `FALSE`.
+  Outcome vector, factor, or
+  [`survival::Surv`](https://rdrr.io/pkg/survival/man/Surv.html) object
+  used to fit `object`. Required for per-feature distribution plots.
+
+- figure_fmt:
+
+  Character; graphics device extension used when saving plots. Common
+  choices: `"pdf"` (default, publication quality), `"png"`, `"svg"`.
+
+- new_hard_threshold:
+
+  Numeric in `(0, 1]` or `NULL`. When supplied, overrides the stored
+  threshold for support extraction and stability-path plotting.
+
+- task_type:
+
+  Character; one of `"binary"` (default), `"multiclass"`, or
+  `"regression"`. Determines which per-feature plot is generated:
+  grouped boxplots for classification, LOESS scatter for regression.
+
+- override:
+
+  Logical; if `TRUE`, an existing directory with the same path is
+  accepted and its contents may be overwritten. Default `FALSE`.
 
 ## Value
 
@@ -72,16 +76,26 @@ Invisibly returns `path` as a normalised absolute string.
 ## Details
 
 The function orchestrates several lower-level helpers:
-`export_stabl_to_csv()` for tabular data, `plot_fdr_graph()` and
-`plot_stabl_path()` for diagnostic plots, and `boxplot_features()` or
-`scatterplot_features()` for per-feature distribution visualisations.
-All graphics are saved using `ggplot2::ggsave()` in the format specified
-by `figure_fmt`.
+[`export_stabl_to_csv()`](https://mdmanurung.github.io/stablr/reference/export_stabl_to_csv.md)
+for tabular data,
+[`plot_fdr_graph()`](https://mdmanurung.github.io/stablr/reference/plot_fdr_graph.md)
+and
+[`plot_stabl_path()`](https://mdmanurung.github.io/stablr/reference/plot_stabl_path.md)
+for diagnostic plots, and
+[`boxplot_features()`](https://mdmanurung.github.io/stablr/reference/boxplot_features.md)
+or
+[`scatterplot_features()`](https://mdmanurung.github.io/stablr/reference/scatterplot_features.md)
+for per-feature distribution visualisations. All graphics are saved
+using
+[`ggplot2::ggsave()`](https://ggplot2.tidyverse.org/reference/ggsave.html)
+in the format specified by `figure_fmt`.
 
 ## See also
 
-`export_stabl_to_csv()` for the CSV-only variant, `plot_stabl_path()`,
-`plot_fdr_graph()`
+[`export_stabl_to_csv()`](https://mdmanurung.github.io/stablr/reference/export_stabl_to_csv.md)
+for the CSV-only variant,
+[`plot_stabl_path()`](https://mdmanurung.github.io/stablr/reference/plot_stabl_path.md),
+[`plot_fdr_graph()`](https://mdmanurung.github.io/stablr/reference/plot_fdr_graph.md)
 
 ## Examples
 
@@ -100,5 +114,9 @@ if (requireNamespace("ggplot2", quietly = TRUE)) {
                      task_type = "regression", figure_fmt = "png")
   list.files(out_dir)
 }
+#> [1] "FDR Graph.png"                   "Max STABL artificial scores.csv"
+#> [3] "Max STABL scores.csv"            "STABL artificial scores.csv"    
+#> [5] "STABL scores.csv"                "Selected Features"              
+#> [7] "Stability Path.png"             
 # }
 ```

@@ -18,62 +18,64 @@ compute_fdp_plus(
 
 ## Arguments
 
-  - stabl\_scores:
-    
-    Numeric matrix (features \\(\\times\\) lambdas) of stability scores
-    for the real features.
+- stabl_scores:
 
-  - stabl\_scores\_artificial:
-    
-    Numeric matrix (artificial features \\(\\times\\) lambdas) of
-    stability scores for the injected noise features.
+  Numeric matrix (features \\\times\\ lambdas) of stability scores for
+  the real features.
 
-  - artificial\_proportion:
-    
-    Positive numeric scalar; the fraction of artificial features
-    relative to real features (used as \\(\\pi\\)).
+- stabl_scores_artificial:
 
-  - fdr\_threshold\_range:
-    
-    Numeric vector of threshold values to sweep. Default: `seq(0, 0.99,
-    by = 0.01)`, matching Python STABL's `np.arange(0., 1., .01)`.
+  Numeric matrix (artificial features \\\times\\ lambdas) of stability
+  scores for the injected noise features.
+
+- artificial_proportion:
+
+  Positive numeric scalar; the fraction of artificial features relative
+  to real features (used as \\\pi\\).
+
+- fdr_threshold_range:
+
+  Numeric vector of threshold values to sweep. Default:
+  `seq(0, 0.99, by = 0.01)`, matching Python STABL's
+  `np.arange(0., 1., .01)`.
 
 ## Value
 
 Named list:
 
-  - FDRs:
-    
-    Numeric vector of FDP+ estimates, one per threshold.
+- FDRs:
 
-  - min\_fdr:
-    
-    Minimum FDP+ achieved across the threshold range.
+  Numeric vector of FDP+ estimates, one per threshold.
 
-  - fdr\_min\_threshold:
-    
-    Threshold value achieving `min_fdr`, capped at 1.
+- min_fdr:
 
-  - fdrs\_table:
-    
-    Numeric matrix (lambdas \\(\\times\\) thresholds) of per-lambda FDP+
-    values.
+  Minimum FDP+ achieved across the threshold range.
+
+- fdr_min_threshold:
+
+  Threshold value achieving `min_fdr`, capped at 1.
+
+- fdrs_table:
+
+  Numeric matrix (lambdas \\\times\\ thresholds) of per-lambda FDP+
+  values.
 
 ## Details
 
-The FDP+ at threshold \\(\\tau\\) is estimated as:
-$$\\widehat{\\text{FDP}}(\\tau) = \\frac{(1/\\pi) \\cdot |\\{j :
-\\hat{q}\_j^{\\text{art}} \> \\tau\\}| + 1} {\\max(1,\\, |\\{j :
-\\hat{q}\_j \> \\tau\\}|)}$$ where \\(\\pi\\) is
-`artificial_proportion`, \\(\\hat{q}\_j\\) are the maximum-over-lambda
-stability scores for real feature \\(j\\), and
-\\(\\hat{q}\_j^{\\text{art}}\\) are the scores for artificial feature
-\\(j\\).
+The FDP+ at threshold \\\tau\\ is estimated as:
+\$\$\widehat{\text{FDP}}(\tau) = \frac{(1/\pi) \cdot \|\\j :
+\hat{q}\_j^{\text{art}} \> \tau\\\| + 1} {\max(1,\\ \|\\j : \hat{q}\_j
+\> \tau\\\|)}\$\$ where \\\pi\\ is `artificial_proportion`,
+\\\hat{q}\_j\\ are the maximum-over-lambda stability scores for real
+feature \\j\\, and \\\hat{q}\_j^{\text{art}}\\ are the scores for
+artificial feature \\j\\.
 
 ## See also
 
-`stabl_fit()` which calls this internally when artificial features are
-used, `plot_fdr_graph()` to visualise the FDP+ curve.
+[`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
+which calls this internally when artificial features are used,
+[`plot_fdr_graph()`](https://mdmanurung.github.io/stablr/reference/plot_fdr_graph.md)
+to visualise the FDP+ curve.
 
 ## Examples
 
@@ -85,5 +87,7 @@ scores_art  <- matrix(c(0.1, 0.2, 0.3, 0.15, 0.25, 0.1), nrow = 3)
 result <- compute_fdp_plus(scores_real, scores_art,
                            artificial_proportion = 1.0)
 result$min_fdr           # minimum FDP+ estimate
+#> [1] 0.5
 result$fdr_min_threshold # threshold that achieves it
+#> [1] 0.3
 ```

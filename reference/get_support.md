@@ -4,7 +4,8 @@ Returns a named logical vector that is `TRUE` for every feature whose
 maximum stability score exceeds the effective threshold. This is the
 primary accessor for downstream use of a fitted STABL model: index your
 data matrix with the returned mask, or pass the object to
-`get_feature_names_out()` to obtain the names directly.
+[`get_feature_names()`](https://mdmanurung.github.io/stablr/reference/get_feature_names.md)
+to obtain the names directly.
 
 ## Usage
 
@@ -14,14 +15,15 @@ get_support(object, new_hard_threshold = NULL)
 
 ## Arguments
 
-  - object:
-    
-    A fitted `"stabl_fit"` object returned by `stabl_fit()`.
+- object:
 
-  - new\_hard\_threshold:
-    
-    Numeric in `(0, 1]` or `NULL`. When supplied, overrides the
-    threshold stored in `object` for this call only.
+  A fitted `"stabl_fit"` object returned by
+  [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md).
+
+- new_hard_threshold:
+
+  Numeric in `(0, 1]` or `NULL`. When supplied, overrides the threshold
+  stored in `object` for this call only.
 
 ## Value
 
@@ -35,14 +37,15 @@ original feature names from the training matrix.
 1.  `new_hard_threshold` (if supplied to this call).
 
 2.  `object$hard_threshold` (if a hard threshold was given to
-    `stabl_fit()`).
+    [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)).
 
 3.  `object$fdr_min_threshold_` (the FDP+-optimal threshold computed
     from artificial features during fitting).
 
 An error is raised when none of these is available — which can only
-happen if `stabl_fit()` was called with both `artificial_type = NULL`
-and no `hard_threshold`.
+happen if
+[`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
+was called with both `artificial_type = NULL` and no `hard_threshold`.
 
 **Explore fallback:** When `explore = TRUE` was set during fitting and
 no feature's score exceeds the threshold, the function returns the top
@@ -52,8 +55,10 @@ the signal is weak.
 
 ## See also
 
-`get_feature_names_out()` to get names directly, `get_importances()` to
-inspect raw stability scores.
+[`get_feature_names()`](https://mdmanurung.github.io/stablr/reference/get_feature_names.md)
+to get names directly,
+[`get_importances()`](https://mdmanurung.github.io/stablr/reference/get_importances.md)
+to inspect raw stability scores.
 
 ## Examples
 
@@ -68,5 +73,9 @@ fit <- stabl_fit(x, y,
                  hard_threshold = 0.3,
                  random_state   = 1L)
 get_support(fit)                        # named logical vector
+#>   f1   f2   f3   f4   f5 
+#> TRUE TRUE TRUE TRUE TRUE 
 get_support(fit, new_hard_threshold = 0.5)  # stricter threshold
+#>   f1   f2   f3   f4   f5 
+#> TRUE TRUE TRUE TRUE TRUE 
 ```

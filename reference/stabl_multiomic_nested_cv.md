@@ -30,6 +30,7 @@ stabl_multiomic_nested_cv(
   l1_ratio = NULL,
   workers = 1L,
   cv_workers = 1L,
+  study_labels = NULL,
   ...
 )
 
@@ -39,120 +40,221 @@ print(x, ...)
 
 ## Arguments
 
-  - x\_list:
-    
-    Named list of omic matrices or data frames with identical sample row
-    names.
+- x_list:
 
-  - y:
-    
-    Named factor or character vector aligned to `x_list` rows.
+  Named list of omic matrices or data frames with identical sample row
+  names.
 
-  - candidates:
-    
-    Optional list of candidate definitions. Each candidate is a list
-    with `name` and `blocks`; `blocks` names one or more omics from
-    `x_list`. When `NULL`, one candidate is created for each omic plus
-    one early-fusion candidate using all omics.
+- y:
 
-  - lambda\_grid:
-    
-    Either `"auto"`, a single lambda-grid data frame, or a named list of
-    lambda grids. Named entries can match omic names or candidate names.
+  Named factor or character vector aligned to `x_list` rows.
 
-  - outer\_v:
-    
-    Number of outer folds per repeat.
+- candidates:
 
-  - outer\_repeats:
-    
-    Number of repeated outer CV rounds.
+  Optional list of candidate definitions. Each candidate is a list with
+  `name` and `blocks`; `blocks` names one or more omics from `x_list`.
+  When `NULL`, one candidate is created for each omic plus one
+  early-fusion candidate using all omics.
 
-  - inner\_v:
-    
-    Number of inner folds used for candidate selection.
+- lambda_grid:
 
-  - stratified:
-    
-    Logical. When `TRUE` (default), outer and inner folds preserve class
-    proportions as closely as possible.
+  Either `"auto"`, a single lambda-grid data frame, or a named list of
+  lambda grids. Named entries can match omic names or candidate names.
 
-  - strata:
-    
-    Optional named vector used to stratify folds instead of `y`.
-    Categorical values are used directly. Numeric values are binned into
-    quantile groups before fold assignment.
+- outer_v:
 
-  - strata\_bins:
-    
-    Number of quantile bins for numeric `strata`.
+  Number of outer folds per repeat.
 
-  - metric:
-    
-    Candidate-selection metric, `"ber"` or `"accuracy"`.
+- outer_repeats:
 
-  - family:
-    
-    Passed to `stabl_fit()`. Defaults to `"multinomial"`.
+  Number of repeated outer CV rounds.
 
-  - n\_bootstraps:
-    
-    Passed to `stabl_fit()`.
+- inner_v:
 
-  - artificial\_type:
-    
-    Passed to `stabl_fit()`.
+  Number of inner folds used for candidate selection.
 
-  - hard\_threshold:
-    
-    Passed to `stabl_fit()`.
+- stratified:
 
-  - random\_state:
-    
-    Integer or `NULL`; top-level seed. Default: `NULL`.
+  Logical. When `TRUE` (default), outer and inner folds preserve class
+  proportions as closely as possible.
 
-  - n\_lambda:
-    
-    Passed to `stabl_fit()` when `lambda_grid = "auto"`.
+- strata:
 
-  - l1\_ratio:
-    
-    Passed to `stabl_fit()` when `lambda_grid = "auto"`. Use this with
-    `base_learner = "elastic_net"` to generate alpha-aware train-fold
-    grids.
+  Optional named vector used to stratify folds instead of `y`.
+  Categorical values are used directly. Numeric values are binned into
+  quantile groups before fold assignment. Cannot be combined with
+  `study_labels`.
 
-  - workers:
-    
-    Passed to `stabl_fit()` for bootstrap-level parallelism.
+- strata_bins:
 
-  - cv\_workers:
-    
-    Number of outer folds to evaluate in parallel. Uses
-    `parallel::mclapply()` on Unix-like systems and falls back to
-    sequential execution on Windows.
+  Number of quantile bins for numeric `strata`.
 
-  - ...:
-    
-    Additional arguments passed to `stabl_fit()`.
+- metric:
 
-  - x:
-    
-    A numeric matrix or `data.frame` (samples \\(\\times\\) features)
-    with row names used as sample IDs.
+  Candidate-selection metric, `"ber"` or `"accuracy"`.
+
+- family:
+
+  Passed to
+  [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md).
+  Defaults to `"multinomial"`.
+
+- n_bootstraps:
+
+  Passed to
+  [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md).
+
+- artificial_type:
+
+  Passed to
+  [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md).
+
+- hard_threshold:
+
+  Passed to
+  [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md).
+
+- random_state:
+
+  Integer or `NULL`; top-level seed. Default: `NULL`.
+
+- n_lambda:
+
+  Passed to
+  [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
+  when `lambda_grid = "auto"`.
+
+- l1_ratio:
+
+  Passed to
+  [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
+  when `lambda_grid = "auto"`. Use this with
+  `base_learner = "elastic_net"` to generate alpha-aware train-fold
+  grids.
+
+- workers:
+
+  Passed to
+  [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
+  for bootstrap-level parallelism.
+
+- cv_workers:
+
+  Number of outer folds to evaluate in parallel. Uses
+  [`parallel::mclapply()`](https://rdrr.io/r/parallel/mclapply.html) on
+  Unix-like systems and falls back to sequential execution on Windows.
+
+- study_labels:
+
+  Optional named vector assigning each sample to a study (cohort, site,
+  or batch); names must cover exactly the sample IDs. When `NULL`
+  (default), folds are assigned sample-wise exactly as in prior releases
+  (`fold_scheme = "sample_iid"`). When supplied, the CV unit becomes the
+  study (`fold_scheme = "study_disjoint"`): outer folds assign whole
+  studies (with `outer_v` equal to the number of studies this is
+  leave-one-study-out), inner candidate-selection folds are
+  study-disjoint within each outer training split, and
+  `stratified = TRUE` is reinterpreted at the study level through a
+  deterministic largest-first greedy pass that minimises
+  class-proportion imbalance across folds (sample-level stratification
+  is impossible under study disjointness). Study disjointness concerns
+  the CV folds only: within-training bootstrap resampling is untouched,
+  so `bootstrap_strata` (sampling design) and SGL `feature_groups`
+  (feature grouping) remain orthogonal to `study_labels` (CV unit).
+
+- ...:
+
+  Additional arguments passed to
+  [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md).
+
+- x:
+
+  A numeric matrix or `data.frame` (samples \\\times\\ features) with
+  row names used as sample IDs.
 
 ## Value
 
 An object of class `"stabl_multiomic_nested_cv"` containing fold
 definitions, inner candidate diagnostics, outer held-out predictions,
-selected features, and aggregate performance.
+selected features, and aggregate performance. The object also records
+the sampling unit as `fold_scheme` (`"sample_iid"` or
+`"study_disjoint"`) and the validated `study_labels`; under
+`fold_scheme = "study_disjoint"` each outer/inner fold additionally
+carries `study_ids` (per-fold study membership) and `class_counts`
+(per-fold held-out class counts). When `study_labels` is supplied,
+`performance_by_study` holds per-study outer held-out accuracy and
+balanced error rate (pooled across folds and repeats; `NA` balanced
+error rate for studies whose pooled held-out predictions contain a
+single outcome class).
 
 ## Methods (by generic)
 
-  - `print(stabl_multiomic_nested_cv)`: Print a concise summary of a
-    `stabl_multiomic_nested_cv` object; invisibly returns `x`.
+- `print(stabl_multiomic_nested_cv)`: Print a concise summary of a
+  `stabl_multiomic_nested_cv` object; invisibly returns `x`.
 
 ## Note
 
 Cooperative fusion (`cooperative_fusion = TRUE`) is not supported in
-nested CV. Use `stabl_multiomic_train_validate()` or
-`stabl_multiomic_cv()` for cooperative workflows.
+nested CV. Use
+[`stabl_multiomic_train_validate()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_train_validate.md)
+or
+[`stabl_multiomic_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_cv.md)
+for cooperative workflows. The held-out metrics estimate predictive
+performance for the declared candidate workflow; they do not establish
+dataset-wide FDP control. Late-fusion stacking is not a candidate type
+in this helper.
+
+Batch harmonization (e.g. ComBat) fitted on the full dataset before
+cross-validation leaks study-level information across folds and inflates
+performance estimates. Fit harmonization within training folds, or
+interpret all reported metrics as conditional on the harmonization step;
+study-disjoint folds do not repair leakage from pooled preprocessing.
+
+## Examples
+
+``` r
+set.seed(3L)
+ids <- paste0("s", 1:18)
+y <- setNames(factor(rep(c("A", "B", "C"), each = 6L)), ids)
+signal <- stats::model.matrix(~ y - 1)
+x <- matrix(
+  rnorm(18 * 6, sd = 0.3), 18, 6,
+  dimnames = list(ids, paste0("g", 1:6))
+)
+x[, 1:3] <- x[, 1:3] + signal
+nested <- suppressWarnings(stabl_multiomic_nested_cv(
+  x_list = list(rna = x), y = y,
+  candidates = list(list(name = "rna", blocks = "rna")),
+  lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+  outer_v = 3L, inner_v = 3L, n_bootstraps = 3L,
+  artificial_type = NULL, hard_threshold = 1e-9,
+  sample_fraction = 1, random_state = 3L
+))
+nested$performance$balanced_error_rate
+#> [1] 0
+
+# Study-disjoint folds: each block of four samples is treated as one
+# study; outer CV is leave-one-study-out.
+set.seed(4L)
+ids2 <- paste0("s", 1:20)
+y2 <- setNames(factor(rep(c("A", "B"), times = 10L)), ids2)
+x2 <- matrix(
+  rnorm(20 * 6, sd = 0.3), 20, 6,
+  dimnames = list(ids2, paste0("g", 1:6))
+)
+x2[, 1:2] <- x2[, 1:2] + stats::model.matrix(~ y2 - 1)
+study_labels <- setNames(rep(paste0("study", 1:5), each = 4L), ids2)
+nested2 <- suppressWarnings(stabl_multiomic_nested_cv(
+  x_list = list(rna = x2), y = y2,
+  candidates = list(list(name = "rna", blocks = "rna")),
+  lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+  outer_v = 5L, inner_v = 2L, n_bootstraps = 3L,
+  artificial_type = NULL, hard_threshold = 1e-9,
+  sample_fraction = 1, random_state = 4L,
+  study_labels = study_labels
+))
+nested2$fold_scheme
+#> [1] "study_disjoint"
+nested2$outer_folds[[1L]]$study_ids
+#> [1] "study5"
+```

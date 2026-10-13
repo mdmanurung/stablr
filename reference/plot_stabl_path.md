@@ -19,18 +19,19 @@ plot_stabl_path(
 
 ## Arguments
 
-  - object:
-    
-    A fitted `"stabl_fit"` object from `stabl_fit()`.
+- object:
 
-  - new\_hard\_threshold:
-    
-    Numeric in `(0, 1]` or `NULL`. When supplied, overrides the
-    threshold stored in `object`.
+  A fitted `"stabl_fit"` object from
+  [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md).
 
-  - title:
-    
-    Character; plot title (default `"STABL Stability Path"`).
+- new_hard_threshold:
+
+  Numeric in `(0, 1]` or `NULL`. When supplied, overrides the threshold
+  stored in `object`.
+
+- title:
+
+  Character; plot title (default `"STABL Stability Path"`).
 
 ## Value
 

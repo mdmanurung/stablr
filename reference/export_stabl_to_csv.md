@@ -13,13 +13,14 @@ export_stabl_to_csv(object, path)
 
 ## Arguments
 
-  - object:
-    
-    A fitted `"stabl_fit"` object from `stabl_fit()`.
+- object:
 
-  - path:
-    
-    Character string; path to an existing (or to-be-created) directory.
+  A fitted `"stabl_fit"` object from
+  [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md).
+
+- path:
+
+  Character string; path to an existing (or to-be-created) directory.
 
 ## Value
 
@@ -29,16 +30,16 @@ Invisibly returns `path` (as a normalized string).
 
 Files written:
 
-  - `STABL scores.csv` — full p x L stability score matrix.
+- `STABL scores.csv` — full p x L stability score matrix.
 
-  - `Max STABL scores.csv` — per-feature maximum stability score, sorted
-    descending.
+- `Max STABL scores.csv` — per-feature maximum stability score, sorted
+  descending.
 
-  - `STABL artificial scores.csv` — artificial feature scores (only when
-    `object$artificial_type` is not `NULL`).
+- `STABL artificial scores.csv` — artificial feature scores (only when
+  `object$artificial_type` is not `NULL`).
 
-  - `Max STABL artificial scores.csv` — artificial max scores, sorted
-    descending (only when artificial features were used).
+- `Max STABL artificial scores.csv` — artificial max scores, sorted
+  descending (only when artificial features were used).
 
 ## Examples
 
@@ -54,5 +55,7 @@ fit <- stabl_fit(x, y,
 out_dir <- file.path(tempdir(), "stabl_csv_export")
 export_stabl_to_csv(fit, out_dir)
 list.files(out_dir)
+#> [1] "Max STABL artificial scores.csv" "Max STABL scores.csv"           
+#> [3] "STABL artificial scores.csv"     "STABL scores.csv"               
 # }
 ```

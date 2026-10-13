@@ -14,28 +14,28 @@ scatterplot_features(features, x, y, title = "Selected Features", ncol = 3L)
 
 ## Arguments
 
-  - features:
-    
-    Character vector of feature names to plot. Features not present as
-    columns in `x` are silently skipped.
+- features:
 
-  - x:
-    
-    Numeric matrix or data frame of predictors. Column names must
-    include all elements of `features`.
+  Character vector of feature names to plot. Features not present as
+  columns in `x` are silently skipped.
 
-  - y:
-    
-    Numeric vector of continuous outcome values. Must have the same
-    number of elements as `nrow(x)`.
+- x:
 
-  - title:
-    
-    Character scalar; plot title. Default `"Selected Features"`.
+  Numeric matrix or data frame of predictors. Column names must include
+  all elements of `features`.
 
-  - ncol:
-    
-    Positive integer; number of facet columns in the grid. Default 3.
+- y:
+
+  Numeric vector of continuous outcome values. Must have the same number
+  of elements as `nrow(x)`.
+
+- title:
+
+  Character scalar; plot title. Default `"Selected Features"`.
+
+- ncol:
+
+  Positive integer; number of facet columns in the grid. Default 3.
 
 ## Value
 
@@ -43,7 +43,9 @@ A `ggplot` object with one facet panel per feature.
 
 ## See also
 
-`boxplot_features()` for classification tasks, `save_stabl_results()`
+[`boxplot_features()`](https://mdmanurung.github.io/stablr/reference/boxplot_features.md)
+for classification tasks,
+[`save_stabl_results()`](https://mdmanurung.github.io/stablr/reference/save_stabl_results.md)
 which calls this automatically.
 
 ## Examples

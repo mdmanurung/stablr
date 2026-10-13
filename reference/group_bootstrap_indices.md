@@ -2,9 +2,10 @@
 
 Draws row indices for a single STABL bootstrap iteration by sampling
 **groups** rather than individual samples. Use this instead of
-`classic_bootstrap_indices()` whenever the training data contains
-repeated measurements or known clusters (e.g. multiple time-points per
-subject, technical replicates, or family members).
+[`sample_bootstrap_indices()`](https://mdmanurung.github.io/stablr/reference/sample_bootstrap_indices.md)
+whenever the training data contains repeated measurements or known
+clusters (e.g. multiple time-points per subject, technical replicates,
+or family members).
 
 ## Usage
 
@@ -16,52 +17,62 @@ group_bootstrap_indices(
   replace = FALSE,
   stratify = FALSE,
   strata = NULL,
+  random_state = NULL,
   seed = NULL
 )
 ```
 
 ## Arguments
 
-  - y:
-    
-    Outcome vector with the same length as `groups`.
+- y:
 
-  - groups:
-    
-    Vector of group identifiers (same length as `y`). Values may be any
-    type that supports `unique()` and equality comparison.
+  Outcome vector with the same length as `groups`.
 
-  - n\_subsamples:
-    
-    Positive integer; target number of rows in the subsample. The actual
-    count may differ slightly due to whole-group granularity (whole
-    groups are always preserved; the realised count is the smallest
-    group-aligned value `>= n_subsamples`).
+- groups:
 
-  - replace:
-    
-    Logical; may the same group be sampled more than once? Default
-    `FALSE`.
+  Vector of group identifiers (same length as `y`). Values may be any
+  type that supports [`unique()`](https://rdrr.io/r/base/unique.html)
+  and equality comparison.
 
-  - stratify:
-    
-    Logical; if `TRUE`, sample whole groups within outcome strata so the
-    realised subsample retains class representation where the group
-    structure permits it. Each group must map to exactly one outcome
-    class. Whole groups are still preserved, so realised counts can
-    exceed per-class targets. Default `FALSE`.
+- n_subsamples:
 
-  - strata:
-    
-    Optional categorical stratification design. Provide a vector for one
-    stratification factor, or a `data.frame`/matrix/list for a joint
-    design across multiple factors. Each group must map to exactly one
-    realised stratum.
+  Positive integer; target number of rows in the subsample. The actual
+  count may differ slightly due to whole-group granularity (whole groups
+  are always preserved; the realised count is the smallest group-aligned
+  value `>= n_subsamples`).
 
-  - seed:
-    
-    Optional integer; passed to `set.seed()` before sampling. `NULL`
-    leaves the RNG state unchanged.
+- replace:
+
+  Logical; may the same group be sampled more than once? Default
+  `FALSE`.
+
+- stratify:
+
+  Logical; if `TRUE`, sample whole groups within outcome strata so the
+  realised subsample retains class representation where the group
+  structure permits it. Each group must map to exactly one outcome
+  class. Whole groups are still preserved, so realised counts can exceed
+  per-class targets. Default `FALSE`.
+
+- strata:
+
+  Optional categorical stratification design. Provide a vector for one
+  stratification factor, or a `data.frame`/matrix/list for a joint
+  design across multiple factors. Each group must map to exactly one
+  realised stratum.
+
+- random_state:
+
+  Optional integer; seed used for this draw. The function does **not**
+  clobber the caller's global RNG state: the previous `.Random.seed` is
+  restored on exit (via
+  [`withr::local_seed()`](https://withr.r-lib.org/reference/with_seed.html)).
+
+- seed:
+
+  Deprecated; use `random_state` instead. If supplied, a deprecation
+  warning is emitted and the value is used as `random_state` when the
+  latter is `NULL`. It will be removed in a future release.
 
 ## Value
 
@@ -74,7 +85,7 @@ the same subject appear in both the bootstrap subsample and its
 complement, the stability score becomes inflated because the learner can
 partially memorise subject-level patterns. By sampling complete groups,
 the subsample and its "holdout" are subject-disjoint, preserving the
-independence assumption underlying STABL's FDP+ guarantee.
+independence assumption underlying STABL's FDP+ diagnostic assumptions.
 
 **How groups are sampled:** Groups are drawn one at a time (without
 replacement by default) until the running tally of included rows reaches
@@ -86,13 +97,16 @@ cost of a slightly variable subsample size. When `replace = TRUE` the
 same group may be drawn multiple times (useful when there are very few
 groups).
 
-**Degenerate bootstrap guard:** As with `classic_bootstrap_indices()`,
+**Degenerate bootstrap guard:** As with
+[`sample_bootstrap_indices()`](https://mdmanurung.github.io/stablr/reference/sample_bootstrap_indices.md),
 if the final subsample contains only one unique class the function
 retries until a class-diverse sample is obtained.
 
 ## See also
 
-`classic_bootstrap_indices()` for independent-sample data, `stabl_fit()`
+[`sample_bootstrap_indices()`](https://mdmanurung.github.io/stablr/reference/sample_bootstrap_indices.md)
+for independent-sample data,
+[`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
 which calls this sampler automatically when `groups` is supplied.
 
 ## Examples
@@ -101,6 +115,10 @@ which calls this sampler automatically when `groups` is supplied.
 # 3 groups with 4 samples each; binary outcome
 y      <- c(0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1)
 groups <- rep(c("G1", "G2", "G3"), each = 4L)
-idx    <- group_bootstrap_indices(y, groups, n_subsamples = 8L, seed = 1L)
+idx    <- group_bootstrap_indices(y, groups, n_subsamples = 8L,
+                                  random_state = 1L)
 table(groups[idx])  # whole groups only; count >= 8
+#> 
+#> G1 G3 
+#>  4  4 
 ```
