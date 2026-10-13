@@ -63,8 +63,8 @@ test_that("cran-comments remain explicitly provisional before external checks", 
 
   expect_match(text, "DRAFT", fixed = TRUE)
   expect_match(text, "first CRAN submission", fixed = TRUE)
-  expect_match(text, "stablr_0.1.1.tar.gz", fixed = TRUE)
-  expect_false(grepl("stablr_0.1.0.tar.gz", text, fixed = TRUE))
+  expect_match(text, "stablr_0.3.0.tar.gz", fixed = TRUE)
+  expect_false(grepl("stablr_0.1.1.tar.gz", text, fixed = TRUE))
   expect_false(grepl("0 errors \\| 0 warnings", text))
   expect_false(grepl("--no-manual --ignore-vignettes --no-build-vignettes", text))
 })

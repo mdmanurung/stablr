@@ -1,6 +1,8 @@
 name: pkgdown
 
 on:
+  push:
+    branches: [main]
   pull_request:
   release:
     types: [published]
@@ -30,8 +32,8 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site
-      - name: Deploy published release or manual build
-        if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+      - name: Deploy published release, push to main, or manual build
+        if: github.event_name == 'release' || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}

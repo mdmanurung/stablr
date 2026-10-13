@@ -67,6 +67,16 @@ reference:
   - auto_lambda_grid
   - compute_fdp_plus
 
+- title: Knockoff Feature Construction
+  desc: Factories that inject artificial features (Model-X knockoffs or
+    random permutations) for FDP+ calibration; plug into stabl_fit through
+    the knockoff/solver arguments.
+  contents:
+  - make_knockoff_features
+  - make_knockoff_equi_features
+  - make_knockoff_mvr_features
+  - make_rp_features
+
 - title: Learner Adapters
   desc: Public learner factories for glmnet-family and sparse-group backends.
   contents:
