@@ -51,6 +51,11 @@
 #' When the lambda grid contains an `alpha` column (elastic-net mixed-alpha
 #' path), the plot is automatically faceted by `alpha`.
 #'
+#' The path is always drawn in decreasing-lambda order (high penalty on the
+#' left, low penalty on the right) within each `alpha` level, independently of
+#' the row order of the supplied lambda grid.  The x-axis is the position along
+#' that ordered path, so auto grids (log-spaced lambda) are evenly spaced.
+#'
 #' @param object A fitted `"stabl_fit"` object from [stabl_fit()].
 #' @param new_hard_threshold Numeric in `(0, 1]` or `NULL`.  When supplied,
 #'   overrides the threshold stored in `object`.
@@ -87,6 +92,18 @@ plot_stabl_path <- function(object, new_hard_threshold = NULL,
   # Determine whether to facet by alpha
   has_alpha <- "alpha" %in% names(lam_grid)
 
+  # Canonical left-to-right order: decreasing lambda (sparse -> dense) within
+  # each alpha level.  The path direction must not depend on the row order of
+  # the supplied grid; `auto_lambda_grid()` already returns decreasing lambda,
+  # so auto grids are unchanged.
+  ord <- if (has_alpha) {
+    order(lam_grid$alpha, -lam_grid$lambda)
+  } else {
+    order(-lam_grid$lambda)
+  }
+  scores   <- scores[, ord, drop = FALSE]
+  lam_grid <- lam_grid[ord, , drop = FALSE]
+
   lambda_vals <- unname(lam_grid$lambda)
   df_real <- .scores_to_long_df(feat_names, scores, lambda_vals, lam_grid,
                                  has_alpha, selected = support)
@@ -94,7 +111,7 @@ plot_stabl_path <- function(object, new_hard_threshold = NULL,
   df_art <- NULL
   if (!is.null(object$stabl_scores_artificial_) &&
       !is.null(object$artificial_type)) {
-    art_scores <- object$stabl_scores_artificial_
+    art_scores <- object$stabl_scores_artificial_[, ord, drop = FALSE]
     art_names  <- paste0("artificial.", seq_len(nrow(art_scores)))
     df_art <- .scores_to_long_df(art_names, art_scores, lambda_vals, lam_grid,
                                   has_alpha)
@@ -173,9 +190,7 @@ plot_stabl_path <- function(object, new_hard_threshold = NULL,
     ggplot2::theme_minimal(base_size = 11) +
     ggplot2::theme(
       panel.grid.major.x = ggplot2::element_blank(),
-      panel.grid.minor   = ggplot2::element_blank(),
-      axis.text.x        = ggplot2::element_blank(),
-      axis.ticks.x       = ggplot2::element_blank()
+      panel.grid.minor   = ggplot2::element_blank()
     )
 
   # Facet by alpha if multiple alpha values present
