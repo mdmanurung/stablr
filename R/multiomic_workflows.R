@@ -35,15 +35,15 @@
 #'   the column-bound concatenation of all omic matrices in addition to the
 #'   per-omic fits.  Results are returned in the `early_fusion` field.
 #' @param late_fusion Logical.  When `TRUE`, a downstream predictor is fitted
-#'   per omic on its selected features, and [stacked_multi_omic()] combines the
+#'   per omic on its selected features, and [stabl_multiomic_stacked()] combines the
 #'   per-omic predictions.  If no features are selected for an omic, late
 #'   fusion falls back to class priors for multinomial tasks or the train-set
 #'   mean for other tasks. The `task_type` (binary, regression, or multiclass)
 #'   is inferred from `family`.  Results are returned in the `late_fusion`
 #'   field.
 #' @param n_iter_lf Number of random weight draws passed to
-#'   [stacked_multi_omic()] during late fusion.  Ignored when
-#'   `late_fusion = FALSE`.  Naming note: [stacked_multi_omic()] calls this
+#'   [stabl_multiomic_stacked()] during late fusion.  Ignored when
+#'   `late_fusion = FALSE`.  Naming note: [stabl_multiomic_stacked()] calls this
 #'   same quantity `n_iter`; the multiomic workflows expose it as `n_iter_lf`
 #'   so that the `...` channel (forwarded to [stabl_fit()]) stays free of
 #'   name collisions.  `n_iter` itself is not a [stabl_fit()] argument and is
@@ -210,7 +210,7 @@ stabl_multiomic_train_validate <- function(
     n_bootstraps       = n_bootstraps,
     artificial_type    = artificial_type,
     hard_threshold     = hard_threshold,
-    groups             = groups_train,
+    sample_groups      = groups_train,
     stratify_bootstrap = stratify_bootstrap,
     bootstrap_strata   = bootstrap_strata_train,
     l1_ratio           = l1_ratio,
@@ -367,7 +367,16 @@ stabl_multiomic_train_validate <- function(
 #'       `stabl_multiomic_fit` results.}
 #'     \item{`diagnostics`}{Data frame with one row per fold/omic and columns
 #'       `fold`, `omic`, `n_selected`, `threshold`, and `max_score`.}
+#'     \item{`fold_scheme`}{`"group_disjoint"` when `groups` is supplied
+#'       (all samples of a group share one assessment fold — pass study
+#'       labels here for study-disjoint CV), otherwise `"sample_iid"`.}
 #'   }
+#'
+#' @note Batch harmonization (e.g. ComBat) fitted on the full dataset before
+#'   cross-validation leaks study-level information across folds and inflates
+#'   performance estimates. Fit harmonization within training folds, or
+#'   interpret all reported metrics as conditional on the harmonization step;
+#'   group-disjoint folds do not repair leakage from pooled preprocessing.
 #'
 #' @examples
 #' set.seed(2L)
@@ -435,7 +444,9 @@ stabl_multiomic_cv <- function(
     sample_ids = sample_ids,
     groups = groups,
     v = v,
-    random_state = random_state
+    random_state = random_state,
+    y = y,
+    family = family
   )
 
   fold_results <- vector("list", length(folds))
@@ -494,7 +505,8 @@ stabl_multiomic_cv <- function(
     list(
       folds = folds,
       fold_results = fold_results,
-      diagnostics = do.call(rbind, diagnostics)
+      diagnostics = do.call(rbind, diagnostics),
+      fold_scheme = if (is.null(groups)) "sample_iid" else "group_disjoint"
     ),
     class = "stabl_multiomic_cv"
   )
@@ -553,7 +565,7 @@ stabl_multiomic_cv <- function(
       list(...)
     ))
 
-    sel <- get_feature_names_out(fit)
+    sel <- get_feature_names(fit)
 
     fits[[omic]] <- fit
     selected_features[[omic]] <- sel
@@ -588,7 +600,7 @@ stabl_multiomic_cv <- function(
     list(...)
   ))
 
-  ef_sel       <- get_feature_names_out(ef_fit)
+  ef_sel       <- get_feature_names(ef_fit)
   ef_train_mat <- .subset_selected_matrix(as.data.frame(x_all_train), ef_sel)
 
   ef_valid_mat <- if (!is.null(x_valid_list)) {
@@ -606,7 +618,7 @@ stabl_multiomic_cv <- function(
   )
 }
 
-# Fit per-omic stacking models and combine them via stacked_multi_omic.
+# Fit per-omic stacking models and combine them via stabl_multiomic_stacked.
 # selected_valid is NULL when no validation split is provided.
 .late_fusion_multiomic_fit <- function(selected_train, selected_valid, y_train,
                                         y_valid, omic_names, family, n_iter_lf,
@@ -658,7 +670,7 @@ stabl_multiomic_cv <- function(
     if (!is.null(valid_preds)) valid_preds[[omic]] <- omic_result$valid_preds
   }
 
-  stacked <- stacked_multi_omic(
+  stacked <- stabl_multiomic_stacked(
     predictions  = train_preds,
     y            = y_train,
     task_type    = "multiclass",
@@ -723,7 +735,7 @@ stabl_multiomic_cv <- function(
     if (!is.null(valid_preds)) valid_preds[, omic] <- omic_result$valid_preds
   }
 
-  stacked <- stacked_multi_omic(
+  stacked <- stabl_multiomic_stacked(
     predictions  = train_preds,
     y            = y_train,
     task_type    = task_type,
@@ -840,7 +852,9 @@ stabl_multiomic_cv <- function(
                                      groups,
                                      v,
                                      random_state = NULL,
-                                     strata = NULL) {
+                                     strata = NULL,
+                                     y = NULL,
+                                     family = NULL) {
   units <- if (is.null(groups)) {
     sample_ids
   } else {
@@ -915,6 +929,29 @@ stabl_multiomic_cv <- function(
       valid_ids = valid_ids
     )
   })
+
+  # C5 guardrail: grouped assessment folds must hold both outcome classes
+  # for classification, mirroring the study-disjoint validation in
+  # stabl_multiomic_nested_cv. Regression is unaffected.
+  if (!is.null(groups) && !is.null(y) && !is.null(family) &&
+      family %in% c("binomial", "multinomial")) {
+    for (fold in folds) {
+      fold_classes <- unique(y[fold$valid_ids])
+      if (length(fold_classes) < 2L) {
+        .abort_stablr(
+          "stablr_cv_infeasible",
+          paste0(
+            "Cross-validation fold `", fold$fold,
+            "` holds a single outcome class; classification metrics are ",
+            "undefined. Provide more groups, fewer folds, or groups with ",
+            "mixed outcome composition."
+          ),
+          fold = fold$fold,
+          classes_present = fold_classes
+        )
+      }
+    }
+  }
 
   .validate_multiomic_cv_folds(folds, sample_strata)
   folds
@@ -1560,13 +1597,13 @@ stabl_multiomic_cv <- function(
 }
 
 # ---------------------------------------------------------------------------
-# stacked_multi_omic
+# stabl_multiomic_stacked
 # ---------------------------------------------------------------------------
 
 #' Stacked Generalization Over Per-Omic Predictions
 #'
 #' Finds optimal omic weights by random search, matching the Python
-#' `stacked_multi_omic` algorithm from `stabl/stacked_generalization.py`.
+#' `stabl_multiomic_stacked` algorithm from `stabl/stacked_generalization.py`.
 #' Missing values in `predictions` are handled per-row: rows with all-NA
 #' predictions receive `NA` in the stacked output.
 #'
@@ -1606,8 +1643,20 @@ stabl_multiomic_cv <- function(
 #'       `Associated_weight` containing the optimal weight.}
 #'     \item{`score`}{Best score achieved (AUC, R², or negative log loss).}
 #'   }
+#' @examples
+#' set.seed(1L)
+#' # Simulate two-omic predictions for 20 binary samples
+#' y    <- rep(c(0L, 1L), 10)
+#' pred <- data.frame(
+#'   omic_a = y + rnorm(20, sd = 0.5),
+#'   omic_b = y + rnorm(20, sd = 1.5)
+#' )
+#' res <- stabl_multiomic_stacked(pred, y, task_type = "binary",
+#'                                n_iter = 200L, random_state = 42L)
+#' res$weights
+#' res$score
 #' @export
-stacked_multi_omic <- function(
+stabl_multiomic_stacked <- function(
     predictions,
     y,
     task_type = c("binary", "regression", "multiclass"),
@@ -2072,4 +2121,36 @@ stacked_multi_omic <- function(
   }
 
   list(train_preds = train_preds, valid_preds = valid_preds, model = m)
+}
+
+# ── Deprecation shim (0.3.0 API overhaul) ─────────────────────────────────────
+
+#' Deprecated: use [stabl_multiomic_stacked()]
+#'
+#' `stacked_multi_omic()` is deprecated and will be removed in a future
+#' release; use [stabl_multiomic_stacked()] instead.  (The Python parity
+#' fixtures keep the historical `stacked_multi_omic` name on the Python
+#' side; the R entry point is `stabl_multiomic_stacked()`.)
+#' @param ... See [stabl_multiomic_stacked()].
+#' @examples
+#' set.seed(1L)
+#' y <- rep(c(0L, 1L), 10)
+#' pred <- data.frame(
+#'   omic_a = y + rnorm(20, sd = 0.5),
+#'   omic_b = y + rnorm(20, sd = 1.5)
+#' )
+#' # warns; use stabl_multiomic_stacked()
+#' old <- suppressWarnings(stacked_multi_omic(pred, y, task_type = "binary",
+#'                                            n_iter = 200L, random_state = 42L))
+#' new <- stabl_multiomic_stacked(pred, y, task_type = "binary",
+#'                                n_iter = 200L, random_state = 42L)
+#' stopifnot(identical(names(old), names(new)))
+#' @keywords internal
+#' @export
+stacked_multi_omic <- function(...) {
+  warning(
+    "`stacked_multi_omic()` is deprecated; use `stabl_multiomic_stacked()` ",
+    "instead.", call. = FALSE
+  )
+  stabl_multiomic_stacked(...)
 }

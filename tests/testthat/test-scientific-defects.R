@@ -124,14 +124,14 @@ test_that("SCI-02 named stacking aligns outcomes to prediction rows", {
   y_named <- stats::setNames(y_ordered, ids)
   shuffled <- y_named[c(5L, 2L, 8L, 1L, 7L, 4L, 6L, 3L)]
 
-  expected <- stacked_multi_omic(
+  expected <- stabl_multiomic_stacked(
     predictions,
     y_named,
     task_type = "binary",
     n_iter = 100L,
     random_state = 802L
   )
-  actual <- stacked_multi_omic(
+  actual <- stabl_multiomic_stacked(
     predictions,
     shuffled,
     task_type = "binary",
@@ -156,7 +156,7 @@ test_that("SCI-02 multiclass stacking aligns every named prediction matrix", {
   probabilities[cbind(seq_along(y), as.integer(y))] <- 0.9
   reversed <- probabilities[rev(ids), , drop = FALSE]
 
-  aligned <- stacked_multi_omic(
+  aligned <- stabl_multiomic_stacked(
     list(omic_a = probabilities, omic_b = reversed),
     y[rev(ids)],
     task_type = "multiclass",
@@ -178,31 +178,31 @@ test_that("SCI-02 stacking rejects mixed, duplicate, and mismatched IDs", {
   y <- stats::setNames(c(0, 1, 0, 1), ids)
 
   expect_error(
-    stacked_multi_omic(predictions, unname(y), n_iter = 2L),
+    stabl_multiomic_stacked(predictions, unname(y), n_iter = 2L),
     "present on both"
   )
   expect_error(
-    stacked_multi_omic(unname(predictions), y, n_iter = 2L),
+    stabl_multiomic_stacked(unname(predictions), y, n_iter = 2L),
     "present on both"
   )
 
   duplicate_predictions <- predictions
   rownames(duplicate_predictions)[[4L]] <- ids[[3L]]
   expect_error(
-    stacked_multi_omic(duplicate_predictions, y, n_iter = 2L),
+    stabl_multiomic_stacked(duplicate_predictions, y, n_iter = 2L),
     "unique sample IDs"
   )
   duplicate_y <- y
   names(duplicate_y)[[4L]] <- ids[[3L]]
   expect_error(
-    stacked_multi_omic(predictions, duplicate_y, n_iter = 2L),
+    stabl_multiomic_stacked(predictions, duplicate_y, n_iter = 2L),
     "unique sample IDs"
   )
 
   mismatched_y <- y
   names(mismatched_y)[[4L]] <- "foreign"
   expect_error(
-    stacked_multi_omic(predictions, mismatched_y, n_iter = 2L),
+    stabl_multiomic_stacked(predictions, mismatched_y, n_iter = 2L),
     "same sample IDs"
   )
 })

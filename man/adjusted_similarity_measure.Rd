@@ -2,39 +2,25 @@
 % Please edit documentation in R/metrics.R
 \name{adjusted_similarity_measure}
 \alias{adjusted_similarity_measure}
-\title{Summary Statistic of Adjusted Similarity Values}
+\title{Deprecated: use \code{\link[=adjusted_similarity_summary]{adjusted_similarity_summary()}}}
 \usage{
 adjusted_similarity_measure(list_of_lists, nb_total_elements, stat = "median")
 }
 \arguments{
-\item{list_of_lists}{A list of character/integer vectors, one per run.}
-
-\item{nb_total_elements}{Integer; total number of candidate features.}
-
-\item{stat}{Character; \code{"median"} (default, robust to outliers) or
-\code{"mean"}.}
-}
-\value{
-A named list with two elements:
-\describe{
-\item{\code{statistic}}{The median (or mean) of adjusted-similarity values.}
-\item{\code{err}}{For \code{"median"}: the 25th and 75th percentile vector
-(IQR bounds).  For \code{"mean"}: the root-mean-squared deviation
-(RMSD / population SD).}
-}
+\item{list_of_lists, nb_total_elements, stat}{See
+\code{\link[=adjusted_similarity_summary]{adjusted_similarity_summary()}}.}
 }
 \description{
-Convenience wrapper that computes all pairwise adjusted similarities
-(via \code{\link[=adjusted_similarity_values]{adjusted_similarity_values()}}) and reduces them to a single
-location statistic with an associated spread measure.  Useful for
-reporting a single reproducibility number per STABL configuration in
-benchmarking tables.
+\code{adjusted_similarity_measure()} is deprecated and will be removed in a
+future release; use \code{\link[=adjusted_similarity_summary]{adjusted_similarity_summary()}} instead.
 }
 \examples{
-sets <- list(c("f1","f2","f3"), c("f2","f3","f4"), c("f1","f3","f5"))
-adjusted_similarity_measure(sets, nb_total_elements = 10L)
-adjusted_similarity_measure(sets, nb_total_elements = 10L, stat = "mean")
+sets <- list(c("f1", "f2", "f3"), c("f2", "f3", "f4"), c("f1", "f3", "f5"))
+# warns; use adjusted_similarity_summary()
+same <- suppressWarnings(identical(
+  adjusted_similarity_measure(sets, nb_total_elements = 10L),
+  adjusted_similarity_summary(sets, nb_total_elements = 10L)
+))
+stopifnot(same)
 }
-\seealso{
-\code{\link[=adjusted_similarity_values]{adjusted_similarity_values()}}, \code{\link[=pearson_similarity_measure]{pearson_similarity_measure()}}
-}
+\keyword{internal}

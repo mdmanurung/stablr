@@ -2,30 +2,21 @@
 % Please edit documentation in R/metrics.R
 \name{pearson_similarity_values}
 \alias{pearson_similarity_values}
-\title{Upper-Triangle Pearson Similarity Values}
+\title{Deprecated: use \code{\link[=pearson_similarity_pairwise]{pearson_similarity_pairwise()}}}
 \usage{
 pearson_similarity_values(list_of_lists, d)
 }
-\arguments{
-\item{list_of_lists}{A list of character/integer vectors, one per run.}
-
-\item{d}{Integer; total number of candidate features.}
-}
-\value{
-Numeric vector of length N*(N-1)/2.
-}
 \description{
-Computes all pairwise Pearson-corrected similarities and returns the
-N\eqn{\times}(N-1)/2 upper-triangle values as a flat vector (same layout
-as \code{\link[=adjusted_similarity_values]{adjusted_similarity_values()}}, enabling direct comparison between the
-two metrics on the same data).
+\code{pearson_similarity_values()} is deprecated and will be removed in a
+future release; use \code{\link[=pearson_similarity_pairwise]{pearson_similarity_pairwise()}} instead.
 }
 \examples{
-sets <- list(c("f1","f2","f3"), c("f2","f3","f4"), c("f1","f3","f5"))
-pearson_similarity_values(sets, d = 10L)
+sets <- list(c("f1", "f2", "f3"), c("f2", "f3", "f4"), c("f1", "f3", "f5"))
+# warns; use pearson_similarity_pairwise()
+same <- suppressWarnings(identical(
+  pearson_similarity_values(sets, d = 10L),
+  pearson_similarity_pairwise(sets, nb_total_elements = 10L)
+))
+stopifnot(same)
 }
-\seealso{
-\code{\link[=pearson_similarity]{pearson_similarity()}} for the pairwise function,
-\code{\link[=pearson_similarity_measure]{pearson_similarity_measure()}} for a one-number summary,
-\code{\link[=adjusted_similarity_values]{adjusted_similarity_values()}} for an alternative chance-correction.
-}
+\keyword{internal}

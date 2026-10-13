@@ -4,7 +4,7 @@
 #' maximum stability score exceeds the effective threshold.  This is the
 #' primary accessor for downstream use of a fitted STABL model: index your
 #' data matrix with the returned mask, or pass the object to
-#' [get_feature_names_out()] to obtain the names directly.
+#' [get_feature_names()] to obtain the names directly.
 #'
 #' @details
 #' **Threshold resolution order:**
@@ -30,7 +30,7 @@
 #' @return Named logical vector of length `object$n_features_in_`.  Names are
 #'   the original feature names from the training matrix.
 #'
-#' @seealso [get_feature_names_out()] to get names directly,
+#' @seealso [get_feature_names()] to get names directly,
 #'   [get_importances()] to inspect raw stability scores.
 #'
 #' @examples
@@ -122,7 +122,7 @@ get_stabl_scores.stabl_fit <- function(object) {
 #' Convenience wrapper around [get_support()] that returns only the names of
 #' the features that pass the stability threshold, ready for use as column
 #' selectors in downstream modelling (e.g.
-#' `x[, get_feature_names_out(fit)]`).
+#' `x[, get_feature_names(fit)]`).
 #'
 #' @param object A fitted `"stabl_fit"` object returned by [stabl_fit()].
 #' @param new_hard_threshold Numeric in `(0, 1]` or `NULL`.  Forwarded to
@@ -146,15 +146,15 @@ get_stabl_scores.stabl_fit <- function(object) {
 #'                  n_bootstraps   = 4L,
 #'                  hard_threshold = 0.3,
 #'                  random_state   = 1L)
-#' sel <- get_feature_names_out(fit)   # character vector
+#' sel <- get_feature_names(fit)   # character vector
 #' x_sel <- x[, sel, drop = FALSE]    # subset to selected columns
 #' @export
-get_feature_names_out <- function(object, new_hard_threshold = NULL) {
-  UseMethod("get_feature_names_out")
+get_feature_names <- function(object, new_hard_threshold = NULL) {
+  UseMethod("get_feature_names")
 }
 
 #' @export
-get_feature_names_out.stabl_fit <- function(object, new_hard_threshold = NULL) {
+get_feature_names.stabl_fit <- function(object, new_hard_threshold = NULL) {
   mask <- get_support(object, new_hard_threshold = new_hard_threshold)
   object$feature_names[mask]
 }
@@ -190,7 +190,7 @@ get_feature_names_out.stabl_fit <- function(object, new_hard_threshold = NULL) {
 #' dim(transformed)
 #' try(transform_stabl(fit, unname(x)))
 #'
-#' @seealso [get_feature_names_out()], [get_support()]
+#' @seealso [get_feature_names()], [get_support()]
 #' @export
 transform_stabl <- function(object, x, new_hard_threshold = NULL) {
   .check_fitted_stabl(object)
@@ -205,7 +205,7 @@ transform_stabl <- function(object, x, new_hard_threshold = NULL) {
     stop("`x` column names must not contain duplicates.", call. = FALSE)
   }
 
-  selected <- get_feature_names_out(object, new_hard_threshold = new_hard_threshold)
+  selected <- get_feature_names(object, new_hard_threshold = new_hard_threshold)
   missing <- setdiff(selected, feature_names)
   if (length(missing) > 0L) {
     stop(
@@ -657,3 +657,34 @@ print.stabl_multiomic_cv <- function(x, ...) {
 
 # Null-coalescing helper (package-internal)
 `%||%` <- function(a, b) if (is.null(a)) b else a
+
+# ── Deprecation shim (0.3.0 API overhaul) ─────────────────────────────────────
+
+#' Deprecated: use [get_feature_names()]
+#'
+#' `get_feature_names_out()` is deprecated and will be removed in a future
+#' release; use [get_feature_names()] instead.
+#' @param object,new_hard_threshold See [get_feature_names()].
+#' @examples
+#' set.seed(1L)
+#' x <- matrix(rnorm(30 * 4), 30, 4,
+#'             dimnames = list(paste0("s", 1:30), paste0("f", 1:4)))
+#' y <- setNames(x[, "f1"] + rnorm(30, sd = 0.5), rownames(x))
+#' fit <- stabl_fit(x, y, lambda_grid = data.frame(lambda = 0.1),
+#'                  n_bootstraps = 10L, artificial_type = NULL,
+#'                  hard_threshold = 0.5)
+#' # warns; use get_feature_names()
+#' same <- suppressWarnings(identical(
+#'   get_feature_names_out(fit),
+#'   get_feature_names(fit)
+#' ))
+#' stopifnot(same)
+#' @keywords internal
+#' @export
+get_feature_names_out <- function(object, new_hard_threshold = NULL) {
+  warning(
+    "`get_feature_names_out()` is deprecated; use `get_feature_names()` ",
+    "instead.", call. = FALSE
+  )
+  get_feature_names(object, new_hard_threshold = new_hard_threshold)
+}

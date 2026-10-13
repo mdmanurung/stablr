@@ -16,7 +16,7 @@ test_that("stabl_fit recovers a 3-feature gaussian signal with compact support",
                    artificial_type = "random_permutation",
                    random_state = 7L)
 
-  selected <- get_feature_names_out(fit)
+  selected <- get_feature_names(fit)
   # All three planted features must be selected; allow a small number of
   # extras to accommodate bootstrap/path variability.
   expect_true(all(c("f1", "f2", "f3") %in% selected))

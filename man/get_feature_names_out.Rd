@@ -2,42 +2,30 @@
 % Please edit documentation in R/stabl_accessors.R
 \name{get_feature_names_out}
 \alias{get_feature_names_out}
-\title{Get the Names of Selected Features from a Fitted STABL Object}
+\title{Deprecated: use \code{\link[=get_feature_names]{get_feature_names()}}}
 \usage{
 get_feature_names_out(object, new_hard_threshold = NULL)
 }
 \arguments{
-\item{object}{A fitted \code{"stabl_fit"} object returned by \code{\link[=stabl_fit]{stabl_fit()}}.}
-
-\item{new_hard_threshold}{Numeric in \verb{(0, 1]} or \code{NULL}.  Forwarded to
-\code{\link[=get_support]{get_support()}}; see that function for the full threshold resolution
-order.}
-}
-\value{
-Character vector of selected feature names.  An empty character
-vector is returned when no feature passes the threshold (and
-\code{explore = FALSE} was used during fitting).
+\item{object, new_hard_threshold}{See \code{\link[=get_feature_names]{get_feature_names()}}.}
 }
 \description{
-Convenience wrapper around \code{\link[=get_support]{get_support()}} that returns only the names of
-the features that pass the stability threshold, ready for use as column
-selectors in downstream modelling (e.g.
-\code{x[, get_feature_names_out(fit)]}).
+\code{get_feature_names_out()} is deprecated and will be removed in a future
+release; use \code{\link[=get_feature_names]{get_feature_names()}} instead.
 }
 \examples{
 set.seed(1L)
-x <- matrix(rnorm(30 * 5), 30, 5,
-            dimnames = list(paste0("s", 1:30), paste0("f", 1:5)))
-y <- setNames(rnorm(30), rownames(x))
-fit <- stabl_fit(x, y,
-                 lambda_grid    = data.frame(lambda = c(0.2, 0.1, 0.05)),
-                 n_bootstraps   = 4L,
-                 hard_threshold = 0.3,
-                 random_state   = 1L)
-sel <- get_feature_names_out(fit)   # character vector
-x_sel <- x[, sel, drop = FALSE]    # subset to selected columns
+x <- matrix(rnorm(30 * 4), 30, 4,
+            dimnames = list(paste0("s", 1:30), paste0("f", 1:4)))
+y <- setNames(x[, "f1"] + rnorm(30, sd = 0.5), rownames(x))
+fit <- stabl_fit(x, y, lambda_grid = data.frame(lambda = 0.1),
+                 n_bootstraps = 10L, artificial_type = NULL,
+                 hard_threshold = 0.5)
+# warns; use get_feature_names()
+same <- suppressWarnings(identical(
+  get_feature_names_out(fit),
+  get_feature_names(fit)
+))
+stopifnot(same)
 }
-\seealso{
-\code{\link[=get_support]{get_support()}} for the binary mask, \code{\link[=get_importances]{get_importances()}} for
-ranked scores.
-}
+\keyword{internal}

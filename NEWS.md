@@ -1,3 +1,131 @@
+# stablr 0.3.0
+
+## Cross-study reliability: study-disjoint resampling (B1–B3)
+
+- **New `study_labels` argument on `stabl_multiomic_nested_cv()`** declares
+  the sampling unit of the cross-validation.  When supplied (a named vector
+  covering exactly the sample IDs), whole studies become the CV unit: outer
+  folds assign whole studies (`outer_v` equal to the number of studies gives
+  leave-one-study-out), inner candidate-selection folds are study-disjoint
+  within each outer training split, and `stratified = TRUE` is reinterpreted
+  at the study level through a deterministic largest-first greedy pass that
+  minimises class-proportion imbalance.  The default `study_labels = NULL`
+  preserves the sample-i.i.d. scheme byte-identically (`fold_scheme =
+  "sample_iid"`).  Study disjointness concerns the CV folds only —
+  `bootstrap_strata` (sampling design) and SGL `feature_groups` (features)
+  remain orthogonal.
+- **Fail-closed validation** for the study-disjoint scheme: label names must
+  cover exactly the sample IDs; at least `max(outer_v, 2)` studies; each
+  outer-training split needs at least `inner_v + 1` studies; every
+  validation fold (outer and inner) must hold both outcome classes; and
+  1-sample studies are rejected.  `stabl_multiomic_nested_cv()` also gained
+  a majority-class fallback when a fold's selection leaves fewer than two
+  features (previously a glmnet error).
+- **Provenance and reporting:** the nested-CV object records `fold_scheme`
+  (`"sample_iid"` / `"study_disjoint"`) and the validated `study_labels`;
+  under the study-disjoint scheme each fold carries `study_ids` and held-out
+  `class_counts`, and `print()` shows the scheme.
+- **New `stabl_multiomic_study_diagnostics()`** (inferred scope, flagged):
+  per-study outcome composition and per-feature absolute standardized mean
+  differences versus the pooled rest, quantifying the study-level shift that
+  motivates study-disjoint folds.
+- **New `stabl_multiomic_study_split()`** (inferred scope, flagged): a
+  deterministic study-disjoint train/validation split (greedy, seeded,
+  class-balanced) feeding `stabl_multiomic_train_validate()`.
+  `stabl_multiomic_cv()` already supports group-disjoint assessment folds
+  through its `groups` argument and now records `fold_scheme` =
+  `"group_disjoint"` for provenance.
+- **Benchmark evidence:** `inst/benchmarks/b1_study_disjoint_cv.R` compares
+  held-out BER under sample-i.i.d. versus study-disjoint outer folds on
+  multi-study simulations, isolating two batch mechanisms: class-independent
+  location shifts on null features (a deliberate null probe — the gap is
+  approximately zero there, as expected) and outcome-prevalence drift across
+  studies (gap ≈ +0.04 BER over 10 seeds, positive in 9 of 10 seeds — the
+  sample-i.i.d. estimate is optimistic precisely when study-level outcome
+  composition differs).  Per-fold selection sets are persisted
+  (`b1_selected_features.csv`) for the Round C stability-of-stability
+  analysis.
+
+## Cross-study reliability: reporting, comparison, and guardrails (C1–C5)
+
+All Round C items are inferred scope (the approved plan flags them for
+audit reconciliation):
+
+- **Per-study performance (C1):** `stabl_multiomic_nested_cv()` now returns
+  `performance_by_study` when `study_labels` is supplied — per-study outer
+  held-out accuracy and balanced error rate pooled across folds and repeats
+  (`NA` balanced error rate for studies whose pooled held-out predictions
+  contain a single outcome class).  `NULL` under the sample-i.i.d. scheme.
+- **Scheme comparison helper (C2):** new
+  `stabl_multiomic_scheme_comparison()` runs the same nested CV under both
+  sampling units (sample-i.i.d. and study-disjoint) with matched arguments
+  and returns both objects plus a comparison table and the BER gap
+  (positive = the sample-i.i.d. estimate was optimistic).
+- **Harmonization guardrail (C3, documentation):** the CV docs now warn that
+  batch harmonization (e.g. ComBat) fitted on the full dataset before
+  cross-validation leaks study-level information across folds; fit
+  harmonization within training folds or interpret metrics as conditional
+  on that step.  Study-disjoint folds do not repair leakage from pooled
+  preprocessing.
+- **Stability of stability (C4):** new
+  `stabl_multiomic_selection_stability()` computes fold x fold Jaccard
+  similarity of the selected feature sets across the outer folds of a
+  study-disjoint nested CV (the deferred selection-stability heatmap
+  analysis; render with `stats::heatmap()`).
+- **Grouped-CV guardrail (C5):** `stabl_multiomic_cv()` now fails closed
+  when a grouped assessment fold holds a single outcome class under a
+  classification family (mirroring the study-disjoint validation);
+  regression is unaffected.
+
+## Two-tier API: beginner `stabl()` + expert `stabl_fit()`
+
+- **New `stabl()`:** a one-stop-shop entry point for first-time and
+  application users.  Pass a `data.frame` (or a matrix plus an outcome
+  vector; the outcome may also be named as a column of the `data.frame`)
+  and it runs STABL with statistically safe defaults — model-X knockoff
+  artificial features (`artificial_type = "knockoff_equi"`), FDP+
+  calibration, strict knockoff fallback (`knockoff_fallback = "stop"`),
+  and an automatic lambda grid.  Roughly eight arguments cover the common
+  cases; everything else is forwarded to `stabl_fit()` through `...`.
+- **New S3 methods for the `stabl` class:** `print.stabl()` (plain-language
+  answer: what was fitted, which features were selected, the achieved FDP+
+  estimate), `summary.stabl()`, and `plot.stabl()` (stability paths plus
+  the FDP+ curve).  `stabl` objects also remain full `stabl_fit` objects,
+  so every accessor and workflow applies unchanged.
+- **New beginner generics `support()` and `feature_names()`** with methods
+  for `stabl` and `stabl_fit`; they delegate to `get_support()` and
+  `get_feature_names()`.
+
+## Renamed functions and arguments (old names kept as deprecation shims)
+
+Each old name still works: it warns once per session and delegates to the
+new name.  Positional calls are unaffected.
+
+| Old name | New name | Why |
+|---|---|---|
+| `stabl_fit(groups =)` | `stabl_fit(sample_groups =)` | `groups` collided with `feature_groups`; sample- vs feature-grouping is now unambiguous |
+| `get_feature_names_out()` | `get_feature_names()` | drops the sklearn-ism; reads naturally in R |
+| `stacked_multi_omic()` | `stabl_multiomic_stacked()` | joins the `stabl_multiomic_*` family and fixes the multi_omic/multiomic casing split |
+| `jaccard_matrix()` | `jaccard_similarity_matrix()` | states what the matrix contains |
+| `adjusted_similarity_values()` | `adjusted_similarity_pairwise()` | the triplet now reads pair / all-pairs matrix / summary consistently |
+| `adjusted_similarity_measure()` | `adjusted_similarity_summary()` | as above |
+| `pearson_similarity_values()` | `pearson_similarity_pairwise()` | as above |
+| `pearson_similarity_measure()` | `pearson_similarity_summary()` | as above |
+| `classic_bootstrap_indices()` | `sample_bootstrap_indices()` | states what is resampled (samples, not features or groups) |
+| `pearson_similarity_pairwise(d =)` / `_summary(d =)` | `nb_total_elements =` | aligns the element-count argument with the adjusted-similarity family (`d =` still accepted with a deprecation warning) |
+
+## Documentation
+
+- pkgdown reference index reorganized into tiers: Getting started, Core,
+  Workflows, Expert, Metrics, Plotting, Data, and a dedicated Deprecated
+  section.
+- New vignette "Getting started with stabl" — a beginner walkthrough from
+  a `data.frame` to a plain-language selection.
+- README gains a two-tier quick start (beginner `stabl()` first, expert
+  `stabl_fit()` second).
+- All help pages regenerated; every shim's help page points to its
+  replacement.
+
 # stablr 0.2.2
 
 ## Scientific hardening (audit A1-A3, E1-E3)

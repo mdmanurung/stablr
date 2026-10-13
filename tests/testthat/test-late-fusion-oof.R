@@ -102,12 +102,12 @@ test_that("legacy late fusion remains explicitly available", {
 
 test_that("stacking rejects malformed scalar outcomes and infinite predictions", {
   p <- cbind(a = 1:4, b = 4:1)
-  expect_error(stacked_multi_omic(p, 1:3, "regression"), "one value")
-  expect_error(stacked_multi_omic(p, c(0, 0, 0, 0), "binary"), "both event")
+  expect_error(stabl_multiomic_stacked(p, 1:3, "regression"), "one value")
+  expect_error(stabl_multiomic_stacked(p, c(0, 0, 0, 0), "binary"), "both event")
   p[1, 1] <- Inf
-  expect_error(stacked_multi_omic(p, 1:4, "regression"), "finite")
+  expect_error(stabl_multiomic_stacked(p, 1:4, "regression"), "finite")
   p <- cbind(a = c(NA, 2:4), b = c(NA, 3:1))
-  stacked <- stacked_multi_omic(p, 1:4, "regression", n_iter = 2L,
+  stacked <- stabl_multiomic_stacked(p, 1:4, "regression", n_iter = 2L,
                                 random_state = 1L)
   expect_true(is.na(stacked$predictions[["Stacked Gen. Predictions"]][[1L]]))
 })
@@ -160,9 +160,9 @@ test_that("multiclass stacking rejects incomplete or unnormalised probabilities"
   bad_na[1, 1] <- NA_real_
   bad_sum <- probs
   bad_sum[1, ] <- c(0.2, 0.2, 0.2)
-  expect_error(stacked_multi_omic(list(a = bad_na), y, "multiclass"),
+  expect_error(stabl_multiomic_stacked(list(a = bad_na), y, "multiclass"),
                "complete and finite")
-  expect_error(stacked_multi_omic(list(a = bad_sum), y, "multiclass"),
+  expect_error(stabl_multiomic_stacked(list(a = bad_sum), y, "multiclass"),
                "sum to one")
 })
 

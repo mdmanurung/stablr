@@ -156,7 +156,7 @@ run_config <- function(learner, artificial_type, d, seed) {
           n_bootstraps = n_bootstraps,
           random_state = seed
         )
-        out <- fdp_tpr(get_feature_names_out(fit), d$signals, d$nulls)
+        out <- fdp_tpr(get_feature_names(fit), d$signals, d$nulls)
         out$actual_artificial_type <-
           if (!is.null(fit$artificial_provenance))
             paste(fit$artificial_provenance$actual_type, collapse = "+")

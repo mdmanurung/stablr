@@ -184,7 +184,7 @@ test_that("group bootstrap path runs without error", {
     family          = "gaussian",
     n_bootstraps    = 10L,
     artificial_type = "random_permutation",
-    groups          = groups
+    sample_groups   = groups
   )
 
   expect_s3_class(fit, "stabl_fit")
@@ -323,7 +323,7 @@ test_that("stabl_fit auto lambda grid forwards l1_ratio", {
   expect_equal(sort(unique(fit$fitted_lambda_grid$alpha)), c(0.3, 0.7))
 })
 
-test_that("get_feature_names_out returns character subset of feature names", {
+test_that("get_feature_names returns character subset of feature names", {
   set.seed(13)
   n <- 40L; p <- 10L
   x <- matrix(rnorm(n * p), n, p,
@@ -335,7 +335,7 @@ test_that("get_feature_names_out returns character subset of feature names", {
   fit <- stabl_fit(x = x, y = y, lambda_grid = lam_grid, family = "gaussian",
                    n_bootstraps = 10L, artificial_type = "random_permutation")
 
-  sel <- get_feature_names_out(fit)
+  sel <- get_feature_names(fit)
   expect_type(sel, "character")
   expect_true(all(sel %in% paste0("f", seq_len(p))))
 })

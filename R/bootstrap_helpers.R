@@ -56,15 +56,15 @@
 #' @examples
 #' set.seed(42L)
 #' y <- c(rep(0, 15), rep(1, 15))  # balanced binary outcome
-#' idx <- classic_bootstrap_indices(y, n_subsamples = 20L, random_state = 1L)
+#' idx <- sample_bootstrap_indices(y, n_subsamples = 20L, random_state = 1L)
 #' table(y[idx])  # class distribution in the bootstrap
 #'
 #' # Stratified sampling preserves class proportions
-#' idx_str <- classic_bootstrap_indices(y, n_subsamples = 20L,
+#' idx_str <- sample_bootstrap_indices(y, n_subsamples = 20L,
 #'                                      stratify = TRUE, random_state = 1L)
 #' table(y[idx_str])
 #' @export
-classic_bootstrap_indices <- function(
+sample_bootstrap_indices <- function(
   y,
   n_subsamples,
   replace = TRUE,
@@ -132,7 +132,7 @@ classic_bootstrap_indices <- function(
 
   idx <- .guard_diverse_bootstrap(
     y, idx, draw_once,
-    caller = "classic_bootstrap_indices",
+    caller = "sample_bootstrap_indices",
     hint   = "Check class balance or increase `sample_fraction`."
   )
 
@@ -143,7 +143,7 @@ classic_bootstrap_indices <- function(
 #'
 #' Draws row indices for a single STABL bootstrap iteration by sampling
 #' **groups** rather than individual samples.  Use this instead of
-#' [classic_bootstrap_indices()] whenever the training data contains repeated
+#' [sample_bootstrap_indices()] whenever the training data contains repeated
 #' measurements or known clusters (e.g. multiple time-points per subject,
 #' technical replicates, or family members).
 #'
@@ -164,7 +164,7 @@ classic_bootstrap_indices <- function(
 #' of a slightly variable subsample size.  When `replace = TRUE` the same
 #' group may be drawn multiple times (useful when there are very few groups).
 #'
-#' **Degenerate bootstrap guard:** As with [classic_bootstrap_indices()], if
+#' **Degenerate bootstrap guard:** As with [sample_bootstrap_indices()], if
 #' the final subsample contains only one unique class the function retries
 #' until a class-diverse sample is obtained.
 #'
@@ -195,7 +195,7 @@ classic_bootstrap_indices <- function(
 #'
 #' @return Integer vector of 1-based row indices into the training set.
 #'
-#' @seealso [classic_bootstrap_indices()] for independent-sample data,
+#' @seealso [sample_bootstrap_indices()] for independent-sample data,
 #'   [stabl_fit()] which calls this sampler automatically when `groups` is
 #'   supplied.
 #'
@@ -555,4 +555,29 @@ group_bootstrap_indices <- function(y, groups, n_subsamples, replace = FALSE,
   if (!replace) sampled_idx <- unique(sampled_idx)
 
   sample(sampled_idx, length(sampled_idx), replace = FALSE)
+}
+
+# ── Deprecation shim (0.3.0 API overhaul) ─────────────────────────────────────
+
+#' Deprecated: use [sample_bootstrap_indices()]
+#'
+#' `classic_bootstrap_indices()` is deprecated and will be removed in a
+#' future release; use [sample_bootstrap_indices()] instead.
+#' @param ... See [sample_bootstrap_indices()].
+#' @examples
+#' y <- c(rep(0, 10), rep(1, 10))
+#' # warns; use sample_bootstrap_indices()
+#' same <- suppressWarnings(identical(
+#'   classic_bootstrap_indices(y, n_subsamples = 5L, random_state = 1L),
+#'   sample_bootstrap_indices(y, n_subsamples = 5L, random_state = 1L)
+#' ))
+#' stopifnot(same)
+#' @keywords internal
+#' @export
+classic_bootstrap_indices <- function(...) {
+  warning(
+    "`classic_bootstrap_indices()` is deprecated; use ",
+    "`sample_bootstrap_indices()` instead.", call. = FALSE
+  )
+  sample_bootstrap_indices(...)
 }

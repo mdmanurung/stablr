@@ -26,6 +26,7 @@ stabl_multiomic_nested_cv(
   l1_ratio = NULL,
   workers = 1L,
   cv_workers = 1L,
+  study_labels = NULL,
   ...
 )
 
@@ -57,7 +58,8 @@ preserve class proportions as closely as possible.}
 
 \item{strata}{Optional named vector used to stratify folds instead of \code{y}.
 Categorical values are used directly. Numeric values are binned into
-quantile groups before fold assignment.}
+quantile groups before fold assignment. Cannot be combined with
+\code{study_labels}.}
 
 \item{strata_bins}{Number of quantile bins for numeric \code{strata}.}
 
@@ -85,6 +87,22 @@ train-fold grids.}
 \code{parallel::mclapply()} on Unix-like systems and falls back to sequential
 execution on Windows.}
 
+\item{study_labels}{Optional named vector assigning each sample to a study
+(cohort, site, or batch); names must cover exactly the sample IDs. When
+\code{NULL} (default), folds are assigned sample-wise exactly as in prior
+releases (\code{fold_scheme = "sample_iid"}). When supplied, the CV unit
+becomes the study (\code{fold_scheme = "study_disjoint"}): outer folds assign
+whole studies (with \code{outer_v} equal to the number of studies this is
+leave-one-study-out), inner candidate-selection folds are study-disjoint
+within each outer training split, and \code{stratified = TRUE} is reinterpreted
+at the study level through a deterministic largest-first greedy pass that
+minimises class-proportion imbalance across folds (sample-level
+stratification is impossible under study disjointness). Study
+disjointness concerns the CV folds only: within-training bootstrap
+resampling is untouched, so \code{bootstrap_strata} (sampling design) and SGL
+\code{feature_groups} (feature grouping) remain orthogonal to \code{study_labels}
+(CV unit).}
+
 \item{...}{Additional arguments passed to \code{\link[=stabl_fit]{stabl_fit()}}.}
 
 \item{x}{A numeric matrix or \code{data.frame} (samples \eqn{\times} features)
@@ -93,7 +111,15 @@ with row names used as sample IDs.}
 \value{
 An object of class \code{"stabl_multiomic_nested_cv"} containing fold
 definitions, inner candidate diagnostics, outer held-out predictions,
-selected features, and aggregate performance.
+selected features, and aggregate performance. The object also records the
+sampling unit as \code{fold_scheme} (\code{"sample_iid"} or \code{"study_disjoint"}) and
+the validated \code{study_labels}; under \code{fold_scheme = "study_disjoint"} each
+outer/inner fold additionally carries \code{study_ids} (per-fold study
+membership) and \code{class_counts} (per-fold held-out class counts). When
+\code{study_labels} is supplied, \code{performance_by_study} holds per-study
+outer held-out accuracy and balanced error rate (pooled across folds and
+repeats; \code{NA} balanced error rate for studies whose pooled held-out
+predictions contain a single outcome class).
 }
 \description{
 Runs a repeated outer cross-validation loop for generalisation assessment.
@@ -115,6 +141,12 @@ nested CV. Use \code{\link[=stabl_multiomic_train_validate]{stabl_multiomic_trai
 estimate predictive performance for the declared candidate workflow; they
 do not establish dataset-wide FDP control. Late-fusion stacking is not a
 candidate type in this helper.
+
+Batch harmonization (e.g. ComBat) fitted on the full dataset before
+cross-validation leaks study-level information across folds and inflates
+performance estimates. Fit harmonization within training folds, or
+interpret all reported metrics as conditional on the harmonization step;
+study-disjoint folds do not repair leakage from pooled preprocessing.
 }
 \examples{
 set.seed(3L)
@@ -135,4 +167,27 @@ nested <- suppressWarnings(stabl_multiomic_nested_cv(
   sample_fraction = 1, random_state = 3L
 ))
 nested$performance$balanced_error_rate
+
+# Study-disjoint folds: each block of four samples is treated as one
+# study; outer CV is leave-one-study-out.
+set.seed(4L)
+ids2 <- paste0("s", 1:20)
+y2 <- setNames(factor(rep(c("A", "B"), times = 10L)), ids2)
+x2 <- matrix(
+  rnorm(20 * 6, sd = 0.3), 20, 6,
+  dimnames = list(ids2, paste0("g", 1:6))
+)
+x2[, 1:2] <- x2[, 1:2] + stats::model.matrix(~ y2 - 1)
+study_labels <- setNames(rep(paste0("study", 1:5), each = 4L), ids2)
+nested2 <- suppressWarnings(stabl_multiomic_nested_cv(
+  x_list = list(rna = x2), y = y2,
+  candidates = list(list(name = "rna", blocks = "rna")),
+  lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+  outer_v = 5L, inner_v = 2L, n_bootstraps = 3L,
+  artificial_type = NULL, hard_threshold = 1e-9,
+  sample_fraction = 1, random_state = 4L,
+  study_labels = study_labels
+))
+nested2$fold_scheme
+nested2$outer_folds[[1L]]$study_ids
 }

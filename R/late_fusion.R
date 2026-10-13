@@ -88,7 +88,7 @@
     fold_id[assess_ids] <- i
     fold_seed <- .derive_nested_seed(random_state, i, 31001L)
     fold_params <- fit_params
-    fold_params$groups <- if (is.null(groups_train)) NULL else groups_train[train_ids]
+    fold_params$sample_groups <- if (is.null(groups_train)) NULL else groups_train[train_ids]
     fold_params$bootstrap_strata <- .subset_bootstrap_strata_by_ids(
       bootstrap_strata_train, train_ids, "bootstrap_strata_train"
     )
@@ -143,7 +143,7 @@
   }
 
   if (any(fold_id == 0L)) stop("Internal error: incomplete OOF coverage.", call. = FALSE)
-  stacked <- stacked_multi_omic(
+  stacked <- stabl_multiomic_stacked(
     predictions = oof, y = y_downstream, task_type = task_type,
     n_iter = n_iter_lf,
     random_state = .derive_nested_seed(random_state, 1L, 47001L)

@@ -1,23 +1,23 @@
-test_that("classic_bootstrap_indices returns requested size", {
+test_that("sample_bootstrap_indices returns requested size", {
   y <- c(0, 1, 0, 1, 0, 1)
-  idx <- classic_bootstrap_indices(y = y, n_subsamples = 4, replace = FALSE, random_state = 1)
+  idx <- sample_bootstrap_indices(y = y, n_subsamples = 4, replace = FALSE, random_state = 1)
 
   expect_length(idx, 4)
   expect_true(all(idx >= 1 & idx <= length(y)))
 })
 
-test_that("classic_bootstrap_indices validates non-replacement size", {
+test_that("sample_bootstrap_indices validates non-replacement size", {
   y <- c(0, 1, 0)
   expect_error(
-    classic_bootstrap_indices(y = y, n_subsamples = 5, replace = FALSE),
+    sample_bootstrap_indices(y = y, n_subsamples = 5, replace = FALSE),
     "cannot exceed"
   )
 })
 
-test_that("classic_bootstrap_indices can stratify by outcome class", {
+test_that("sample_bootstrap_indices can stratify by outcome class", {
   y <- c(rep("NP", 15L), rep("P", 23L))
 
-  idx <- classic_bootstrap_indices(
+  idx <- sample_bootstrap_indices(
     y = y,
     n_subsamples = 19L,
     replace = FALSE,
@@ -30,16 +30,16 @@ test_that("classic_bootstrap_indices can stratify by outcome class", {
   expect_named(table(y[idx]), c("NP", "P"))
 })
 
-test_that("classic_bootstrap_indices rejects impossible stratified targets", {
+test_that("sample_bootstrap_indices rejects impossible stratified targets", {
   y <- c("A", "B", "C")
 
   expect_error(
-    classic_bootstrap_indices(y = y, n_subsamples = 2L, stratify = TRUE),
+    sample_bootstrap_indices(y = y, n_subsamples = 2L, stratify = TRUE),
     "at least the number of realised strata"
   )
 })
 
-test_that("classic_bootstrap_indices can stratify by a multi-column design", {
+test_that("sample_bootstrap_indices can stratify by a multi-column design", {
   y <- c(rep("NP", 15L), rep("P", 23L))
   study <- c(
     rep("CVTU3", 3L), rep("EGSV2", 4L), rep("PfGA2", 8L),
@@ -47,7 +47,7 @@ test_that("classic_bootstrap_indices can stratify by a multi-column design", {
   )
   strata <- data.frame(outcome = y, study = study)
 
-  idx <- classic_bootstrap_indices(
+  idx <- sample_bootstrap_indices(
     y = y,
     n_subsamples = 19L,
     replace = FALSE,
@@ -109,7 +109,7 @@ test_that("group_bootstrap_indices keeps whole groups when target aligns", {
   }
 })
 
-test_that("classic_bootstrap_indices can split repeated-measures groups", {
+test_that("sample_bootstrap_indices can split repeated-measures groups", {
   # Without grouped sampling, subject rows can be partially sampled.
   groups <- rep(paste0("id", 1:4), each = 3L)
   y <- rep(c(0, 1), length.out = length(groups))
@@ -117,7 +117,7 @@ test_that("classic_bootstrap_indices can split repeated-measures groups", {
   has_partial_group <- FALSE
   set.seed(321)
   for (i in seq_len(200L)) {
-    idx <- classic_bootstrap_indices(y = y, n_subsamples = 6L, replace = FALSE)
+    idx <- sample_bootstrap_indices(y = y, n_subsamples = 6L, replace = FALSE)
     selected_groups <- unique(groups[idx])
     partial <- any(vapply(selected_groups, function(g) {
       sel <- idx[groups[idx] == g]
@@ -214,12 +214,12 @@ test_that("group_bootstrap_indices stratified replacement can reuse groups", {
   expect_true(all(c("NP", "P") %in% y[idx]))
 })
 
-test_that("classic_bootstrap_indices errors after max retries on impossible class diversity", {
+test_that("sample_bootstrap_indices errors after max retries on impossible class diversity", {
   # n_subsamples = 1 can never contain both classes, even though the population
   # has 2 classes, so the iterative retry loop must hit its cap and stop().
   y <- c(0L, rep(1L, 19L))   # 2-class population
   expect_error(
-    classic_bootstrap_indices(y = y, n_subsamples = 1L, replace = FALSE, random_state = 1L),
+    sample_bootstrap_indices(y = y, n_subsamples = 1L, replace = FALSE, random_state = 1L),
     "could not draw a class-diverse subsample"
   )
 })

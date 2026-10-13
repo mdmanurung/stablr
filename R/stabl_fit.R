@@ -49,9 +49,12 @@
 #' @param explore Logical; if `TRUE` and no features pass the threshold, fall
 #'   back to the top `n_explore` features.  Default: `FALSE`.
 #' @param n_explore Positive integer; fallback feature count.  Default: `5L`.
-#' @param groups Named vector of group IDs (same names as `rownames(x)`) or
-#'   `NULL`.  When supplied, [group_bootstrap_indices()] is used instead of
-#'   [classic_bootstrap_indices()].  Default: `NULL`.
+#' @param sample_groups Named vector of group IDs (same names as
+#'   `rownames(x)`) or `NULL`.  When supplied, [group_bootstrap_indices()]
+#'   is used instead of [sample_bootstrap_indices()] -- use this when
+#'   samples are clustered (e.g., repeated measures, multiple sites) and
+#'   bootstrap resampling must keep clusters intact.  Default: `NULL`.
+#' @param groups Deprecated; use `sample_groups` instead.
 #' @param stratify_bootstrap Logical; if `TRUE`, bootstrap subsamples are
 #'   stratified by the outcome class.  This is intended for classification
 #'   tasks with small or imbalanced classes.  Default `FALSE` preserves the
@@ -138,7 +141,7 @@
 #'   artificial_type = "random_permutation",
 #'   random_state = 1L
 #' )
-#' get_feature_names_out(fit_lasso)
+#' get_feature_names(fit_lasso)
 #'
 #' # Adaptive lasso path
 #' fit_adaptive <- stabl_fit(
@@ -184,7 +187,7 @@
 #'   artificial_type = "random_permutation",
 #'   random_state = 4L
 #' ))
-#' get_feature_names_out(fit_multi)
+#' get_feature_names(fit_multi)
 #' @export
 stabl_fit <- function(
     x,
@@ -201,6 +204,7 @@ stabl_fit <- function(
     fdr_threshold_range   = seq(0, 0.99, by = 0.01),
     explore               = FALSE,
     n_explore             = 5L,
+    sample_groups         = NULL,
     groups                = NULL,
     stratify_bootstrap    = FALSE,
     bootstrap_strata      = NULL,
@@ -221,11 +225,22 @@ stabl_fit <- function(
     stop("`x` must be a numeric matrix or data.frame.", call. = FALSE)
   }
 
-  validate_sample_alignment(x, y, groups)
+  # 0.3.0 API overhaul: `groups` is renamed to `sample_groups` (it groups
+  # SAMPLES for the bootstrap; `feature_groups` groups FEATURES for SGL).
+  # The old name keeps working with a deprecation warning.
+  if (!missing(groups) && !is.null(groups)) {
+    warning(
+      "`groups` is deprecated; use `sample_groups` instead.", call. = FALSE
+    )
+    if (is.null(sample_groups)) sample_groups <- groups
+  }
+  groups <- NULL  # legacy name retired from the body
 
-  # Align y (and groups) to row order of x
+  validate_sample_alignment(x, y, sample_groups)
+
+  # Align y (and sample_groups) to row order of x
   y <- .subset_outcome_by_ids(y, rownames(x))
-  if (!is.null(groups)) groups <- groups[rownames(x)]
+  if (!is.null(sample_groups)) sample_groups <- sample_groups[rownames(x)]
   if (!is.null(bootstrap_strata)) {
     bootstrap_strata <- .subset_bootstrap_strata_by_ids(
       bootstrap_strata,
@@ -396,15 +411,15 @@ stabl_fit <- function(
   boot_sampler <- if (!is.null(modeled_classes)) {
     .classification_bootstrap_sampler(
       y = y,
-      groups = groups,
+      groups = sample_groups,
       n_subsamples = n_subsamples,
       replace = replace,
       strata_ids = bootstrap_strata_ids,
       family = family,
       class_levels = modeled_classes
     )
-  } else if (is.null(groups)) {
-    function(.) classic_bootstrap_indices(
+  } else if (is.null(sample_groups)) {
+    function(.) sample_bootstrap_indices(
       y = y,
       n_subsamples = n_subsamples,
       replace = replace,
@@ -413,7 +428,7 @@ stabl_fit <- function(
   } else {
     function(.) group_bootstrap_indices(
       y = y,
-      groups = groups,
+      groups = sample_groups,
       n_subsamples = n_subsamples,
       replace = replace,
       strata = bootstrap_strata

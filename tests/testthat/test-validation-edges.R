@@ -71,5 +71,5 @@ test_that("stabl_fit tolerates a zero-variance column", {
                      random_state = 1L)
   })
   # The zero-variance column should not be selected (no variability to score).
-  expect_false("f3" %in% get_feature_names_out(fit))
+  expect_false("f3" %in% get_feature_names(fit))
 })

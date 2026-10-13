@@ -124,7 +124,7 @@ test_that("stabl_fit(base_learner='oblique_rf') recovers non-linear planted sign
     )
     expect_s3_class(fit_k, "stabl_fit")
     expect_identical(nrow(fit_k$fitted_lambda_grid), 30L)
-    selected <- get_feature_names_out(fit_k)
+    selected <- get_feature_names(fit_k)
     expect_true(all(d$signals %in% selected),
                 info = paste("selected:", paste(selected, collapse = ",")))
   } else {
@@ -142,7 +142,7 @@ test_that("stabl_fit(base_learner='oblique_rf') recovers non-linear planted sign
     n_bootstraps = 15L,
     random_state = 8L
   ))
-  selected_p <- get_feature_names_out(fit_p)
+  selected_p <- get_feature_names(fit_p)
   expect_true(all(d$signals %in% selected_p),
               info = paste("selected:", paste(selected_p, collapse = ",")))
 })

@@ -59,7 +59,7 @@ pearson_similarity(c("f1","f2"),      c("f1","f2"),      n_universe = 10L) # nea
 pearson_similarity(character(0),      c("f1","f2"),      n_universe = 10L) # 0
 }
 \seealso{
-\code{\link[=pearson_similarity_values]{pearson_similarity_values()}} for computing all pairwise values at
-once, \code{\link[=pearson_similarity_measure]{pearson_similarity_measure()}} for a summary statistic,
+\code{\link[=pearson_similarity_pairwise]{pearson_similarity_pairwise()}} for computing all pairwise values at
+once, \code{\link[=pearson_similarity_summary]{pearson_similarity_summary()}} for a summary statistic,
 \code{\link[=adjusted_similarity]{adjusted_similarity()}} for an alternative chance-correction.
 }

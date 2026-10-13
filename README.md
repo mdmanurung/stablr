@@ -58,7 +58,32 @@ Optional functionality uses optional packages:
 - `sparsegl`: `base_learner = "sparse_group_lasso"`
 - `mixOmics`: TCGA vignette dataset
 
-## Five-minute example
+## Quick start
+
+**New to stablr? Use `stabl()`.** Give it a table of features and an
+outcome; it runs STABL with statistically safe defaults (model-X knockoff
+artificial features, FDP+ calibration, strict fallback, automatic lambda
+grid) and prints a plain-language answer:
+
+```r
+library(stablr)
+
+set.seed(42)
+df <- data.frame(m1 = rnorm(80), m2 = rnorm(80), m3 = rnorm(80))
+df$response <- 1.2 * df$m1 - 0.8 * df$m2 + rnorm(80)
+
+fit <- stabl(df, y = "response", n_bootstraps = 1000L, random_state = 42L)
+fit                    # plain-language answer
+feature_names(fit)     # the selected features
+plot(fit)              # stability paths + FDP+ curve
+```
+
+**Need full control? Use `stabl_fit()`.** The expert interface exposes all
+arguments — lambda grids, bootstrap design, thresholds, learner adapters,
+sample grouping — and every accessor and workflow applies to both `stabl`
+and `stabl_fit` objects. See `?stabl_fit` and the vignettes.
+
+## Five-minute example (expert interface)
 
 ```r
 library(stablr)
@@ -85,7 +110,7 @@ fit <- stabl_fit(
   random_state = 42L
 )
 
-get_feature_names_out(fit)
+get_feature_names(fit)
 head(sort(get_importances(fit), decreasing = TRUE))
 ```
 
@@ -150,6 +175,11 @@ R-native extension and is labelled as such.
 
 ## API Reference
 
+Beginner entry point:
+
+- `stabl()` — one-stop-shop wrapper with safe defaults; `print()`,
+  `summary()`, `plot()`, `support()`, `feature_names()` methods
+
 Core fitting:
 
 - `stabl_fit()`, `auto_lambda_grid()`
@@ -158,7 +188,7 @@ Core fitting:
 Input validation and bootstrapping:
 
 - `validate_sample_alignment()`, `validate_multiomic_inputs()`
-- `classic_bootstrap_indices()`, `group_bootstrap_indices()`
+- `sample_bootstrap_indices()`, `group_bootstrap_indices()`
 
 Artificial features and FDP+:
 
@@ -167,14 +197,14 @@ Artificial features and FDP+:
 
 Accessors:
 
-- `get_support()`, `get_feature_names_out()`, `transform_stabl()`,
+- `get_support()`, `get_feature_names()`, `transform_stabl()`,
   `get_stabl_scores()`, `get_importances()`
 - `get_cooperative_features()`, `get_cooperative_diagnostics()`
 
 Multi-omic workflows:
 
 - `stabl_multiomic_train_validate()`, `stabl_multiomic_cv()`
-- `stacked_multi_omic()`, `load_ool_data()`
+- `stabl_multiomic_stacked()`, `load_ool_data()`
 
 Visualization and export:
 
@@ -184,12 +214,18 @@ Visualization and export:
 
 Selection reproducibility metrics:
 
-- `jaccard_similarity()`, `jaccard_matrix()`
-- `adjusted_similarity()`, `adjusted_similarity_values()`,
-  `adjusted_similarity_measure()`
-- `pearson_similarity()`, `pearson_similarity_values()`,
-  `pearson_similarity_measure()`
+- `jaccard_similarity()`, `jaccard_similarity_matrix()`
+- `adjusted_similarity()`, `adjusted_similarity_pairwise()`,
+  `adjusted_similarity_summary()`
+- `pearson_similarity()`, `pearson_similarity_pairwise()`,
+  `pearson_similarity_summary()`
 - `fdr_similarity()`, `tpr_similarity()`, `fscore_similarity()`
+
+Deprecated names (still work; warn once and delegate): `get_feature_names_out()`,
+`stacked_multi_omic()`, `jaccard_matrix()`, `classic_bootstrap_indices()`,
+`adjusted_similarity_values()`, `adjusted_similarity_measure()`,
+`pearson_similarity_values()`, `pearson_similarity_measure()` — see `NEWS.md`
+for the full rename table.
 
 ## Interpretation limits
 

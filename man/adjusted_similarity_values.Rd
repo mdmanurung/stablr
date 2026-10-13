@@ -2,33 +2,21 @@
 % Please edit documentation in R/metrics.R
 \name{adjusted_similarity_values}
 \alias{adjusted_similarity_values}
-\title{Upper-Triangle Adjusted Similarity Values}
+\title{Deprecated: use \code{\link[=adjusted_similarity_pairwise]{adjusted_similarity_pairwise()}}}
 \usage{
 adjusted_similarity_values(list_of_lists, nb_total_elements)
 }
-\arguments{
-\item{list_of_lists}{A list of character/integer vectors, one per STABL run.}
-
-\item{nb_total_elements}{Integer; total number of candidate features.}
-}
-\value{
-Numeric vector of length N*(N-1)/2 containing the pairwise
-adjusted-similarity values for all unique pairs (row-major upper-triangle
-order, matching the Python convention).
-}
 \description{
-Computes the full pairwise adjusted-similarity matrix for N feature sets and
-returns only the N\eqn{\times}(N-1)/2 off-diagonal upper-triangle values as
-a flat vector.  This format is convenient for computing summary statistics
-(see \code{\link[=adjusted_similarity_measure]{adjusted_similarity_measure()}}) or for Wilcoxon/permutation tests
-comparing reproducibility across methods.
+\code{adjusted_similarity_values()} is deprecated and will be removed in a
+future release; use \code{\link[=adjusted_similarity_pairwise]{adjusted_similarity_pairwise()}} instead.
 }
 \examples{
-sets <- list(c("f1","f2","f3"), c("f2","f3","f4"), c("f1","f3","f5"))
-adjusted_similarity_values(sets, nb_total_elements = 10L)
+sets <- list(c("f1", "f2", "f3"), c("f2", "f3", "f4"), c("f1", "f3", "f5"))
+# warns; use adjusted_similarity_pairwise()
+same <- suppressWarnings(identical(
+  adjusted_similarity_values(sets, nb_total_elements = 10L),
+  adjusted_similarity_pairwise(sets, nb_total_elements = 10L)
+))
+stopifnot(same)
 }
-\seealso{
-\code{\link[=adjusted_similarity]{adjusted_similarity()}} for the pairwise function,
-\code{\link[=adjusted_similarity_measure]{adjusted_similarity_measure()}} for a one-number summary,
-\code{\link[=pearson_similarity_values]{pearson_similarity_values()}} for an alternative chance-correction.
-}
+\keyword{internal}

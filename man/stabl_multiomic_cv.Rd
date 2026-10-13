@@ -120,6 +120,9 @@ A list with class \code{"stabl_multiomic_cv"} containing:
 \code{stabl_multiomic_fit} results.}
 \item{\code{diagnostics}}{Data frame with one row per fold/omic and columns
 \code{fold}, \code{omic}, \code{n_selected}, \code{threshold}, and \code{max_score}.}
+\item{\code{fold_scheme}}{\code{"group_disjoint"} when \code{groups} is supplied
+(all samples of a group share one assessment fold — pass study
+labels here for study-disjoint CV), otherwise \code{"sample_iid"}.}
 }
 }
 \description{
@@ -138,6 +141,13 @@ forwarded to each fold-specific \code{\link[=stabl_multiomic_train_validate]{sta
 \code{stabl_multiomic_cv} object; invisibly returns \code{x}.
 
 }}
+\note{
+Batch harmonization (e.g. ComBat) fitted on the full dataset before
+cross-validation leaks study-level information across folds and inflates
+performance estimates. Fit harmonization within training folds, or
+interpret all reported metrics as conditional on the harmonization step;
+group-disjoint folds do not repair leakage from pooled preprocessing.
+}
 \examples{
 set.seed(2L)
 ids <- paste0("s", 1:12)

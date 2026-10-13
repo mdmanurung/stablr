@@ -21,7 +21,7 @@ Returns a named logical vector that is \code{TRUE} for every feature whose
 maximum stability score exceeds the effective threshold.  This is the
 primary accessor for downstream use of a fitted STABL model: index your
 data matrix with the returned mask, or pass the object to
-\code{\link[=get_feature_names_out]{get_feature_names_out()}} to obtain the names directly.
+\code{\link[=get_feature_names]{get_feature_names()}} to obtain the names directly.
 }
 \details{
 \strong{Threshold resolution order:}
@@ -56,6 +56,6 @@ get_support(fit)                        # named logical vector
 get_support(fit, new_hard_threshold = 0.5)  # stricter threshold
 }
 \seealso{
-\code{\link[=get_feature_names_out]{get_feature_names_out()}} to get names directly,
+\code{\link[=get_feature_names]{get_feature_names()}} to get names directly,
 \code{\link[=get_importances]{get_importances()}} to inspect raw stability scores.
 }

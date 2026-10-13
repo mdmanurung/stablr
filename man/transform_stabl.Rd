@@ -42,5 +42,5 @@ try(transform_stabl(fit, unname(x)))
 
 }
 \seealso{
-\code{\link[=get_feature_names_out]{get_feature_names_out()}}, \code{\link[=get_support]{get_support()}}
+\code{\link[=get_feature_names]{get_feature_names()}}, \code{\link[=get_support]{get_support()}}
 }

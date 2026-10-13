@@ -1,6 +1,6 @@
 Package: stablr
 Title: Sparse and Reliable Biomarker Discovery in R
-Version: 0.2.2
+Version: 0.3.0
 Authors@R:
     c(
     person(given = "Mikaël", family = "Manurung", role = c("aut", "cre", "cph"),
@@ -92,6 +92,7 @@ Collate:
     'learner_oblique_rf.R'
     'metrics.R'
     'stabl_fit.R'
+    'stabl.R'
     'cooperative-utils.R'
     'cooperative-multiview.control.R'
     'RcppExports.R'
@@ -118,6 +119,7 @@ Collate:
     'late_fusion.R'
     'multiomic_workflows.R'
     'nested_cv.R'
+    'study_tools.R'
     'stabl_accessors.R'
     's3_methods.R'
     'environment_stability.R'

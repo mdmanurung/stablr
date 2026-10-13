@@ -186,7 +186,7 @@ save_stabl_results <- function(
   )
 
   # 4. Selected features list → CSV
-  sel_features <- get_feature_names_out(object,
+  sel_features <- get_feature_names(object,
                                         new_hard_threshold = new_hard_threshold)
   sel_dir <- file.path(path, "Selected Features")
   dir.create(sel_dir, recursive = TRUE, showWarnings = FALSE)

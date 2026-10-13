@@ -25,8 +25,24 @@
 #'   preserve class proportions as closely as possible.
 #' @param strata Optional named vector used to stratify folds instead of `y`.
 #'   Categorical values are used directly. Numeric values are binned into
-#'   quantile groups before fold assignment.
+#'   quantile groups before fold assignment. Cannot be combined with
+#'   `study_labels`.
 #' @param strata_bins Number of quantile bins for numeric `strata`.
+#' @param study_labels Optional named vector assigning each sample to a study
+#'   (cohort, site, or batch); names must cover exactly the sample IDs. When
+#'   `NULL` (default), folds are assigned sample-wise exactly as in prior
+#'   releases (`fold_scheme = "sample_iid"`). When supplied, the CV unit
+#'   becomes the study (`fold_scheme = "study_disjoint"`): outer folds assign
+#'   whole studies (with `outer_v` equal to the number of studies this is
+#'   leave-one-study-out), inner candidate-selection folds are study-disjoint
+#'   within each outer training split, and `stratified = TRUE` is reinterpreted
+#'   at the study level through a deterministic largest-first greedy pass that
+#'   minimises class-proportion imbalance across folds (sample-level
+#'   stratification is impossible under study disjointness). Study
+#'   disjointness concerns the CV folds only: within-training bootstrap
+#'   resampling is untouched, so `bootstrap_strata` (sampling design) and SGL
+#'   `feature_groups` (feature grouping) remain orthogonal to `study_labels`
+#'   (CV unit).
 #' @param metric Candidate-selection metric, `"ber"` or `"accuracy"`.
 #' @param family Passed to [stabl_fit()]. Defaults to `"multinomial"`.
 #' @param n_bootstraps Passed to [stabl_fit()].
@@ -52,7 +68,21 @@
 #'
 #' @return An object of class `"stabl_multiomic_nested_cv"` containing fold
 #'   definitions, inner candidate diagnostics, outer held-out predictions,
-#'   selected features, and aggregate performance.
+#'   selected features, and aggregate performance. The object also records the
+#'   sampling unit as `fold_scheme` (`"sample_iid"` or `"study_disjoint"`) and
+#'   the validated `study_labels`; under `fold_scheme = "study_disjoint"` each
+#'   outer/inner fold additionally carries `study_ids` (per-fold study
+#'   membership) and `class_counts` (per-fold held-out class counts). When
+#'   `study_labels` is supplied, `performance_by_study` holds per-study
+#'   outer held-out accuracy and balanced error rate (pooled across folds and
+#'   repeats; `NA` balanced error rate for studies whose pooled held-out
+#'   predictions contain a single outcome class).
+#'
+#' @note Batch harmonization (e.g. ComBat) fitted on the full dataset before
+#'   cross-validation leaks study-level information across folds and inflates
+#'   performance estimates. Fit harmonization within training folds, or
+#'   interpret all reported metrics as conditional on the harmonization step;
+#'   study-disjoint folds do not repair leakage from pooled preprocessing.
 #'
 #' @examples
 #' set.seed(3L)
@@ -73,6 +103,29 @@
 #'   sample_fraction = 1, random_state = 3L
 #' ))
 #' nested$performance$balanced_error_rate
+#'
+#' # Study-disjoint folds: each block of four samples is treated as one
+#' # study; outer CV is leave-one-study-out.
+#' set.seed(4L)
+#' ids2 <- paste0("s", 1:20)
+#' y2 <- setNames(factor(rep(c("A", "B"), times = 10L)), ids2)
+#' x2 <- matrix(
+#'   rnorm(20 * 6, sd = 0.3), 20, 6,
+#'   dimnames = list(ids2, paste0("g", 1:6))
+#' )
+#' x2[, 1:2] <- x2[, 1:2] + stats::model.matrix(~ y2 - 1)
+#' study_labels <- setNames(rep(paste0("study", 1:5), each = 4L), ids2)
+#' nested2 <- suppressWarnings(stabl_multiomic_nested_cv(
+#'   x_list = list(rna = x2), y = y2,
+#'   candidates = list(list(name = "rna", blocks = "rna")),
+#'   lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+#'   outer_v = 5L, inner_v = 2L, n_bootstraps = 3L,
+#'   artificial_type = NULL, hard_threshold = 1e-9,
+#'   sample_fraction = 1, random_state = 4L,
+#'   study_labels = study_labels
+#' ))
+#' nested2$fold_scheme
+#' nested2$outer_folds[[1L]]$study_ids
 #' @export
 stabl_multiomic_nested_cv <- function(
     x_list,
@@ -95,6 +148,7 @@ stabl_multiomic_nested_cv <- function(
     l1_ratio        = NULL,
     workers         = 1L,
     cv_workers      = 1L,
+    study_labels    = NULL,
     ...
 ) {
   metric <- match.arg(metric)
@@ -123,18 +177,65 @@ stabl_multiomic_nested_cv <- function(
     bins = strata_bins
   )
 
-  if (isTRUE(stratified) && min(table(strata_labels)) < max(outer_v, inner_v)) {
-    stop("Each stratum must have at least `max(outer_v, inner_v)` samples.", call. = FALSE)
+  if (!is.null(study_labels) && !is.null(strata)) {
+    stop(
+      paste0(
+        "`study_labels` and `strata` cannot be combined: study-disjoint ",
+        "folds are assigned at the study level, so sample-level ",
+        "stratification does not apply."
+      ),
+      call. = FALSE
+    )
   }
 
   candidates <- .normalize_stabl_nested_candidates(candidates, names(x_list))
-  outer_folds <- .make_repeated_cv_folds(
-    y = strata_labels,
-    v = outer_v,
-    repeats = outer_repeats,
-    stratified = stratified,
-    random_state = random_state
-  )
+
+  if (is.null(study_labels)) {
+    if (isTRUE(stratified) && min(table(strata_labels)) < max(outer_v, inner_v)) {
+      stop("Each stratum must have at least `max(outer_v, inner_v)` samples.", call. = FALSE)
+    }
+    fold_scheme <- "sample_iid"
+    outer_folds <- .make_repeated_cv_folds(
+      y = strata_labels,
+      v = outer_v,
+      repeats = outer_repeats,
+      stratified = stratified,
+      random_state = random_state
+    )
+    inner_folds_pre <- NULL
+  } else {
+    study_labels <- .validate_study_labels(study_labels, sample_ids)
+    n_studies <- length(unique(as.character(study_labels)))
+    if (n_studies < max(outer_v, 2L)) {
+      stop(sprintf(
+        paste0(
+          "`study_labels` defines %d %s; study-disjoint outer CV ",
+          "requires at least max(outer_v, 2) = %d %s."
+        ),
+        n_studies,
+        if (n_studies == 1L) "study" else "studies",
+        max(outer_v, 2L),
+        if (max(outer_v, 2L) == 1L) "study" else "studies"
+      ), call. = FALSE)
+    }
+    fold_scheme <- "study_disjoint"
+    outer_folds <- .make_repeated_study_folds(
+      study_labels = study_labels,
+      y = y,
+      v = outer_v,
+      repeats = outer_repeats,
+      stratified = stratified,
+      random_state = random_state
+    )
+    inner_folds_pre <- .prebuild_study_disjoint_inner_folds(
+      outer_folds = outer_folds,
+      study_labels = study_labels,
+      y = y,
+      inner_v = inner_v,
+      stratified = stratified,
+      random_state = random_state
+    )
+  }
 
   fold_runner <- function(outer_i) {
     .run_nested_cv_fold(
@@ -156,6 +257,7 @@ stabl_multiomic_nested_cv <- function(
       n_lambda        = n_lambda,
       l1_ratio        = l1_ratio,
       workers         = workers,
+      inner_folds     = if (is.null(inner_folds_pre)) NULL else inner_folds_pre[[outer_i]],
       ...
     )
   }
@@ -180,6 +282,11 @@ stabl_multiomic_nested_cv <- function(
   diagnostics <- do.call(rbind, inner_rows)
   selected_features <- do.call(rbind, feature_rows)
   performance <- .classification_metrics_from_preds_df(predictions, y)
+  performance_by_study <- if (!is.null(study_labels)) {
+    .per_study_performance(predictions, study_labels, y)
+  } else {
+    NULL
+  }
 
   structure(
     list(
@@ -189,11 +296,14 @@ stabl_multiomic_nested_cv <- function(
       outer_predictions = predictions,
       selected_features = selected_features,
       performance = performance,
+      performance_by_study = performance_by_study,
       levels = levels(y),
       metric = metric,
       candidates = candidates,
       strata = strata_labels,
       stratified = isTRUE(stratified),
+      fold_scheme = fold_scheme,
+      study_labels = study_labels,
       cv_workers = cv_workers,
       stabl_workers = workers
     ),
@@ -350,6 +460,243 @@ stabl_multiomic_nested_cv <- function(
       valid_ids = valid_ids,
       fold      = paste0("Fold", i)
     )
+  })
+}
+
+.validate_study_labels <- function(study_labels, sample_ids) {
+  if (is.null(study_labels)) return(NULL)
+  if (is.null(names(study_labels))) {
+    stop("`study_labels` must be a named vector; its names must be sample IDs.",
+         call. = FALSE)
+  }
+  if (anyNA(study_labels)) {
+    stop("`study_labels` cannot contain missing values.", call. = FALSE)
+  }
+  label_names <- names(study_labels)
+  if (length(study_labels) != length(sample_ids) ||
+      !setequal(label_names, sample_ids)) {
+    missing_ids <- setdiff(sample_ids, label_names)
+    unexpected_ids <- setdiff(label_names, sample_ids)
+    stop(sprintf(
+      paste0(
+        "`study_labels` names must cover exactly the sample IDs ",
+        "(missing: %s; unexpected: %s)."
+      ),
+      if (length(missing_ids)) paste(head(missing_ids, 5L), collapse = ", ") else "none",
+      if (length(unexpected_ids)) paste(head(unexpected_ids, 5L), collapse = ", ") else "none"
+    ), call. = FALSE)
+  }
+  study_labels <- as.character(study_labels[sample_ids])
+  names(study_labels) <- sample_ids
+  sizes <- table(study_labels)
+  if (any(sizes < 2L)) {
+    bad <- names(sizes)[sizes < 2L]
+    stop(sprintf(
+      paste0(
+        "Each study must contain at least 2 samples; %s %s only %s. ",
+        "A 1-sample study usually indicates an ID parsing mistake."
+      ),
+      paste(sprintf("'%s'", bad), collapse = ", "),
+      if (length(bad) == 1L) "has" else "have",
+      paste(head(as.integer(sizes[sizes < 2L]), 5L), collapse = ", ")
+    ), call. = FALSE)
+  }
+  out <- factor(study_labels)
+  names(out) <- sample_ids
+  out
+}
+
+.make_repeated_study_folds <- function(study_labels, y, v, repeats = 1L,
+                                       stratified = TRUE, random_state = NULL) {
+  rep_list <- lapply(seq_len(as.integer(repeats)), function(rep_i) {
+    rep_seed  <- .derive_nested_seed(random_state, rep_i, 10L)
+    rep_folds <- .make_study_disjoint_folds(
+      study_labels = study_labels,
+      y = y,
+      v = v,
+      stratified = stratified,
+      random_state = rep_seed
+    )
+    lapply(seq_along(rep_folds), function(fold_i) {
+      fold             <- rep_folds[[fold_i]]
+      fold[["repeat"]] <- rep_i
+      fold$fold        <- paste0("Fold", fold_i)
+      fold$fold_id     <- paste0("Repeat", rep_i, "_Fold", fold_i)
+      fold
+    })
+  })
+  folds <- unlist(rep_list, recursive = FALSE)
+  .assert_study_fold_class_coverage(folds, context = "outer")
+  folds
+}
+
+.make_study_disjoint_folds <- function(study_labels, y, v, stratified = TRUE,
+                                       random_state = NULL) {
+  study_labels <- study_labels[names(y)]
+  if (anyNA(study_labels)) {
+    stop("`study_labels` must be defined for every sample in `y`.", call. = FALSE)
+  }
+  studies <- sort(unique(as.character(study_labels)))
+  n_studies <- length(studies)
+  v <- as.integer(v)
+  if (n_studies < v) {
+    stop("The number of studies must be at least `v`.", call. = FALSE)
+  }
+
+  class_tab <- table(
+    study = factor(as.character(study_labels), levels = studies),
+    class = factor(as.character(y))
+  )
+
+  if (isTRUE(stratified)) {
+    assignment <- .greedy_balanced_study_assignment(class_tab, v, random_state)
+  } else {
+    assignment <- .with_local_seed(
+      if (!is.null(random_state)) as.integer(random_state),
+      {
+        shuffled <- sample(studies)
+        setNames(rep(seq_len(v), length.out = n_studies), shuffled)
+      }
+    )
+  }
+
+  study_of_sample <- as.character(study_labels)
+  lapply(seq_len(v), function(i) {
+    fold_studies <- sort(names(assignment)[assignment == i])
+    valid_ids <- names(y)[study_of_sample %in% fold_studies]
+    list(
+      train_ids = setdiff(names(y), valid_ids),
+      valid_ids = valid_ids,
+      fold      = paste0("Fold", i),
+      study_ids = fold_studies,
+      class_counts = table(y[valid_ids])
+    )
+  })
+}
+
+.greedy_balanced_study_assignment <- function(class_tab, v, random_state) {
+  studies <- rownames(class_tab)
+  overall_prop <- colSums(class_tab) / sum(class_tab)
+
+  ordered_studies <- .with_local_seed(
+    if (!is.null(random_state)) as.integer(random_state),
+    {
+      # Largest studies first; the seeded shuffle fixes the order of size
+      # ties so the assignment is deterministic for a given `random_state`
+      # and invariant to sample-row order.
+      shuffled <- sample(studies)
+      sizes <- as.integer(rowSums(class_tab))[shuffled]
+      shuffled[order(-sizes, method = "radix")]
+    }
+  )
+
+  fold_class_counts <- matrix(0L, nrow = v, ncol = ncol(class_tab))
+  fold_sizes <- integer(v)
+  fold_n_studies <- integer(v)
+  assignment <- setNames(integer(length(ordered_studies)), ordered_studies)
+
+  assign_study <- function(study, allowed) {
+    study_counts <- as.integer(class_tab[study, ])
+    study_size <- sum(study_counts)
+    imbalance <- vapply(allowed, function(f) {
+      new_size <- fold_sizes[f] + study_size
+      sum(abs((fold_class_counts[f, ] + study_counts) / new_size - overall_prop))
+    }, numeric(1L))
+    best <- allowed[imbalance == min(imbalance)]
+    if (length(best) > 1L) {
+      best <- best[fold_sizes[best] == min(fold_sizes[best])]
+      best <- best[fold_n_studies[best] == min(fold_n_studies[best])]
+      best <- best[[1L]]
+    }
+    fold_class_counts[best, ] <<- fold_class_counts[best, ] + study_counts
+    fold_sizes[best] <<- fold_sizes[best] + study_size
+    fold_n_studies[best] <<- fold_n_studies[best] + 1L
+    assignment[study] <<- best
+  }
+
+  # Pass 1: seed every fold with one of the largest studies (class-balanced
+  # among the empty folds) so no validation fold can end up empty; with
+  # `v == n_studies` this is the whole leave-one-study-out assignment.
+  for (study in ordered_studies[seq_len(v)]) {
+    assign_study(study, allowed = which(fold_n_studies == 0L))
+  }
+  # Pass 2: greedily assign the remaining studies by class-proportion
+  # imbalance across folds, restricted to folds below the even-split
+  # capacity (ceil(n_studies / v) studies per fold). Under outcome-
+  # prevalence drift, unconstrained imbalance minimisation can concentrate
+  # studies into few folds, which distorts fold sizes and can leave an
+  # outer-training split with fewer than inner_v + 1 studies.
+  if (length(ordered_studies) > v) {
+    capacity <- ceiling(nrow(class_tab) / v)
+    for (study in ordered_studies[-seq_len(v)]) {
+      assign_study(study, allowed = which(fold_n_studies < capacity))
+    }
+  }
+  assignment
+}
+
+.assert_study_fold_class_coverage <- function(folds, context = "outer") {
+  for (fold in folds) {
+    counts <- fold$class_counts
+    if (sum(counts > 0L) < 2L) {
+      fold_name <- if (is.null(fold$fold_id)) fold$fold else fold$fold_id
+      stop(sprintf(
+        paste0(
+          "Study-disjoint %s validation fold `%s` contains a single outcome ",
+          "class (held-out counts: %s; studies: %s); balanced error rate is ",
+          "undefined for single-class held-out sets. Adjust `study_labels`, ",
+          "reduce `outer_v`/`inner_v`, or keep `stratified = TRUE`."
+        ),
+        context,
+        fold_name,
+        paste(sprintf("%s=%d", names(counts), as.integer(counts)),
+              collapse = ", "),
+        paste(fold$study_ids, collapse = ", ")
+      ), call. = FALSE)
+    }
+  }
+  invisible(NULL)
+}
+
+.prebuild_study_disjoint_inner_folds <- function(outer_folds, study_labels, y,
+                                                 inner_v, stratified,
+                                                 random_state) {
+  lapply(seq_along(outer_folds), function(outer_i) {
+    outer <- outer_folds[[outer_i]]
+    train_ids <- outer$train_ids
+    train_study_labels <- study_labels[train_ids]
+    n_train_studies <- length(unique(as.character(train_study_labels)))
+    if (n_train_studies < inner_v + 1L) {
+      stop(sprintf(
+        paste0(
+          "Outer fold `%s` trains on %d %s; study-disjoint inner ",
+          "candidate selection requires at least inner_v + 1 = %d %s. ",
+          "Reduce `inner_v` or supply more studies."
+        ),
+        outer$fold_id,
+        n_train_studies,
+        if (n_train_studies == 1L) "study" else "studies",
+        inner_v + 1L,
+        if (inner_v + 1L == 1L) "study" else "studies"
+      ), call. = FALSE)
+    }
+    inner_folds <- .make_study_disjoint_folds(
+      study_labels = train_study_labels,
+      y = y[train_ids],
+      v = inner_v,
+      stratified = stratified,
+      random_state = .derive_nested_seed(random_state, outer_i, 1000L)
+    )
+    inner_folds <- lapply(seq_along(inner_folds), function(fold_i) {
+      fold <- inner_folds[[fold_i]]
+      fold$fold <- paste0("Fold", fold_i)
+      fold
+    })
+    .assert_study_fold_class_coverage(
+      inner_folds,
+      context = sprintf("inner (within outer fold `%s`)", outer$fold_id)
+    )
+    inner_folds
   })
 }
 
@@ -523,9 +870,48 @@ stabl_multiomic_nested_cv <- function(
   )
 }
 
+# Per-study outer held-out performance (C1): pools a study's predictions
+# across all outer folds and repeats.  Balanced error rate is computed over
+# the outcome classes actually present in the study's pooled predictions and
+# is NA when only one class is present.
+.per_study_performance <- function(predictions, study_labels, y) {
+  if (is.null(predictions) || nrow(predictions) == 0L) {
+    return(NULL)
+  }
+  study_of_prediction <- unname(study_labels[as.character(predictions$sample_id)])
+  studies <- sort(unique(study_of_prediction))
+  rows <- lapply(studies, function(study_id) {
+    idx <- which(study_of_prediction == study_id)
+    truth <- factor(predictions$truth[idx], levels = levels(y))
+    predicted <- factor(predictions$predicted[idx], levels = levels(y))
+    tab <- table(truth = truth, predicted = predicted)
+    n <- sum(tab)
+    accuracy <- unname(sum(diag(tab)) / n)
+    recalls <- diag(tab) / pmax(rowSums(tab), 1L)
+    present <- rowSums(tab) > 0L
+    ber <- if (sum(present) >= 2L) {
+      unname(1 - mean(recalls[present]))
+    } else {
+      NA_real_
+    }
+    data.frame(
+      study = as.character(study_id),
+      n_predictions = as.integer(n),
+      accuracy = accuracy,
+      balanced_error_rate = ber,
+      stringsAsFactors = FALSE
+    )
+  })
+  out <- do.call(rbind, rows)
+  rownames(out) <- NULL
+  out
+}
+
 .predict_selected_multinomial <- function(x_train, y_train, x_valid, levels) {
   y_train <- factor(y_train, levels = levels)
-  if (ncol(x_train) == 0L || length(unique(y_train)) < 2L) {
+  # glmnet requires at least two columns; a single selected feature falls
+  # back to the majority-class predictor like the empty-selection case.
+  if (ncol(x_train) < 2L || length(unique(y_train)) < 2L) {
     return(.majority_class_prediction(y_train, nrow(x_valid)))
   }
 
@@ -603,18 +989,20 @@ stabl_multiomic_nested_cv <- function(
                                stratified, x_list, y, candidates, lambda_grid,
                                metric, family, n_bootstraps, artificial_type,
                                hard_threshold, random_state, n_lambda, l1_ratio,
-                               workers, ...) {
+                               workers, inner_folds = NULL, ...) {
   outer <- outer_folds[[outer_i]]
   train_ids <- outer$train_ids
   valid_ids <- outer$valid_ids
 
-  inner_seed <- .derive_nested_seed(random_state, outer_i, 1000L)
-  inner_folds <- .make_cv_folds(
-    y = strata_labels[train_ids],
-    v = inner_v,
-    stratified = stratified,
-    random_state = inner_seed
-  )
+  if (is.null(inner_folds)) {
+    inner_seed <- .derive_nested_seed(random_state, outer_i, 1000L)
+    inner_folds <- .make_cv_folds(
+      y = strata_labels[train_ids],
+      v = inner_v,
+      stratified = stratified,
+      random_state = inner_seed
+    )
+  }
 
   inner_eval <- .evaluate_stabl_candidates_inner(
     x_list = x_list,
@@ -701,6 +1089,12 @@ stabl_multiomic_nested_cv <- function(
 print.stabl_multiomic_nested_cv <- function(x, ...) {
   cat("<stabl_multiomic_nested_cv>\n")
   cat("  outer folds: ", length(x$outer_folds), "\n", sep = "")
+  cat("  fold scheme: ",
+      if (is.null(x$fold_scheme)) "sample_iid" else x$fold_scheme, "\n",
+      sep = "")
+  if (!is.null(x$study_labels)) {
+    cat("  studies:     ", length(unique(as.character(x$study_labels))), "\n", sep = "")
+  }
   cat("  candidates:  ", paste(names(x$candidates), collapse = ", "), "\n", sep = "")
   cat("  metric:      ", x$metric, "\n", sep = "")
   cat("  accuracy:    ", sprintf("%.3f", x$performance$accuracy), "\n", sep = "")
