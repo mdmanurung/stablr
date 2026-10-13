@@ -102,9 +102,10 @@ The notebook uses the full OOL-CV training files (`CyTOF`, `Proteomics`, and
 applies a preprocessing pipeline before STABL: zero-variance filtering,
 high-missingness feature filtering, median imputation, and standardisation.
 Here, `load_ool_data()` ships 150 training samples and 21 aligned validation
-samples for `CyTOF` and `Proteomics` only, with the first 100 features from
-each assay, already aligned and without missing values. These are quick-build
-settings, not the predeclared full OOL parity analysis. Use
+samples for `CyTOF` and `Proteomics` only, with the
+first 100 features from each assay, already aligned and without missing
+values. These are quick-build settings, not the predeclared full OOL parity
+analysis. Use
 `docs/PYTHON_TO_R_MAPPING.md` when the goal is to mirror the tutorial
 notebook's datasets and preprocessing choices.
 
