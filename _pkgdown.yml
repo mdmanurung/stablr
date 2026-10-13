@@ -1,9 +1,15 @@
 url: https://mdmanurung.github.io/stablr/
 
+authors:
+  "Mikaël Manurung":
+    href: https://github.com/mdmanurung
+
 destination: _site
 
 template:
   bootstrap: 5
+  bootswatch: flatly
+  math-rendering: katex
 
 home:
   title: stablr

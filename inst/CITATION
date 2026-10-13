@@ -42,7 +42,7 @@ bibentry(
   url = "https://github.com/mdmanurung/stablr",
   textVersion = paste(
     "Manurung M (2026). stablr: Sparse and Reliable Biomarker Discovery in R.",
-    "R package version 0.1.1.",
+    sprintf("R package version %s.", meta$Version),
     "https://github.com/mdmanurung/stablr"
   )
 )
