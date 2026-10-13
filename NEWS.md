@@ -1,5 +1,51 @@
 # stablr 0.3.0
 
+## Cross-study reliability: study-disjoint resampling (B1–B3)
+
+- **New `study_labels` argument on `stabl_multiomic_nested_cv()`** declares
+  the sampling unit of the cross-validation.  When supplied (a named vector
+  covering exactly the sample IDs), whole studies become the CV unit: outer
+  folds assign whole studies (`outer_v` equal to the number of studies gives
+  leave-one-study-out), inner candidate-selection folds are study-disjoint
+  within each outer training split, and `stratified = TRUE` is reinterpreted
+  at the study level through a deterministic largest-first greedy pass that
+  minimises class-proportion imbalance.  The default `study_labels = NULL`
+  preserves the sample-i.i.d. scheme byte-identically (`fold_scheme =
+  "sample_iid"`).  Study disjointness concerns the CV folds only —
+  `bootstrap_strata` (sampling design) and SGL `feature_groups` (features)
+  remain orthogonal.
+- **Fail-closed validation** for the study-disjoint scheme: label names must
+  cover exactly the sample IDs; at least `max(outer_v, 2)` studies; each
+  outer-training split needs at least `inner_v + 1` studies; every
+  validation fold (outer and inner) must hold both outcome classes; and
+  1-sample studies are rejected.  `stabl_multiomic_nested_cv()` also gained
+  a majority-class fallback when a fold's selection leaves fewer than two
+  features (previously a glmnet error).
+- **Provenance and reporting:** the nested-CV object records `fold_scheme`
+  (`"sample_iid"` / `"study_disjoint"`) and the validated `study_labels`;
+  under the study-disjoint scheme each fold carries `study_ids` and held-out
+  `class_counts`, and `print()` shows the scheme.
+- **New `stabl_multiomic_study_diagnostics()`** (inferred scope, flagged):
+  per-study outcome composition and per-feature absolute standardized mean
+  differences versus the pooled rest, quantifying the study-level shift that
+  motivates study-disjoint folds.
+- **New `stabl_multiomic_study_split()`** (inferred scope, flagged): a
+  deterministic study-disjoint train/validation split (greedy, seeded,
+  class-balanced) feeding `stabl_multiomic_train_validate()`.
+  `stabl_multiomic_cv()` already supports group-disjoint assessment folds
+  through its `groups` argument and now records `fold_scheme` =
+  `"group_disjoint"` for provenance.
+- **Benchmark evidence:** `inst/benchmarks/b1_study_disjoint_cv.R` compares
+  held-out BER under sample-i.i.d. versus study-disjoint outer folds on
+  multi-study simulations, isolating two batch mechanisms: class-independent
+  location shifts on null features (a deliberate null probe — the gap is
+  approximately zero there, as expected) and outcome-prevalence drift across
+  studies (gap ≈ +0.04 BER over 10 seeds, positive in 9 of 10 seeds — the
+  sample-i.i.d. estimate is optimistic precisely when study-level outcome
+  composition differs).  Per-fold selection sets are persisted
+  (`b1_selected_features.csv`) for the Round C stability-of-stability
+  analysis.
+
 ## Two-tier API: beginner `stabl()` + expert `stabl_fit()`
 
 - **New `stabl()`:** a one-stop-shop entry point for first-time and

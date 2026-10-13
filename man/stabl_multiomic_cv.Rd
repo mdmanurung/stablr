@@ -120,6 +120,9 @@ A list with class \code{"stabl_multiomic_cv"} containing:
 \code{stabl_multiomic_fit} results.}
 \item{\code{diagnostics}}{Data frame with one row per fold/omic and columns
 \code{fold}, \code{omic}, \code{n_selected}, \code{threshold}, and \code{max_score}.}
+\item{\code{fold_scheme}}{\code{"group_disjoint"} when \code{groups} is supplied
+(all samples of a group share one assessment fold — pass study
+labels here for study-disjoint CV), otherwise \code{"sample_iid"}.}
 }
 }
 \description{

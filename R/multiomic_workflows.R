@@ -367,6 +367,9 @@ stabl_multiomic_train_validate <- function(
 #'       `stabl_multiomic_fit` results.}
 #'     \item{`diagnostics`}{Data frame with one row per fold/omic and columns
 #'       `fold`, `omic`, `n_selected`, `threshold`, and `max_score`.}
+#'     \item{`fold_scheme`}{`"group_disjoint"` when `groups` is supplied
+#'       (all samples of a group share one assessment fold — pass study
+#'       labels here for study-disjoint CV), otherwise `"sample_iid"`.}
 #'   }
 #'
 #' @examples
@@ -494,7 +497,8 @@ stabl_multiomic_cv <- function(
     list(
       folds = folds,
       fold_results = fold_results,
-      diagnostics = do.call(rbind, diagnostics)
+      diagnostics = do.call(rbind, diagnostics),
+      fold_scheme = if (is.null(groups)) "sample_iid" else "group_disjoint"
     ),
     class = "stabl_multiomic_cv"
   )

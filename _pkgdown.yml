@@ -121,6 +121,8 @@ reference:
   - stabl_multiomic_cv
   - stabl_multiomic_nested_cv
   - stabl_multiomic_stacked
+  - stabl_multiomic_study_diagnostics
+  - stabl_multiomic_study_split
   - load_ool_data
 
 - title: Visualization

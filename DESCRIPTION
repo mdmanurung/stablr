@@ -119,6 +119,7 @@ Collate:
     'late_fusion.R'
     'multiomic_workflows.R'
     'nested_cv.R'
+    'study_tools.R'
     'stabl_accessors.R'
     's3_methods.R'
     'environment_stability.R'
