@@ -141,6 +141,13 @@ forwarded to each fold-specific \code{\link[=stabl_multiomic_train_validate]{sta
 \code{stabl_multiomic_cv} object; invisibly returns \code{x}.
 
 }}
+\note{
+Batch harmonization (e.g. ComBat) fitted on the full dataset before
+cross-validation leaks study-level information across folds and inflates
+performance estimates. Fit harmonization within training folds, or
+interpret all reported metrics as conditional on the harmonization step;
+group-disjoint folds do not repair leakage from pooled preprocessing.
+}
 \examples{
 set.seed(2L)
 ids <- paste0("s", 1:12)

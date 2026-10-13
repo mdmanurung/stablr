@@ -171,3 +171,119 @@ test_that("stabl_multiomic_cv records the fold scheme", {
     )
   }
 })
+
+# C2 (inferred scope): pooled vs study-disjoint scheme comparison.
+test_that("scheme comparison runs both arms and reports the gap", {
+  fixture <- .make_study_tools_fixture(n_studies = 6L, n_per_study = 8L, seed = 8L)
+  cmp <- suppressWarnings(stabl_multiomic_scheme_comparison(
+    x_list = fixture$x_list,
+    y = fixture$y,
+    study_labels = fixture$study_labels,
+    candidates = list(list(name = "rna", blocks = "rna")),
+    lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+    outer_v = 2L, inner_v = 2L, n_bootstraps = 10L,
+    artificial_type = NULL, hard_threshold = 1e-9,
+    sample_fraction = 1, random_state = 10L
+  ))
+  expect_identical(cmp$sample_iid$fold_scheme, "sample_iid")
+  expect_identical(cmp$study_disjoint$fold_scheme, "study_disjoint")
+  expect_equal(nrow(cmp$comparison), 2L)
+  expect_identical(cmp$comparison$scheme, c("sample_iid", "study_disjoint"))
+  expect_true(all(is.finite(cmp$comparison$balanced_error_rate)))
+  expect_equal(
+    cmp$ber_gap,
+    cmp$comparison$balanced_error_rate[[2L]] -
+      cmp$comparison$balanced_error_rate[[1L]]
+  )
+  expect_error(
+    stabl_multiomic_scheme_comparison(
+      fixture$x_list, fixture$y, study_labels = NULL
+    ),
+    "study_labels"
+  )
+})
+
+# C4 (inferred scope): stability of stability across study-disjoint folds.
+test_that("selection stability returns a fold x fold Jaccard matrix", {
+  fixture <- .make_study_tools_fixture(n_studies = 6L, n_per_study = 8L, seed = 11L)
+  # plant signal so selections are non-degenerate
+  fixture$x_list$rna[, 1:2] <-
+    fixture$x_list$rna[, 1:2] + 1.5 * (fixture$y == "A")
+
+  nested <- suppressWarnings(stabl_multiomic_nested_cv(
+    x_list = fixture$x_list,
+    y = fixture$y,
+    candidates = list(list(name = "rna", blocks = "rna")),
+    lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+    outer_v = 2L, inner_v = 2L, n_bootstraps = 10L,
+    artificial_type = NULL, hard_threshold = 1e-9,
+    sample_fraction = 1, random_state = 12L,
+    study_labels = fixture$study_labels
+  ))
+  stab <- stabl_multiomic_selection_stability(nested)
+  fold_ids <- vapply(nested$outer_folds, `[[`, character(1L), "fold_id")
+  expect_identical(dimnames(stab$similarity_matrix), list(fold_ids, fold_ids))
+  expect_identical(
+    dim(stab$similarity_matrix),
+    c(length(fold_ids), length(fold_ids))
+  )
+  expect_true(all(diag(stab$similarity_matrix) == 1))
+  expect_true(all(stab$similarity_matrix >= 0 & stab$similarity_matrix <= 1))
+  expect_true(is.finite(stab$mean_pairwise_similarity))
+  expect_true(stab$mean_pairwise_similarity >= 0)
+  expect_identical(stab$fold_scheme, "study_disjoint")
+  expect_true(all(stab$fold_selection_sizes >= 0))
+
+  # fail-closed: sample-iid objects and foreign objects are rejected
+  nested_iid <- suppressWarnings(stabl_multiomic_nested_cv(
+    x_list = fixture$x_list,
+    y = fixture$y,
+    candidates = list(list(name = "rna", blocks = "rna")),
+    lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+    outer_v = 2L, inner_v = 2L, n_bootstraps = 10L,
+    artificial_type = NULL, hard_threshold = 1e-9,
+    sample_fraction = 1, random_state = 12L
+  ))
+  expect_error(
+    stabl_multiomic_selection_stability(nested_iid),
+    "study_disjoint"
+  )
+  expect_error(
+    stabl_multiomic_selection_stability(list()),
+    "stabl_multiomic_nested_cv"
+  )
+})
+
+# C5 (inferred scope): grouped-CV single-class guardrail.
+test_that("grouped CV fails closed on single-class assessment folds", {
+  set.seed(14L)
+  ids <- paste0("s", 1:8)
+  y <- setNames(factor(c(rep("A", 4), rep("B", 4))), ids)
+  x <- matrix(rnorm(8 * 4), 8, 4, dimnames = list(ids, paste0("g", 1:4)))
+  groups <- setNames(rep(c("g1", "g2"), each = 4L), ids)
+
+  # v = 2 with two single-class groups: every assignment yields a
+  # single-class assessment fold, so the guard fires deterministically.
+  expect_error(
+    stabl_multiomic_cv(
+      x_list = list(rna = x), y = y,
+      lambda_grid = data.frame(lambda = 0.1), v = 2L,
+      n_bootstraps = 2L, artificial_type = NULL, hard_threshold = 0.5,
+      random_state = 3L, groups = groups, family = "binomial"
+    ),
+    "single outcome class"
+  )
+
+  # non-regression: mixed-composition groups with classification pass the
+  # guard and still record the group-disjoint scheme
+  y_mixed <- setNames(factor(rep(c("A", "B"), times = 4L)), ids)
+  x_mixed <- x
+  x_mixed[, 1:2] <- x_mixed[, 1:2] + 1.5 * (y_mixed == "A")
+  cv_ok <- suppressWarnings(stabl_multiomic_cv(
+    x_list = list(rna = x_mixed), y = y_mixed,
+    lambda_grid = data.frame(lambda = 0.1), v = 2L,
+    n_bootstraps = 2L, artificial_type = NULL, hard_threshold = 0.5,
+    random_state = 3L, groups = groups, family = "binomial"
+  ))
+  expect_identical(cv_ok$fold_scheme, "group_disjoint")
+})

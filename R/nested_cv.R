@@ -72,7 +72,17 @@
 #'   sampling unit as `fold_scheme` (`"sample_iid"` or `"study_disjoint"`) and
 #'   the validated `study_labels`; under `fold_scheme = "study_disjoint"` each
 #'   outer/inner fold additionally carries `study_ids` (per-fold study
-#'   membership) and `class_counts` (per-fold held-out class counts).
+#'   membership) and `class_counts` (per-fold held-out class counts). When
+#'   `study_labels` is supplied, `performance_by_study` holds per-study
+#'   outer held-out accuracy and balanced error rate (pooled across folds and
+#'   repeats; `NA` balanced error rate for studies whose pooled held-out
+#'   predictions contain a single outcome class).
+#'
+#' @note Batch harmonization (e.g. ComBat) fitted on the full dataset before
+#'   cross-validation leaks study-level information across folds and inflates
+#'   performance estimates. Fit harmonization within training folds, or
+#'   interpret all reported metrics as conditional on the harmonization step;
+#'   study-disjoint folds do not repair leakage from pooled preprocessing.
 #'
 #' @examples
 #' set.seed(3L)
@@ -272,6 +282,11 @@ stabl_multiomic_nested_cv <- function(
   diagnostics <- do.call(rbind, inner_rows)
   selected_features <- do.call(rbind, feature_rows)
   performance <- .classification_metrics_from_preds_df(predictions, y)
+  performance_by_study <- if (!is.null(study_labels)) {
+    .per_study_performance(predictions, study_labels, y)
+  } else {
+    NULL
+  }
 
   structure(
     list(
@@ -281,6 +296,7 @@ stabl_multiomic_nested_cv <- function(
       outer_predictions = predictions,
       selected_features = selected_features,
       performance = performance,
+      performance_by_study = performance_by_study,
       levels = levels(y),
       metric = metric,
       candidates = candidates,
@@ -852,6 +868,43 @@ stabl_multiomic_nested_cv <- function(
     truth     = factor(predictions$truth,     levels = levels(y)),
     predicted = factor(predictions$predicted, levels = levels(y))
   )
+}
+
+# Per-study outer held-out performance (C1): pools a study's predictions
+# across all outer folds and repeats.  Balanced error rate is computed over
+# the outcome classes actually present in the study's pooled predictions and
+# is NA when only one class is present.
+.per_study_performance <- function(predictions, study_labels, y) {
+  if (is.null(predictions) || nrow(predictions) == 0L) {
+    return(NULL)
+  }
+  study_of_prediction <- unname(study_labels[as.character(predictions$sample_id)])
+  studies <- sort(unique(study_of_prediction))
+  rows <- lapply(studies, function(study_id) {
+    idx <- which(study_of_prediction == study_id)
+    truth <- factor(predictions$truth[idx], levels = levels(y))
+    predicted <- factor(predictions$predicted[idx], levels = levels(y))
+    tab <- table(truth = truth, predicted = predicted)
+    n <- sum(tab)
+    accuracy <- unname(sum(diag(tab)) / n)
+    recalls <- diag(tab) / pmax(rowSums(tab), 1L)
+    present <- rowSums(tab) > 0L
+    ber <- if (sum(present) >= 2L) {
+      unname(1 - mean(recalls[present]))
+    } else {
+      NA_real_
+    }
+    data.frame(
+      study = as.character(study_id),
+      n_predictions = as.integer(n),
+      accuracy = accuracy,
+      balanced_error_rate = ber,
+      stringsAsFactors = FALSE
+    )
+  })
+  out <- do.call(rbind, rows)
+  rownames(out) <- NULL
+  out
 }
 
 .predict_selected_multinomial <- function(x_train, y_train, x_valid, levels) {

@@ -380,3 +380,55 @@ test_that("end-to-end smoke: 4 synthetic studies report the study-disjoint schem
   expect_output(print(res), "study_disjoint")
   expect_output(print(res), "studies:\\s+4")
 })
+
+# C1 (inferred scope): per-study performance reporting.
+test_that("performance_by_study pools per-study held-out predictions", {
+  fixture <- .make_study_fixture(c(8L, 8L, 8L, 8L, 8L, 8L), seed = 16L)  # n = 48
+  # study6 is single-class: its pooled held-out BER is undefined (NA), but
+  # pairing it with a mixed study in every fold keeps all validation folds
+  # two-class so the CV itself runs.
+  ids6 <- names(fixture$study_labels)[fixture$study_labels == "study6"]
+  fixture$y[ids6] <- factor(rep("A", length(ids6)), levels = levels(fixture$y))
+
+  res <- suppressWarnings(stabl_multiomic_nested_cv(
+    x_list = fixture$x_list,
+    y = fixture$y,
+    candidates = list(list(name = "rna", blocks = "rna")),
+    lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+    outer_v = 3L,
+    inner_v = 2L,
+    n_bootstraps = 10L,
+    artificial_type = NULL,
+    hard_threshold = 1e-9,
+    sample_fraction = 1,
+    random_state = 51L,
+    study_labels = fixture$study_labels
+  ))
+
+  pbs <- res$performance_by_study
+  expect_false(is.null(pbs))
+  expect_equal(nrow(pbs), 6L)
+  expect_setequal(pbs$study, paste0("study", 1:6))
+  expect_equal(sum(pbs$n_predictions), nrow(res$outer_predictions))
+  expect_true(all(pbs$accuracy >= 0 & pbs$accuracy <= 1))
+  expect_true(is.na(pbs$balanced_error_rate[pbs$study == "study6"]))
+  expect_true(all(is.finite(
+    pbs$balanced_error_rate[pbs$study != "study6"]
+  )))
+
+  # sample-iid arm: the field stays NULL (additive, zero behavior change)
+  res_iid <- suppressWarnings(stabl_multiomic_nested_cv(
+    x_list = fixture$x_list,
+    y = fixture$y,
+    candidates = list(list(name = "rna", blocks = "rna")),
+    lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+    outer_v = 3L,
+    inner_v = 2L,
+    n_bootstraps = 10L,
+    artificial_type = NULL,
+    hard_threshold = 1e-9,
+    sample_fraction = 1,
+    random_state = 51L
+  ))
+  expect_null(res_iid$performance_by_study)
+})

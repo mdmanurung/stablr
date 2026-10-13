@@ -46,6 +46,37 @@
   (`b1_selected_features.csv`) for the Round C stability-of-stability
   analysis.
 
+## Cross-study reliability: reporting, comparison, and guardrails (C1–C5)
+
+All Round C items are inferred scope (the approved plan flags them for
+audit reconciliation):
+
+- **Per-study performance (C1):** `stabl_multiomic_nested_cv()` now returns
+  `performance_by_study` when `study_labels` is supplied — per-study outer
+  held-out accuracy and balanced error rate pooled across folds and repeats
+  (`NA` balanced error rate for studies whose pooled held-out predictions
+  contain a single outcome class).  `NULL` under the sample-i.i.d. scheme.
+- **Scheme comparison helper (C2):** new
+  `stabl_multiomic_scheme_comparison()` runs the same nested CV under both
+  sampling units (sample-i.i.d. and study-disjoint) with matched arguments
+  and returns both objects plus a comparison table and the BER gap
+  (positive = the sample-i.i.d. estimate was optimistic).
+- **Harmonization guardrail (C3, documentation):** the CV docs now warn that
+  batch harmonization (e.g. ComBat) fitted on the full dataset before
+  cross-validation leaks study-level information across folds; fit
+  harmonization within training folds or interpret metrics as conditional
+  on that step.  Study-disjoint folds do not repair leakage from pooled
+  preprocessing.
+- **Stability of stability (C4):** new
+  `stabl_multiomic_selection_stability()` computes fold x fold Jaccard
+  similarity of the selected feature sets across the outer folds of a
+  study-disjoint nested CV (the deferred selection-stability heatmap
+  analysis; render with `stats::heatmap()`).
+- **Grouped-CV guardrail (C5):** `stabl_multiomic_cv()` now fails closed
+  when a grouped assessment fold holds a single outcome class under a
+  classification family (mirroring the study-disjoint validation);
+  regression is unaffected.
+
 ## Two-tier API: beginner `stabl()` + expert `stabl_fit()`
 
 - **New `stabl()`:** a one-stop-shop entry point for first-time and

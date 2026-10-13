@@ -95,3 +95,5 @@ feature_names.stabl,s3,feature_names,stabl,selection,R/stabl.R,man/support.Rd,ru
 feature_names.stabl_fit,s3,feature_names,stabl_fit,selection,R/stabl.R,man/support.Rd,running,test-stabl-wrapper.R,not_applicable-method,accessor_contract
 stabl_multiomic_study_diagnostics,export,,,multiomic,R/study_tools.R,man/stabl_multiomic_study_diagnostics.Rd,running,test-study-tools.R,test-study-tools.R,core_contract
 stabl_multiomic_study_split,export,,,multiomic,R/study_tools.R,man/stabl_multiomic_study_split.Rd,running,test-study-tools.R,test-study-tools.R,core_contract
+stabl_multiomic_scheme_comparison,export,,,multiomic,R/study_tools.R,man/stabl_multiomic_scheme_comparison.Rd,running,test-study-tools.R,test-study-tools.R,core_contract
+stabl_multiomic_selection_stability,export,,,multiomic,R/study_tools.R,man/stabl_multiomic_selection_stability.Rd,running,test-study-tools.R,test-study-tools.R,core_contract

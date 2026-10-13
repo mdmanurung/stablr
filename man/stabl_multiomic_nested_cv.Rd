@@ -115,7 +115,11 @@ selected features, and aggregate performance. The object also records the
 sampling unit as \code{fold_scheme} (\code{"sample_iid"} or \code{"study_disjoint"}) and
 the validated \code{study_labels}; under \code{fold_scheme = "study_disjoint"} each
 outer/inner fold additionally carries \code{study_ids} (per-fold study
-membership) and \code{class_counts} (per-fold held-out class counts).
+membership) and \code{class_counts} (per-fold held-out class counts). When
+\code{study_labels} is supplied, \code{performance_by_study} holds per-study
+outer held-out accuracy and balanced error rate (pooled across folds and
+repeats; \code{NA} balanced error rate for studies whose pooled held-out
+predictions contain a single outcome class).
 }
 \description{
 Runs a repeated outer cross-validation loop for generalisation assessment.
@@ -137,6 +141,12 @@ nested CV. Use \code{\link[=stabl_multiomic_train_validate]{stabl_multiomic_trai
 estimate predictive performance for the declared candidate workflow; they
 do not establish dataset-wide FDP control. Late-fusion stacking is not a
 candidate type in this helper.
+
+Batch harmonization (e.g. ComBat) fitted on the full dataset before
+cross-validation leaks study-level information across folds and inflates
+performance estimates. Fit harmonization within training folds, or
+interpret all reported metrics as conditional on the harmonization step;
+study-disjoint folds do not repair leakage from pooled preprocessing.
 }
 \examples{
 set.seed(3L)

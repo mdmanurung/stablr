@@ -337,3 +337,196 @@ stabl_multiomic_study_split <- function(x_list, y, study_labels,
   }
   assignment
 }
+
+# ── C2 (inferred scope): scheme comparison ────────────────────────────────────
+
+#' Compare Sample-I.I.D. and Study-Disjoint Nested CV
+#'
+#' Runs [stabl_multiomic_nested_cv()] twice on the same data — once with
+#' sample-i.i.d. folds and once with study-disjoint folds — and summarises
+#' the gap between the two generalization estimates. A large gap signals that
+#' the sample-i.i.d. estimate is optimistic because held-out samples share
+#' study-level structure (e.g. outcome prevalence or feature shifts) with the
+#' training data.
+#'
+#' Both arms receive identical arguments (including `random_state`), so the
+#' only difference is the CV sampling unit. Under `stratified = TRUE` the
+#' stratification is interpreted at the sample level for the sample-i.i.d.
+#' arm and at the study level for the study-disjoint arm, matching the
+#' semantics of each scheme.
+#'
+#' @param x_list Named list of omic matrices or data frames with identical
+#'   sample row names.
+#' @param y Named outcome vector (factor for classification, numeric for
+#'   regression).
+#' @param study_labels Named vector assigning each sample to a study; names
+#'   must cover exactly the sample IDs. Required.
+#' @param ... Additional arguments passed to [stabl_multiomic_nested_cv()]
+#'   (`candidates`, `lambda_grid`, `metric`, `family`, `n_bootstraps`,
+#'   `artificial_type`, `hard_threshold`, `stratified`, `random_state`,
+#'   `n_lambda`, `l1_ratio`, `outer_v`, `inner_v`, `cv_workers`,
+#'   `stabl_workers`).
+#'
+#' @return A list with `sample_iid` and `study_disjoint` (the two
+#'   `stabl_multiomic_nested_cv` objects), `comparison` (one row per scheme
+#'   with `balanced_error_rate`, `accuracy`, and `macro_f1`), and `ber_gap`
+#'   (study-disjoint minus sample-i.i.d. balanced error rate; positive values
+#'   mean the sample-i.i.d. estimate was optimistic).
+#'
+#' @seealso [stabl_multiomic_nested_cv()],
+#'   [stabl_multiomic_study_diagnostics()]
+#'
+#' @examples
+#' set.seed(6L)
+#' ids <- paste0("s", 1:48)
+#' y <- setNames(factor(rep(c("A", "B"), times = 24L)), ids)
+#' x <- matrix(rnorm(48 * 4, sd = 0.5), 48, 4,
+#'             dimnames = list(ids, paste0("g", 1:4)))
+#' x[, 1:2] <- x[, 1:2] + 1.2 * (y == "A")
+#' study_labels <- setNames(rep(paste0("study", 1:6), each = 8L), ids)
+#' # study6 is outcome-skewed: sample-i.i.d. folds leak its composition
+#' y[study_labels == "study6"] <-
+#'   factor(rep(c("A", "A", "A", "A", "A", "A", "B", "B")), levels = levels(y))
+#' cmp <- stabl_multiomic_scheme_comparison(
+#'   x_list = list(rna = x), y = y, study_labels = study_labels,
+#'   candidates = list(list(name = "rna", blocks = "rna")),
+#'   lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+#'   outer_v = 2L, inner_v = 2L, n_bootstraps = 10L,
+#'   artificial_type = NULL, hard_threshold = 1e-9,
+#'   sample_fraction = 1, random_state = 6L
+#' )
+#' cmp$comparison
+#' cmp$ber_gap
+#' @export
+stabl_multiomic_scheme_comparison <- function(x_list, y, study_labels, ...) {
+  if (is.null(study_labels)) {
+    stop(
+      "`study_labels` is required: the comparison needs a study-disjoint arm.",
+      call. = FALSE
+    )
+  }
+  .validate_study_labels(study_labels, rownames(x_list[[1L]]))
+
+  call_args <- c(list(x_list = x_list, y = y), list(...))
+  sample_iid <- do.call(
+    stabl_multiomic_nested_cv,
+    c(call_args, list(study_labels = NULL))
+  )
+  study_disjoint <- do.call(
+    stabl_multiomic_nested_cv,
+    c(call_args, list(study_labels = study_labels))
+  )
+
+  comparison <- data.frame(
+    scheme = c("sample_iid", "study_disjoint"),
+    balanced_error_rate = vapply(
+      list(sample_iid, study_disjoint),
+      function(obj) unname(obj$performance$balanced_error_rate),
+      numeric(1L)
+    ),
+    accuracy = vapply(
+      list(sample_iid, study_disjoint),
+      function(obj) unname(obj$performance$accuracy),
+      numeric(1L)
+    ),
+    macro_f1 = vapply(
+      list(sample_iid, study_disjoint),
+      function(obj) unname(obj$performance$macro_f1),
+      numeric(1L)
+    ),
+    stringsAsFactors = FALSE
+  )
+
+  list(
+    sample_iid = sample_iid,
+    study_disjoint = study_disjoint,
+    comparison = comparison,
+    ber_gap = unname(
+      comparison$balanced_error_rate[[2L]] -
+        comparison$balanced_error_rate[[1L]]
+    )
+  )
+}
+
+# ── C4 (inferred scope): stability of stability across studies ───────────────
+
+#' Selection Stability Across Study-Disjoint Folds
+#'
+#' Quantifies how consistent the selected feature sets are across the outer
+#' folds of a study-disjoint nested CV. Each fold's selection signature is
+#' the union of features selected for the winning candidate across repeats;
+#' pairwise Jaccard similarities between fold signatures summarise whether
+#' the support is stable when whole studies are held out.
+#'
+#' @param object A `stabl_multiomic_nested_cv` object returned by
+#'   [stabl_multiomic_nested_cv()] with `fold_scheme = "study_disjoint"`.
+#'
+#' @return A list with `similarity_matrix` (fold x fold Jaccard matrix, rows
+#'   and columns in outer-fold order), `mean_pairwise_similarity`,
+#'   `min_pairwise_similarity`, `fold_selection_sizes` (named integer vector
+#'   of per-fold signature sizes), `n_repeats`, and `fold_scheme`. Render the
+#'   matrix with e.g. `stats::heatmap(result$similarity_matrix)`.
+#'
+#' @seealso [jaccard_similarity_matrix()] for the underlying metric and
+#'   [stabl_multiomic_nested_cv()] for the study-disjoint scheme.
+#'
+#' @examples
+#' set.seed(7L)
+#' ids <- paste0("s", 1:48)
+#' y <- setNames(factor(rep(c("A", "B"), times = 24L)), ids)
+#' x <- matrix(rnorm(48 * 5, sd = 0.5), 48, 5,
+#'             dimnames = list(ids, paste0("g", 1:5)))
+#' x[, 1:2] <- x[, 1:2] + 1.2 * (y == "A")
+#' study_labels <- setNames(rep(paste0("study", 1:6), each = 8L), ids)
+#' nested <- suppressWarnings(stabl_multiomic_nested_cv(
+#'   x_list = list(rna = x), y = y, study_labels = study_labels,
+#'   candidates = list(list(name = "rna", blocks = "rna")),
+#'   lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+#'   outer_v = 2L, inner_v = 2L, n_bootstraps = 10L,
+#'   artificial_type = NULL, hard_threshold = 1e-9,
+#'   sample_fraction = 1, random_state = 7L
+#' ))
+#' stab <- stabl_multiomic_selection_stability(nested)
+#' stab$similarity_matrix
+#' stab$mean_pairwise_similarity
+#' @export
+stabl_multiomic_selection_stability <- function(object) {
+  if (!inherits(object, "stabl_multiomic_nested_cv")) {
+    stop(
+      "`object` must be a `stabl_multiomic_nested_cv` result.",
+      call. = FALSE
+    )
+  }
+  if (!identical(object$fold_scheme, "study_disjoint")) {
+    stop(
+      paste0(
+        "`object` must come from study-disjoint CV ",
+        "(fold_scheme = \"study_disjoint\")."
+      ),
+      call. = FALSE
+    )
+  }
+  sf <- object$selected_features
+  if (is.null(sf) || nrow(sf) == 0L) {
+    stop("The nested-CV object records no selected features.", call. = FALSE)
+  }
+
+  fold_order <- vapply(object$outer_folds, `[[`, character(1L), "fold_id")
+  fold_sets <- lapply(fold_order, function(fold_id) {
+    unique(sf$feature[sf$fold_id == fold_id])
+  })
+  names(fold_sets) <- fold_order
+
+  mat <- jaccard_similarity_matrix(fold_sets, remove_diag = FALSE)
+  dimnames(mat) <- list(fold_order, fold_order)
+  offdiag <- mat[lower.tri(mat)]
+
+  list(
+    similarity_matrix = mat,
+    mean_pairwise_similarity = if (length(offdiag)) unname(mean(offdiag)) else NA_real_,
+    min_pairwise_similarity = if (length(offdiag)) unname(min(offdiag)) else NA_real_,
+    fold_selection_sizes = setNames(lengths(fold_sets), fold_order),
+    n_repeats = length(unique(sf$repeat_id)),
+    fold_scheme = "study_disjoint"
+  )
+}

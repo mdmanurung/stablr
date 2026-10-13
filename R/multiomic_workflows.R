@@ -372,6 +372,12 @@ stabl_multiomic_train_validate <- function(
 #'       labels here for study-disjoint CV), otherwise `"sample_iid"`.}
 #'   }
 #'
+#' @note Batch harmonization (e.g. ComBat) fitted on the full dataset before
+#'   cross-validation leaks study-level information across folds and inflates
+#'   performance estimates. Fit harmonization within training folds, or
+#'   interpret all reported metrics as conditional on the harmonization step;
+#'   group-disjoint folds do not repair leakage from pooled preprocessing.
+#'
 #' @examples
 #' set.seed(2L)
 #' ids <- paste0("s", 1:12)
@@ -438,7 +444,9 @@ stabl_multiomic_cv <- function(
     sample_ids = sample_ids,
     groups = groups,
     v = v,
-    random_state = random_state
+    random_state = random_state,
+    y = y,
+    family = family
   )
 
   fold_results <- vector("list", length(folds))
@@ -844,7 +852,9 @@ stabl_multiomic_cv <- function(
                                      groups,
                                      v,
                                      random_state = NULL,
-                                     strata = NULL) {
+                                     strata = NULL,
+                                     y = NULL,
+                                     family = NULL) {
   units <- if (is.null(groups)) {
     sample_ids
   } else {
@@ -919,6 +929,29 @@ stabl_multiomic_cv <- function(
       valid_ids = valid_ids
     )
   })
+
+  # C5 guardrail: grouped assessment folds must hold both outcome classes
+  # for classification, mirroring the study-disjoint validation in
+  # stabl_multiomic_nested_cv. Regression is unaffected.
+  if (!is.null(groups) && !is.null(y) && !is.null(family) &&
+      family %in% c("binomial", "multinomial")) {
+    for (fold in folds) {
+      fold_classes <- unique(y[fold$valid_ids])
+      if (length(fold_classes) < 2L) {
+        .abort_stablr(
+          "stablr_cv_infeasible",
+          paste0(
+            "Cross-validation fold `", fold$fold,
+            "` holds a single outcome class; classification metrics are ",
+            "undefined. Provide more groups, fewer folds, or groups with ",
+            "mixed outcome composition."
+          ),
+          fold = fold$fold,
+          classes_present = fold_classes
+        )
+      }
+    }
+  }
 
   .validate_multiomic_cv_folds(folds, sample_strata)
   folds
