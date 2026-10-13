@@ -1,5 +1,20 @@
 # stablr 0.3.0
 
+## Documentation
+
+- Documentation website restyled after the dreamlet site (Flatly theme,
+  KaTeX math rendering, maintainer links on the authors page); the pkgdown
+  workflow now deploys the site on every push to main.
+- Homepage restructured to lead with resources, motivation, the analysis
+  workflow diagram, and installation; release-governance detail moved to
+  `docs/RELEASE_STATUS.md`.
+- All eight vignettes rewritten in the formal register of the limma User's
+  Guide (numbered task-oriented sections, declarative prose, output
+  interpretation); code chunks are unchanged.
+- `inst/CITATION` derives the package version dynamically instead of
+  hardcoding it.
+- pkgdown reference index extended with the knockoff feature constructors.
+
 ## Cross-study reliability: study-disjoint resampling (B1–B3)
 
 - **New `study_labels` argument on `stabl_multiomic_nested_cv()`** declares
