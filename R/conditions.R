@@ -39,7 +39,9 @@
     "eigenvalue\\(s\\) converged",
     "did not converge",
     "not positive definite",
+    "not positive-definite",
     "not positive semidefinite",
+    "cannot solve SDP",
     "computationally singular",
     "system is exactly singular",
     "leading minor.*not positive"

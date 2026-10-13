@@ -1,5 +1,44 @@
 # stablr 0.2.2
 
+## Scientific hardening (audit A1-A3, E1-E3)
+
+- **Strict fallback policy (flagged behavior change):** when a knockoff
+  constructor fails on a supported-dimensional input, the previous behavior
+  was to warn and silently fall back to random-permutation features — which
+  do not support FDP+ calibration, so the fit's FDP+ estimates silently
+  changed target.  `make_artificial_features()` and `stabl_fit()` now take
+  `knockoff_fallback = "stop"` (the default): the fallback is an error with
+  an actionable message.  `knockoff_fallback = "allow"` restores the
+  warn-and-fall-back behavior (recorded in the provenance
+  `fallback_history`).  The benign `knockoff_mvr` -> `knockoff_equi`
+  fallback is unaffected (both are model-X constructions with valid FDP+
+  calibration) and remains a warning under either policy.  Related fix: the
+  linear-algebra infeasibility classifier now recognizes the hyphenated
+  "not positive-definite" and "cannot solve SDP" messages emitted by the
+  knockoff package's SDP solver, so those failures are typed and handled
+  consistently instead of escaping as raw errors.
+- **RF/oblique-RF confirmatory guard extended:** the runtime guardrail for
+  multivariate RF learners now also fires for the fixed-X `knockoff`
+  pairing (fixed-X exchangeability does not survive bootstrap row
+  subsampling), not only for `random_permutation`.  The model-X pairings
+  (`knockoff_equi`, `knockoff_mvr`) remain warning-free.
+- **Covariance terminology:** the fixed-X knockoff documentation now states
+  the actual contract (second-moment/Gram structure on the input scale)
+  rather than "covariance structure".
+- **SCI-04 feasibility clause (E1):** the draft
+  `SCI-04-null-selected-fraction-v2` contract now documents that the
+  proposed release criterion `U <= 0.10` (Hoeffding, `alpha = 0.05`) is
+  vacuous at the previously considered n = 100 replicates (margin 0.1224 >
+  0.10) and predeclares `n >= 150` as a design-time fail-closed
+  feasibility requirement, with deterministic reference tests pinning the
+  arithmetic.  The gate remains `proposed_unaccepted` pending independent
+  review; no locked-run data was used.
+- **F5 benchmark expansion (E2/E3):** the RF validation suite now includes
+  the oblique-RF adapter (`aorsf`) when installed, giving the adapter its
+  first F5 FDP evidence, and the start-of-run knockoff probe verifies the
+  0.2.2 shipped-pair scale contract on a heterogeneous-scale design
+  (column sds 0.01-100) instead of a standardized one.
+
 ## Audit hotfixes (source audit of 0.2.1, PR #3 follow-up)
 
 - **Fixed-X shipped-pair scale contract completed (flagged behavior

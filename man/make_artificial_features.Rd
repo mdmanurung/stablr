@@ -4,17 +4,25 @@
 \alias{make_artificial_features}
 \title{Dispatcher for Artificial Feature Generation}
 \usage{
-make_artificial_features(x, n_injected, type, random_state = NULL)
+make_artificial_features(
+  x,
+  n_injected,
+  type,
+  random_state = NULL,
+  knockoff_fallback = c("stop", "allow")
+)
 }
 \arguments{
 \item{x}{Numeric matrix of predictors (samples \eqn{\times} features).
 Must have more columns than \code{n_injected} for random permutation; for
-knockoffs, a fallback to random permutation is attempted when the
-knockoff constructor fails (e.g., rank-deficient input). Fixed-X
-knockoffs that require row augmentation also fall back because augmented
-knockoff rows cannot be aligned with the original outcome. All knockoff
-modes fail closed above 3 000 predictors; random permutation has no such
-dimensional limit.}
+knockoffs, constructor failure (e.g., rank-deficient input) is governed
+by \code{knockoff_fallback}: by default (\code{"stop"}) it is an error, and with
+\code{knockoff_fallback = "allow"} a fallback to random permutation is
+attempted. Fixed-X knockoffs that require row augmentation also fail
+(or fall back under \code{"allow"}) because augmented knockoff rows cannot
+be aligned with the original outcome. All knockoff modes fail closed
+above 3 000 predictors; random permutation has no such dimensional
+limit.}
 
 \item{n_injected}{Positive integer; number of artificial columns to append.
 Typically \code{round(ncol(x) * artificial_proportion)} as computed in
@@ -27,6 +35,18 @@ Typically \code{round(ncol(x) * artificial_proportion)} as computed in
 random operations for reproducibility.  \code{NULL} leaves the RNG unchanged.
 Seeding happens exactly once in this dispatcher; downstream generators
 inherit the seeded RNG state and do not re-seed (audit M-5).}
+
+\item{knockoff_fallback}{Character; the fallback policy when a knockoff
+constructor fails on a supported-dimensional input (audit A1, strict
+fallback policy).  \code{"stop"} (the default) raises an error: a
+knockoff-to-random-permutation fallback silently changes the FDP+
+calibration target, because permutation features do not support FDP+
+calibration.  \code{"allow"} restores the pre-0.2.2 behavior (warn and fall
+back to random-permutation features for the affected chunk; the
+\code{fallback_history} provenance records the event).  The benign
+\code{knockoff_mvr} -> \code{knockoff_equi} fallback is unaffected: both are
+model-X constructions with valid FDP+ calibration, so it remains a
+warning under either policy.}
 }
 \value{
 Named list with three elements:
@@ -66,13 +86,14 @@ Four noise strategies are supported:
 columns and shuffles each copy independently, breaking all signal while
 preserving marginal distributions.  Fast and broadly applicable.}
 \item{\code{"knockoff"}}{Generates \strong{fixed-X} knockoffs via
-\code{\link[knockoff:create.fixed]{knockoff::create.fixed()}}, which preserve the covariance structure of
-the original features under the fixed-design assumption.  The design is
-standardized internally before the construction.  Kept for backward
-compatibility; note that fixed-X knockoffs are generated once on the
-full design, so their exchangeability does not survive the row
-subsampling of the bootstrap loop — prefer \code{"knockoff_equi"} or
-\code{"knockoff_mvr"} when correlation structure matters.}
+\code{\link[knockoff:create.fixed]{knockoff::create.fixed()}}, which preserve the second-moment (Gram)
+structure of the original design on the input's own scale:
+\verb{t(xk) xk = t(x) x} and \verb{t(x) xk = t(x) x - diag(s)} with \code{s >= 0}
+(0.2.2 scale contract).  Kept for backward compatibility; note that
+fixed-X knockoffs are generated once on the full design, so their
+exchangeability does not survive the row subsampling of the bootstrap
+loop — prefer \code{"knockoff_equi"} or \code{"knockoff_mvr"} when correlation
+structure matters.}
 \item{\code{"knockoff_equi"}}{Generates \strong{model-X equicorrelated} knockoffs
 via \code{knockoff::create.gaussian(..., method = "equi")}.  This matches the
 \code{GaussianSampler(method='equicorrelated')} call in Python STABL and is

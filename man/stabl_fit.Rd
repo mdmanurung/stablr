@@ -31,7 +31,8 @@ stabl_fit(
   adaptive_gamma = 1,
   adaptive_epsilon = 1e-06,
   feature_groups = NULL,
-  corr_group_threshold = NULL
+  corr_group_threshold = NULL,
+  knockoff_fallback = c("stop", "allow")
 )
 
 \method{print}{stabl_fit}(x, ...)
@@ -52,10 +53,15 @@ data-driven grid via \code{\link[=auto_lambda_grid]{auto_lambda_grid()}} (uses \
 (reads \code{alpha} from the \code{lambda_grid} \code{alpha} column), or
 \code{"adaptive_lasso"}, or \code{"sparse_group_lasso"}, or \code{"rf"} (random forest
 via \code{ranger}; requires \code{lambda_grid} from \code{\link[=auto_rf_threshold_grid]{auto_rf_threshold_grid()}} or
-\code{"auto"}). Default: \code{"lasso"}. \code{"rf"} is an experimental extension beyond
-Python STABL: FDP+ calibration for random forests is empirical, not
-guaranteed, and is validated separately (see the package's RF validation
-study); it must be paired with model-X knockoff artificial features.}
+\code{"auto"}), or \code{"oblique_rf"} (oblique random forest via \code{aorsf};
+requires \code{lambda_grid} from \code{\link[=auto_oblique_threshold_grid]{auto_oblique_threshold_grid()}} or
+\code{"auto"}). Default: \code{"lasso"}. \code{"rf"} and \code{"oblique_rf"} are experimental
+extensions beyond Python STABL: FDP+ calibration for (oblique) random
+forests is empirical, not guaranteed, and is validated separately (see
+the package's RF validation study); they must be paired with model-X
+knockoff artificial features. For \code{"oblique_rf"} the per-feature
+selection frequencies are noisier than for \code{"rf"} because importance is
+spread across the linear combinations used in each split.}
 
 \item{family}{Character; \code{glmnet} response family (\code{"gaussian"},
 \code{"binomial"}, \code{"multinomial"}, or \code{"cox"}). Default: \code{"gaussian"}.}
@@ -135,6 +141,13 @@ grid used by existing workflows.}
 to derive sparse-group feature groups from pairwise correlations of
 original features. Used only when
 \code{base_learner = "sparse_group_lasso"}.}
+
+\item{knockoff_fallback}{Character; policy when a knockoff constructor
+fails on a supported-dimensional input (audit A1).  \code{"stop"} (the
+default) raises an error because a knockoff-to-random-permutation
+fallback silently changes the FDP+ calibration target; \code{"allow"}
+restores the pre-0.2.2 warn-and-fall-back behavior (recorded in the
+artificial provenance's \code{fallback_history}).}
 
 \item{...}{Ignored; present for S3 \code{print} method compatibility.}
 }

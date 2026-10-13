@@ -34,6 +34,38 @@ must fail closed.
 This proposal was selected from the sampling model before any corrected bound
 was computed. It must not be tuned against the failed locked run.
 
+## Feasibility of the release criterion (audit E1, 0.2.2)
+
+The Hoeffding margin depends only on `alpha` and the replicate count `n`:
+`margin(n) = sqrt(log(1 / alpha) / (2 * n))`. The release criterion
+`U <= 0.10` is achievable only if `margin(n) < 0.10`, because even a perfect
+run (`mean(X) = 0`) yields `U = margin(n)`. At `alpha = 0.05`:
+
+| replicates `n` | margin | criterion `U <= 0.10` achievable at all |
+|---|---|---|
+| 100 | 0.1224 | **no** (vacuous: `U >= 0.1224 > 0.10` always) |
+| 150 | 0.0999 | yes (requires `mean(X) <= 0.0001`) |
+| 200 | 0.0865 | yes (requires `mean(X) <= 0.0135`) |
+| 250 | 0.0774 | yes (requires `mean(X) <= 0.0226`) |
+
+The previously considered replicate count (n = 100) therefore makes the
+proposed criterion **impossible to satisfy**: the gate would fail every run
+regardless of the method's true null-selection behavior. This is a property
+of the formula and the predeclared settings alone (no locked-run data was
+used). Accordingly:
+
+- the predeclared release replicate count for this gate must satisfy
+  `n >= 150`; a cell designed with `n < 150` is infeasible by construction
+  and must fail closed at design time, before any simulation is run;
+- the deterministic reference tests pin this arithmetic
+  (`tests/testthat/test-sci04-gate-feasibility.R`): `margin(100) > 0.10`,
+  `margin(150) <= 0.10`, `margin(200) <= 0.10`;
+- the minimum-feasible replicate count remains demanding (at `n = 150` the
+  observed mean must be near zero). If the accepted decision record wants a
+  less degenerate operating point, it must raise `n` or renegotiate the
+  0.10 criterion explicitly; neither may be tuned against the failed
+  locked run.
+
 ## Acceptance boundary
 
 This record does not authorize an implementation. The proposed bound must not

@@ -214,7 +214,9 @@ make_rp_features <- function(x, n_injected) {
 #'   construction ran) and carries `standardized = FALSE` with NULL
 #'   `means`/`sds` when the random-permutation fallback was taken.
 #' @keywords internal
-make_knockoff_features <- function(x, n_injected, random_state = NULL) {
+make_knockoff_features <- function(x, n_injected, random_state = NULL,
+                                   knockoff_fallback = c("stop", "allow")) {
+  knockoff_fallback <- match.arg(knockoff_fallback)
   .assert_supported_knockoff_dimension(x, "knockoff")
   .require_pkg("knockoff", "for artificial_type = \"knockoff\"")
 
@@ -294,6 +296,9 @@ make_knockoff_features <- function(x, n_injected, random_state = NULL) {
       },
       stablr_numerical_infeasibility = function(e) {
         reason <- conditionMessage(e)
+        if (identical(knockoff_fallback, "stop")) {
+          .abort_strict_knockoff_fallback("knockoff", reason)
+        }
         warning(
           "knockoff::create.fixed failed; falling back to random ",
           "permutation for this chunk. Reason: ", reason,
@@ -365,6 +370,26 @@ make_knockoff_features <- function(x, n_injected, random_state = NULL) {
 
 # ── Shared helpers for model-X generators ─────────────────────────────────────
 
+# A1 (0.2.2) strict fallback policy.  A knockoff -> random-permutation
+# fallback silently changes the statistical guarantees: permutation features
+# do not support FDP+ calibration, so a fit that requested a knockoff type
+# but silently received permuted nulls reports FDP+ estimates whose target
+# estimand changed.  The fallback is therefore an error unless the caller
+# explicitly opts in with knockoff_fallback = "allow".  (The benign
+# knockoff_mvr -> knockoff_equi fallback is NOT affected: both are model-X
+# constructions with valid FDP+ calibration, so it stays a warning.)
+.abort_strict_knockoff_fallback <- function(requested_type, reason) {
+  stop(
+    "knockoff construction failed for artificial_type = \"", requested_type,
+    "\" and the random-permutation fallback is disabled ",
+    "(knockoff_fallback = \"stop\", the strict default). Reason: ", reason,
+    " Random-permutation features do not support FDP+ calibration; repair ",
+    "the input (e.g., reduce p, remove constant or duplicate columns) or ",
+    "explicitly opt in with knockoff_fallback = \"allow\".",
+    call. = FALSE
+  )
+}
+
 # Estimate a positive-definite covariance matrix from x.
 # Falls back to corpcor shrinkage when cov(x) is not PD.
 .estimate_pd_sigma <- function(x) {
@@ -399,7 +424,9 @@ make_knockoff_features <- function(x, n_injected, random_state = NULL) {
 #' @return Named list with elements `x_augmented`, `noise_col_indices`, and
 #'   `artificial_provenance`; see [make_rp_features()] for details.
 #' @keywords internal
-make_knockoff_equi_features <- function(x, n_injected, random_state = NULL) {
+make_knockoff_equi_features <- function(x, n_injected, random_state = NULL,
+                                        knockoff_fallback = c("stop", "allow")) {
+  knockoff_fallback <- match.arg(knockoff_fallback)
   .assert_supported_knockoff_dimension(x, "knockoff_equi")
   .require_pkg("knockoff", "for artificial_type = \"knockoff_equi\"")
 
@@ -427,6 +454,9 @@ make_knockoff_equi_features <- function(x, n_injected, random_state = NULL) {
       },
       stablr_numerical_infeasibility = function(e) {
         reason <- conditionMessage(e)
+        if (identical(knockoff_fallback, "stop")) {
+          .abort_strict_knockoff_fallback("knockoff_equi", reason)
+        }
         warning(
           "knockoff_equi: create.gaussian failed; falling back to random ",
           "permutation for this chunk. Reason: ", reason,
@@ -505,7 +535,9 @@ make_knockoff_equi_features <- function(x, n_injected, random_state = NULL) {
 #'   `artificial_provenance$mvr_chunking` compatibility field always records
 #'   that chunking was not applied.
 #' @keywords internal
-make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
+make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL,
+                                       knockoff_fallback = c("stop", "allow")) {
+  knockoff_fallback <- match.arg(knockoff_fallback)
   .assert_supported_knockoff_dimension(x, "knockoff_mvr")
   .require_pkg("knockoff", "for artificial_type = \"knockoff_mvr\"")
 
@@ -582,6 +614,9 @@ make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
       },
       stablr_numerical_infeasibility = function(e) {
         reason <- conditionMessage(e)
+        if (identical(knockoff_fallback, "stop")) {
+          .abort_strict_knockoff_fallback("knockoff_mvr", reason)
+        }
         from_type <- if (nrow(fallback_history)) {
           fallback_history$to_type[[nrow(fallback_history)]]
         } else {
@@ -674,13 +709,14 @@ make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
 #'     columns and shuffles each copy independently, breaking all signal while
 #'     preserving marginal distributions.  Fast and broadly applicable.}
 #'   \item{`"knockoff"`}{Generates **fixed-X** knockoffs via
-#'     [knockoff::create.fixed()], which preserve the covariance structure of
-#'     the original features under the fixed-design assumption.  The design is
-#'     standardized internally before the construction.  Kept for backward
-#'     compatibility; note that fixed-X knockoffs are generated once on the
-#'     full design, so their exchangeability does not survive the row
-#'     subsampling of the bootstrap loop — prefer `"knockoff_equi"` or
-#'     `"knockoff_mvr"` when correlation structure matters.}
+#'     [knockoff::create.fixed()], which preserve the second-moment (Gram)
+#'     structure of the original design on the input's own scale:
+#'     `t(xk) xk = t(x) x` and `t(x) xk = t(x) x - diag(s)` with `s >= 0`
+#'     (0.2.2 scale contract).  Kept for backward compatibility; note that
+#'     fixed-X knockoffs are generated once on the full design, so their
+#'     exchangeability does not survive the row subsampling of the bootstrap
+#'     loop — prefer `"knockoff_equi"` or `"knockoff_mvr"` when correlation
+#'     structure matters.}
 #'   \item{`"knockoff_equi"`}{Generates **model-X equicorrelated** knockoffs
 #'     via `knockoff::create.gaussian(..., method = "equi")`.  This matches the
 #'     `GaussianSampler(method='equicorrelated')` call in Python STABL and is
@@ -694,12 +730,14 @@ make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
 #'
 #' @param x Numeric matrix of predictors (samples \eqn{\times} features).
 #'   Must have more columns than `n_injected` for random permutation; for
-#'   knockoffs, a fallback to random permutation is attempted when the
-#'   knockoff constructor fails (e.g., rank-deficient input). Fixed-X
-#'   knockoffs that require row augmentation also fall back because augmented
-#'   knockoff rows cannot be aligned with the original outcome. All knockoff
-#'   modes fail closed above 3 000 predictors; random permutation has no such
-#'   dimensional limit.
+#'   knockoffs, constructor failure (e.g., rank-deficient input) is governed
+#'   by `knockoff_fallback`: by default (`"stop"`) it is an error, and with
+#'   `knockoff_fallback = "allow"` a fallback to random permutation is
+#'   attempted. Fixed-X knockoffs that require row augmentation also fail
+#'   (or fall back under `"allow"`) because augmented knockoff rows cannot
+#'   be aligned with the original outcome. All knockoff modes fail closed
+#'   above 3 000 predictors; random permutation has no such dimensional
+#'   limit.
 #' @param n_injected Positive integer; number of artificial columns to append.
 #'   Typically `round(ncol(x) * artificial_proportion)` as computed in
 #'   [stabl_fit()].
@@ -709,6 +747,17 @@ make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
 #'   random operations for reproducibility.  `NULL` leaves the RNG unchanged.
 #'   Seeding happens exactly once in this dispatcher; downstream generators
 #'   inherit the seeded RNG state and do not re-seed (audit M-5).
+#' @param knockoff_fallback Character; the fallback policy when a knockoff
+#'   constructor fails on a supported-dimensional input (audit A1, strict
+#'   fallback policy).  `"stop"` (the default) raises an error: a
+#'   knockoff-to-random-permutation fallback silently changes the FDP+
+#'   calibration target, because permutation features do not support FDP+
+#'   calibration.  `"allow"` restores the pre-0.2.2 behavior (warn and fall
+#'   back to random-permutation features for the affected chunk; the
+#'   `fallback_history` provenance records the event).  The benign
+#'   `knockoff_mvr` -> `knockoff_equi` fallback is unaffected: both are
+#'   model-X constructions with valid FDP+ calibration, so it remains a
+#'   warning under either policy.
 #'
 #' @return Named list with three elements:
 #'   \describe{
@@ -744,7 +793,8 @@ make_knockoff_mvr_features <- function(x, n_injected, random_state = NULL) {
 #' @seealso [compute_fdp_plus()] which consumes the artificial-feature scores,
 #'   [stabl_fit()] which calls this function automatically.
 #' @export
-make_artificial_features <- function(x, n_injected, type, random_state = NULL) {
+make_artificial_features <- function(x, n_injected, type, random_state = NULL,
+                                     knockoff_fallback = c("stop", "allow")) {
   if (!is.matrix(x) || !is.numeric(x)) {
     stop("`x` must be a numeric matrix.", call. = FALSE)
   }
@@ -773,15 +823,19 @@ make_artificial_features <- function(x, n_injected, type, random_state = NULL) {
   if (startsWith(type, "knockoff")) {
     .assert_supported_knockoff_dimension(x, type)
   }
+  knockoff_fallback <- match.arg(knockoff_fallback)
   if (!is.null(random_state)) set.seed(random_state)
   switch(
     type,
     random_permutation = make_rp_features(x, n_injected),
     knockoff           = make_knockoff_features(x, n_injected,
-                                                random_state = random_state),
+                                                random_state = random_state,
+                                                knockoff_fallback),
     knockoff_equi      = make_knockoff_equi_features(x, n_injected,
-                                                     random_state = random_state),
+                                                     random_state = random_state,
+                                                     knockoff_fallback),
     knockoff_mvr       = make_knockoff_mvr_features(x, n_injected,
-                                                    random_state = random_state)
+                                                    random_state = random_state,
+                                                    knockoff_fallback)
   )
 }

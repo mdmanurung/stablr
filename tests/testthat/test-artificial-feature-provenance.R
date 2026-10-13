@@ -8,13 +8,27 @@ test_that("make_artificial_features records fixed-X knockoff fallback provenance
     dimnames = list(paste0("s", 1:3), paste0("f", 1:3))
   )
 
+  # Audit A1 (0.2.2) strict fallback policy: by default the knockoff ->
+  # random-permutation fallback is an error; the fallback path (and its
+  # provenance) requires explicit opt-in.
+  expect_error(
+    make_artificial_features(
+      x = x,
+      n_injected = 2L,
+      type = "knockoff",
+      random_state = 1001L
+    ),
+    "random-permutation fallback is disabled"
+  )
+
   saw_fallback_warning <- FALSE
   result <- withCallingHandlers(
     make_artificial_features(
       x = x,
       n_injected = 2L,
       type = "knockoff",
-      random_state = 1001L
+      random_state = 1001L,
+      knockoff_fallback = "allow"
     ),
     warning = function(w) {
       if (grepl("falling back to random permutation", conditionMessage(w),
@@ -77,7 +91,8 @@ test_that("fixed-X row augmentation falls back instead of truncating invalid kno
       x = x,
       n_injected = 10L,
       type = "knockoff",
-      random_state = 1003L
+      random_state = 1003L,
+      knockoff_fallback = "allow"
     ),
     warning = function(w) {
       if (grepl("falling back to random permutation", conditionMessage(w),
@@ -148,7 +163,8 @@ test_that("stabl_fit preserves artificial-feature fallback provenance", {
       artificial_type = "knockoff",
       artificial_proportion = 2 / 3,
       sample_fraction = 1,
-      random_state = 1002L
+      random_state = 1002L,
+      knockoff_fallback = "allow"
     ),
     warning = function(w) {
       if (grepl("falling back to random permutation", conditionMessage(w),
@@ -216,4 +232,64 @@ test_that("artificial fallback history retains nested event order", {
     "stablr_mvr_infeasible",
     fixed = TRUE
   )
+})
+
+test_that("strict fallback policy: model-X paths also fail closed by default", {
+  skip_if_not_installed("knockoff")
+
+  set.seed(1005L)
+  x <- matrix(
+    rnorm(9L),
+    nrow = 3L,
+    dimnames = list(paste0("s", 1:3), paste0("f", 1:3))
+  )
+
+  for (type in c("knockoff_equi", "knockoff_mvr")) {
+    expect_error(
+      make_artificial_features(
+        x = x,
+        n_injected = 2L,
+        type = type,
+        random_state = 1005L
+      ),
+      "random-permutation fallback is disabled"
+    )
+  }
+
+  # The benign knockoff_mvr -> knockoff_equi fallback is NOT a
+  # guarantee-changing fallback: it must remain a warning (not an error)
+  # under the strict policy.  Simulated by mocking the MVR solver failure.
+  x_big <- matrix(
+    rnorm(80L * 5L),
+    nrow = 80L,
+    dimnames = list(paste0("s", seq_len(80L)), paste0("f", seq_len(5L)))
+  )
+  testthat::local_mocked_bindings(
+    solve_mvr = function(...) {
+      e <- simpleError("simulated MVR solver failure")
+      class(e) <- c(
+        "stablr_mvr_infeasible", "stablr_numerical_infeasibility", class(e)
+      )
+      stop(e)
+    },
+    .package = "stablr"
+  )
+  saw_equi_fallback_warning <- FALSE
+  result <- withCallingHandlers(
+    make_artificial_features(
+      x = x_big,
+      n_injected = 3L,
+      type = "knockoff_mvr",
+      random_state = 1005L
+    ),
+    warning = function(w) {
+      if (grepl("using equi S for this chunk", conditionMessage(w),
+                fixed = TRUE)) {
+        saw_equi_fallback_warning <<- TRUE
+      }
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_true(saw_equi_fallback_warning)
+  expect_equal(result$artificial_provenance$actual_type, "knockoff_equi")
 })
