@@ -3,6 +3,7 @@ pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   stablr-advanced: stablr-advanced.html
+  stablr-aging-case-study: stablr-aging-case-study.html
   stablr-cooperative: stablr-cooperative.html
   stablr-environments: stablr-environments.html
   stablr-getting-started: stablr-getting-started.html
@@ -10,7 +11,7 @@ articles:
   stablr-multiomic: stablr-multiomic.html
   stablr-tcga-nestedcv: stablr-tcga-nestedcv.html
   stablr-tcga: stablr-tcga.html
-last_built: 2026-10-13T22:36Z
+last_built: 2026-10-14T07:47Z
 urls:
   reference: https://mdmanurung.github.io/stablr/reference
   article: https://mdmanurung.github.io/stablr/articles

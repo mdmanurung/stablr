@@ -541,6 +541,26 @@ get_feature_names_out(fit_en)
 
 The printed names are the features selected by the elastic-net fit.
 
+### 7.3 Choosing a base learner: what the benchmarks show
+
+The bundled benchmarks measure how each learner and artificial-feature
+pairing controls the false discovery proportion on simulated data. Three
+numbers matter when you pick a pairing. Read them as measured
+calibration evidence, not as guarantees for your dataset.
+
+| Base learner | Artificial features | Measured mean FDP | Guidance |
+|----|----|----|----|
+| `rf` | `knockoff_equi` | 0.03 (linear design), 0.07 (nonlinear, p = 10) | Recommended pairing for knockoff-based selection in this scope. Not calibrated at p = 50 with strong correlation (0.44) or for binary outcomes (0.26). |
+| `lasso` | `knockoff_equi` | 0.58 (learner-regime benchmark, p = 10) | Anti-conservative for the lasso. Treat FDP+ as a diagnostic only. |
+| `oblique_rf` | `knockoff_equi` | 0.24 (p = 10); no remedy passed | Fenced. Decoy importance is inflated; use `rf` with knockoffs instead. |
+| any | `random_permutation` | 0.32 to 0.44 | Anti-conservative by construction. Use as a guard, not as calibration. |
+
+Two rules follow from the table. First, pair the random forest with
+equicorrelated knockoffs when you need calibrated selection with
+correlated features. Second, read every FDP+ estimate against the design
+of your own data; the benchmarks are simulations, and no benchmark
+proves calibration on your dataset.
+
 ## 8 Interpretation of the FDP+ estimate
 
 [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)

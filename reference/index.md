@@ -62,26 +62,33 @@ Public learner factories for glmnet-family and sparse-group backends.
 - [`make_sgl_adapter()`](https://mdmanurung.github.io/stablr/reference/make_sgl_adapter.md)
   : Build a Sparse Group Lasso Learner Adapter
 
-## Experimental Learner Adapters
+## Extended Learner Adapters
 
-Experimental extension beyond the glmnet family; API and statistical
-validation are still in progress.
+Extensions beyond the glmnet family. The random forest is calibrated
+within a measured scope (WS-2); the oblique forest is fenced (WS-3); the
+ordinal learner is experimental (WS-9).
 
 - [`make_ranger_adapter()`](https://mdmanurung.github.io/stablr/reference/make_ranger_adapter.md)
-  : Build a Random-Forest Learner Adapter (Experimental)
+  : Build a Random-Forest Learner Adapter (Calibrated, Scoped)
 - [`auto_rf_threshold_grid()`](https://mdmanurung.github.io/stablr/reference/auto_rf_threshold_grid.md)
   : Auto-Generate an Importance-Threshold Grid for Random-Forest STABL
   (Experimental)
 - [`make_aorsf_adapter()`](https://mdmanurung.github.io/stablr/reference/make_aorsf_adapter.md)
-  : Build an Oblique Random-Forest Learner Adapter (Experimental)
+  : Build an Oblique Random-Forest Learner Adapter (Fenced)
 - [`auto_oblique_threshold_grid()`](https://mdmanurung.github.io/stablr/reference/auto_oblique_threshold_grid.md)
   : Auto-Generate an Importance-Threshold Grid for Oblique-Random-Forest
   STABL (Experimental)
+- [`make_ordinal_adapter()`](https://mdmanurung.github.io/stablr/reference/make_ordinal_adapter.md)
+  : Build an Ordinal-Regression Learner Adapter (Experimental)
+- [`auto_ordinal_lambda_grid()`](https://mdmanurung.github.io/stablr/reference/auto_ordinal_lambda_grid.md)
+  : Build a Data-Driven Lambda Grid for the Ordinal Learner
+  (Experimental)
 
 ## Environment Stability
 
 ICP-inspired transportability workflow across environments (batches,
-cohorts, sites); experimental extension beyond Python STABL.
+cohorts, sites); promoted with a documented scope after the WS-5
+transportability benchmark (min-aggregation is the calibrated read).
 
 - [`stabl_environment_stability()`](https://mdmanurung.github.io/stablr/reference/stabl_environment_stability.md)
   : Environment-Stability Workflow: Reliable and Transportable Feature

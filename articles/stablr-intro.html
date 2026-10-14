@@ -42,6 +42,8 @@
     <li><a class="dropdown-item" href="../articles/stablr-tcga-nestedcv.html">TCGA nested CV and DIABLO</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-cooperative.html">Cooperative fusion</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-environments.html">Environment stability</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><a class="dropdown-item" href="../articles/stablr-aging-case-study.html">Aging case study</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-advanced.html">Advanced workflows</a></li>
   </ul>
 </li>
@@ -645,6 +647,65 @@ correlated group should not be chosen.</p>
 <span><span class="co">#&gt; [1] "B1"  "B3"  "B4"  "B5"  "B6"  "B22"</span></span></code></pre></div>
 <p>The printed names are the features selected by the elastic-net
 fit.</p>
+</div>
+<div class="section level3">
+<h3 id="choosing-a-base-learner-what-the-benchmarks-show">7.3 Choosing a base learner: what the benchmarks show<a class="anchor" aria-label="anchor" href="#choosing-a-base-learner-what-the-benchmarks-show"></a>
+</h3>
+<p>The bundled benchmarks measure how each learner and
+artificial-feature pairing controls the false discovery proportion on
+simulated data. Three numbers matter when you pick a pairing. Read them
+as measured calibration evidence, not as guarantees for your
+dataset.</p>
+<table class="table">
+<colgroup>
+<col width="25%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
+</colgroup>
+<thead><tr class="header">
+<th>Base learner</th>
+<th>Artificial features</th>
+<th>Measured mean FDP</th>
+<th>Guidance</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>rf</code></td>
+<td><code>knockoff_equi</code></td>
+<td>0.03 (linear design), 0.07 (nonlinear, p = 10)</td>
+<td>Recommended pairing for knockoff-based selection in this scope. Not
+calibrated at p = 50 with strong correlation (0.44) or for binary
+outcomes (0.26).</td>
+</tr>
+<tr class="even">
+<td><code>lasso</code></td>
+<td><code>knockoff_equi</code></td>
+<td>0.58 (learner-regime benchmark, p = 10)</td>
+<td>Anti-conservative for the lasso. Treat FDP+ as a diagnostic
+only.</td>
+</tr>
+<tr class="odd">
+<td><code>oblique_rf</code></td>
+<td><code>knockoff_equi</code></td>
+<td>0.24 (p = 10); no remedy passed</td>
+<td>Fenced. Decoy importance is inflated; use <code>rf</code> with
+knockoffs instead.</td>
+</tr>
+<tr class="even">
+<td>any</td>
+<td><code>random_permutation</code></td>
+<td>0.32 to 0.44</td>
+<td>Anti-conservative by construction. Use as a guard, not as
+calibration.</td>
+</tr>
+</tbody>
+</table>
+<p>Two rules follow from the table. First, pair the random forest with
+equicorrelated knockoffs when you need calibrated selection with
+correlated features. Second, read every FDP+ estimate against the design
+of your own data; the benchmarks are simulations, and no benchmark
+proves calibration on your dataset.</p>
 </div>
 </div>
 <div class="section level2">

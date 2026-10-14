@@ -46,6 +46,8 @@
     <li><a class="dropdown-item" href="articles/stablr-tcga-nestedcv.html">TCGA nested CV and DIABLO</a></li>
     <li><a class="dropdown-item" href="articles/stablr-cooperative.html">Cooperative fusion</a></li>
     <li><a class="dropdown-item" href="articles/stablr-environments.html">Environment stability</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><a class="dropdown-item" href="articles/stablr-aging-case-study.html">Aging case study</a></li>
     <li><a class="dropdown-item" href="articles/stablr-advanced.html">Advanced workflows</a></li>
   </ul>
 </li>
@@ -69,11 +71,11 @@
 <div class="section level3">
 <h3 id="r-native-stabl-sparse-stable-biomarker-selection-with-false-discovery-calibration">R-native STABL: sparse, stable biomarker selection with false-discovery calibration<a class="anchor" aria-label="anchor" href="#r-native-stabl-sparse-stable-biomarker-selection-with-false-discovery-calibration"></a>
 </h3>
-<p>The <code>stablr</code> package implements STABL (Stability-based Thresholding and Aggregation for Biomarker discovery via LASSO) for high-dimensional clinical and omic data. It resamples the data, fits a sparse learner across a penalty grid, records how often each feature is selected, and calibrates those selection frequencies against artificial decoy features. The package ports the parity-critical STABL semantics from the Python implementation while exposing R-native S3 objects, <code>glmnet</code>-ecosystem learners, multi-omic workflows, visualization helpers, and CSV/disk export utilities. It compiles C++ but has no Python or tidymodels runtime dependency.</p>
+<p>The <code>stablr</code> package implements STABL (Stability-based Thresholding and Aggregation for Biomarker discovery via LASSO) for high-dimensional clinical and omic data. The method repeats three steps. It resamples the data. It fits a sparse learner across a penalty grid. It records how often each feature is selected. It then calibrates these selection frequencies against artificial decoy features. The package keeps the parity-critical STABL semantics of the Python implementation. It exposes R-native S3 objects, <code>glmnet</code>-ecosystem learners, multi-omic workflows, visualization helpers, and CSV/disk export utilities. It compiles C++ but has no Python or tidymodels runtime dependency.</p>
 <p>Major functionality of <code>stablr</code>:</p>
 <ul>
 <li>
-<a href="reference/stabl.html"><code>stabl()</code></a>                     One-stop-shop selector: a data.frame in, a plain-language selection out</li>
+<a href="reference/stabl.html"><code>stabl()</code></a>                     Simple selector: a data.frame in, a plain-language selection out</li>
 <li>
 <a href="reference/stabl_fit.html"><code>stabl_fit()</code></a>                    Expert interface: full control of lambda grid, bootstrap design, thresholds, and learners</li>
 <li>
@@ -106,8 +108,8 @@
 <div class="section level2">
 <h2 id="motivation">Motivation<a class="anchor" aria-label="anchor" href="#motivation"></a>
 </h2>
-<p>A high-dimensional biomarker screen begins with an uncomfortable fact: there are many more tempting variables than there are samples. A sparse model can still choose a short list, but a single fit does not tell whether the list is sturdy or merely lucky, and a selection that reproduces only inside the sampling scheme that produced it has little value for a new cohort or a new lab.</p>
-<p>STABL turns the one-shot question into a repeated experiment. Bootstrap resampling paired with artificial decoy features converts selection frequency into a calibrated decision: a feature is retained only when it out-competes decoys that carry no signal, and the fitted threshold is the first minimizer of the observed FDP+ diagnostic curve. <code>stablr</code> extends the same discipline across omic views (early, late, and cooperative fusion) and across environments and studies (grouped and study-disjoint resampling), so that reliability and transportability are measured rather than assumed.</p>
+<p>A high-dimensional biomarker screen begins with an uncomfortable fact: there are many more tempting variables than there are samples. A sparse model can still choose a short list. But a single fit does not tell whether the list is sturdy or merely lucky. A selection that reproduces only inside its own sampling scheme has little value for a new cohort or a new lab.</p>
+<p>STABL turns the one-shot question into a repeated experiment. Bootstrap resampling paired with artificial decoy features converts selection frequency into a calibrated decision. A feature is retained only when it out-competes decoys that carry no signal. The fitted threshold is the first minimizer of the observed FDP+ diagnostic curve. <code>stablr</code> extends the same discipline across omic views (early, late, and cooperative fusion) and across environments and studies (grouped and study-disjoint resampling), so that reliability and transportability are measured rather than assumed.</p>
 </div>
 <div class="section level2">
 <h2 id="stablr-workflow">stablr workflow<a class="anchor" aria-label="anchor" href="#stablr-workflow"></a>
@@ -117,7 +119,7 @@
 <div class="section level2">
 <h2 id="technical-intro">Technical intro<a class="anchor" aria-label="anchor" href="#technical-intro"></a>
 </h2>
-<p><code>stablr</code> is R-native without a Python runtime. The core STABL method is parity-tested against the Python STABL implementation (Hédou et al. 2024); cross-language solver validation uses ranking/support contracts and does not claim bit-identical coefficients. The cooperative-learning backend is compiled C++17 (vendored multiview engine), and learners come from the <code>glmnet</code> ecosystem: lasso, elastic net, adaptive lasso, and optional sparse group lasso, with gaussian, binomial, multinomial, and Cox outcomes where the backend supports the family.</p>
+<p><code>stablr</code> is R-native without a Python runtime. The core STABL method is parity-tested against the Python STABL implementation (Hédou et al. 2024); cross-language solver validation uses ranking/support contracts and does not claim bit-identical coefficients. The cooperative-learning backend is compiled C++17 (vendored multiview engine), and learners come from the <code>glmnet</code> ecosystem: lasso, elastic net, adaptive lasso, and optional sparse group lasso, with gaussian, binomial, multinomial, and Cox outcomes where the backend supports the family. A random-forest learner (<code>ranger</code>) and an ordinal-regression learner (<code>ordinalNet</code>) are also available as base learners.</p>
 <p>The interface is two-tier. <code><a href="reference/stabl.html">stabl()</a></code> runs STABL with statistically safe defaults — model-X knockoff artificial features, FDP+ calibration, strict fallback, automatic lambda grid — and prints a plain-language answer:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mdmanurung.github.io/stablr/">stablr</a></span><span class="op">)</span></span>
@@ -126,7 +128,7 @@
 <span><span class="fu"><a href="reference/support.html">feature_names</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span>     <span class="co"># the selected features</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span>              <span class="co"># stability paths + FDP+ curve</span></span></code></pre></div>
 <p><code><a href="reference/stabl_fit.html">stabl_fit()</a></code> exposes every argument — lambda grids, bootstrap design, thresholds, learner adapters, sample grouping — and every accessor and workflow applies to both objects. See <code><a href="reference/stabl_fit.html">?stabl_fit</a></code> and the vignettes.</p>
-<p>Everything beyond core STABL is labelled as an extension: cooperative fusion (Ding et al. 2022) ships on the vendored multiview engine for gaussian and binomial families (Cox deferred); the random-forest learner is experimental until its FDP+ calibration study completes; the environment-stability workflow aggregates per-environment selections by their minimum frequency.</p>
+<p>Everything beyond core STABL is labelled as an extension. Cooperative fusion (Ding et al. 2022) ships on the vendored multiview engine for gaussian and binomial families (Cox deferred). The random-forest learner is calibrated for scoped settings: linear and nonlinear gaussian problems with up to a few dozen predictors (see <code><a href="reference/make_ranger_adapter.html">?make_ranger_adapter</a></code>). The ordinal learner is experimental pending its calibration study (see <code><a href="reference/make_ordinal_adapter.html">?make_ordinal_adapter</a></code>). The environment-stability workflow aggregates per-environment selections by their minimum frequency; it is calibrated for small feature panels (see <code><a href="reference/stabl_environment_stability.html">?stabl_environment_stability</a></code>).</p>
 <p>Interpretation limits are part of the contract. The fitted threshold is the first minimizer of the observed FDP+ curve; a plotted <code>fdr_target</code> is a visual reference, not a fitting target, and neither is a universal false-discovery guarantee. Knockoff modes fail closed above 3,000 predictors because a globally valid chunked construction has not been established; random-permutation controls remain available at larger dimensions.</p>
 </div>
 <div class="section level2">

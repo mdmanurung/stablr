@@ -16,5 +16,7 @@
   Discovery](https://mdmanurung.github.io/stablr/articles/stablr-cooperative.md):
 - [Environment Stability: Reliable AND Transportable Feature
   Sets](https://mdmanurung.github.io/stablr/articles/stablr-environments.md):
+- [Case study: age-associated cell types across eight
+  cohorts](https://mdmanurung.github.io/stablr/articles/stablr-aging-case-study.md):
 - [Advanced stablr
   Workflows](https://mdmanurung.github.io/stablr/articles/stablr-advanced.md):

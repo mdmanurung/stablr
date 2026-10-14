@@ -1,9 +1,9 @@
-# Build a Random-Forest Learner Adapter (Experimental)
+# Build a Random-Forest Learner Adapter (Calibrated, Scoped)
 
-Experimental learner adapter extending STABL to non-linear signals with
-random forests (`ranger`). One forest is fit per bootstrap subsample;
-the "penalty path" is an importance-threshold path built from quantiles
-of the pooled permutation-importance distribution (see
+Learner adapter extending STABL to non-linear signals with random
+forests (`ranger`). One forest is fit per bootstrap subsample; the
+"penalty path" is an importance-threshold path built from quantiles of
+the pooled permutation-importance distribution (see
 [`auto_rf_threshold_grid()`](https://mdmanurung.github.io/stablr/reference/auto_rf_threshold_grid.md)),
 so the selection set grows monotonically as the threshold decreases —
 the same sparse-to-dense nesting the lambda path provides for glmnet
@@ -32,9 +32,13 @@ threshold carried by `lambda_val`.
 
 ## Details
 
-**Experimental:** this is a stablr extension beyond Python STABL, and
-FDP+ calibration for random-forest learners is empirical (validated
-separately by the F5 benchmark), not a theoretical guarantee.
+**Calibrated within a measured scope (WS-2, 60 simulation runs):** with
+`knockoff_equi` decoys the mean empirical FDP is 0.025 on a linear
+design and 0.065 on a low-dimensional nonlinear design (p = 10), meeting
+the predeclared criterion (FDP \<= 0.15, TPR \>= 0.8). The criterion is
+NOT met on a high-dimensional correlated design at p = 50 (mean FDP
+0.44) or for binary outcomes (0.26); avoid this pairing there. This is
+simulation evidence, not a guarantee for your dataset.
 
 **Statistical guardrails:** permutation importance is used (not Gini).
 Random forests must be paired with model-X knockoff artificial features

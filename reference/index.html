@@ -26,6 +26,8 @@
     <li><a class="dropdown-item" href="../articles/stablr-tcga-nestedcv.html">TCGA nested CV and DIABLO</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-cooperative.html">Cooperative fusion</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-environments.html">Environment stability</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><a class="dropdown-item" href="../articles/stablr-aging-case-study.html">Aging case study</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-advanced.html">Advanced workflows</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -201,9 +203,9 @@
         </dt>
         <dd>Build a Sparse Group Lasso Learner Adapter</dd>
       </dl></div><div class="section level2">
-      <h2 id="experimental-learner-adapters">Experimental Learner Adapters<a class="anchor" aria-label="anchor" href="#experimental-learner-adapters"></a></h2>
+      <h2 id="extended-learner-adapters">Extended Learner Adapters<a class="anchor" aria-label="anchor" href="#extended-learner-adapters"></a></h2>
 
-      <div class="section-desc"><p>Experimental extension beyond the glmnet family; API and statistical validation are still in progress.</p></div>
+      <div class="section-desc"><p>Extensions beyond the glmnet family. The random forest is calibrated within a measured scope (WS-2); the oblique forest is fenced (WS-3); the ordinal learner is experimental (WS-9).</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -215,7 +217,7 @@
           <code><a href="make_ranger_adapter.html">make_ranger_adapter()</a></code>
 
         </dt>
-        <dd>Build a Random-Forest Learner Adapter (Experimental)</dd>
+        <dd>Build a Random-Forest Learner Adapter (Calibrated, Scoped)</dd>
 
         <dt>
 
@@ -229,7 +231,7 @@
           <code><a href="make_aorsf_adapter.html">make_aorsf_adapter()</a></code>
 
         </dt>
-        <dd>Build an Oblique Random-Forest Learner Adapter (Experimental)</dd>
+        <dd>Build an Oblique Random-Forest Learner Adapter (Fenced)</dd>
 
         <dt>
 
@@ -237,10 +239,24 @@
 
         </dt>
         <dd>Auto-Generate an Importance-Threshold Grid for Oblique-Random-Forest STABL (Experimental)</dd>
+
+        <dt>
+
+          <code><a href="make_ordinal_adapter.html">make_ordinal_adapter()</a></code>
+
+        </dt>
+        <dd>Build an Ordinal-Regression Learner Adapter (Experimental)</dd>
+
+        <dt>
+
+          <code><a href="auto_ordinal_lambda_grid.html">auto_ordinal_lambda_grid()</a></code>
+
+        </dt>
+        <dd>Build a Data-Driven Lambda Grid for the Ordinal Learner (Experimental)</dd>
       </dl></div><div class="section level2">
       <h2 id="environment-stability">Environment Stability<a class="anchor" aria-label="anchor" href="#environment-stability"></a></h2>
 
-      <div class="section-desc"><p>ICP-inspired transportability workflow across environments (batches, cohorts, sites); experimental extension beyond Python STABL.</p></div>
+      <div class="section-desc"><p>ICP-inspired transportability workflow across environments (batches, cohorts, sites); promoted with a documented scope after the WS-5 transportability benchmark (min-aggregation is the calibrated read).</p></div>
 
       <dl></dl></div><div class="section level2">
 

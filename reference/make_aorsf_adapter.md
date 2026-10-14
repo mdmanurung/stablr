@@ -1,9 +1,9 @@
-# Build an Oblique Random-Forest Learner Adapter (Experimental)
+# Build an Oblique Random-Forest Learner Adapter (Fenced)
 
-Experimental learner adapter extending STABL to non-linear signals with
-oblique random forests (`aorsf`). One forest is fit per bootstrap
-subsample; the "penalty path" is an importance-threshold path built from
-quantiles of the pooled negation-importance distribution (see
+Learner adapter extending STABL to non-linear signals with oblique
+random forests (`aorsf`). One forest is fit per bootstrap subsample; the
+"penalty path" is an importance-threshold path built from quantiles of
+the pooled negation-importance distribution (see
 [`auto_oblique_threshold_grid()`](https://mdmanurung.github.io/stablr/reference/auto_oblique_threshold_grid.md)),
 so the selection set grows monotonically as the threshold decreases —
 the same sparse-to-dense nesting the lambda path provides for glmnet
@@ -32,9 +32,11 @@ carried by `lambda_val`.
 
 ## Details
 
-**Experimental:** this is a stablr extension beyond Python STABL, and
-FDP+ calibration for oblique random-forest learners is empirical
-(validated separately by the F5 benchmark), not a theoretical guarantee.
+**Fenced (WS-3, 40 simulation runs):** no predeclared remedy reached the
+calibration criterion (mean FDP \<= 0.15 on both designs; best remedy
+0.18 / 0.39). Knockoff decoy importance is inflated for oblique forests,
+so FDP+ is anti-conservative. Use `base_learner = "rf"` with
+`knockoff_equi` for knockoff-calibrated selection instead.
 
 **Statistical guardrails:** negation importance is used (not permutation
 importance) because it discriminates relevant from irrelevant predictors

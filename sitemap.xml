@@ -3,6 +3,7 @@
 <url><loc>https://mdmanurung.github.io/stablr/LICENSE.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/articles/index.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/articles/stablr-advanced.html</loc></url>
+<url><loc>https://mdmanurung.github.io/stablr/articles/stablr-aging-case-study.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/articles/stablr-cooperative.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/articles/stablr-environments.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/articles/stablr-getting-started.html</loc></url>
@@ -20,6 +21,7 @@
 <url><loc>https://mdmanurung.github.io/stablr/reference/adjusted_similarity_values.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/auto_lambda_grid.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/auto_oblique_threshold_grid.html</loc></url>
+<url><loc>https://mdmanurung.github.io/stablr/reference/auto_ordinal_lambda_grid.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/auto_rf_threshold_grid.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/boxplot_features.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/classic_bootstrap_indices.html</loc></url>
@@ -50,6 +52,7 @@
 <url><loc>https://mdmanurung.github.io/stablr/reference/make_knockoff_equi_features.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/make_knockoff_features.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/make_knockoff_mvr_features.html</loc></url>
+<url><loc>https://mdmanurung.github.io/stablr/reference/make_ordinal_adapter.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/make_ranger_adapter.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/make_rp_features.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/make_sgl_adapter.html</loc></url>

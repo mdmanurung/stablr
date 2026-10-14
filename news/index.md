@@ -2,6 +2,48 @@
 
 ## stablr 0.3.0
 
+### Maturity benchmarks
+
+- Ordinal regression learner (`base_learner = "ordinal"`, `ordinalNet`
+  proportional-odds): simulated calibration (10 seeds x 2 designs) gives
+  knockoff_equi mean FDP+ 0.00 (nominal 0.1) but mean TPR 0.37 –
+  strongly conservative; graduation bar (FDP+ \<= 0.15, TPR \>= 0.8) NOT
+  met, so the learner stays experimental
+  (inst/benchmarks/ws9_summary.md). (simulation evidence; summaries in
+  inst/benchmarks/)
+
+- Random-forest adapter graduated within a measured scope (WS-2, 60
+  runs): rf + knockoff_equi meets the predeclared criterion (mean FDP
+  \<= 0.15, TPR \>= 0.8) on linear and low-dimensional nonlinear
+  designs; NOT met at p = 50 with strong correlation or for binary
+  outcomes. Man pages and the pkgdown section document the scope.
+
+- Oblique random-forest adapter fenced (WS-3, 40 runs): no predeclared
+  remedy reached the criterion; knockoff decoy importance is inflated.
+  Man pages recommend base_learner = “rf” for knockoff-calibrated
+  selection.
+
+- Cooperative-fusion benchmark committed (WS-4, 60 runs): no fusion mode
+  dominates; cooperative fusion is competitive; the late-fusion gaussian
+  weakness is documented as a caveat. Cox cooperative fusion is
+  permanently deferred (no CV-loss precedent; fail-closed stops guard
+  the engine).
+
+- Environment-stability workflow promoted with a documented scope (WS-5,
+  60 runs): min-aggregation controls FDP+ across location-shift and
+  prevalence-drift designs; per-environment permutation rows are
+  documented anti-conservative.
+
+- Knockoff high-dimensional boundary recorded as permanent (WS-7
+  decision record, docs/plans/).
+
+- Learner-regime guidance table shipped in the intro vignette, section
+  7.3 (WS-6).
+
+- plot_stabl_path now draws the path in canonical decreasing-lambda
+  order regardless of grid row order, aligns artificial-feature lines to
+  the same order, and shows x-axis tick labels.
+
 ### Documentation
 
 - Documentation website restyled after the dreamlet site (Flatly theme,
