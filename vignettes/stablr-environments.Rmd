@@ -109,8 +109,8 @@ Reports use this quantity.
 # 4 Interpretation of the aggregated scores
 
 The aggregation rule is the **minimum across environments** of each feature's
-max-over-lambda stability score. A feature is only as reliable as its
-*weakest* environment:
+max-over-lambda stability score. This minimum is the min-agg score. A feature
+is only as reliable as its *weakest* environment:
 
 - `f1` and `f2` score high in every batch. Their minimum stays high. These
   are the transportable features. They would survive a new batch, a new site,

@@ -156,7 +156,7 @@ This vignette uses compact 6-point lambda grids and small bootstrap counts
 throughout. For publication-quality results, use 500-1000 bootstraps and
 broader grids.
 
-In each printed fit, the number of selected feature names and the FDP
+In each printed fit, the number of selected feature names and the FDP+
 estimate deserve first attention. The ideal result is not a long list. It is
 a compact list. Decoy features must not explain its stability easily.
 
