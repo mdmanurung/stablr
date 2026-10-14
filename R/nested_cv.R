@@ -909,10 +909,67 @@ stabl_multiomic_nested_cv <- function(
 
 .predict_selected_multinomial <- function(x_train, y_train, x_valid, levels) {
   y_train <- factor(y_train, levels = levels)
-  # glmnet requires at least two columns; a single selected feature falls
-  # back to the majority-class predictor like the empty-selection case.
-  if (ncol(x_train) < 2L || length(unique(y_train)) < 2L) {
+  n_sel <- ncol(x_train)
+
+  # Zero selected features, or a degenerate one-class training outcome:
+  # training-derived majority-class prediction.
+  if (n_sel == 0L || length(unique(y_train)) < 2L) {
     return(.majority_class_prediction(y_train, nrow(x_valid)))
+  }
+
+  # Exactly one selected feature: glmnet requires at least two columns, so
+  # the downstream predictor is a genuine one-feature model.  Binary uses a
+  # logit glm; multinomial uses a nearest-class-centroid discriminant rule
+  # (per-class training means of the feature, midpoint decision boundaries),
+  # which is the one-predictor LDA direction and needs no iterative fit.
+  # Separation or other numerical failures fall back to the training-derived
+  # majority class.
+  if (n_sel == 1L) {
+    return(tryCatch(
+      {
+        if (length(levels) == 2L) {
+          # suppressWarnings: complete separation warns ("fitted probabilities
+          # numerically 0 or 1"); the resulting fit is still a valid
+          # one-feature predictor and is preferred over the majority class.
+          fit <- suppressWarnings(.with_linear_algebra_numerical_infeasibility(
+            stats::glm(
+              y_train ~ .x,
+              data   = data.frame(.x = as.numeric(x_train[, 1L])),
+              family = stats::binomial(link = "logit"),
+              control = stats::glm.control(maxit = 50L)
+            ),
+            source = "one-feature binomial selected-feature fit",
+            subclass = "stablr_downstream_numerical_infeasibility"
+          ))
+          prob <- stats::predict(
+            fit,
+            newdata = data.frame(.x = as.numeric(x_valid[, 1L])),
+            type = "response"
+          )
+          ifelse(unname(prob) >= 0.5, levels[2L], levels[1L])
+        } else {
+          xv <- as.numeric(x_train[, 1L])
+          centroids <- vapply(
+            levels,
+            function(lv) mean(xv[y_train == lv]),
+            numeric(1L)
+          )
+          if (any(!is.finite(centroids))) {
+            .abort_numerical_infeasibility(
+              "stablr_downstream_numerical_infeasibility",
+              "One-feature multinomial centroid is not finite.",
+              centroids = centroids
+            )
+          }
+          x_new <- as.numeric(x_valid[, 1L])
+          dist <- abs(outer(x_new, centroids, "-"))
+          levels[max.col(-dist, ties.method = "first")]
+        }
+      },
+      stablr_numerical_infeasibility = function(e) {
+        .majority_class_prediction(y_train, nrow(x_valid))
+      }
+    ))
   }
 
   pred <- tryCatch(

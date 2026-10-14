@@ -460,3 +460,91 @@ test_that("OOF downstream numerical infeasibility uses a typed fallback", {
     "stablr_downstream_numerical_infeasibility"
   )
 })
+
+test_that("zero-feature binary fallback uses training event prevalence", {
+  # Imbalanced binary outcome in fixed 0/1 event coding: the empty-panel
+  # fallback must be the training prevalence, not 0.5.
+  ids <- paste0("s", 1:20)
+  y <- setNames(c(rep(1L, 3L), rep(0L, 17L)), ids)
+  x_empty <- matrix(numeric(0), nrow = 20L, ncol = 0L,
+                    dimnames = list(ids, character()))
+  x_valid_empty <- matrix(numeric(0), nrow = 4L, ncol = 0L,
+                          dimnames = list(paste0("v", 1:4), character()))
+
+  out <- stablr:::.late_fusion_fit_omic(
+    x_empty, y, x_valid_empty, NA_real_, "binary"
+  )
+  expect_equal(unique(out$train_preds), 3 / 20)
+  expect_equal(unique(out$valid_preds), 3 / 20)
+  expect_null(out$model)
+})
+
+test_that("zero-feature binary fallback respects factor event coding", {
+  # Factor outcome mapped through .late_fusion_binary_outcome(): the event
+  # level is the second factor level, so prevalence is over that level.
+  ids <- paste0("s", 1:20)
+  y_fac <- setNames(factor(c(rep("event", 4L), rep("control", 16L)),
+                           levels = c("control", "event")), ids)
+  mapped <- stablr:::.late_fusion_binary_outcome(y_fac)
+  x_empty <- matrix(numeric(0), nrow = 20L, ncol = 0L,
+                    dimnames = list(ids, character()))
+
+  out <- stablr:::.late_fusion_fit_omic(
+    x_empty, mapped$y, NULL, NA_real_, "binary"
+  )
+  expect_equal(unique(out$train_preds), 4 / 20)
+})
+
+test_that("zero-feature binary fallback is invariant to outcome permutation", {
+  # Permuting the training outcomes must not change the fallback value.
+  ids <- paste0("s", 1:24)
+  y <- setNames(c(rep(1L, 6L), rep(0L, 18L)), ids)
+  x_empty <- matrix(numeric(0), nrow = 24L, ncol = 0L,
+                    dimnames = list(ids, character()))
+
+  set.seed(5L)
+  out1 <- stablr:::.late_fusion_fit_omic(
+    x_empty, y, NULL, NA_real_, "binary"
+  )
+  out2 <- stablr:::.late_fusion_fit_omic(
+    x_empty, sample(y), NULL, NA_real_, "binary"
+  )
+  expect_identical(out1$train_preds, out2$train_preds)
+})
+
+test_that("multiclass single-class training outcome returns class priors", {
+  # A degenerate one-class training outcome must not reach glmnet; the
+  # fallback is the training-derived class-prior matrix.
+  ids <- paste0("s", 1:12)
+  y <- setNames(factor(rep("A", 12L), levels = c("A", "B", "C")), ids)
+  x_one <- matrix(rnorm(12L), nrow = 12L, ncol = 1L,
+                  dimnames = list(ids, "f1"))
+
+  out <- stablr:::.late_fusion_fit_omic(
+    x_one, y, NULL, NA_real_, "multiclass", levels = c("A", "B", "C")
+  )
+  expect_equal(unname(out$train_preds[1L, ]), c(1, 0, 0))
+  expect_null(out$model)
+})
+
+test_that("binary fallback through the safe wrapper applies prevalence once", {
+  # A selector-fit error forces the wrapper fallback; the resulting binary
+  # predictions must equal the training prevalence exactly once (no
+  # double-adjustment).
+  ids <- paste0("s", 1:16)
+  y <- setNames(c(rep(1L, 5L), rep(0L, 11L)), ids)
+  x <- matrix(rnorm(32), 16, 2, dimnames = list(ids, c("x1", "x2")))
+  cond <- stablr:::.abort_numerical_infeasibility(
+    "stablr_learner_numerical_infeasibility",
+    "deliberate selector infeasibility for prevalence test"
+  )
+
+  pred <- tryCatch(
+    stablr:::.late_fusion_fit_omic_safe(
+      x, y, NULL, "binary", selection_condition = cond
+    ),
+    stablr_numerical_infeasibility = function(e) e
+  )
+  expect_equal(unique(pred$train_preds), 5 / 16)
+  expect_match(pred$fallback_reason, "selector_fit_error")
+})

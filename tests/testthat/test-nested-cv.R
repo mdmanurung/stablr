@@ -235,3 +235,90 @@ test_that("selected multinomial fitting catches typed numerical failures", {
     rep("A", nrow(x_valid))
   )
 })
+
+test_that("one selected feature uses a genuine one-feature binary fit", {
+  # Strongly informative single feature: the one-feature glm must recover the
+  # signal instead of falling back to the majority class.
+  set.seed(7L)
+  x_train <- matrix(rnorm(40L), nrow = 40L, ncol = 1L,
+                    dimnames = list(paste0("s", 1:40), "f1"))
+  y_train <- factor(ifelse(x_train[, 1L] > 0, "event", "control"),
+                    levels = c("control", "event"))
+  x_valid <- matrix(c(-2, -1, 1, 2), nrow = 4L, ncol = 1L,
+                    dimnames = list(paste0("v", 1:4), "f1"))
+
+  pred <- stablr:::.predict_selected_multinomial(
+    x_train, y_train, x_valid, levels(y_train)
+  )
+  expect_identical(pred, c("control", "control", "event", "event"))
+})
+
+test_that("one selected feature falls back to majority on separation", {
+  # Complete separation with a tiny training set: the glm cannot produce a
+  # finite fit, so the training-derived majority class must be returned.
+  x_train <- matrix(c(-3, -2, -1, 1, 2, 3), nrow = 6L, ncol = 1L,
+                    dimnames = list(paste0("s", 1:6), "f1"))
+  y_train <- factor(c(rep("control", 3L), rep("event", 3L)),
+                    levels = c("control", "event"))
+  x_valid <- matrix(0, nrow = 2L, ncol = 1L,
+                    dimnames = list(c("v1", "v2"), "f1"))
+
+  pred <- suppressWarnings(stablr:::.predict_selected_multinomial(
+    x_train, y_train, x_valid, levels(y_train)
+  ))
+  expect_true(all(pred %in% levels(y_train)))
+  expect_length(pred, 2L)
+})
+
+test_that("zero selected features keep the majority-class contract", {
+  x_train <- matrix(numeric(0), nrow = 10L, ncol = 0L)
+  x_valid <- matrix(numeric(0), nrow = 3L, ncol = 0L)
+  y_train <- factor(c(rep("B", 7L), rep("A", 3L)), levels = c("A", "B"))
+
+  expect_identical(
+    stablr:::.predict_selected_multinomial(
+      x_train, y_train, x_valid, levels(y_train)
+    ),
+    rep("B", 3L)
+  )
+})
+
+test_that("one selected feature works for multinomial outcomes", {
+  set.seed(11L)
+  x_train <- matrix(rnorm(60L), nrow = 60L, ncol = 1L,
+                    dimnames = list(paste0("s", 1:60), "f1"))
+  y_train <- factor(
+    ifelse(x_train[, 1L] < -0.5, "low",
+           ifelse(x_train[, 1L] > 0.5, "high", "mid")),
+    levels = c("low", "mid", "high")
+  )
+  x_valid <- matrix(c(-2, 0, 2), nrow = 3L, ncol = 1L,
+                    dimnames = list(paste0("v", 1:3), "f1"))
+
+  pred <- stablr:::.predict_selected_multinomial(
+    x_train, y_train, x_valid, levels(y_train)
+  )
+  expect_true(all(pred %in% levels(y_train)))
+  expect_length(pred, 3L)
+  # The extreme validation points should map to the extreme classes.
+  expect_identical(pred[1L], "low")
+  expect_identical(pred[3L], "high")
+})
+
+test_that("one-feature prediction is deterministic across repeated calls", {
+  set.seed(13L)
+  x_train <- matrix(rnorm(30L), nrow = 30L, ncol = 1L,
+                    dimnames = list(paste0("s", 1:30), "f1"))
+  y_train <- factor(ifelse(x_train[, 1L] > 0, "event", "control"),
+                    levels = c("control", "event"))
+  x_valid <- matrix(rnorm(6L), nrow = 6L, ncol = 1L,
+                    dimnames = list(paste0("v", 1:6), "f1"))
+
+  p1 <- stablr:::.predict_selected_multinomial(
+    x_train, y_train, x_valid, levels(y_train)
+  )
+  p2 <- stablr:::.predict_selected_multinomial(
+    x_train, y_train, x_valid, levels(y_train)
+  )
+  expect_identical(p1, p2)
+})
