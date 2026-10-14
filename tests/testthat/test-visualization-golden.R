@@ -79,14 +79,20 @@ test_that("plot_stabl_path renders the hard-threshold stability path", {
   expect_equal(anyDuplicated(line_data[, c("feature", "lambda_idx")]), 0L)
   expect_setequal(unique(line_data$feature), fit$feature_names)
 
-  # Fitted stabl_scores_ values, per feature, ordered along the lambda path.
+  # Fitted stabl_scores_ values, per feature, ordered along the canonical
+  # decreasing-lambda path (the plot direction must not depend on the row
+  # order of the supplied grid).
+  ord <- order(-fit$fitted_lambda_grid$lambda)
   for (i in seq_along(fit$feature_names)) {
     rows <- line_data[line_data$feature == fit$feature_names[i], ]
     rows <- rows[order(rows$lambda_idx), ]
     expect_equal(rows$lambda_idx, seq_len(n_lambda))
-    expect_equal(rows$score, unname(fit$stabl_scores_[i, ]))
+    expect_equal(rows$score, unname(fit$stabl_scores_[i, ord]))
   }
   expect_setequal(unique(line_data$lambda), fit$fitted_lambda_grid$lambda)
+  # The rendered lambda values decrease along the path.
+  lam_path <- unique(line_data[order(line_data$lambda_idx), "lambda"])
+  expect_true(all(diff(lam_path) < 0))
 
   # The selected flag on each row matches get_support() for that feature.
   support_map <- setNames(get_support(fit), fit$feature_names)
@@ -138,6 +144,7 @@ test_that("plot_stabl_path overlays artificial features and FDP+ threshold", {
 
   # Real features: one row per (feature, lambda), selected flag from support.
   n_lambda <- ncol(fit$stabl_scores_)
+  ord <- order(-fit$fitted_lambda_grid$lambda)
   expect_equal(nrow(real_data), length(fit$feature_names) * n_lambda)
   support_map <- setNames(get_support(fit), fit$feature_names)
   expect_identical(unname(support_map[real_data$feature]), real_data$selected)
@@ -151,7 +158,7 @@ test_that("plot_stabl_path overlays artificial features and FDP+ threshold", {
   for (i in seq_len(n_art)) {
     rows <- art_data[art_data$feature == paste0("artificial.", i), ]
     rows <- rows[order(rows$lambda_idx), ]
-    expect_equal(rows$score, unname(fit$stabl_scores_artificial_[i, ]))
+    expect_equal(rows$score, unname(fit$stabl_scores_artificial_[i, ord]))
   }
 
   # Threshold geometry: dashed hline at the FDP+-optimal threshold.
@@ -163,6 +170,34 @@ test_that("plot_stabl_path overlays artificial features and FDP+ threshold", {
 })
 
 # ── plot_fdr_graph ────────────────────────────────────────────────────────────
+
+test_that("plot_stabl_path direction is independent of grid row order", {
+  skip_if_not_installed("ggplot2")
+  # The same lambdas supplied in ascending and descending row order must give
+  # the same rendered path (canonical decreasing-lambda direction).
+  make_fit <- function(lam_grid) {
+    set.seed(11L)
+    n <- 60L; p <- 8L
+    x <- matrix(rnorm(n * p), n, p,
+                 dimnames = list(paste0("s", seq_len(n)),
+                                 paste0("f", seq_len(p))))
+    y <- setNames(2 * x[, "f1"] - 1.5 * x[, "f2"] + rnorm(n, sd = 0.5),
+                  rownames(x))
+    suppressWarnings(stabl_fit(x, y, lambda_grid = lam_grid, family = "gaussian",
+                               n_bootstraps = 15L, random_state = 11L))
+  }
+  lam_asc  <- data.frame(lambda = seq(0.05, 0.3, length.out = 4L))
+  p_asc  <- plot_stabl_path(make_fit(lam_asc))
+  p_desc <- plot_stabl_path(make_fit(lam_asc[rev(seq_len(nrow(lam_asc))), ,
+                                         drop = FALSE]))
+  b_asc  <- ggplot2::ggplot_build(p_asc)$data
+  b_desc <- ggplot2::ggplot_build(p_desc)$data
+  expect_equal(length(b_asc), length(b_desc))
+  for (i in seq_along(b_asc)) {
+    expect_equal(b_asc[[i]], b_desc[[i]],
+                 info = paste("plot layer", i, "differs across grid order"))
+  }
+})
 
 test_that("plot_fdr_graph plots the FDP+ curve stored in the fit", {
   skip_if_not_installed("ggplot2")

@@ -233,3 +233,22 @@ test_that("unknown base_learner error message lists rf", {
     "must be one of"
   )
 })
+
+test_that("permutation importance retry never returns NaN on tiny subsamples", {
+  # Regression: on a 16-row subsample (half-sampling from n = 33), ranger
+  # occasionally returned NaN permutation importance for a few features.
+  # The helper must retry with offset seeds and always return a usable
+  # importance vector.
+  skip_if_not_installed("ranger")
+  set.seed(20261020)
+  n <- 33
+  x <- matrix(rnorm(n * 12), n, 12,
+              dimnames = list(paste0("s", seq_len(n)), paste0("f", 1:12)))
+  y <- setNames(rnorm(n, mean = 50, sd = 15), rownames(x))
+  for (seed in c(1L, 42L, 20261020L, 998877L)) {
+    imp <- stablr:::.rf_fit_permutation_importance(x, y, 100L, seed)
+    expect_false(is.null(imp))
+    expect_length(imp, 12L)
+    expect_false(anyNA(imp))
+  }
+})

@@ -1,7 +1,7 @@
 % Generated manually for the stablr improvement plan (item D1)
 \name{make_ranger_adapter}
 \alias{make_ranger_adapter}
-\title{Build a Random-Forest Learner Adapter (Experimental)}
+\title{Build a Random-Forest Learner Adapter (Calibrated, Scoped)}
 \usage{
 make_ranger_adapter(num_trees = 500L)
 }
@@ -16,8 +16,8 @@ mask selects features whose permutation importance meets the threshold
 carried by \code{lambda_val}.
 }
 \description{
-Experimental learner adapter extending STABL to non-linear signals with
-random forests (\code{ranger}).  One forest is fit per bootstrap subsample;
+Learner adapter extending STABL to non-linear signals with random forests
+(\code{ranger}).  One forest is fit per bootstrap subsample;
 the "penalty path" is an importance-threshold path built from quantiles of
 the pooled permutation-importance distribution (see
 \code{\link[=auto_rf_threshold_grid]{auto_rf_threshold_grid()}}), so the
@@ -25,9 +25,13 @@ selection set grows monotonically as the threshold decreases — the same
 sparse-to-dense nesting the lambda path provides for glmnet learners.
 }
 \details{
-\strong{Experimental:} this is a stablr extension beyond Python STABL, and
-FDP+ calibration for random-forest learners is empirical (validated
-separately by the F5 benchmark), not a theoretical guarantee.
+\strong{Calibrated within a measured scope (WS-2, 60 simulation runs):}
+with \code{knockoff_equi} decoys the mean empirical FDP is 0.025 on a
+linear design and 0.065 on a low-dimensional nonlinear design (p = 10),
+meeting the predeclared criterion (FDP <= 0.15, TPR >= 0.8). The criterion
+is NOT met on a high-dimensional correlated design at p = 50 (mean FDP
+0.44) or for binary outcomes (0.26); avoid this pairing there. This is
+simulation evidence, not a guarantee for your dataset.
 
 \strong{Statistical guardrails:} permutation importance is used (not Gini).
 Random forests must be paired with model-X knockoff artificial features

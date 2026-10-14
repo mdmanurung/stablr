@@ -1,7 +1,7 @@
 % Generated manually for the stablr improvement plan (item D2)
 \name{make_aorsf_adapter}
 \alias{make_aorsf_adapter}
-\title{Build an Oblique Random-Forest Learner Adapter (Experimental)}
+\title{Build an Oblique Random-Forest Learner Adapter (Fenced)}
 \usage{
 make_aorsf_adapter(num_trees = 500L)
 }
@@ -16,7 +16,7 @@ mask selects features whose negation importance meets the threshold carried
 by \code{lambda_val}.
 }
 \description{
-Experimental learner adapter extending STABL to non-linear signals with
+Learner adapter extending STABL to non-linear signals with
 oblique random forests (\code{aorsf}).  One forest is fit per bootstrap
 subsample; the "penalty path" is an importance-threshold path built from
 quantiles of the pooled negation-importance distribution (see
@@ -25,9 +25,11 @@ so the selection set grows monotonically as the threshold decreases — the
 same sparse-to-dense nesting the lambda path provides for glmnet learners.
 }
 \details{
-\strong{Experimental:} this is a stablr extension beyond Python STABL, and
-FDP+ calibration for oblique random-forest learners is empirical (validated
-separately by the F5 benchmark), not a theoretical guarantee.
+\strong{Fenced (WS-3, 40 simulation runs):} no predeclared remedy reached
+the calibration criterion (mean FDP <= 0.15 on both designs; best remedy
+0.18 / 0.39). Knockoff decoy importance is inflated for oblique forests, so
+FDP+ is anti-conservative. Use \code{base_learner = "rf"} with
+\code{knockoff_equi} for knockoff-calibrated selection instead.
 
 \strong{Statistical guardrails:} negation importance is used (not permutation
 importance) because it discriminates relevant from irrelevant predictors

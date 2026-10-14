@@ -20,7 +20,10 @@
 #'   via `ranger`; requires `lambda_grid` from [auto_rf_threshold_grid()] or
 #'   `"auto"`), or `"oblique_rf"` (oblique random forest via `aorsf`;
 #'   requires `lambda_grid` from [auto_oblique_threshold_grid()] or
-#'   `"auto"`). Default: `"lasso"`. `"rf"` and `"oblique_rf"` are experimental
+#'   `"auto"`), or `"ordinal"` (elastic-net cumulative logit via `ordinalNet`
+#'   for ordered-band outcomes; requires a factor `y` and
+#'   [auto_ordinal_lambda_grid()] or `"auto"`). Default: `"lasso"`. `"rf"`,
+#'   `"oblique_rf"`, and `"ordinal"` are experimental
 #'   extensions beyond Python STABL: FDP+ calibration for (oblique) random
 #'   forests is empirical, not guaranteed, and is validated separately (see
 #'   the package's RF validation study); they must be paired with model-X
@@ -28,7 +31,8 @@
 #'   selection frequencies are noisier than for `"rf"` because importance is
 #'   spread across the linear combinations used in each split.
 #' @param family Character; `glmnet` response family (`"gaussian"`,
-#'   `"binomial"`, `"multinomial"`, or `"cox"`). Default: `"gaussian"`.
+#'   `"binomial"`, `"multinomial"`, or `"cox"`), or `"ordinal"` for
+#'   `base_learner = "ordinal"`. Default: `"gaussian"`.
 #' @param n_bootstraps Positive integer; bootstrap iterations per lambda.
 #'   Default: `1000L`.
 #' @param artificial_type Character or `NULL`; `"random_permutation"`,
@@ -289,6 +293,9 @@ stabl_fit <- function(
     } else if (identical(base_learner, "oblique_rf")) {
       # Oblique RF sweeps a negation-importance-threshold path (plan D2).
       auto_oblique_threshold_grid(x, y, n_grid = n_lambda, seed = random_state)
+    } else if (identical(base_learner, "ordinal")) {
+      # Ordinal sweeps an ordinalNet cumulative-logit lambda path (WS-9).
+      auto_ordinal_lambda_grid(x, y, n_lambda = n_lambda)
     } else {
       auto_lambda_grid(
         x,
@@ -512,7 +519,7 @@ stabl_fit <- function(
 }
 
 .modeled_class_levels <- function(y, family) {
-  if (!family %in% c("binomial", "multinomial")) {
+  if (!family %in% c("binomial", "multinomial", "ordinal")) {
     return(NULL)
   }
   values <- as.character(y)
@@ -873,8 +880,9 @@ stabl_fit <- function(
       family    = family,
       num_trees = 500L
     ),
+    ordinal = .make_ordinal_batch_adapter(alpha = 1),
     stop(
-      "`base_learner` must be one of: \"lasso\", \"elastic_net\", \"adaptive_lasso\", \"sparse_group_lasso\", \"rf\", \"oblique_rf\".",
+      "`base_learner` must be one of: \"lasso\", \"elastic_net\", \"adaptive_lasso\", \"sparse_group_lasso\", \"rf\", \"oblique_rf\", \"ordinal\".",
       call. = FALSE
     )
   )
