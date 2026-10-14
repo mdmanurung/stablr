@@ -97,3 +97,40 @@ with the honesty caveats of F5 carried forward. Adverse outcomes are
 committed, not suppressed. Runtime behavior changes (label promotions,
 fences, guards) happen only AFTER results land, in separate commits that
 cite the summary files.
+
+---
+
+## Erratum / addendum — WS-9 (dated 2026-10-15)
+
+This addendum corrects the WS-9 record. The historical preregistration above
+is preserved unchanged; the corrections below apply to the executed benchmark
+and its outputs, not to the predeclared design intent.
+
+1. **Truth-set error.** The executed script defined the signal set as
+   `paste0("f", seq_along(beta))` — all 10 predictors — although only 3 of
+   the 10 coefficients are nonzero (beta = (1.2, 1.0, 0.8, 0, ...)). All
+   empirical FDP/TPR values in the pre-correction outputs are therefore
+   invalid. The corrected script uses `paste0("f", which(beta != 0))`
+   (predictors f1, f2, f3).
+
+2. **Incomplete run grid.** The saved pre-correction results contain 38 of
+   the 40 planned runs: seed 8 is missing in both decoy arms of the
+   correlated design (O2_equicorr03). Root cause: seed 8's data-derived
+   `cut()` thresholds produce a singleton L1 class (count 1), and the
+   ordinal learner requires at least 2 observations per class per bootstrap,
+   so the fit is deterministically infeasible. The historical script dropped
+   the failure silently via `try(...); next`. The corrected script records
+   every failure with seed, error class, and message in `ws9_failures.csv`
+   and fails the run (nonzero exit) if any planned combination is missing.
+
+3. **Non-exact proportional-odds generator.** The WS-9 DGP uses Gaussian
+   latent noise and data-derived `cut()` thresholds. It is therefore not an
+   exact cumulative-logit / proportional-odds data-generating process. The
+   historical experiment is preserved as-is; a genuinely cumulative-logit
+   design with fixed ordered thresholds and logistic latent noise is a
+   separate, separately predeclared benchmark (`ws9_revalidation.R`,
+   PR6-S), not a rerun of this design.
+
+The pre-correction outputs are archived under `inst/benchmarks/archive/` and
+must not be cited as valid evidence. No graduation inference from the
+pre-correction run survives.
