@@ -4,17 +4,17 @@
 
 The `stablr` package implements STABL (Stability-based Thresholding and
 Aggregation for Biomarker discovery via LASSO) for high-dimensional clinical
-and omic data. It resamples the data, fits a sparse learner across a penalty
-grid, records how often each feature is selected, and calibrates those
-selection frequencies against artificial decoy features. The package ports the
-parity-critical STABL semantics from the Python implementation while exposing
-R-native S3 objects, `glmnet`-ecosystem learners, multi-omic workflows,
-visualization helpers, and CSV/disk export utilities. It compiles C++ but has
-no Python or tidymodels runtime dependency.
+and omic data. The method repeats three steps. It resamples the data. It fits
+a sparse learner across a penalty grid. It records how often each feature is
+selected. It then calibrates these selection frequencies against artificial
+decoy features. The package keeps the parity-critical STABL semantics of the
+Python implementation. It exposes R-native S3 objects, `glmnet`-ecosystem
+learners, multi-omic workflows, visualization helpers, and CSV/disk export
+utilities. It compiles C++ but has no Python or tidymodels runtime dependency.
 
 Major functionality of `stablr`:
 
-+ [`stabl()`](reference/stabl.html)                     One-stop-shop selector: a data.frame in, a plain-language selection out
++ [`stabl()`](reference/stabl.html)                     Simple selector: a data.frame in, a plain-language selection out
 + [`stabl_fit()`](reference/stabl_fit.html)                    Expert interface: full control of lambda grid, bootstrap design, thresholds, and learners
 + [`compute_fdp_plus()`](reference/compute_fdp_plus.html)               FDP+ thresholding with random-permutation and knockoff artificial features
 + [`stabl_multiomic_train_validate()`](reference/stabl_multiomic_train_validate.html)  Multi-omic train/validation with early, late, and cooperative fusion
@@ -38,17 +38,14 @@ Major functionality of `stablr`:
 ## Motivation
 
 A high-dimensional biomarker screen begins with an uncomfortable fact: there
-are many more tempting variables than there are samples. A sparse model can
-still choose a short list, but a single fit does not tell whether the list is
-sturdy or merely lucky, and a selection that reproduces only inside the
-sampling scheme that produced it has little value for a new cohort or a new
-lab.
+are many more tempting variables than there are samples. A sparse model can still choose a short list. But a single fit does not tell
+whether the list is sturdy or merely lucky. A selection that reproduces only
+inside its own sampling scheme has little value for a new cohort or a new lab.
 
-STABL turns the one-shot question into a repeated experiment. Bootstrap
-resampling paired with artificial decoy features converts selection frequency
-into a calibrated decision: a feature is retained only when it out-competes
-decoys that carry no signal, and the fitted threshold is the first minimizer
-of the observed FDP+ diagnostic curve. `stablr` extends the same discipline
+STABL turns the one-shot question into a repeated experiment. Bootstrap resampling paired with artificial decoy features converts selection
+frequency into a calibrated decision. A feature is retained only when it
+out-competes decoys that carry no signal. The fitted threshold is the first
+minimizer of the observed FDP+ diagnostic curve. `stablr` extends the same discipline
 across omic views (early, late, and cooperative fusion) and across
 environments and studies (grouped and study-disjoint resampling), so that
 reliability and transportability are measured rather than assumed.
@@ -66,7 +63,8 @@ claim bit-identical coefficients. The cooperative-learning backend is
 compiled C++17 (vendored multiview engine), and learners come from the
 `glmnet` ecosystem: lasso, elastic net, adaptive lasso, and optional sparse
 group lasso, with gaussian, binomial, multinomial, and Cox outcomes where the
-backend supports the family.
+backend supports the family. A random-forest learner (`ranger`) and an
+ordinal-regression learner (`ordinalNet`) are also available as base learners.
 
 The interface is two-tier. `stabl()` runs STABL with statistically safe
 defaults — model-X knockoff artificial features, FDP+ calibration, strict
@@ -84,11 +82,15 @@ plot(fit)              # stability paths + FDP+ curve
 thresholds, learner adapters, sample grouping — and every accessor and
 workflow applies to both objects. See `?stabl_fit` and the vignettes.
 
-Everything beyond core STABL is labelled as an extension: cooperative fusion
+Everything beyond core STABL is labelled as an extension. Cooperative fusion
 (Ding et al. 2022) ships on the vendored multiview engine for gaussian and
-binomial families (Cox deferred); the random-forest learner is experimental
-until its FDP+ calibration study completes; the environment-stability
-workflow aggregates per-environment selections by their minimum frequency.
+binomial families (Cox deferred). The random-forest learner is calibrated for
+scoped settings: linear and nonlinear gaussian problems with up to a few
+dozen predictors (see `?make_ranger_adapter`). The ordinal learner is
+experimental pending its calibration study (see `?make_ordinal_adapter`).
+The environment-stability workflow aggregates per-environment selections by
+their minimum frequency; it is calibrated for small feature panels (see
+`?stabl_environment_stability`).
 
 Interpretation limits are part of the contract. The fitted threshold is the
 first minimizer of the observed FDP+ curve; a plotted `fdr_target` is a

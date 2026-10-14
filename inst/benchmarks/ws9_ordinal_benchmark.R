@@ -3,7 +3,9 @@
 # this run).  Proportional-odds simulations; graduation = ordinal +
 # knockoff_equi mean FDP <= 0.15 AND mean TPR >= 0.8 on BOTH designs.
 
-suppressPackageStartupMessages(library(stablr))
+# Run against THIS checkout, not an installed copy (the ordinal routing and
+# current RF adapter live here).
+pkgload::load_all(".", compile = FALSE, quiet = TRUE)
 
 out_dir <- Sys.getenv("WS9_OUT_DIR", "inst/benchmarks")
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
@@ -30,6 +32,7 @@ simulate_one <- function(dsg, seed, artificial_type) {
     X <- matrix(rnorm(dsg$n * dsg$p), dsg$n, dsg$p)
   }
   colnames(X) <- paste0("f", seq_len(dsg$p))
+  rownames(X) <- paste0("s", seq_len(dsg$n))
   eta  <- as.vector(X %*% dsg$beta) + rnorm(dsg$n, sd = 0.6)
   y    <- cut(eta, breaks = 4, labels = paste0("L", 1:4),
               ordered_result = TRUE)

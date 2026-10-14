@@ -44,7 +44,9 @@
     "cannot solve SDP",
     "computationally singular",
     "system is exactly singular",
-    "leading minor.*not positive"
+    "leading minor.*not positive",
+    "eigen decomposition failed",
+    "TridiagEigen"
   )
   any(vapply(
     patterns,

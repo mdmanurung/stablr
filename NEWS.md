@@ -1,6 +1,11 @@
 # stablr 0.3.0
 
-## Maturity benchmarks (simulation evidence; summaries in inst/benchmarks/)
+## Maturity benchmarks
+- Ordinal regression learner (`base_learner = "ordinal"`, `ordinalNet`
+  proportional-odds): simulated calibration (10 seeds x 2 designs) gives
+  knockoff_equi mean FDP+ 0.00 (nominal 0.1) but mean TPR 0.37 -- strongly
+  conservative; graduation bar (FDP+ <= 0.15, TPR >= 0.8) NOT met, so the
+  learner stays experimental (inst/benchmarks/ws9_summary.md). (simulation evidence; summaries in inst/benchmarks/)
 
 - Random-forest adapter graduated within a measured scope (WS-2, 60 runs):
   rf + knockoff_equi meets the predeclared criterion (mean FDP <= 0.15,

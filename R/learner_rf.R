@@ -164,15 +164,28 @@ auto_rf_threshold_grid <- function(x, y, n_grid = 30L, num_trees = 500L,
   if (is.null(colnames(x))) {
     colnames(x) <- paste0("x", seq_len(ncol(x)))
   }
-  fit <- ranger::ranger(
-    x                         = x,
-    y                         = y,
-    num.trees                 = num_trees,
-    importance                = "permutation",
-    respect.unordered.factors = TRUE,
-    seed                      = seed
-  )
-  fit$variable.importance
+  # On very small subsamples (a few dozen rows), ranger's permutation
+  # importance can contain NaN for a few features — a numerical artifact of
+  # degenerate out-of-bag splits, not a data problem.  Retry with offset
+  # seeds (large-prime steps avoid colliding with other iterations' seeds)
+  # before failing.
+  n_attempts <- 3L
+  for (attempt in seq_len(n_attempts)) {
+    fit <- ranger::ranger(
+      x                         = x,
+      y                         = y,
+      num.trees                 = num_trees,
+      importance                = "permutation",
+      respect.unordered.factors = TRUE,
+      seed                      = seed + (attempt - 1L) * 104729L
+    )
+    importance <- fit$variable.importance
+    if (!is.null(importance) && length(importance) == ncol(x) &&
+        !anyNA(importance)) {
+      return(importance)
+    }
+  }
+  NULL
 }
 
 # Importance quantiles -> threshold grid, sparse end first (decreasing), the
