@@ -42,6 +42,9 @@ navbar:
         href: articles/stablr-cooperative.html
       - text: Environment stability
         href: articles/stablr-environments.html
+      - text: "---------"
+      - text: Aging case study
+        href: articles/stablr-aging-case-study.html
       - text: Advanced workflows
         href: articles/stablr-advanced.html
     github:
