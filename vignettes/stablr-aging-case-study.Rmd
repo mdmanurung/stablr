@@ -21,11 +21,14 @@ cat(
 "> **Summary.** We apply the `stablr` environment-stability workflow to a
 > public aging atlas. The atlas has 2,609 donors from eight scRNA-seq
 > cohorts. The workflow finds 24 of 60 features that track age in every
-> cohort. Seven of eight age-associated cell types from the source
-> publication pass the selection bar. All eight keep the same direction of
-> effect in all cohorts. Models trained on seven cohorts predict age in the
-> eighth cohort. The mean absolute error is 6.7 to 17.7 years, depending on
-> the held-out cohort. This vignette is an application case study. It is not
+> cohort. This full-atlas selection is exploratory. Seven of eight
+> age-associated cell types from the source publication pass the selection
+> bar. All eight keep the same direction of effect in all cohorts. Models
+> trained on seven cohorts predict age in the eighth cohort. The mean
+> absolute error is 6.7 to 17.7 years, depending on the held-out cohort.
+> The selected-panel model uses features chosen with all eight cohorts.
+> Its error is a post-selection estimate, not complete-pipeline held-out
+> validation. This vignette is an application case study. It is not
 > calibration evidence for the method.
 ", sep = ""
 )
@@ -170,6 +173,15 @@ model (`glmnet`, alpha = 0, 5-fold internal CV) on seven cohorts. The fold
 then predicts donor age in the eighth cohort. We evaluate two models: ridge
 on all 60 features, and ridge on the 24 consistent features.
 
+The two models answer different questions. The all-feature model is a
+genuine held-out evaluation: the held-out cohort plays no role in the
+feature set or the fit. The selected-panel model is different. The 24
+features were chosen with all eight cohorts, including the held-out one.
+Its LOCO error is therefore a post-selection estimate. It is apparent for
+the selection procedure, not an unbiased held-out error for the full
+workflow. A selection-isolated LOCO, which re-selects features inside each
+seven-cohort training partition, is a separate correction (PR5).
+
 We report three quantities per held-out cohort:
 
 - Mean absolute error (MAE) with 95% bootstrap intervals. The intervals
@@ -232,14 +244,20 @@ does not reproduce the full 24-feature panel.
 
 # 5 Result: age prediction on held-out cohorts
 
-Table 2 and Figure 3 give the LOCO results. The all-feature model predicts
-age with MAE between 6.7 years (SoundLife) and 15.6 years (CIMA). The
-selected-feature model helps two cohorts clearly: CIMA (15.6 to 7.6 years)
-and UCSF (13.4 to 10.8 years). It hurts two others: OneK1K (15.5 to 17.7
-years) and SoundLife (6.7 to 9.6 years). The remaining intervals overlap.
-The overall means (12.1 and 11.7 years) hide this heterogeneity.
+Table 2 and Figure 3 give the LOCO results. Read the two columns as
+different estimands. The all-feature column is a genuine held-out
+evaluation. The selected column is a post-selection estimate, because the
+24 features were chosen with all eight cohorts. The all-feature model
+predicts age with MAE between 6.7 years (SoundLife) and 15.6 years (CIMA).
+The selected-feature model helps two cohorts clearly: CIMA (15.6 to 7.6
+years) and UCSF (13.4 to 10.8 years). It hurts two others: OneK1K (15.5 to
+17.7 years) and SoundLife (6.7 to 9.6 years). The remaining intervals
+overlap. The overall means (12.1 and 11.7 years) hide this heterogeneity.
 
 Table 2: LOCO age prediction. MAE in years with 95% bootstrap intervals.
+The all-feature column is a genuine held-out evaluation. The selected
+column is a post-selection estimate: the 24 features were chosen with all
+eight cohorts, so its error is optimistic for the full workflow.
 
 | Cohort | n | MAE all features (95% CI) | MAE selected (95% CI) |
 |---|---|---|---|
@@ -332,15 +350,22 @@ Four limits bound the conclusions.
    evidence covers gaussian problems with up to a few dozen predictors.
    This panel has 60 features. The showcase demonstrates the workflow on
    real data. It does not add calibration guarantees.
-2. **The min-agg rule is conservative by design.** A feature must pass the
+2. **Selected-panel LOCO is post-selection.** The 24 consistent features
+   were chosen with all eight cohorts. The selected-panel LOCO error is
+   therefore apparent for the selection procedure, not an unbiased
+   held-out error for the full workflow. The all-feature LOCO column is
+   the genuine held-out evaluation here. A selection-isolated LOCO that
+   re-selects features inside each training partition is a separate
+   correction (PR5).
+3. **The min-agg rule is conservative by design.** A feature must pass the
    bar in every cohort. Features with cohort-specific signal fail the bar.
    Their biology can still be real. CD8+ Tem GZMB+ (score 0.445) is the
    predeclared example.
-3. **Composition features are relative.** Logit proportions measure a cell
+4. **Composition features are relative.** Logit proportions measure a cell
    type against all typed cells. An increase in one compartment
    mechanically dilutes the others. The direction claims are about
    composition. They are not about absolute abundance.
-4. **Single run.** The analysis uses one seed (20261013). The bootstrap
+5. **Single run.** The analysis uses one seed (20261013). The bootstrap
    intervals quantify sampling noise inside that run. They do not cover
    seed-level variation of the full pipeline.
 
