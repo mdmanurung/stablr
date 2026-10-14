@@ -70,6 +70,7 @@ Suggests:
     knockoff,
     knitr,
     mixOmics,
+    ordinalNet,
     ranger,
     rlang,
     rmarkdown,
@@ -90,6 +91,7 @@ Collate:
     'learner_adapters.R'
     'learner_rf.R'
     'learner_oblique_rf.R'
+    'learner_ordinal.R'
     'metrics.R'
     'stabl_fit.R'
     'stabl.R'
