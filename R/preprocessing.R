@@ -239,3 +239,66 @@ stabl_preprocess_apply.stabl_preprocessing_recipes <- function(object, x, ...) {
   baked <- recipes::bake(object$prepped, new_data = as.data.frame(x))
   as.matrix(baked)
 }
+
+# ── Fold-level specification handling (used by nested CV / workflows) ───────
+
+# Validate a user-supplied preprocessing SPECIFICATION.  A specification is
+# `NULL` (identity), a character vector of MVP transforms, or an unprepped
+# `recipes::recipe`.  A fitted `stabl_preprocessing` object is rejected: a
+# transform fitted outside the fold loop would leak information across folds.
+.validate_preprocessing_spec <- function(preprocessing, arg = "`preprocessing`") {
+  if (is.null(preprocessing)) return(invisible(NULL))
+  if (inherits(preprocessing, "stabl_preprocessing")) {
+    stop(sprintf(
+      paste0(
+        "%s must be an unfitted specification (a character vector of ",
+        "transforms or an unprepped recipes::recipe), not a fitted ",
+        "`stabl_preprocessing` object: a transform fitted outside the fold ",
+        "loop would leak information across folds."
+      ),
+      arg
+    ), call. = FALSE)
+  }
+  if (is.character(preprocessing)) {
+    supported <- c("zv", "impute_median", "center", "scale")
+    bad <- setdiff(preprocessing, supported)
+    if (length(bad)) {
+      stop(sprintf(
+        "%s names unsupported transform(s): %s. Supported: %s",
+        arg, paste(bad, collapse = ", "), paste(supported, collapse = ", ")
+      ), call. = FALSE)
+    }
+    return(invisible(NULL))
+  }
+  if (inherits(preprocessing, "recipe")) {
+    if (isTRUE(preprocessing$trained)) {
+      stop(sprintf(
+        paste0(
+          "%s must be an unprepped recipe; a prepped recipe carries ",
+          "full-data parameters and would leak information across folds."
+        ),
+        arg
+      ), call. = FALSE)
+    }
+    return(invisible(NULL))
+  }
+  stop(sprintf(
+    paste0(
+      "%s must be NULL, a character vector of transforms ",
+      "(\"zv\", \"impute_median\", \"center\", \"scale\"), or an unprepped ",
+      "recipes::recipe."
+    ),
+    arg
+  ), call. = FALSE)
+}
+
+# Fit a preprocessing specification on one fold's training matrix.  Returns
+# NULL for the identity (NULL) specification.
+.fit_fold_preprocessing <- function(preprocessing, x_train) {
+  .validate_preprocessing_spec(preprocessing)
+  if (is.null(preprocessing)) return(NULL)
+  if (is.character(preprocessing)) {
+    return(stabl_preprocess_fit(x_train, transforms = preprocessing))
+  }
+  stabl_preprocess_fit_recipes(preprocessing, x_train)
+}

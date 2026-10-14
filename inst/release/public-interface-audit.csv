@@ -108,3 +108,6 @@ stabl_preprocess_apply,export,,,preprocessing,R/preprocessing.R,man/stabl_prepro
 stabl_preprocess_fit_recipes,export,,,preprocessing,R/preprocessing.R,man/stabl_preprocess_fit_recipes.Rd,running,test-preprocessing.R,test-preprocessing.R,utility_contract
 stabl_preprocess_apply.stabl_preprocessing,s3,stabl_preprocess_apply,stabl_preprocessing,preprocessing,R/preprocessing.R,man/stabl_preprocess_apply.Rd,running,test-preprocessing.R,not_applicable-method,accessor_contract
 stabl_preprocess_apply.stabl_preprocessing_recipes,s3,stabl_preprocess_apply,stabl_preprocessing_recipes,preprocessing,R/preprocessing.R,man/stabl_preprocess_apply.Rd,running,test-preprocessing.R,not_applicable-method,accessor_contract
+stabl_analyze,export,,,workflow,R/analysis_workflow.R,man/stabl_analyze.Rd,running,test-analysis-workflow.R,test-analysis-workflow.R,core_contract
+print.stabl_analysis,s3,print,stabl_analysis,workflow,R/analysis_workflow.R,man/stabl_analyze.Rd,running,test-analysis-workflow.R,not_applicable-method,accessor_contract
+summary.stabl_analysis,s3,summary,stabl_analysis,workflow,R/analysis_workflow.R,man/stabl_analyze.Rd,running,test-analysis-workflow.R,not_applicable-method,accessor_contract

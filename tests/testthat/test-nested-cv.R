@@ -322,3 +322,119 @@ test_that("one-feature prediction is deterministic across repeated calls", {
   )
   expect_identical(p1, p2)
 })
+
+# ── PR3: preprocessing threading and held-out probabilities ─────────────────
+
+test_that("preprocessing is fitted inside fold training (zv drops constants)", {
+  set.seed(202)
+  n <- 18L
+  ids <- paste0("s", seq_len(n))
+  y <- setNames(factor(rep(c("A", "B"), each = 9L)), ids)
+  x <- matrix(rnorm(n * 5L, sd = 0.3), n, 5L,
+              dimnames = list(ids, paste0("g", 1:5)))
+  x[, 1] <- x[, 1] + as.numeric(y == "B")
+  x[, 5] <- 7  # constant feature: must be filtered inside every fold
+
+  fit <- suppressWarnings(stabl_multiomic_nested_cv(
+    x_list = list(rna = x), y = y,
+    candidates = list(list(name = "rna", blocks = "rna")),
+    lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+    outer_v = 3L, inner_v = 3L, n_bootstraps = 3L,
+    artificial_type = NULL, hard_threshold = 1e-9, sample_fraction = 1,
+    random_state = 5L,
+    preprocessing = c("zv", "center", "scale"),
+    keep_fold_predictors = TRUE
+  ))
+  expect_false("g5" %in% fit$selected_features$feature)
+  for (fr in fit$fold_results) {
+    expect_s3_class(fr$fit$preprocessing, "stabl_preprocessing")
+    expect_false("rna::g5" %in% fr$fit$preprocessing$retained_features)
+  }
+})
+
+test_that("return_probabilities adds an aligned binary event probability", {
+  set.seed(303)
+  n <- 18L
+  ids <- paste0("s", seq_len(n))
+  y <- setNames(factor(rep(c("A", "B"), each = 9L)), ids)
+  x <- matrix(rnorm(n * 5L, sd = 0.3), n, 5L,
+              dimnames = list(ids, paste0("g", 1:5)))
+  x[, 1] <- x[, 1] + as.numeric(y == "B")
+
+  fit <- suppressWarnings(stabl_multiomic_nested_cv(
+    x_list = list(rna = x), y = y,
+    candidates = list(list(name = "rna", blocks = "rna")),
+    lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+    outer_v = 3L, inner_v = 3L, n_bootstraps = 3L,
+    artificial_type = NULL, hard_threshold = 1e-9, sample_fraction = 1,
+    random_state = 6L,
+    return_probabilities = TRUE
+  ))
+  preds <- fit$outer_predictions
+  expect_true("event_probability" %in% names(preds))
+  expect_true(all(preds$event_probability >= 0 & preds$event_probability <= 1))
+  expect_equal(nrow(preds), n)
+  expect_identical(fit$event_class, "B")
+  # Legacy hard-class columns are untouched.
+  expect_true(all(c("truth", "predicted", "selected_candidate") %in%
+                    names(preds)))
+
+  # Deterministic for a fixed seed.
+  fit2 <- suppressWarnings(stabl_multiomic_nested_cv(
+    x_list = list(rna = x), y = y,
+    candidates = list(list(name = "rna", blocks = "rna")),
+    lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+    outer_v = 3L, inner_v = 3L, n_bootstraps = 3L,
+    artificial_type = NULL, hard_threshold = 1e-9, sample_fraction = 1,
+    random_state = 6L,
+    return_probabilities = TRUE
+  ))
+  expect_identical(fit$outer_predictions, fit2$outer_predictions)
+})
+
+test_that("legacy nested-CV output is unchanged when new options are omitted", {
+  set.seed(404)
+  n <- 18L
+  ids <- paste0("s", seq_len(n))
+  y <- setNames(factor(rep(c("A", "B"), each = 9L)), ids)
+  x <- matrix(rnorm(n * 5L, sd = 0.3), n, 5L,
+              dimnames = list(ids, paste0("g", 1:5)))
+  x[, 1] <- x[, 1] + as.numeric(y == "B")
+
+  fit <- suppressWarnings(stabl_multiomic_nested_cv(
+    x_list = list(rna = x), y = y,
+    candidates = list(list(name = "rna", blocks = "rna")),
+    lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+    outer_v = 3L, inner_v = 3L, n_bootstraps = 3L,
+    artificial_type = NULL, hard_threshold = 1e-9, sample_fraction = 1,
+    random_state = 8L
+  ))
+  expect_false("event_probability" %in% names(fit$outer_predictions))
+  expect_null(fit$event_class)
+  expect_null(fit$preprocessing)
+  for (fr in fit$fold_results) {
+    expect_null(fr$fit$predictor)
+    expect_null(fr$fit$preprocessing)
+  }
+})
+
+test_that("return_probabilities fails clearly for multiclass outcomes", {
+  set.seed(505)
+  n <- 18L
+  ids <- paste0("s", seq_len(n))
+  y <- setNames(factor(rep(c("A", "B", "C"), each = 6L)), ids)
+  x <- matrix(rnorm(n * 4L, sd = 0.3), n, 4L,
+              dimnames = list(ids, paste0("g", 1:4)))
+  expect_error(
+    suppressWarnings(stabl_multiomic_nested_cv(
+      x_list = list(rna = x), y = y,
+      candidates = list(list(name = "rna", blocks = "rna")),
+      lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+      outer_v = 3L, inner_v = 3L, n_bootstraps = 3L,
+      artificial_type = NULL, hard_threshold = 1e-9, sample_fraction = 1,
+      random_state = 9L,
+      return_probabilities = TRUE
+    )),
+    "binary"
+  )
+})
