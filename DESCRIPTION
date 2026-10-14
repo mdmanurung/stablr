@@ -123,6 +123,7 @@ Collate:
     'nested_cv.R'
     'study_tools.R'
     'stabl_accessors.R'
+    'interpretation.R'
     's3_methods.R'
     'environment_stability.R'
     'visualization.R'
