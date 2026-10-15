@@ -2,7 +2,7 @@
 ^Meta$
 ^docs$
 ^scripts$
-^bench$
+^benchmarks$
 ^data-raw$
 ^papers$
 ^CONTEXT[.]md$

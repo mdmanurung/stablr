@@ -40,6 +40,24 @@ cat(
 )
 ```
 
+```{r status, echo = FALSE, results = "asis"}
+cat(
+"> **Status of this vignette (2026-10-15).** This vignette is the
+> historical *exploratory* analysis (v1). A prospective revision with a
+> locked protocol, a leakage-proof engine, a six-selector matrix, and a
+> permutation null has since been completed (v2). Section 10 summarizes
+> the v2 design and findings; the v2 package lives in
+> `benchmarks/ws8_v2/`. Three v1 defects found by audit are flagged
+> where they occur: the exported `mean_score` and `selected_lasso`
+> columns are entirely missing (so the lasso sensitivity claim is not
+> verifiable from the committed table), and the script-level and
+> vignette-level MAE summaries used different estimands (micro vs macro).
+> The v1 numbers below are otherwise as committed. Where v1 and v2
+> differ, v2 is authoritative.
+", sep = ""
+)
+```
+
 # Contents
 
 - 1 Background and aims
@@ -51,6 +69,7 @@ cat(
 - 7 Discussion
 - 8 Limits
 - 9 Reproducibility
+- 10 The v2 prospective revision
 - References
 
 # 1 Background and aims
@@ -72,9 +91,9 @@ This case study asks two questions:
    see?
 
 The analysis ran once with a fixed seed. The analysis script is
-`inst/benchmarks/ws8_aging_showcase.R` in the package source. The figures
-and statistics tables come from `inst/benchmarks/ws8_figures.R` and
-`inst/benchmarks/ws8_recalibration.R`. The pipeline takes about 15
+`benchmarks/ws8_aging_showcase.R` in the package source. The figures
+and statistics tables come from `benchmarks/ws8_figures.R` and
+`benchmarks/ws8_recalibration.R`. The pipeline takes about 15
 minutes. The post-review follow-up analyses add about one hour, most of
 it the selection-isolated LOCO. This vignette shows the saved results.
 
@@ -298,6 +317,13 @@ T Naive is the only feature that both learners select. The agreement is
 partial. The lasso result supports the direction of the primary result. It
 does not reproduce the full 24-feature panel.
 
+*Audit note (v2): the exported `selected_lasso` column is missing for all
+60 features in the committed results table (a name-stripping defect in the
+export). The "6 features" count above is therefore not verifiable from the
+committed artifact; treat it as a narrative claim from the run log. The v2
+revision replaces this sensitivity with a matched-budget lasso stability
+comparator (selector M2, Section 10).*
+
 ## 4.2 Which cohort sets the bar
 
 The min-agg score is a minimum over cohorts. For all 24 selected features,
@@ -335,6 +361,12 @@ The selected-feature model helps two cohorts clearly: CIMA (15.6 to 7.6
 years) and UCSF (13.4 to 10.8 years). It hurts two others: OneK1K (15.5 to
 17.7 years) and SoundLife (6.7 to 9.6 years). The overall means (12.1 and
 11.7 years) hide this heterogeneity.
+
+*Audit note (v2): the means quoted here are macro means (unweighted over
+cohorts). The analysis script's own pooled summary was a micro mean
+(donor-weighted, 14.0 years for the all-feature model). The two estimands
+were presented under one name in v1; v2 reports both, explicitly labeled
+(Section 10).*
 
 A paired per-donor comparison makes this precise (Table 4). For each
 donor, we take the difference of absolute errors (all-feature minus
@@ -539,12 +571,12 @@ Four limits bound the conclusions.
 - Data: Artyomov lab single-cell portal, dataset
   `pan_atlas_healthy_aging_all_celtypes`, file `all_cells_metadata.csv.gz`.
   MD5 `50651968855bf6ca3efcdf199e2a9fd5`. Retrieved 2026-10-13.
-- Pipeline: `inst/benchmarks/ws8_aging_showcase.R`. The design was
-  predeclared in `inst/benchmarks/ws8_showcase_predesign.md`. Seed
+- Pipeline: `benchmarks/ws8_aging_showcase.R`. The design was
+  predeclared in `benchmarks/ws8_showcase_predesign.md`. Seed
   20261013.
-- Figures and statistics: `inst/benchmarks/ws8_figures.R` and
-  `inst/benchmarks/ws8_recalibration.R`. Outputs:
-  `inst/benchmarks/ws8_feature_stats.csv`, `ws8_loco_mae_ci.csv`,
+- Figures and statistics: `benchmarks/ws8_figures.R` and
+  `benchmarks/ws8_recalibration.R`. Outputs:
+  `benchmarks/ws8_feature_stats.csv`, `ws8_loco_mae_ci.csv`,
   `ws8_loco_calibration.csv`, `ws8_rule_comparison.csv`,
   `ws8_recalibration.csv`, and `vignettes/figures/`.
 - Post-review follow-ups (2026-10-15): `ws8_review_fdp.R`
@@ -556,6 +588,11 @@ Four limits bound the conclusions.
   pipeline script; only the last refits.
 - Software: R 4.4.2; `stablr` 0.3.0 (this branch); `ranger`, `glmnet`,
   `knockoff`.
+- Audit note (v2): in `ws8_results.csv`, the `mean_score` and
+  `selected_lasso` columns are missing for all 60 rows (export defects).
+  All other committed v1 artifacts check out against the scripts.
+- The v2 prospective revision lives in `benchmarks/ws8_v2/` with its
+  own locked protocol, claims ledger, and run manifests (Section 10).
 
 # References
 

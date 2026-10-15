@@ -8,12 +8,12 @@
   non-degenerate. Redundancy co-selection gate NOT met (0.60): correlated
   substitutes are always grouped when co-selected (10/10), but FDP+
   selection prunes members in 4/10 seeds. Adverse result committed
-  (inst/benchmarks/iv_summary.md; Gate B report in docs/plans/).
+  (benchmarks/iv_summary.md; Gate B report in docs/plans/).
 - Ordinal regression learner (`base_learner = "ordinal"`, `ordinalNet`
   proportional-odds): simulated calibration (10 seeds x 2 designs) gives
   knockoff_equi mean FDP+ 0.00 (nominal 0.1) but mean TPR 0.37 -- strongly
   conservative; graduation bar (FDP+ <= 0.15, TPR >= 0.8) NOT met, so the
-  learner stays experimental (inst/benchmarks/ws9_summary.md). (simulation evidence; summaries in inst/benchmarks/)
+  learner stays experimental (benchmarks/ws9_summary.md). (simulation evidence; summaries in benchmarks/)
 
 - Random-forest adapter graduated within a measured scope (WS-2, 60 runs):
   rf + knockoff_equi meets the predeclared criterion (mean FDP <= 0.15,
@@ -89,7 +89,7 @@
   `stabl_multiomic_cv()` already supports group-disjoint assessment folds
   through its `groups` argument and now records `fold_scheme` =
   `"group_disjoint"` for provenance.
-- **Benchmark evidence:** `inst/benchmarks/b1_study_disjoint_cv.R` compares
+- **Benchmark evidence:** `benchmarks/b1_study_disjoint_cv.R` compares
   held-out BER under sample-i.i.d. versus study-disjoint outer folds on
   multi-study simulations, isolating two batch mechanisms: class-independent
   location shifts on null features (a deliberate null probe — the gap is
@@ -369,7 +369,7 @@ today.
   non-linear signals. Random forests must be paired with model-X knockoff
   artificial features; the anti-conservative random-permutation pairing now
   warns. Calibration is validated empirically by the F5 benchmark
-  (`inst/benchmarks/f5_rf_validation.R`).
+  (`benchmarks/f5_rf_validation.R`).
 - **Environment-stability workflow:** `stabl_environment_stability()` fits
   STABL per environment (batch, cohort, site) and aggregates selection
   frequencies by their minimum across environments — an ICP-inspired
