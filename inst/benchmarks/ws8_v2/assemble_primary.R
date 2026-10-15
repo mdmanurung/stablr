@@ -1,7 +1,7 @@
 # WS-8 v2 M3 — Assemble the combined primary comparison across all methods.
 #
 # Merges the per-method heldout_replication.csv files (M0/M1/M2 from run_m012,
-# M3 from the main-run log, M4 from run_m4, M5 from run_m5) into one table and
+# M3 from run_m3, M4 from run_m4, M5 from run_m5) into one table and
 # computes the predeclared confirmatory contrasts: M4 vs M0 and M4 vs M3 at
 # K=10, with cohort-level uncertainty (8 generalization units) and an exact
 # paired sign-flip permutation p-value.  All other contrasts are exploratory.
@@ -22,20 +22,10 @@ read_rep <- function(dir, methods) {
 
 rep_df <- do.call(rbind, list(
   read_rep("run_m012", c("M0", "M1", "M2")),
+  read_rep("run_m3", "M3"),
   read_rep("run_m4", "M4"),
   read_rep("run_m5", "M5")
 ))
-# M3 comes from the main-run log (its CSV was not written before the run was
-# stopped after completing all 8 folds).  Hard-code the verified per-fold values.
-m3_vals <- c(ABF300 = 0.199, AIDA = 0.119, CIMA = 0.208, KCL = 0.157,
-             OneK1K = 0.083, SoundLife = 0.230, SPAC = -0.059, UCSF = 0.199)
-m3 <- expand.grid(method = "M3", fold = names(m3_vals), K = c(10, 5, 15, 20),
-                  stringsAsFactors = FALSE)
-m3 <- m3[m3$K == 10, ]
-m3$R <- as.numeric(m3_vals[m3$fold])
-m3$sign_agreement <- NA_real_; m3$n_panel <- 10L
-m3 <- m3[, names(rep_df)]
-rep_df <- rbind(rep_df, m3)
 rep_df <- rep_df[order(rep_df$method, rep_df$fold, rep_df$K), ]
 write.csv(rep_df, file.path(out_dir, "heldout_replication.csv"), row.names = FALSE)
 
