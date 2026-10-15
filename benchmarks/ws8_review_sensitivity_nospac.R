@@ -9,14 +9,14 @@
 # refitting.
 #
 # Usage: run from the repo root, e.g.
-#   Rscript inst/benchmarks/ws8_review_sensitivity_nospac.R
+#   Rscript benchmarks/ws8_review_sensitivity_nospac.R
 #
 # Application case study — NOT calibration evidence.
 
 pkgload::load_all(".", compile = FALSE, quiet = TRUE)
 
 obj_path <- Sys.getenv("WS8_OBJECTS", "/workspace/ws8_out/ws8_objects.rds")
-out_dir  <- Sys.getenv("WS8_OUT_DIR", "inst/benchmarks")
+out_dir  <- Sys.getenv("WS8_OUT_DIR", "benchmarks")
 obj <- readRDS(obj_path)
 
 es  <- obj$env_rf$env_scores   # features x cohorts, max-over-lambda scores

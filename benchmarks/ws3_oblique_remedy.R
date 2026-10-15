@@ -9,14 +9,14 @@
 #   on design B and a heterogeneous-scale variant (column SDs log-uniform
 #   [0.1, 10]), oblique_rf + knockoff_equi, 10 seeds.
 # Success (predeclared): mean empirical FDP <= 0.15 on BOTH designs.
-# Run: Rscript inst/benchmarks/ws3_oblique_remedy.R   (~1.5-2.5 h)
+# Run: Rscript benchmarks/ws3_oblique_remedy.R   (~1.5-2.5 h)
 
 .libPaths(c("/workspace/Rlib-shared", .libPaths()))
 if (!requireNamespace("aorsf", quietly = TRUE)) stop("aorsf required")
 if (file.exists("DESCRIPTION")) pkgload::load_all(".", compile = TRUE, quiet = TRUE) else library(stablr)
 
 seeds <- 1:10
-out_dir <- "inst/benchmarks"
+out_dir <- "benchmarks"
 
 make_design <- function(variant, seed) {
   set.seed(seed)

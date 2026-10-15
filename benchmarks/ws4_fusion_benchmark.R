@@ -25,14 +25,14 @@
 #   - View-wise selection shares: fraction of the mode's selected features
 #     carrying the `v2_` prefix.
 #
-# Run: Rscript inst/benchmarks/ws4_fusion_benchmark.R   (~0.5-3 h)
+# Run: Rscript benchmarks/ws4_fusion_benchmark.R   (~0.5-3 h)
 
 .libPaths(c("/workspace/Rlib-shared", .libPaths()))
 if (file.exists("DESCRIPTION")) pkgload::load_all(".", compile = TRUE, quiet = TRUE) else library(stablr)
 
 seeds <- 1:5
 n_bootstraps <- 100L
-out_dir <- "inst/benchmarks"
+out_dir <- "benchmarks"
 
 make_data <- function(arm, family, seed) {
   set.seed(seed)

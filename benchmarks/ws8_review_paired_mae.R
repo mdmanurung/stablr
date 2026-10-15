@@ -13,14 +13,14 @@
 # therefore mixes a change of feature set with a change of covariate set.
 #
 # Usage: run from the repo root, e.g.
-#   Rscript inst/benchmarks/ws8_review_paired_mae.R
+#   Rscript benchmarks/ws8_review_paired_mae.R
 #
 # Application case study — NOT calibration evidence.
 
 pkgload::load_all(".", compile = FALSE, quiet = TRUE)
 
 obj_path <- Sys.getenv("WS8_OBJECTS", "/workspace/ws8_out/ws8_objects.rds")
-out_dir  <- Sys.getenv("WS8_OUT_DIR", "inst/benchmarks")
+out_dir  <- Sys.getenv("WS8_OUT_DIR", "benchmarks")
 obj <- readRDS(obj_path)
 
 la <- obj$loco_all   # donor-level: cohort, n, mae, slope, pred, obs

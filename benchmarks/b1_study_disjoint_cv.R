@@ -3,7 +3,7 @@
 # B1 — study-disjoint nested CV benchmark (0.3.0 cross-study round)
 # ============================================================================
 # NOT a testthat test: a self-contained benchmark script, run via
-#   Rscript inst/benchmarks/b1_study_disjoint_cv.R [--smoke]
+#   Rscript benchmarks/b1_study_disjoint_cv.R [--smoke]
 #
 # Question: how optimistic is the sample-i.i.d. nested-CV estimate of
 # held-out BER, relative to a study-disjoint estimate, when studies carry

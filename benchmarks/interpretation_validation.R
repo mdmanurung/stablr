@@ -14,7 +14,7 @@
 
 pkgload::load_all(".", compile = FALSE, quiet = TRUE)
 
-out_dir <- Sys.getenv("IV_OUT_DIR", "inst/benchmarks")
+out_dir <- Sys.getenv("IV_OUT_DIR", "benchmarks")
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
 seeds <- 1:10

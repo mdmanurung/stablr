@@ -3,7 +3,7 @@
 # F5 — RF validation simulation suite (plan item F5; gates D1; audit E2/E3)
 # ============================================================================
 # NOT a testthat test: a self-contained benchmark script, run via
-#   Rscript inst/benchmarks/f5_rf_validation.R [--smoke]
+#   Rscript benchmarks/f5_rf_validation.R [--smoke]
 # Full run (~10 seeds x {knockoff_equi, random_permutation} x
 # {rf, oblique_rf (if aorsf is installed), lasso}) takes roughly 45-90
 # minutes; `--smoke` runs a 2-seed small-n proof of execution in a couple of

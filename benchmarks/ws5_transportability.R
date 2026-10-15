@@ -8,7 +8,7 @@
 # Pooled single-fit STABL vs stabl_environment_stability() (min-aggregation).
 # Predeclared question: does min-aggregation keep empirical FDP at or below
 # the pooled fit's on shifted environments, and what TPR does it cost?
-# Run: Rscript inst/benchmarks/ws5_transportability.R   (~1-2 h)
+# Run: Rscript benchmarks/ws5_transportability.R   (~1-2 h)
 
 .libPaths(c("/workspace/Rlib-shared", .libPaths()))
 if (file.exists("DESCRIPTION")) pkgload::load_all(".", compile = TRUE, quiet = TRUE) else library(stablr)
@@ -16,7 +16,7 @@ if (file.exists("DESCRIPTION")) pkgload::load_all(".", compile = TRUE, quiet = T
 seeds <- 1:10
 n_env <- 80; p <- 30; E <- 3
 n_bootstraps <- 100L
-out_dir <- "inst/benchmarks"
+out_dir <- "benchmarks"
 
 make_data <- function(mechanism, seed) {
   set.seed(seed)

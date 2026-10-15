@@ -10,7 +10,7 @@
 # (raw LOCO predictions) and after (out-of-fold recalibrated predictions).
 #
 # Run from the repository root:
-#   R_LIBS=<rlib> Rscript inst/benchmarks/ws8_recalibration.R
+#   R_LIBS=<rlib> Rscript benchmarks/ws8_recalibration.R
 
 obj <- readRDS(file.path(
   Sys.getenv("WS8_OUT_DIR", "/workspace/ws8_out"), "ws8_objects.rds"
@@ -76,7 +76,7 @@ res <- do.call(rbind, lapply(sort(unique(cal$cohort)), function(cc) {
   cbind(data.frame(cohort = cc, n = nrow(d), stringsAsFactors = FALSE),
         recal_cv(d))
 }))
-write.csv(res, "inst/benchmarks/ws8_recalibration.csv", row.names = FALSE)
+write.csv(res, "benchmarks/ws8_recalibration.csv", row.names = FALSE)
 
 print(res, digits = 3)
 

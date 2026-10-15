@@ -6,7 +6,7 @@
 # Graduation criterion (predeclared): mean empirical FDP <= 0.15 with
 # TPR >= 0.8 on designs A-D for rf+knockoff_equi. Permutation rows
 # characterize the guard; they do not graduate the adapter.
-# Run: Rscript inst/benchmarks/ws2_rf_graduation.R   (~1.5-2.5 h)
+# Run: Rscript benchmarks/ws2_rf_graduation.R   (~1.5-2.5 h)
 
 .libPaths(c("/workspace/Rlib-shared", .libPaths()))
 if (!requireNamespace("ranger", quietly = TRUE)) stop("ranger required")
@@ -15,7 +15,7 @@ if (file.exists("DESCRIPTION")) pkgload::load_all(".", compile = TRUE, quiet = T
 nominal_fdp <- 0.1
 seeds <- 1:10
 n_bootstraps <- 100L
-out_dir <- "inst/benchmarks"
+out_dir <- "benchmarks"
 
 # ---- Knockoff sanity probe (F5 contract, heterogeneous scale) ---------------
 probe_status <- tryCatch({

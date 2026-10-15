@@ -9,7 +9,7 @@ pkgload::load_all(".", compile = FALSE, quiet = TRUE)
 set.seed(20261013)
 
 data_dir <- Sys.getenv("WS8_DATA_DIR", "/workspace")
-out_dir  <- Sys.getenv("WS8_OUT_DIR", "inst/benchmarks")
+out_dir  <- Sys.getenv("WS8_OUT_DIR", "benchmarks")
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
 cat("== WS-8 step 1: load donor-level tables ==\n")

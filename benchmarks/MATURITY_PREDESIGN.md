@@ -92,7 +92,7 @@ literature-backed but ships experimental).
 
 ## Reporting
 
-Each script writes `inst/benchmarks/wsX_results.csv` + `wsX_summary.md`
+Each script writes `benchmarks/wsX_results.csv` + `wsX_summary.md`
 with the honesty caveats of F5 carried forward. Adverse outcomes are
 committed, not suppressed. Runtime behavior changes (label promotions,
 fences, guards) happen only AFTER results land, in separate commits that
@@ -131,6 +131,6 @@ and its outputs, not to the predeclared design intent.
    separate, separately predeclared benchmark (`ws9_revalidation.R`,
    PR6-S), not a rerun of this design.
 
-The pre-correction outputs are archived under `inst/benchmarks/archive/` and
+The pre-correction outputs are archived under `benchmarks/archive/` and
 must not be cited as valid evidence. No graduation inference from the
 pre-correction run survives.

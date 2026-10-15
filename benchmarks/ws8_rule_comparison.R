@@ -11,7 +11,7 @@
 # an approximation; both directions of disagreement are reported.
 #
 # Run from the repository root:
-#   R_LIBS=<rlib> Rscript inst/benchmarks/ws8_rule_comparison.R
+#   R_LIBS=<rlib> Rscript benchmarks/ws8_rule_comparison.R
 
 obj <- readRDS(file.path(
   Sys.getenv("WS8_OUT_DIR", "/workspace/ws8_out"), "ws8_objects.rds"
@@ -53,7 +53,7 @@ out <- data.frame(
   pass_5of8_sig_bh = sig_count_bh >= 5L,
   stringsAsFactors = FALSE
 )
-write.csv(out, "inst/benchmarks/ws8_rule_comparison.csv", row.names = FALSE)
+write.csv(out, "benchmarks/ws8_rule_comparison.csv", row.names = FALSE)
 
 sel <- out[out$selected_minagg, ]
 cat("== Rule comparison on the 24 min-agg selected features ==\n")

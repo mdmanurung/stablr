@@ -5,7 +5,7 @@
 # statistics tables into the vignette figures folder. Run from the
 # repository root:
 #
-#   R_LIBS=<rlib> Rscript inst/benchmarks/ws8_figures.R
+#   R_LIBS=<rlib> Rscript benchmarks/ws8_figures.R
 #
 # The figures present an application case study. They are NOT calibration
 # evidence.
@@ -133,9 +133,9 @@ cal_stats <- do.call(rbind, lapply(sort(unique(cal$cohort)), function(cc) {
 }))
 
 # ---- Write statistics tables --------------------------------------------------
-write.csv(rank_df, "inst/benchmarks/ws8_feature_stats.csv", row.names = FALSE)
-write.csv(mae_tab, "inst/benchmarks/ws8_loco_mae_ci.csv", row.names = FALSE)
-write.csv(cal_stats, "inst/benchmarks/ws8_loco_calibration.csv", row.names = FALSE)
+write.csv(rank_df, "benchmarks/ws8_feature_stats.csv", row.names = FALSE)
+write.csv(mae_tab, "benchmarks/ws8_loco_mae_ci.csv", row.names = FALSE)
+write.csv(cal_stats, "benchmarks/ws8_loco_calibration.csv", row.names = FALSE)
 
 # ---- Figure 1: min-agg score ranking with 95% Clopper-Pearson bands ----------
 rank_df$label <- sub("^CT:", "", rank_df$feature)

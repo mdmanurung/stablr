@@ -78,9 +78,9 @@ FDP+ number reported here is a diagnostic computed on one real dataset.
 
 ## Outputs
 
-- `inst/benchmarks/ws8_results.csv` — per-feature per-cohort stability
+- `benchmarks/ws8_results.csv` — per-feature per-cohort stability
   scores, selection flags, per-cohort age coefficients.
-- `inst/benchmarks/ws8_summary.md` — narrative summary with the tables above.
+- `benchmarks/ws8_summary.md` — narrative summary with the tables above.
 - Figures (PNG, in the case-study vignette): stability path, environment
   min-score ranking, LOCO calibration curves, consistency heatmap.
 
@@ -218,7 +218,7 @@ the vignette until this run completes.
 # Amendment 1 (2026-10-15) — WS-8 v2 code conformance and review remediation
 
 Filed after the M7 adversarial review of the v2 benchmark package
-(`inst/benchmarks/ws8_v2/`; dispositions in `review_decisions.md`). The locked
+(`benchmarks/ws8_v2/`; dispositions in `review_decisions.md`). The locked
 v2 protocol text is unchanged; this amendment records where the code was
 brought into conformance with the lock and where locked gaps were closed.
 

@@ -26,7 +26,7 @@
 # current RF adapter live here).
 pkgload::load_all(".", compile = FALSE, quiet = TRUE)
 
-out_dir <- Sys.getenv("WS9_OUT_DIR", "inst/benchmarks")
+out_dir <- Sys.getenv("WS9_OUT_DIR", "benchmarks")
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
 n_seeds <- 10L
