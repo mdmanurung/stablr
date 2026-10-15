@@ -28,6 +28,7 @@ rho_mat <- sapply(cohorts, function(cv) {
   apply(X[idx, ], 2, function(f) suppressWarnings(cor(f, y[idx], method = "spearman")))
 })
 rownames(rho_mat) <- colnames(X)
+write.csv(round(rho_mat, 4), file.path(out_dir, "per_cohort_rho.csv"))
 
 # ---- 1. Reference populations -------------------------------------------------
 ref <- c("CT:CD8+ T Naive", "CT:CD8+ RTE", "CT:CD4+ RTE", "CT:CD4+ Temra",
