@@ -42,7 +42,7 @@ endpoint is ranking-based. They remain available for a future amendment.
 
 - `WS8_DATA_DIR` — directory containing the raw portal file (default `/workspace`).
 - `WS8_V2_IN` — input results directory for downstream scripts
-  (default `inst/benchmarks/ws8_v2/results/m1`).
+  (default `benchmarks/ws8_v2/results/m1`).
 - `WS8_V2_OUT` — output directory for `run.R` (default `results/run` under the
   benchmark); set per method group.
 - `WS8_METHODS` — comma-separated selector subset for `run.R` (default all M0–M5).
@@ -52,7 +52,7 @@ endpoint is ranking-based. They remain available for a future amendment.
 ## Outputs
 
 All outputs under `results/<run_id>/` (versioned). See `protocol.md` §10 for the
-required tables. Historical v1 artifacts in `inst/benchmarks/` are preserved
+required tables. Historical v1 artifacts in `benchmarks/` are preserved
 byte-for-byte and never overwritten.
 
 ## Limitations

@@ -5,10 +5,10 @@
 # contamination; ranking ties are deterministic; the zero-panel fallback returns
 # the median-age baseline; and the engine never touches test labels upstream.
 #
-# Run from repo root:  Rscript inst/benchmarks/ws8_v2/test_loco.R
+# Run from repo root:  Rscript benchmarks/ws8_v2/test_loco.R
 # Exits non-zero on any failure.
 
-source("inst/benchmarks/ws8_v2/loco.R")
+source("benchmarks/ws8_v2/loco.R")
 
 pass <- 0L; fail <- 0L
 check <- function(cond, msg) {

@@ -3,11 +3,11 @@
 # Reads committed CSVs under results/ and writes PNGs to results/figures/.
 # No model fitting here; every panel is traceable to a committed table.
 #
-# Usage: Rscript inst/benchmarks/ws8_v2/figures.R   # run from the repo root
+# Usage: Rscript benchmarks/ws8_v2/figures.R   # run from the repo root
 
 suppressPackageStartupMessages(library(ggplot2))
 
-base <- "inst/benchmarks/ws8_v2/results"
+base <- "benchmarks/ws8_v2/results"
 fig_dir <- file.path(base, "figures")
 dir.create(fig_dir, showWarnings = FALSE, recursive = TRUE)
 

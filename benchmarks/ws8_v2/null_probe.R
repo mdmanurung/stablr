@@ -9,7 +9,7 @@
 # This is a diagnostic null, NOT a calibrated FDR guarantee.  Real-data and
 # null curves are kept separate.
 #
-# Usage: Rscript inst/benchmarks/ws8_v2/null_probe.R   # run from the repo root
+# Usage: Rscript benchmarks/ws8_v2/null_probe.R   # run from the repo root
 #   env WS8_V2_IN    dir holding donor_tables.rds (default .../results/m1)
 #   env WS8_V2_OUT   output dir (default .../results/null)
 #   env WS8_N_PERM   number of permutations (default 10; smoke before scaling)
@@ -25,12 +25,12 @@
 # Application case study — NOT calibration evidence.
 
 pkgload::load_all(".", compile = FALSE, quiet = TRUE)
-source("inst/benchmarks/ws8_v2/metrics.R")
-source("inst/benchmarks/ws8_v2/loco.R")
-source("inst/benchmarks/ws8_v2/selectors.R")
+source("benchmarks/ws8_v2/metrics.R")
+source("benchmarks/ws8_v2/loco.R")
+source("benchmarks/ws8_v2/selectors.R")
 
-in_dir  <- Sys.getenv("WS8_V2_IN", file.path("inst/benchmarks/ws8_v2/results/m1"))
-out_dir <- Sys.getenv("WS8_V2_OUT", file.path("inst/benchmarks/ws8_v2/results/null"))
+in_dir  <- Sys.getenv("WS8_V2_IN", file.path("benchmarks/ws8_v2/results/m1"))
+out_dir <- Sys.getenv("WS8_V2_OUT", file.path("benchmarks/ws8_v2/results/null"))
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 n_perm    <- as.integer(Sys.getenv("WS8_N_PERM", "10"))
 perm_start <- as.integer(Sys.getenv("WS8_PERM_START", "1"))

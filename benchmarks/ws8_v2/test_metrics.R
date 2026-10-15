@@ -1,10 +1,10 @@
 # WS-8 v2 — fast synthetic tests for metric/export helpers (gate G1 unit tests).
 #
 # Toy-data invariants that run without the atlas.  Run from repo root:
-#   Rscript inst/benchmarks/ws8_v2/test_metrics.R
+#   Rscript benchmarks/ws8_v2/test_metrics.R
 # Exits non-zero on any failure.
 
-source("inst/benchmarks/ws8_v2/metrics.R")
+source("benchmarks/ws8_v2/metrics.R")
 
 pass <- 0L; fail <- 0L
 check <- function(cond, msg) {

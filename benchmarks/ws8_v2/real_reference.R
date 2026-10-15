@@ -9,19 +9,19 @@
 # finding 2/9).  The LOCO native panels (7-cohort training fits) remain
 # available per fold in training_scores.csv.
 #
-# Usage: Rscript inst/benchmarks/ws8_v2/real_reference.R   # run from repo root
+# Usage: Rscript benchmarks/ws8_v2/real_reference.R   # run from repo root
 #   env WS8_V2_IN    dir holding donor_tables.rds (default .../results/m1)
 #   env WS8_V2_OUT   output dir (default .../results/null)
 #
 # Application case study — NOT calibration evidence.
 
 pkgload::load_all(".", compile = FALSE, quiet = TRUE)
-source("inst/benchmarks/ws8_v2/metrics.R")
-source("inst/benchmarks/ws8_v2/loco.R")
-source("inst/benchmarks/ws8_v2/selectors.R")
+source("benchmarks/ws8_v2/metrics.R")
+source("benchmarks/ws8_v2/loco.R")
+source("benchmarks/ws8_v2/selectors.R")
 
-in_dir  <- Sys.getenv("WS8_V2_IN", file.path("inst/benchmarks/ws8_v2/results/m1"))
-out_dir <- Sys.getenv("WS8_V2_OUT", file.path("inst/benchmarks/ws8_v2/results/null"))
+in_dir  <- Sys.getenv("WS8_V2_IN", file.path("benchmarks/ws8_v2/results/m1"))
+out_dir <- Sys.getenv("WS8_V2_OUT", file.path("benchmarks/ws8_v2/results/null"))
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
 # ---- Design matrix (identical construction to null_probe.R) -------------------

@@ -6,12 +6,12 @@
 # feature count.  Also verifies the historical 59-cell-type matrix is
 # reproducible under the documented v1 inclusion rules.
 #
-# Usage: Rscript inst/benchmarks/ws8_v2/data_checks.R   # run from the repo root
+# Usage: Rscript benchmarks/ws8_v2/data_checks.R   # run from the repo root
 #   env WS8_V2_OUT  dir holding donor_tables.rds (default .../results/m1)
 #
 # Application case study — NOT calibration evidence.
 
-out_dir <- Sys.getenv("WS8_V2_OUT", file.path("inst/benchmarks/ws8_v2/results/m1"))
+out_dir <- Sys.getenv("WS8_V2_OUT", file.path("benchmarks/ws8_v2/results/m1"))
 obj <- readRDS(file.path(out_dir, "donor_tables.rds"))
 counts <- obj$counts; meta <- obj$meta; ct_mat <- obj$ct_mat; total <- obj$total
 

@@ -6,7 +6,7 @@ numbered amendment appended to `ws8_showcase_predesign.md` and a note here.
 
 **Source snapshot:** repository `mdmanurung/stablr`, branch `ws8-v2`, base commit
 `1ff3cd33c4b084201e481a88177031cc2c2ad432` (main after PR #14). Working tree clean
-except untracked `inst/benchmarks/ws8_loco_silo_objects.rds` (committed under v2 for
+except untracked `benchmarks/ws8_loco_silo_objects.rds` (committed under v2 for
 provenance).
 
 ## 1. Aims and hypotheses
@@ -159,7 +159,7 @@ if a test ID appears in any upstream fit.
 
 ## 10. Outputs and claims gate
 
-All v2 outputs under `inst/benchmarks/ws8_v2/` with a versioned `results/` subfolder.
+All v2 outputs under `benchmarks/ws8_v2/` with a versioned `results/` subfolder.
 Required tables: `data_manifest`, `folds`, `feature_scores`, `heldout_replication`,
 `predictions`, `prediction_metrics`, `method_comparisons`, `null_results`,
 `simulation_results`, `run_manifest.json`, `claims_ledger.md`. No claim of

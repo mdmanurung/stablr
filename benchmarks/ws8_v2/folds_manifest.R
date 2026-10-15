@@ -6,12 +6,12 @@
 # Per-method per-fold manifests (ID hashes, drop sets, panel sizes, seed) are
 # written by run.R as fold_manifest.csv in each run directory.
 #
-# Usage: Rscript inst/benchmarks/ws8_v2/folds_manifest.R   # run from repo root
+# Usage: Rscript benchmarks/ws8_v2/folds_manifest.R   # run from repo root
 
-source("inst/benchmarks/ws8_v2/loco.R")
+source("benchmarks/ws8_v2/loco.R")
 
-in_dir <- Sys.getenv("WS8_V2_IN", file.path("inst/benchmarks/ws8_v2/results/m1"))
-out_dir <- Sys.getenv("WS8_V2_OUT", file.path("inst/benchmarks/ws8_v2/results"))
+in_dir <- Sys.getenv("WS8_V2_IN", file.path("benchmarks/ws8_v2/results/m1"))
+out_dir <- Sys.getenv("WS8_V2_OUT", file.path("benchmarks/ws8_v2/results"))
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
 obj <- readRDS(file.path(in_dir, "donor_tables.rds"))

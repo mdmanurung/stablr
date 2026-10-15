@@ -7,16 +7,16 @@
 # ~13.1M-row file.  Writes a data manifest with hashes, row counts, and
 # exclusion logs.
 #
-# Usage: Rscript inst/benchmarks/ws8_v2/data_prepare.R   # run from the repo root
+# Usage: Rscript benchmarks/ws8_v2/data_prepare.R   # run from the repo root
 #   env WS8_DATA_DIR  directory holding all_cells_metadata.csv.gz (default /workspace)
-#   env WS8_V2_OUT    output dir (default inst/benchmarks/ws8_v2/results/m1)
+#   env WS8_V2_OUT    output dir (default benchmarks/ws8_v2/results/m1)
 #
 # Application case study — NOT calibration evidence.
 
 suppressPackageStartupMessages(library(data.table))
 
 data_dir <- Sys.getenv("WS8_DATA_DIR", "/workspace")
-out_dir  <- Sys.getenv("WS8_V2_OUT", file.path("inst/benchmarks/ws8_v2/results/m1"))
+out_dir  <- Sys.getenv("WS8_V2_OUT", file.path("benchmarks/ws8_v2/results/m1"))
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
 raw <- file.path(data_dir, "all_cells_metadata.csv.gz")

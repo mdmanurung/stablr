@@ -7,10 +7,10 @@
 # generalization units) and an exact paired sign-flip permutation p-value.
 # All other contrasts are exploratory.
 #
-# Usage: Rscript inst/benchmarks/ws8_v2/assemble_primary.R   # run from the repo root
+# Usage: Rscript benchmarks/ws8_v2/assemble_primary.R   # run from the repo root
 # Application case study — NOT calibration evidence.
 
-base <- "inst/benchmarks/ws8_v2/results"
+base <- "benchmarks/ws8_v2/results"
 out_dir <- file.path(base, "run")   # combined output
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 

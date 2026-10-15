@@ -7,7 +7,7 @@
 # panels, plus median-age and all-59 baselines), and writes the required
 # output tables.  No held-out label influences selection, signs, or tuning.
 #
-# Usage: Rscript inst/benchmarks/ws8_v2/run.R   # run from the repository root
+# Usage: Rscript benchmarks/ws8_v2/run.R   # run from the repository root
 #   env WS8_V2_IN   dir holding donor_tables.rds (default .../results/m1)
 #   env WS8_V2_OUT  output dir (default .../results/run)
 #   env WS8_METHODS comma subset of M0..M5 (default all)
@@ -21,12 +21,12 @@
 
 pkgload::load_all(".", compile = FALSE, quiet = TRUE)
 suppressPackageStartupMessages(library(glmnet))
-source("inst/benchmarks/ws8_v2/metrics.R")
-source("inst/benchmarks/ws8_v2/loco.R")
-source("inst/benchmarks/ws8_v2/selectors.R")
+source("benchmarks/ws8_v2/metrics.R")
+source("benchmarks/ws8_v2/loco.R")
+source("benchmarks/ws8_v2/selectors.R")
 
-in_dir  <- Sys.getenv("WS8_V2_IN", file.path("inst/benchmarks/ws8_v2/results/m1"))
-out_dir <- Sys.getenv("WS8_V2_OUT", file.path("inst/benchmarks/ws8_v2/results/run"))
+in_dir  <- Sys.getenv("WS8_V2_IN", file.path("benchmarks/ws8_v2/results/m1"))
+out_dir <- Sys.getenv("WS8_V2_OUT", file.path("benchmarks/ws8_v2/results/run"))
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 methods <- strsplit(Sys.getenv("WS8_METHODS", "M0,M1,M2,M3,M4,M5"), ",")[[1]]
 K_primary <- 10L; K_sens <- c(5L, 15L, 20L)

@@ -7,14 +7,14 @@
 # quantiles, and exact sign-flip p-values; and a calibration summary (both
 # slopes and bias ranges).  Negative differences favor the first-named panel.
 #
-# Usage: Rscript inst/benchmarks/ws8_v2/assemble_prediction.R  # from repo root
+# Usage: Rscript benchmarks/ws8_v2/assemble_prediction.R  # from repo root
 #   env WS8_V2_PRED_DIR  dir holding prediction_metrics.csv
 #                        (default .../results/run_m4b)
 #   env WS8_V2_OUT       output dir (default .../results/run)
 #
 # Application case study — NOT calibration evidence.
 
-base <- "inst/benchmarks/ws8_v2/results"
+base <- "benchmarks/ws8_v2/results"
 pred_dir <- Sys.getenv("WS8_V2_PRED_DIR", file.path(base, "run_m4b"))
 out_dir  <- Sys.getenv("WS8_V2_OUT", file.path(base, "run"))
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
