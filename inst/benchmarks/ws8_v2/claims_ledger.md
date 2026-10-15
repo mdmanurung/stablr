@@ -29,7 +29,8 @@ Primary endpoint: macro signed-rho replication R(K) over 8 LOCO folds. Artifacts
 | V4 | Env-aware STABL beats lasso stability | M4 0.286 vs M2 0.118; paired diff +0.168 [0.032, 0.366], p = 0.0078 (exploratory) | supported | exploratory contrast |
 | V5 | Majority aggregation (M5) recovers replication vs strict min (M4) | M5 0.321 vs M4 0.286; diff −0.034 [−0.098, 0.009], p = 0.023 (exploratory) | tentative | strict-min is conservative; majority trades off |
 | V6 | A sparse STABL panel retains age prediction in unseen cohorts (H3) | M4 top-10 ridge macro MAE 12.19 y vs all-59 12.35 y, median-age 20.11 y | supported | prediction is secondary; not a superiority claim over all-59 |
-| V7 | A reproducible core exists (H1) | M4 sign agreement 0.80–0.95 across folds at K=10; per-cohort R@10 all positive (0.183–0.414) | supported | magnitude modest; see M5 null probe for whether it exceeds null |
+| V7 | A reproducible core exists (H1) | M4 sign agreement 0.80–0.95 across folds at K=10; per-cohort R@10 all positive (0.183–0.414) | supported | magnitude modest; see V8 null |
+| V8 | The min-agg selection is NOT non-null at the feature-count level (H5 confirmed) | S0 within-cohort age permutation: M4 selects 59/59 features in 10/10 permutations (median max min-score 0.998, range 0.990–1.000; real data: 24 features). `results/null/null_results.csv`, `null_scores_perm*.csv` | supported (adverse) | selection saturation means the panel COUNT carries no signal; the case rests on replication/prediction RANKINGS, not on selection being non-null. Consistent with v1 FDP+ ≈ 1. 10 permutations suffice: the null is a point mass at the ceiling, so Monte Carlo error is irrelevant |
 
 **Headline (H2): mixed/negative.** Environment-aware STABL improves held-out
 association replication over pooled STABL (the controlled aggregation contrast) and
