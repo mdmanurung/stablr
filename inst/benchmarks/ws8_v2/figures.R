@@ -3,7 +3,7 @@
 # Reads committed CSVs under results/ and writes PNGs to results/figures/.
 # No model fitting here; every panel is traceable to a committed table.
 #
-# Usage: Rscript inst/benchmarks/ws8_v2/figures.R
+# Usage: Rscript inst/benchmarks/ws8_v2/figures.R   # run from the repo root
 
 suppressPackageStartupMessages(library(ggplot2))
 

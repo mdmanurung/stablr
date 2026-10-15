@@ -9,15 +9,24 @@
 # This is a diagnostic null, NOT a calibrated FDR guarantee.  Real-data and
 # null curves are kept separate.
 #
-# Usage: Rscript inst/benchmarks/ws8_v2/null_probe.R
+# Usage: Rscript inst/benchmarks/ws8_v2/null_probe.R   # run from the repo root
 #   env WS8_V2_IN    dir holding donor_tables.rds (default .../results/m1)
 #   env WS8_V2_OUT   output dir (default .../results/null)
 #   env WS8_N_PERM   number of permutations (default 10; smoke before scaling)
 #   env WS8_PERM_START  first permutation index (default 1) for chunking
 #
+# Amendment 1: the null now runs through the same fold-transform code path as
+# the real fits (fit_fold_transform on the full atlas; the transform depends
+# only on X, which permutation does not change, so the drop set is identical
+# across permutations by construction).  The real-data comparator is read from
+# the committed real_reference_scores.csv produced by real_reference.R (same
+# full-atlas 8-cohort design), not from a hard-coded literal.
+#
 # Application case study — NOT calibration evidence.
 
 pkgload::load_all(".", compile = FALSE, quiet = TRUE)
+source("inst/benchmarks/ws8_v2/metrics.R")
+source("inst/benchmarks/ws8_v2/loco.R")
 source("inst/benchmarks/ws8_v2/selectors.R")
 
 in_dir  <- Sys.getenv("WS8_V2_IN", file.path("inst/benchmarks/ws8_v2/results/m1"))
@@ -37,6 +46,14 @@ cohort <- setNames(as.character(meta$dataset), meta$donor)
 cat(sprintf("null probe: %d donors x %d features, %d cohorts, %d permutations (start %d)\n",
             nrow(X), ncol(X), length(unique(cohort)), n_perm, perm_start))
 
+# Same transform code path as the real fits.  The transform depends only on X
+# (zero-variance filtering), which permutation does not change, so the recipe
+# is fit once here and is identical across permutations by construction.
+recipe <- fit_fold_transform(X, cohort)
+cat(sprintf("transform: %d features dropped (zero-variance within a cohort)\n",
+            length(recipe$drop)))
+Xf <- apply_fold_transform(recipe, X)
+
 # ---- Permutation loop ---------------------------------------------------------
 rows <- list()
 for (pi in seq_len(n_perm)) {
@@ -51,7 +68,7 @@ for (pi in seq_len(n_perm)) {
   }
   # refit the full M4 selector on permuted data (full atlas, all 8 cohorts)
   es <- stabl_environment_stability(
-    x = X, y = y_perm, environments = cohort, lambda_grid = "auto",
+    x = Xf, y = y_perm, environments = cohort, lambda_grid = "auto",
     base_learner = "rf", artificial_type = "knockoff_equi",
     n_bootstraps = 200L, sample_fraction = 1, replace = TRUE,
     random_state = 20261013 + perm_id)
@@ -82,5 +99,13 @@ cat(sprintf("n_selected: median %.1f, range [%d, %d]\n",
             median(null_df$n_selected), min(null_df$n_selected), max(null_df$n_selected)))
 cat(sprintf("max min-score: median %.3f, range [%.3f, %.3f]\n",
             median(null_df$max_min_score), min(null_df$max_min_score), max(null_df$max_min_score)))
-cat("\nReal-data reference: 24 features selected, max min-score 1.000.\n")
+# Real-data comparator from the committed artifact (same full-atlas design).
+ref_f <- file.path(out_dir, "real_reference_scores.csv")
+if (file.exists(ref_f)) {
+  ref <- read.csv(ref_f, stringsAsFactors = FALSE)
+  cat(sprintf("\nReal-data reference (real_reference.R, same design): %d features selected, max min-score %.3f.\n",
+              sum(ref$native), max(ref$min_score)))
+} else {
+  cat("\nReal-data reference not found (run real_reference.R first).\n")
+}
 cat("Done. Outputs in ", out_dir, "\n")

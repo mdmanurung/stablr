@@ -6,7 +6,7 @@
 # feature count.  Also verifies the historical 59-cell-type matrix is
 # reproducible under the documented v1 inclusion rules.
 #
-# Usage: Rscript inst/benchmarks/ws8_v2/data_checks.R
+# Usage: Rscript inst/benchmarks/ws8_v2/data_checks.R   # run from the repo root
 #   env WS8_V2_OUT  dir holding donor_tables.rds (default .../results/m1)
 #
 # Application case study — NOT calibration evidence.

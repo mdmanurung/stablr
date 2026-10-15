@@ -6,7 +6,7 @@
 # K=10, with cohort-level uncertainty (8 generalization units) and an exact
 # paired sign-flip permutation p-value.  All other contrasts are exploratory.
 #
-# Usage: Rscript inst/benchmarks/ws8_v2/assemble_primary.R
+# Usage: Rscript inst/benchmarks/ws8_v2/assemble_primary.R   # run from the repo root
 # Application case study — NOT calibration evidence.
 
 base <- "inst/benchmarks/ws8_v2/results"
@@ -41,6 +41,12 @@ cat("== PRIMARY: macro signed-rho replication R(K) ==\n")
 print(round(macro, 3))
 
 # ---- Confirmatory contrasts at K=10: M4 vs M0, M4 vs M3 ------------------------
+# Uncertainty basis (protocol section 7): the 8 cohorts are the generalization
+# units.  ci_low/ci_high are a paired t interval for the MEAN cohort difference
+# (t on n-1 = 7 df; assumes approximate symmetry of the cohort differences;
+# n = 8 is imprecise — read with the exact sign-flip p).  spread_low/spread_high
+# are the 2.5-97.5% quantiles of the 8 paired differences (a descriptive spread
+# of cohort effects, NOT a confidence interval for the mean).
 sign_flip_p <- function(d) {
   # exact paired sign-flip permutation test on the mean difference
   n <- length(d); obs <- mean(d)
@@ -54,13 +60,17 @@ getR <- function(m) sapply(folds, function(f) k10$R[k10$method == m & k10$fold =
 
 contrasts <- do.call(rbind, lapply(c("M0", "M1", "M2", "M3", "M5"), function(m) {
   d <- getR("M4") - getR(m)
+  n <- length(d)
+  tc <- stats::qt(0.975, n - 1) * stats::sd(d) / sqrt(n)
   data.frame(
     contrast = paste0("M4 - ", m),
     macro_diff = round(mean(d), 4),
-    ci_low = round(unname(quantile(d, 0.025)), 4),
-    ci_high = round(unname(quantile(d, 0.975)), 4),
+    ci_low = round(mean(d) - tc, 4),
+    ci_high = round(mean(d) + tc, 4),
+    spread_low = round(unname(quantile(d, 0.025)), 4),
+    spread_high = round(unname(quantile(d, 0.975)), 4),
     sign_flip_p = round(sign_flip_p(d), 4),
-    n_cohorts = length(d),
+    n_cohorts = n,
     confirmatory = m %in% c("M0", "M3"),
     stringsAsFactors = FALSE)
 }))

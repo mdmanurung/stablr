@@ -7,7 +7,7 @@
 # clinical claims.  The eight reference populations are an a priori concordance
 # set, NOT the paper's complete clock (Table S1 unavailable).
 #
-# Usage: Rscript inst/benchmarks/ws8_v2/biology.R
+# Usage: Rscript inst/benchmarks/ws8_v2/biology.R   # run from the repo root
 # Application case study — NOT calibration evidence.
 
 base <- "inst/benchmarks/ws8_v2/results"

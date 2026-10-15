@@ -51,8 +51,8 @@ apply_fold_transform <- function(recipe, X) {
 
 # ---- Training-only direction signs --------------------------------------------
 # Sign of the per-feature association with age, estimated on TRAINING donors
-# only (random-effects-free: sign of the donor-weighted mean per-cohort Spearman
-# rho across training cohorts).  Indeterminate (|mean rho| < tol) -> 0.
+# only: sign of the cohort-balanced (unweighted) mean per-cohort Spearman rho
+# across training cohorts.  Indeterminate (|mean rho| < tol) -> 0.
 training_signs <- function(X_train, y_train, cohort_train, tol = 1e-6) {
   feats <- colnames(X_train)
   rhos <- sapply(feats, function(f) {
@@ -97,12 +97,17 @@ assert_no_leakage <- function(train_ids, test_ids, context = "") {
 }
 
 # ---- One outer fold -----------------------------------------------------------
-# select_fn: function(X_train, y_train, cohort_train) -> list(ranked = character
-#   vector of feature names in rank order, native = character vector of the
-#   native selected panel, scores = named numeric training scores).
+# select_fn: function(X_train, y_train, cohort_train, covar = NULL) -> list
+#   (ranked = character vector of feature names in rank order, native =
+#   character vector of the native selected panel, scores = named numeric
+#   training scores, optional detail = features x cohorts audit matrix).
 # K: top-K budget for the matched-budget panel.
+# covar: optional data.frame of training-only adjustment covariates (sex,
+#   ethnicity) with rows aligned to `donor`; only selectors that declare a
+#   covariate-adjusted rule (M1) use it.  Passed through untouched by RNG.
 # Returns per-fold replication + prediction inputs (no evaluation here).
-run_one_fold <- function(h, X, y, cohort, donor, select_fn, K = 10L) {
+run_one_fold <- function(h, X, y, cohort, donor, select_fn, K = 10L,
+                         covar = NULL) {
   te <- cohort == h; tr <- !te
   train_ids <- donor[tr]; test_ids <- donor[te]
   assert_no_leakage(train_ids, test_ids, context = paste0("fold ", h))
@@ -116,7 +121,12 @@ run_one_fold <- function(h, X, y, cohort, donor, select_fn, K = 10L) {
   ctr <- setNames(as.character(cohort[tr]), donor[tr])
 
   # Training-only selection/ranking (cohort vector named by sample id).
-  sel <- select_fn(Xtr, ytr, ctr)
+  if (!is.null(covar)) {
+    stopifnot(identical(rownames(covar), donor))
+    sel <- select_fn(Xtr, ytr, ctr, covar = covar[tr, , drop = FALSE])
+  } else {
+    sel <- select_fn(Xtr, ytr, ctr)
+  }
   stopifnot(all(sel$ranked %in% colnames(Xtr)))
   panel_topk <- head(sel$ranked, K)
   panel_native <- intersect(sel$native, colnames(Xtr))
@@ -127,7 +137,7 @@ run_one_fold <- function(h, X, y, cohort, donor, select_fn, K = 10L) {
   list(
     fold = h, test_ids = test_ids, train_ids = train_ids,
     recipe = recipe, panel_topk = panel_topk, panel_native = panel_native,
-    signs = signs, scores = sel$scores,
+    signs = signs, scores = sel$scores, sel_full = sel,
     Xtr = Xtr, Xte = Xte, ytr = ytr, yte = yte,
     cohort_tr = ctr, cohort_te = setNames(as.character(cohort[te]), donor[te])
   )
