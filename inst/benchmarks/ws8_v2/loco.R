@@ -111,21 +111,24 @@ run_one_fold <- function(h, X, y, cohort, donor, select_fn, K = 10L) {
   recipe <- fit_fold_transform(X[tr, , drop = FALSE], cohort[tr])
   Xtr <- apply_fold_transform(recipe, X[tr, , drop = FALSE])
   Xte <- apply_fold_transform(recipe, X[te, , drop = FALSE])
-  ytr <- y[tr]; yte <- y[te]
+  # stabl_fit requires outcomes/groups named by sample id matching rownames(x).
+  ytr <- setNames(y[tr], donor[tr]); yte <- setNames(y[te], donor[te])
+  ctr <- setNames(as.character(cohort[tr]), donor[tr])
 
-  # Training-only selection/ranking.
-  sel <- select_fn(Xtr, ytr, cohort[tr])
+  # Training-only selection/ranking (cohort vector named by sample id).
+  sel <- select_fn(Xtr, ytr, ctr)
   stopifnot(all(sel$ranked %in% colnames(Xtr)))
   panel_topk <- head(sel$ranked, K)
   panel_native <- intersect(sel$native, colnames(Xtr))
 
   # Training-only direction signs (for the replication endpoint).
-  signs <- training_signs(Xtr, ytr, cohort[tr])
+  signs <- training_signs(Xtr, ytr, ctr)
 
   list(
     fold = h, test_ids = test_ids, train_ids = train_ids,
     recipe = recipe, panel_topk = panel_topk, panel_native = panel_native,
     signs = signs, scores = sel$scores,
-    Xtr = Xtr, Xte = Xte, ytr = ytr, yte = yte, cohort_te = cohort[te]
+    Xtr = Xtr, Xte = Xte, ytr = ytr, yte = yte,
+    cohort_tr = ctr, cohort_te = setNames(as.character(cohort[te]), donor[te])
   )
 }

@@ -77,7 +77,7 @@ for (m in methods) {
     fit_pred <- function(feats) {
       if (length(feats) == 0L) return(rep(mean(fr$ytr), length(fr$yte)))
       cv <- train_ridge_cohort_cv(fr$Xtr[, feats, drop = FALSE], fr$ytr,
-                                  cohort[cohort != h])
+                                  fr$cohort_tr)
       as.numeric(predict(cv, newx = fr$Xte[, feats, drop = FALSE], s = "lambda.min"))
     }
     pred_topk   <- fit_pred(head(fr$panel_topk, K_primary))
