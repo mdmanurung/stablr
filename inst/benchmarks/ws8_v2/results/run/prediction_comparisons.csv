@@ -1,0 +1,4 @@
+"contrast","macro_diff","ci_low","ci_high","spread_low","spread_high","sign_flip_p","n_cohorts"
+"topk - all59",-0.1648,-2.8442,2.5146,-6.2285,2.4689,0.9297,8
+"topk - median",-7.9162,-11.1323,-4.7002,-14.14,-3.4813,0.0078,8
+"native - all59",0.3036,-0.525,1.1322,-0.8957,1.2414,0.375,8

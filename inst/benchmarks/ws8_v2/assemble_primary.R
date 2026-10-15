@@ -1,10 +1,11 @@
 # WS-8 v2 M3 — Assemble the combined primary comparison across all methods.
 #
-# Merges the per-method heldout_replication.csv files (M0/M1/M2 from run_m012,
-# M3 from run_m3, M4 from run_m4, M5 from run_m5) into one table and
-# computes the predeclared confirmatory contrasts: M4 vs M0 and M4 vs M3 at
-# K=10, with cohort-level uncertainty (8 generalization units) and an exact
-# paired sign-flip permutation p-value.  All other contrasts are exploratory.
+# Merges the per-method heldout_replication.csv files (M0/M1/M2 from run_m012b,
+# M3 from run_m3b, M4 from run_m4b, M5 from run_m5b — the Amendment-1 amended
+# re-run) into one table and computes the predeclared confirmatory contrasts:
+# M4 vs M0 and M4 vs M3 at K=10, with cohort-level uncertainty (8
+# generalization units) and an exact paired sign-flip permutation p-value.
+# All other contrasts are exploratory.
 #
 # Usage: Rscript inst/benchmarks/ws8_v2/assemble_primary.R   # run from the repo root
 # Application case study — NOT calibration evidence.
@@ -21,10 +22,10 @@ read_rep <- function(dir, methods) {
 }
 
 rep_df <- do.call(rbind, list(
-  read_rep("run_m012", c("M0", "M1", "M2")),
-  read_rep("run_m3", "M3"),
-  read_rep("run_m4", "M4"),
-  read_rep("run_m5", "M5")
+  read_rep("run_m012b", c("M0", "M1", "M2")),
+  read_rep("run_m3b", "M3"),
+  read_rep("run_m4b", "M4"),
+  read_rep("run_m5b", "M5")
 ))
 rep_df <- rep_df[order(rep_df$method, rep_df$fold, rep_df$K), ]
 write.csv(rep_df, file.path(out_dir, "heldout_replication.csv"), row.names = FALSE)

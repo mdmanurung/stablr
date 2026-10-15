@@ -61,7 +61,7 @@ p2 <- ggplot(macroK, aes(K, R, colour = method, group = method)) +
 save_png(p2, "fig2_k_sensitivity.png", 6, 4.2)
 
 # ---- Fig 3: predictive transportability (M4, macro MAE by panel) --------------
-pm <- read.csv(file.path(base, "run_m4", "prediction_metrics.csv"))
+pm <- read.csv(file.path(base, "run_m4b", "prediction_metrics.csv"))
 panel_lbls <- c(topk = "M4 top-10", native = "M4 native",
                 all59 = "All 59", median = "Median age")
 pm$panel <- factor(pm$panel, levels = names(panel_lbls))
@@ -86,9 +86,10 @@ p4 <- ggplot(null, aes(perm, n_selected)) +
   geom_hline(yintercept = real_n, linetype = 2, colour = "#D55E00",
              linewidth = 0.9) +
   geom_point(size = 2.5, colour = "#0072B2") +
-  annotate("text", x = 1, y = real_n - 2.2, label = "real data: 24 features",
+  annotate("text", x = 1, y = real_n - 2.2,
+           label = sprintf("real data: %d features", real_n),
            hjust = 0, size = 3.2, colour = "#D55E00") +
-  scale_x_continuous(breaks = 1:10) +
+  scale_x_continuous(breaks = seq(0, 50, 10)) +
   scale_y_continuous(limits = c(0, 62)) +
   labs(x = "Within-cohort age permutation",
        y = "Features selected (min-agg >= 0.5)")

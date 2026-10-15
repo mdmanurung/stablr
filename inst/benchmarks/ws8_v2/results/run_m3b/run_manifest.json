@@ -1,0 +1,11 @@
+{
+  "commit": "6d19afbb0e1fae3804ebc9feeb8e71b1e2f7bde1",
+  "r_version": "R version 4.4.2 (2024-10-31)",
+  "methods": "M3",
+  "K_primary": 10,
+  "K_sensitivity": [5, 15, 20],
+  "n_donors": 2609,
+  "n_features": 59,
+  "seed": 20261013,
+  "run_at": "2026-10-15T22:39:16Z"
+}
