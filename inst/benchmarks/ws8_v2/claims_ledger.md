@@ -17,7 +17,24 @@ milestone. Initialized at M0 (2026-10-15); no v2 outcome claims exist yet.
 
 ## v2 outcome claims
 
-(none yet — populated at M3/M4/M5/M6)
+Primary endpoint: macro signed-rho replication R(K) over 8 LOCO folds. Artifacts:
+`results/run/heldout_replication.csv`, `method_comparisons.csv`,
+`per_cohort_replication_K10.csv`. Selectors M0–M5, matched top-K panels.
+
+| # | Claim | Evidence | Status | Limitation |
+|---|---|---|---|---|
+| V1 | Environment-aware aggregation adds value over pooled STABL | M4 R@10 = 0.286 vs M3 = 0.142; paired diff +0.145 [0.033, 0.244], sign-flip p = 0.0078 (confirmatory) | supported | 8 cohorts; imprecise; association replication, not prediction |
+| V2 | Env-aware STABL does NOT beat the original-style significance vote | M4 0.286 vs M1 0.381; paired diff −0.095 [−0.191, 0.029], p = 0.023 (exploratory) | supported (negative for H2 superiority) | M1 is a comparator, not the controlled pair |
+| V3 | Env-aware STABL beats pooled meta-analysis (weak) | M4 0.286 vs M0 0.203; paired diff +0.083 [−0.087, 0.199], p = 0.094 (confirmatory, NS) | tentative | CI crosses 0 |
+| V4 | Env-aware STABL beats lasso stability | M4 0.286 vs M2 0.118; paired diff +0.168 [0.032, 0.366], p = 0.0078 (exploratory) | supported | exploratory contrast |
+| V5 | Majority aggregation (M5) recovers replication vs strict min (M4) | M5 0.321 vs M4 0.286; diff −0.034 [−0.098, 0.009], p = 0.023 (exploratory) | tentative | strict-min is conservative; majority trades off |
+| V6 | A sparse STABL panel retains age prediction in unseen cohorts (H3) | M4 top-10 ridge macro MAE 12.19 y vs all-59 12.35 y, median-age 20.11 y | supported | prediction is secondary; not a superiority claim over all-59 |
+| V7 | A reproducible core exists (H1) | M4 sign agreement 0.80–0.95 across folds at K=10; per-cohort R@10 all positive (0.183–0.414) | supported | magnitude modest; see M5 null probe for whether it exceeds null |
+
+**Headline (H2): mixed/negative.** Environment-aware STABL improves held-out
+association replication over pooled STABL (the controlled aggregation contrast) and
+over lasso, but does NOT outperform the simpler original-style cohort significance
+vote. No claim of method superiority is made.
 
 ## References
 
