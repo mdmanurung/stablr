@@ -212,3 +212,51 @@ Script: `ws8_loco_selection_isolated.R`. Output:
 `ws8_loco_silo.csv` (per-cohort results) and
 `ws8_loco_silo_features.csv` (per-fold panels). No corrected number enters
 the vignette until this run completes.
+
+---
+
+# Amendment 1 (2026-10-15) — WS-8 v2 code conformance and review remediation
+
+Filed after the M7 adversarial review of the v2 benchmark package
+(`inst/benchmarks/ws8_v2/`; dispositions in `review_decisions.md`). The locked
+v2 protocol text is unchanged; this amendment records where the code was
+brought into conformance with the lock and where locked gaps were closed.
+
+1. **M0 conformance (protocol §4).** M0 is now a DerSimonian–Laird
+   random-effects meta estimate of the per-cohort Spearman rhos (Fisher-z
+   scale), replacing the equal-weight mean that deviated from the lock. The
+   top-K ranking is by |estimate| — direction-agnostic, consistent with the
+   signed endpoint of §3 and with the other selectors; the previous
+   signed-descending ranking ranked strong negative associations last. M0 has
+   no native panel (ranking comparator only); the empty-panel median-age
+   fallback of §5 applies.
+2. **M1 conformance (protocol §8).** M1's per-cohort test is now the locked
+   `lm(feature ~ age + sex + ancestry)` with BH adjustment and the ≥ 5/7
+   vote, replacing the unadjusted Spearman vote that deviated from the lock.
+   Covariate terms constant within a cohort are dropped for that cohort
+   (ancestry is constant in 4 of 8 cohorts). Sex and ethnicity are complete
+   (0 missing), so adjustment is feasible in every fold.
+3. **S0 null scale-up (protocol §9).** The 10-permutation smoke run showed
+   the selection-count statistic at the ceiling (59/59) in every permutation.
+   The null is nevertheless extended to the locked 50-permutation target
+   (chunked, independent seeds) and reported with Monte Carlo uncertainty.
+   The null and a new full-atlas real-data reference fit
+   (`real_reference.R`) share the identical code path and 8-cohort design;
+   the earlier hard-coded real-data reference count is withdrawn.
+4. **Persistence conformance (protocol §6/§10).** `run.R` now writes per-fold
+   training scores for all 59 features, per-cohort audit detail, and a
+   per-fold manifest with train/test ID hashes; `folds_manifest.R` writes the
+   donor-level `folds.csv`.
+5. **Inference labeling (protocol §7).** Contrast intervals are paired t
+   intervals for the mean cohort difference (7 df; n = 8 imprecision stated);
+   the 2.5–97.5% quantiles of the cohort differences are reported separately
+   as a descriptive spread, not as CIs.
+6. **Empty-native fallback (protocol §5).** The zero-panel fallback is the
+   training-median-age baseline (the mean was used in code before; no
+   committed result was affected, because only M0's native panel is empty and
+   its previous tautological all-59 native rows are removed).
+7. **Amended re-run.** The benchmark was re-run in full (M0–M5) with the
+   conformed selectors. Selectors whose implementation did not change (M2,
+   M3, M4, M5) were required to reproduce their committed per-cohort R@10
+   values exactly as a seed-level reproducibility check; M0/M1 changed by
+   design. Verification outcome: claims ledger V10.

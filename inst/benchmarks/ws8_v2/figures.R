@@ -78,7 +78,9 @@ save_png(p3, "fig3_prediction_mae.png", 5.5, 4)
 
 # ---- Fig 4: S0 null probe — selection count under the null --------------------
 null <- read.csv(file.path(base, "null", "null_results.csv"))
-real_n <- 24L  # observed M4 native panel size on real data (ledger V8)
+# Real-data comparator from the committed same-design artifact (review F2).
+ref <- read.csv(file.path(base, "null", "real_reference_scores.csv"))
+real_n <- sum(ref$native)
 
 p4 <- ggplot(null, aes(perm, n_selected)) +
   geom_hline(yintercept = real_n, linetype = 2, colour = "#D55E00",

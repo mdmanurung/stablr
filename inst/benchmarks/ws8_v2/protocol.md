@@ -168,4 +168,10 @@ executed result and defensible design. A credible negative finding is a valid ou
 
 ## Amendments
 
-(none at lock)
+- **Amendment 1 (2026-10-15)** — code conformance and M7 review remediation:
+  M0/M1 implementations brought into conformance with locked §4/§8; S0 null
+  extended to the locked 50-permutation target with a same-design real-data
+  reference fit; §6/§10 persistence gaps closed; §7 interval labeling fixed;
+  §5 empty-native fallback corrected to the median-age baseline. Full text
+  appended to `ws8_showcase_predesign.md`; dispositions in
+  `review_decisions.md`.
