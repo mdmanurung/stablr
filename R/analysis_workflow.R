@@ -594,15 +594,17 @@ stabl_analyze <- function(x,
       )
     } else {
       groups_by_fold[[fold_id]] <- list()
+      # Zero-row placeholder: every column must be length 0 so the frame
+      # binds cleanly with non-empty fold rows.
       fold_rows[[fold_id]] <- data.frame(
-        repeat_id = fr$outer_fold[["repeat"]],
-        fold_id = fold_id,
+        repeat_id = integer(),
+        fold_id = character(),
         feature_set = character(),
         set_type = character(),
         importance_mean = numeric(),
         importance_sd = numeric(),
         n_repeats = integer(),
-        n_selected = 0L,
+        n_selected = integer(),
         stringsAsFactors = FALSE
       )
     }

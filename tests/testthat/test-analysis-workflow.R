@@ -437,3 +437,40 @@ test_that("multi-feature binary probabilities match cv.glmnet event mapping", {
   )
   expect_equal(out_a$probability, 1 - p_direct)
 })
+
+test_that("validated mode tolerates folds with empty selection (IV regression)", {
+  # Regression for the IV-benchmark failure (2026-10-15): on null data some
+  # outer folds select nothing, and the empty fold-importance branch built a
+  # malformed zero-row data.frame ("arguments imply differing number of
+  # rows: 1, 0").  These exact settings produced empty-selection folds on
+  # seeds 6, 9 and 10 of the IV-0 design.
+  set.seed(6L)
+  n <- 120L
+  p <- 10L
+  x <- matrix(rnorm(n * p), n, p,
+              dimnames = list(paste0("s", seq_len(n)), paste0("f", 1:p)))
+  pr <- rep(0.5, n)
+  y <- setNames(
+    factor(ifelse(stats::rbinom(n, 1L, pr) == 1L, "B", "A"),
+           levels = c("A", "B")),
+    rownames(x)
+  )
+  va <- suppressWarnings(stabl_analyze(
+    x, y, family = "binomial", mode = "validated",
+    preprocessing = c("center", "scale"),
+    lambda_grid = data.frame(lambda = c(0.3, 0.2, 0.1)),
+    outer_v = 3L, inner_v = 3L, n_bootstraps = 50L,
+    artificial_type = "random_permutation", random_state = 6L,
+    n_repeats = 10L
+  ))
+  # The empty-selection branch was exercised: at least one of the 3 outer
+  # folds selected nothing.
+  expect_lt(length(unique(va$selected_features$fold_id)), 3L)
+  # Importance summary stays well-formed: one row per feature, features
+  # never selected in any fold are labelled not_selected.
+  s <- va$heldout_importance$summary
+  expect_equal(nrow(s), p)
+  expect_true(all(paste0("f", 1:p) %in% s$feature))
+  expect_true(any(s$n_folds_selected == 0L))
+  expect_true(all(s$na_reason[s$n_folds_selected == 0L] == "not_selected"))
+})
