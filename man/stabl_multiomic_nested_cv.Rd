@@ -27,6 +27,10 @@ stabl_multiomic_nested_cv(
   workers = 1L,
   cv_workers = 1L,
   study_labels = NULL,
+  preprocessing = NULL,
+  event_class = NULL,
+  return_probabilities = FALSE,
+  keep_fold_predictors = FALSE,
   ...
 )
 
@@ -102,6 +106,30 @@ disjointness concerns the CV folds only: within-training bootstrap
 resampling is untouched, so \code{bootstrap_strata} (sampling design) and SGL
 \code{feature_groups} (feature grouping) remain orthogonal to \code{study_labels}
 (CV unit).}
+
+\item{preprocessing}{Optional fold-safe preprocessing specification:
+\code{NULL} (default; identity, legacy behaviour), a character vector of
+transforms for \code{\link[=stabl_preprocess_fit]{stabl_preprocess_fit()}} (\code{"zv"}, \code{"impute_median"},
+\code{"center"}, \code{"scale"}), or an unprepped \code{\link[recipes:recipe]{recipes::recipe()}} (requires the
+\code{recipes} package).  The transform is fitted anew on every inner- and
+outer-training split and applied unchanged to the corresponding
+held-out rows; a fitted \code{stabl_preprocessing} object is rejected because
+it would leak information across folds.  Recipe steps see the
+block-prefixed candidate columns (\code{block::feature}).}
+
+\item{event_class}{For binary outcomes, the level treated as the event
+when \code{return_probabilities = TRUE}; defaults to the second level of \code{y}.}
+
+\item{return_probabilities}{Logical; when \code{TRUE} and \code{y} is binary, each
+outer held-out prediction gains an \code{event_probability} column giving
+P(\code{event_class}) from the fold-trained selected-feature predictor, and
+the object records the \code{event_class}.  Hard-class columns are unchanged.}
+
+\item{keep_fold_predictors}{Logical; when \code{TRUE}, each outer fold's fitted
+downstream predictor (with a \code{predict_event_prob()} closure for binary
+outcomes) and its fold-fitted preprocessing transform are retained in
+\code{fold_results}, enabling held-out permutation importance with the same
+fold-trained predictor.  Defaults to \code{FALSE} (legacy behaviour).}
 
 \item{...}{Additional arguments passed to \code{\link[=stabl_fit]{stabl_fit()}}.}
 

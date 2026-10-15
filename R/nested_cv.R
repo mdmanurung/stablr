@@ -43,6 +43,26 @@
 #'   resampling is untouched, so `bootstrap_strata` (sampling design) and SGL
 #'   `feature_groups` (feature grouping) remain orthogonal to `study_labels`
 #'   (CV unit).
+#' @param preprocessing Optional fold-safe preprocessing specification:
+#'   `NULL` (default; identity, legacy behaviour), a character vector of
+#'   transforms for [stabl_preprocess_fit()] (`"zv"`, `"impute_median"`,
+#'   `"center"`, `"scale"`), or an unprepped [recipes::recipe()] (requires the
+#'   `recipes` package).  The transform is fitted anew on every inner- and
+#'   outer-training split and applied unchanged to the corresponding
+#'   held-out rows; a fitted `stabl_preprocessing` object is rejected because
+#'   it would leak information across folds.  Recipe steps see the
+#'   block-prefixed candidate columns (`block::feature`).
+#' @param event_class For binary outcomes, the level treated as the event
+#'   when `return_probabilities = TRUE`; defaults to the second level of `y`.
+#' @param return_probabilities Logical; when `TRUE` and `y` is binary, each
+#'   outer held-out prediction gains an `event_probability` column giving
+#'   P(`event_class`) from the fold-trained selected-feature predictor, and
+#'   the object records the `event_class`.  Hard-class columns are unchanged.
+#' @param keep_fold_predictors Logical; when `TRUE`, each outer fold's fitted
+#'   downstream predictor (with a `predict_event_prob()` closure for binary
+#'   outcomes) and its fold-fitted preprocessing transform are retained in
+#'   `fold_results`, enabling held-out permutation importance with the same
+#'   fold-trained predictor.  Defaults to `FALSE` (legacy behaviour).
 #' @param metric Candidate-selection metric, `"ber"` or `"accuracy"`.
 #' @param family Passed to [stabl_fit()]. Defaults to `"multinomial"`.
 #' @param n_bootstraps Passed to [stabl_fit()].
@@ -149,6 +169,10 @@ stabl_multiomic_nested_cv <- function(
     workers         = 1L,
     cv_workers      = 1L,
     study_labels    = NULL,
+    preprocessing   = NULL,
+    event_class     = NULL,
+    return_probabilities = FALSE,
+    keep_fold_predictors = FALSE,
     ...
 ) {
   metric <- match.arg(metric)
@@ -169,6 +193,31 @@ stabl_multiomic_nested_cv <- function(
   sample_ids <- names(y)
   if (nlevels(y) < 2L) {
     stop("`y` must contain at least two outcome classes.", call. = FALSE)
+  }
+  .validate_preprocessing_spec(preprocessing)
+  if (!isTRUE(return_probabilities) && !identical(return_probabilities, FALSE)) {
+    stop("`return_probabilities` must be TRUE or FALSE.", call. = FALSE)
+  }
+  if (!isTRUE(keep_fold_predictors) && !identical(keep_fold_predictors, FALSE)) {
+    stop("`keep_fold_predictors` must be TRUE or FALSE.", call. = FALSE)
+  }
+  if (isTRUE(return_probabilities) && nlevels(y) != 2L) {
+    stop(
+      paste0(
+        "`return_probabilities = TRUE` requires a binary outcome; ",
+        "multiclass probability schemas are not part of this helper."
+      ),
+      call. = FALSE
+    )
+  }
+  if (!is.null(event_class)) {
+    if (nlevels(y) != 2L) {
+      stop("`event_class` is only defined for binary outcomes.", call. = FALSE)
+    }
+    event_class <- as.character(event_class)
+    if (!event_class %in% levels(y)) {
+      stop("`event_class` must be one of the outcome levels.", call. = FALSE)
+    }
   }
   strata_labels <- .make_nested_strata(
     strata = strata,
@@ -258,6 +307,10 @@ stabl_multiomic_nested_cv <- function(
       l1_ratio        = l1_ratio,
       workers         = workers,
       inner_folds     = if (is.null(inner_folds_pre)) NULL else inner_folds_pre[[outer_i]],
+      preprocessing   = preprocessing,
+      event_class     = event_class,
+      return_probabilities = return_probabilities,
+      keep_fold_predictors = keep_fold_predictors,
       ...
     )
   }
@@ -305,7 +358,13 @@ stabl_multiomic_nested_cv <- function(
       fold_scheme = fold_scheme,
       study_labels = study_labels,
       cv_workers = cv_workers,
-      stabl_workers = workers
+      stabl_workers = workers,
+      preprocessing = preprocessing,
+      event_class = if (isTRUE(return_probabilities)) {
+        if (is.null(event_class)) levels(y)[2L] else event_class
+      } else {
+        NULL
+      }
     ),
     class = "stabl_multiomic_nested_cv"
   )
@@ -713,7 +772,8 @@ stabl_multiomic_nested_cv <- function(
                                              family, n_bootstraps,
                                              artificial_type, hard_threshold,
                                              random_state, n_lambda, l1_ratio,
-                                             workers, ...) {
+                                             workers, preprocessing = NULL,
+                                             ...) {
   candidate_rows <- list()
   k <- 1L
 
@@ -740,6 +800,7 @@ stabl_multiomic_nested_cv <- function(
         n_lambda = n_lambda,
         l1_ratio = l1_ratio,
         workers = workers,
+        preprocessing = preprocessing,
         ...
       )
       pred_rows[[fold_i]] <- data.frame(
@@ -776,10 +837,24 @@ stabl_multiomic_nested_cv <- function(
                                         candidate, lambda_grid, family,
                                         n_bootstraps, artificial_type,
                                         hard_threshold, random_state,
-                                        n_lambda, l1_ratio, workers, ...) {
+                                        n_lambda, l1_ratio, workers,
+                                        preprocessing = NULL,
+                                        event_class = NULL,
+                                        keep_predictor = FALSE,
+                                        ...) {
   x_train <- .candidate_matrix(x_list, candidate, train_ids)
   x_valid <- .candidate_matrix(x_list, candidate, valid_ids)
   y_train <- y[train_ids]
+
+  # Fold-safe preprocessing: the transform is fitted on THIS fold's training
+  # matrix only, then applied unchanged to the held-out rows.  Selection,
+  # auto lambda grids and decoy construction all see transformed training
+  # data; assessment values never influence the fitted parameters.
+  pp <- .fit_fold_preprocessing(preprocessing, x_train)
+  if (!is.null(pp)) {
+    x_train <- stabl_preprocess_apply(pp, x_train)
+    x_valid <- stabl_preprocess_apply(pp, x_valid)
+  }
 
   fit <- stabl_fit(
     x = x_train,
@@ -807,18 +882,22 @@ stabl_multiomic_nested_cv <- function(
   support <- get_support(fit)
   selected <- names(support)[support]
   importances <- get_importances(fit)
-  predicted <- .predict_selected_multinomial(
+  predictor <- .fit_selected_predictor(
     x_train = x_train[, selected, drop = FALSE],
     y_train = y_train,
     x_valid = x_valid[, selected, drop = FALSE],
-    levels = levels(y)
+    levels = levels(y),
+    event_class = event_class
   )
 
   list(
     stabl_fit = fit,
     selected_features = .split_prefixed_features(selected),
     importances = importances,
-    predicted = predicted,
+    predicted = predictor$predicted,
+    probability = predictor$probability,
+    predictor = if (isTRUE(keep_predictor)) predictor else NULL,
+    preprocessing = pp,
     candidate = candidate$name
   )
 }
@@ -907,15 +986,131 @@ stabl_multiomic_nested_cv <- function(
   out
 }
 
-.predict_selected_multinomial <- function(x_train, y_train, x_valid, levels) {
+# Fit the downstream selected-feature predictor: hard classes plus, for
+# binary outcomes, event probabilities and the retained predictor itself (a
+# model object and a `predict_event_prob(newx)` closure) so validated
+# workflows can compute held-out permutation importance with the same
+# fold-trained predictor.  `.predict_selected_multinomial()` remains the
+# legacy hard-class wrapper with unchanged behaviour.
+.fit_selected_predictor <- function(x_train, y_train, x_valid, levels,
+                                    event_class = NULL) {
   y_train <- factor(y_train, levels = levels)
-  # glmnet requires at least two columns; a single selected feature falls
-  # back to the majority-class predictor like the empty-selection case.
-  if (ncol(x_train) < 2L || length(unique(y_train)) < 2L) {
-    return(.majority_class_prediction(y_train, nrow(x_valid)))
+  n_sel <- ncol(x_train)
+  binary <- length(levels) == 2L
+  if (!is.null(event_class)) {
+    if (!binary) {
+      stop("`event_class` is only defined for binary outcomes.", call. = FALSE)
+    }
+    event_class <- as.character(event_class)
+    if (!event_class %in% levels) {
+      stop("`event_class` must be one of the outcome levels.", call. = FALSE)
+    }
+  }
+  # Both downstream engines (stats::glm and glmnet) model P(second level)
+  # for a two-level factor response; map to the requested event class.
+  event <- if (binary) (event_class %||% levels[2L]) else NULL
+  to_event <- if (binary && identical(event, levels[1L])) {
+    function(p) 1 - p
+  } else {
+    function(p) p
   }
 
-  pred <- tryCatch(
+  # Training-derived fallback: majority hard class; binary event prevalence
+  # (never a fixed 0.5) for the probability.
+  prevalence_fallback <- function() {
+    prevalence <- if (binary) mean(y_train == event) else NULL
+    list(
+      predicted = .majority_class_prediction(y_train, nrow(x_valid)),
+      probability = if (binary) rep(prevalence, nrow(x_valid)) else NULL,
+      model = NULL,
+      predict_event_prob = if (binary) {
+        function(newx) rep(prevalence, nrow(newx))
+      } else {
+        NULL
+      },
+      fallback = "training_prevalence"
+    )
+  }
+
+  # Zero selected features, or a degenerate one-class training outcome.
+  if (n_sel == 0L || length(unique(y_train)) < 2L) {
+    return(prevalence_fallback())
+  }
+
+  # Exactly one selected feature: glmnet requires at least two columns, so
+  # the downstream predictor is a genuine one-feature model.  Binary uses a
+  # logit glm; multinomial uses a nearest-class-centroid discriminant rule
+  # (per-class training means of the feature, midpoint decision boundaries),
+  # which is the one-predictor LDA direction and needs no iterative fit.
+  # Separation or other numerical failures fall back to the training-derived
+  # majority class / event prevalence.
+  if (n_sel == 1L) {
+    return(tryCatch(
+      {
+        if (binary) {
+          # suppressWarnings: complete separation warns ("fitted probabilities
+          # numerically 0 or 1"); the resulting fit is still a valid
+          # one-feature predictor and is preferred over the majority class.
+          fit <- suppressWarnings(.with_linear_algebra_numerical_infeasibility(
+            stats::glm(
+              y_train ~ .x,
+              data   = data.frame(.x = as.numeric(x_train[, 1L])),
+              family = stats::binomial(link = "logit"),
+              control = stats::glm.control(maxit = 50L)
+            ),
+            source = "one-feature binomial selected-feature fit",
+            subclass = "stablr_downstream_numerical_infeasibility"
+          ))
+          prob <- unname(stats::predict(
+            fit,
+            newdata = data.frame(.x = as.numeric(x_valid[, 1L])),
+            type = "response"
+          ))
+          list(
+            predicted = ifelse(prob >= 0.5, levels[2L], levels[1L]),
+            probability = to_event(prob),
+            model = fit,
+            predict_event_prob = function(newx) {
+              to_event(unname(stats::predict(
+                fit,
+                newdata = data.frame(.x = as.numeric(newx[, 1L])),
+                type = "response"
+              )))
+            },
+            fallback = NA_character_
+          )
+        } else {
+          xv <- as.numeric(x_train[, 1L])
+          centroids <- vapply(
+            levels,
+            function(lv) mean(xv[y_train == lv]),
+            numeric(1L)
+          )
+          if (any(!is.finite(centroids))) {
+            .abort_numerical_infeasibility(
+              "stablr_downstream_numerical_infeasibility",
+              "One-feature multinomial centroid is not finite.",
+              centroids = centroids
+            )
+          }
+          x_new <- as.numeric(x_valid[, 1L])
+          dist <- abs(outer(x_new, centroids, "-"))
+          list(
+            predicted = levels[max.col(-dist, ties.method = "first")],
+            probability = NULL,
+            model = list(centroids = centroids),
+            predict_event_prob = NULL,
+            fallback = NA_character_
+          )
+        }
+      },
+      stablr_numerical_infeasibility = function(e) {
+        prevalence_fallback()
+      }
+    ))
+  }
+
+  tryCatch(
     {
       class_counts <- table(y_train)
       if (any(class_counts < 3L)) {
@@ -932,25 +1127,52 @@ stabl_multiomic_nested_cv <- function(
         glmnet::cv.glmnet(
           x = x_train,
           y = y_train,
-          family = if (length(levels) == 2L) "binomial" else "multinomial",
+          family = if (binary) "binomial" else "multinomial",
           type.measure = "class",
           nfolds = min(5L, min(class_counts))
         ),
         source = "glmnet selected-feature classification fit"
       )
-      as.character(stats::predict(
+      predicted <- as.character(stats::predict(
         fit,
         newx = x_valid,
         s = "lambda.min",
         type = "class"
       )[, 1L])
+      probability <- NULL
+      predict_event_prob <- NULL
+      if (binary) {
+        probability <- to_event(as.numeric(stats::predict(
+          fit,
+          newx = x_valid,
+          s = "lambda.min",
+          type = "response"
+        )[, 1L]))
+        predict_event_prob <- function(newx) {
+          to_event(as.numeric(stats::predict(
+            fit,
+            newx = newx,
+            s = "lambda.min",
+            type = "response"
+          )[, 1L]))
+        }
+      }
+      list(
+        predicted = predicted,
+        probability = probability,
+        model = fit,
+        predict_event_prob = predict_event_prob,
+        fallback = NA_character_
+      )
     },
     stablr_numerical_infeasibility = function(e) {
-      .majority_class_prediction(y_train, nrow(x_valid))
+      prevalence_fallback()
     }
   )
+}
 
-  pred
+.predict_selected_multinomial <- function(x_train, y_train, x_valid, levels) {
+  .fit_selected_predictor(x_train, y_train, x_valid, levels)$predicted
 }
 
 .split_prefixed_features <- function(features) {
@@ -989,7 +1211,9 @@ stabl_multiomic_nested_cv <- function(
                                stratified, x_list, y, candidates, lambda_grid,
                                metric, family, n_bootstraps, artificial_type,
                                hard_threshold, random_state, n_lambda, l1_ratio,
-                               workers, inner_folds = NULL, ...) {
+                               workers, inner_folds = NULL, preprocessing = NULL,
+                               event_class = NULL, return_probabilities = FALSE,
+                               keep_fold_predictors = FALSE, ...) {
   outer <- outer_folds[[outer_i]]
   train_ids <- outer$train_ids
   valid_ids <- outer$valid_ids
@@ -1020,6 +1244,7 @@ stabl_multiomic_nested_cv <- function(
     n_lambda = n_lambda,
     l1_ratio = l1_ratio,
     workers = workers,
+    preprocessing = preprocessing,
     ...
   )
 
@@ -1041,6 +1266,9 @@ stabl_multiomic_nested_cv <- function(
     n_lambda = n_lambda,
     l1_ratio = l1_ratio,
     workers = workers,
+    preprocessing = preprocessing,
+    event_class = event_class,
+    keep_predictor = keep_fold_predictors,
     ...
   )
 
@@ -1054,6 +1282,11 @@ stabl_multiomic_nested_cv <- function(
     selected_candidate = selected_name,
     stringsAsFactors = FALSE
   )
+  # Binary event probability for the named event class; rows stay aligned
+  # with `sample_id`.  Only added on explicit request for binary outcomes.
+  if (isTRUE(return_probabilities) && !is.null(outer_fit$probability)) {
+    pred_df$event_probability <- outer_fit$probability
+  }
   feature_df <- .stabl_nested_feature_table(
     selected_features = outer_fit$selected_features,
     importances = outer_fit$importances,

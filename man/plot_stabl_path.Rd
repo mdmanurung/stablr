@@ -32,6 +32,11 @@ is shown as a dashed horizontal line.
 \details{
 When the lambda grid contains an \code{alpha} column (elastic-net mixed-alpha
 path), the plot is automatically faceted by \code{alpha}.
+
+The path is always drawn in decreasing-lambda order (high penalty on the
+left, low penalty on the right) within each \code{alpha} level, independently of
+the row order of the supplied lambda grid.  The x-axis is the position along
+that ordered path, so auto grids (log-spaced lambda) are evenly spaced.
 }
 \examples{
 if (requireNamespace("ggplot2", quietly = TRUE)) {

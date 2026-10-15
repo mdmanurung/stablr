@@ -83,3 +83,30 @@ FDP+ number reported here is a diagnostic computed on one real dataset.
 - `inst/benchmarks/ws8_summary.md` — narrative summary with the tables above.
 - Figures (PNG, in the case-study vignette): stability path, environment
   min-score ranking, LOCO calibration curves, consistency heatmap.
+
+---
+
+## Addendum — LOCO evidence label (dated 2026-10-15)
+
+This addendum documents a departure from the predeclared LOCO intent and the
+planned correction. The historical preregistration above is preserved
+unchanged.
+
+**Departure.** The executed `ws8_aging_showcase.R` selects the 24-feature
+panel using all eight cohorts *before* the leave-one-cohort-out (LOCO) ridge
+prediction. The selected-panel LOCO MAE (historically 11.72 y) is therefore
+a **post-selection** estimate: it is apparent for the selection procedure,
+not an unbiased held-out error for the complete workflow. The all-feature
+LOCO column (12.14 y) is unaffected and remains a genuine held-out
+evaluation, because the held-out cohort plays no role in that feature set.
+
+**Intended correction (PR5, not yet executed).** A selection-isolated LOCO
+will re-run the full pipeline — filtering, `stabl_environment_stability()`
+selection, ridge tuning — inside each seven-cohort training partition, and
+predict the eighth cohort with the fold-specific panel. This is a
+prospective correction; it is not claimed here as prespecified, and no
+corrected numbers are inserted until the rerun completes.
+
+**Preservation.** All historical MAE values, figures, CSVs, and the dataset
+are preserved unchanged. The vignette and `ws8_summary.md` carry updated
+evidence labels only; no historical result was edited or regenerated.

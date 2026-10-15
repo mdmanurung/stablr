@@ -27,20 +27,19 @@ set.seed(42)
 
 # 1 Introduction
 
-The core STABL workflow answers one question: which features are stably
-selected across bootstrap resamples of a given dataset. All bootstrap
-resamples, however, come from the same pool of samples. A second, equally
-practical question is which features are selected stably **in every
-environment** --- every batch, cohort, or site --- and not only in one
-favourable subset.
+The core STABL workflow answers one question: which features stay stable
+across bootstrap resamples of one dataset. All bootstrap resamples come from
+the same pool of samples. A second question is just as practical: which
+features stay stable **in every environment** --- every batch, cohort, or
+site. A feature may show stability in only one favourable subset.
 
-This vignette introduces `stabl_environment_stability()`, a workflow that
-addresses this question. It is inspired by invariant causal prediction (ICP;
-Peters, Bühlmann & Meinshausen, 2016), whose user-facing appeal is exactly
-this kind of cross-environment stability, but it makes **no causal claims**
-and requires nothing beyond environment *labels*.
+This vignette introduces `stabl_environment_stability()`. This workflow
+answers the second question. The idea comes from invariant causal prediction
+(ICP; Peters, Bühlmann & Meinshausen, 2016). ICP targets exactly this kind of
+cross-environment stability. `stabl_environment_stability()` makes **no
+causal claims**. It needs nothing beyond environment *labels*.
 
-The package is attached as follows.
+Attach the package as follows.
 
 ```{r}
 library(stablr)
@@ -48,13 +47,13 @@ library(stablr)
 
 # 2 A synthetic multi-batch example
 
-The simulation comprises 150 samples measured in three batches (`batchA`,
-`batchB`, `batchC`, 50 samples each) with 10 features:
+The simulation has 150 samples in three batches (`batchA`, `batchB`,
+`batchC`; 50 samples each) and 10 features:
 
-- `f1` and `f2` are associated with the outcome with the **same effect in all
-  three batches** --- genuinely transportable signal;
-- `f3` is associated with the outcome **in `batchA` only** (for example, a
-  batch-specific measurement artifact or a population-specific effect);
+- `f1` and `f2` relate to the outcome with the **same effect in all three
+  batches**. This is genuinely transportable signal;
+- `f3` relates to the outcome **in `batchA` only**. For example: a
+  batch-specific measurement artifact or a population-specific effect;
 - `f4`--`f10` are null.
 
 ```{r data}
@@ -78,9 +77,9 @@ y <- setNames(
 # 3 The environment-stability workflow
 
 `stabl_environment_stability()` fits `stabl_fit()` **separately within each
-environment** and aggregates the per-feature stability scores. All arguments
-beyond `x`, `y`, `environments`, `lambda_grid`, and `random_state` are
-forwarded to `stabl_fit()`.
+environment**. It then aggregates the per-feature stability scores. All
+arguments beyond `x`, `y`, `environments`, `lambda_grid`, and `random_state`
+go to `stabl_fit()` unchanged.
 
 ```{r fit}
 res <- stabl_environment_stability(
@@ -94,72 +93,74 @@ res
 ```
 
 The result object carries one full `stabl_fit` per environment
-(`res$env_fits`), the feature × environment score matrix (`res$env_scores`),
-and two summaries, which are inspected below.
+(`res$env_fits`). It also carries the feature × environment score matrix
+(`res$env_scores`) and two summaries. The next chunk inspects them.
 
 ```{r scores}
 round(res$env_scores, 2)
 round(res$min_scores, 2)
 ```
 
-In `res$env_scores`, the transportable features `f1` and `f2` hold high scores
-in all three batches, whereas `f3` scores highly in `batchA` only. The
-`res$min_scores` summary reduces each feature to its weakest environment and
-is the quantity used for reporting.
+In `res$env_scores`, the transportable features `f1` and `f2` hold high
+scores in all three batches. `f3` scores highly in `batchA` only. The
+`res$min_scores` summary reduces each feature to its weakest environment.
+Reports use this quantity.
 
 # 4 Interpretation of the aggregated scores
 
 The aggregation rule is the **minimum across environments** of each feature's
-max-over-lambda stability score --- a feature is only as reliable as its
-*weakest* environment:
+max-over-lambda stability score. This minimum is the min-agg score. A feature
+is only as reliable as its *weakest* environment:
 
-- `f1` and `f2` score high in every batch, so their minimum stays high. These
-  are the transportable features: they would survive a new batch, a new site,
+- `f1` and `f2` score high in every batch. Their minimum stays high. These
+  are the transportable features. They would survive a new batch, a new site,
   or a new cohort.
-- `f3` is perfectly stable *within* `batchA` --- a plain single-cohort STABL
-  run on the pooled data (or on `batchA` alone) would select it --- but its
-  score collapses to null level in `batchB`/`batchC`, so its minimum score is
+- `f3` is perfectly stable *within* `batchA`. A plain single-cohort STABL
+  run on the pooled data (or on `batchA` alone) would select it. In
+  `batchB`/`batchC`, its score collapses to null level. Its minimum score is
   low. The minimum flags it as **not transportable**.
 - The null features never accumulate a high minimum.
 
-A practical reporting pattern is therefore to rank features by
-`res$min_scores` and to treat a combination of high `mean_scores` with low
-`min_scores` as a *batch-dependent* candidate that warrants investigation
-rather than export. The `pairwise_adjusted_similarity` matrix additionally
-summarises how much agreement there is between the *selected sets* of any two
-environments (chance-corrected via `adjusted_similarity()`).
+A practical reporting pattern follows. Rank features by `res$min_scores`.
+Treat high `mean_scores` with low `min_scores` as a *batch-dependent*
+candidate. Such a candidate warrants investigation, not export. The
+`pairwise_adjusted_similarity` matrix additionally summarises agreement
+between the *selected sets* of any two environments. The agreement is
+chance-corrected via `adjusted_similarity()`.
 
 Two practical notes:
 
 1. **Lambda grid matters.** The per-environment summary is a max over the
-   lambda grid, and a grid that reaches the saturated small-lambda regime
-   (where the lasso selects nearly every feature) inflates all scores toward
-   1. Prefer an explicit, top-heavy grid as above, or interpret
+   lambda grid. A grid that reaches the saturated small-lambda regime
+   inflates all scores toward 1. In that regime, the lasso selects nearly
+   every feature. Prefer an explicit, top-heavy grid as above. Or interpret
    `lambda_grid = "auto"` (computed separately per environment) with this
    leniency in mind.
-2. **Environment-aware resampling is complementary.** For a single pooled fit
-   whose bootstrap *respects* environment structure, pass the labels as
-   `groups` to `stabl_fit()` (the group bootstrap keeps whole environments
-   intact) or use `bootstrap_strata`. The workflow shown here answers a
-   different question: not whether selection is stable under resampling, but
-   whether selection is the same everywhere.
+2. **Environment-aware resampling is complementary.** For a single pooled
+   fit, you can make the bootstrap *respect* environment structure. Pass the
+   labels as `groups` to `stabl_fit()`. The group bootstrap keeps whole
+   environments intact. Alternatively, use `bootstrap_strata`. The workflow
+   shown here answers a different question. It does not ask whether selection
+   is stable under resampling. It asks whether selection is the same
+   everywhere.
 
 # 5 Relation to invariant causal prediction
 
 Invariant causal prediction (Peters, Bühlmann & Meinshausen, 2016) uses
-environments to *test* invariance of the outcome mechanism and returns
-variables whose causal role is identifiable --- it targets causal parenthood
-with corresponding assumptions (in particular about hidden confounding) and,
-classically, an environment-valued variable. `stabl_environment_stability()`
-borrows only the *stability-across-environments* idea:
+environments to *test* invariance of the outcome mechanism. It returns
+variables with an identifiable causal role. It targets causal parenthood.
+This target needs corresponding assumptions, in particular about hidden
+confounding. It also classically needs an environment-valued variable.
+`stabl_environment_stability()` borrows only the
+*stability-across-environments* idea:
 
 - **No causal claims** --- outputs are selection frequencies, not causal sets;
-- **No environment variable required** --- plain labels (batch, cohort, site,
-  sequencing lane, time block) are enough, which is what multi-batch omic
-  studies actually have;
-- **No new dependencies** --- everything is built from `stabl_fit()` and the
+- **No environment variable required** --- plain labels are enough: batch,
+  cohort, site, sequencing lane, time block. Multi-batch omic studies have
+  exactly these labels;
+- **No new dependencies** --- everything builds from `stabl_fit()` and the
   existing `stablr` accessors and metrics.
 
-The workflow is appropriate when the operational question is which biomarkers
-hold up in every environment in which they were measured: reliable **and**
-transportable feature sets.
+The workflow fits one operational question: which biomarkers hold up in
+every environment in which they were measured. The result is a feature set
+that is reliable **and** transportable.

@@ -99,3 +99,15 @@ stabl_multiomic_study_diagnostics,export,,,multiomic,R/study_tools.R,man/stabl_m
 stabl_multiomic_study_split,export,,,multiomic,R/study_tools.R,man/stabl_multiomic_study_split.Rd,running,test-study-tools.R,test-study-tools.R,core_contract
 stabl_multiomic_scheme_comparison,export,,,multiomic,R/study_tools.R,man/stabl_multiomic_scheme_comparison.Rd,running,test-study-tools.R,test-study-tools.R,core_contract
 stabl_multiomic_selection_stability,export,,,multiomic,R/study_tools.R,man/stabl_multiomic_selection_stability.Rd,running,test-study-tools.R,test-study-tools.R,core_contract
+stabl_interpret,export,,,interpretation,R/interpretation.R,man/stabl_interpret.Rd,running,test-interpretation.R,test-interpretation.R,core_contract
+print.stabl_interpretation,s3,print,stabl_interpretation,interpretation,R/interpretation.R,man/stabl_interpret.Rd,running,test-interpretation.R,not_applicable-method,accessor_contract
+summary.stabl_interpretation,s3,summary,stabl_interpretation,interpretation,R/interpretation.R,man/stabl_interpret.Rd,running,test-interpretation.R,not_applicable-method,accessor_contract
+plot.stabl_interpretation,s3,plot,stabl_interpretation,interpretation,R/interpretation.R,man/stabl_interpret.Rd,running,test-interpretation.R,not_applicable-method,accessor_contract
+stabl_preprocess_fit,export,,,preprocessing,R/preprocessing.R,man/stabl_preprocess_fit.Rd,running,test-preprocessing.R,test-preprocessing.R,core_contract
+stabl_preprocess_apply,export,,,preprocessing,R/preprocessing.R,man/stabl_preprocess_apply.Rd,running,test-preprocessing.R,test-preprocessing.R,core_contract
+stabl_preprocess_fit_recipes,export,,,preprocessing,R/preprocessing.R,man/stabl_preprocess_fit_recipes.Rd,running,test-preprocessing.R,test-preprocessing.R,utility_contract
+stabl_preprocess_apply.stabl_preprocessing,s3,stabl_preprocess_apply,stabl_preprocessing,preprocessing,R/preprocessing.R,man/stabl_preprocess_apply.Rd,running,test-preprocessing.R,not_applicable-method,accessor_contract
+stabl_preprocess_apply.stabl_preprocessing_recipes,s3,stabl_preprocess_apply,stabl_preprocessing_recipes,preprocessing,R/preprocessing.R,man/stabl_preprocess_apply.Rd,running,test-preprocessing.R,not_applicable-method,accessor_contract
+stabl_analyze,export,,,workflow,R/analysis_workflow.R,man/stabl_analyze.Rd,running,test-analysis-workflow.R,test-analysis-workflow.R,core_contract
+print.stabl_analysis,s3,print,stabl_analysis,workflow,R/analysis_workflow.R,man/stabl_analyze.Rd,running,test-analysis-workflow.R,not_applicable-method,accessor_contract
+summary.stabl_analysis,s3,summary,stabl_analysis,workflow,R/analysis_workflow.R,man/stabl_analyze.Rd,running,test-analysis-workflow.R,not_applicable-method,accessor_contract

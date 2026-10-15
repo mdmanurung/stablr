@@ -102,8 +102,17 @@ test_that("ordinal learner rejects non-factor outcomes and honours seeds", {
 })
 
 test_that("ordinal learner is exposed through the public interface audit", {
+  # Prefer the shipped registry (available in R CMD check trees); fall
+  # back to the skip-guarded source-tree lookup for test_local runs.
+  audit_path <- system.file(
+    "release", "public-interface-audit.csv", package = "stablr"
+  )
+  if (!nzchar(audit_path)) {
+    audit_path <- file.path(.interface_source_root(), "inst", "release",
+                            "public-interface-audit.csv")
+  }
   audit <- utils::read.csv(
-    file.path("..", "..", "inst", "release", "public-interface-audit.csv"),
+    audit_path,
     stringsAsFactors = FALSE, check.names = FALSE, na.strings = character()
   )
   expect_true("make_ordinal_adapter" %in% audit$interface[audit$kind == "export"])

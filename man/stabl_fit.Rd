@@ -56,7 +56,10 @@ data-driven grid via \code{\link[=auto_lambda_grid]{auto_lambda_grid()}} (uses \
 via \code{ranger}; requires \code{lambda_grid} from \code{\link[=auto_rf_threshold_grid]{auto_rf_threshold_grid()}} or
 \code{"auto"}), or \code{"oblique_rf"} (oblique random forest via \code{aorsf};
 requires \code{lambda_grid} from \code{\link[=auto_oblique_threshold_grid]{auto_oblique_threshold_grid()}} or
-\code{"auto"}). Default: \code{"lasso"}. \code{"rf"} and \code{"oblique_rf"} are experimental
+\code{"auto"}), or \code{"ordinal"} (elastic-net cumulative logit via \code{ordinalNet}
+for ordered-band outcomes; requires a factor \code{y} and
+\code{\link[=auto_ordinal_lambda_grid]{auto_ordinal_lambda_grid()}} or \code{"auto"}). Default: \code{"lasso"}. \code{"rf"},
+\code{"oblique_rf"}, and \code{"ordinal"} are experimental
 extensions beyond Python STABL: FDP+ calibration for (oblique) random
 forests is empirical, not guaranteed, and is validated separately (see
 the package's RF validation study); they must be paired with model-X
@@ -65,7 +68,8 @@ selection frequencies are noisier than for \code{"rf"} because importance is
 spread across the linear combinations used in each split.}
 
 \item{family}{Character; \code{glmnet} response family (\code{"gaussian"},
-\code{"binomial"}, \code{"multinomial"}, or \code{"cox"}). Default: \code{"gaussian"}.}
+\code{"binomial"}, \code{"multinomial"}, or \code{"cox"}), or \code{"ordinal"} for
+\code{base_learner = "ordinal"}. Default: \code{"gaussian"}.}
 
 \item{n_bootstraps}{Positive integer; bootstrap iterations per lambda.
 Default: \code{1000L}.}

@@ -72,6 +72,7 @@ Suggests:
     mixOmics,
     ordinalNet,
     ranger,
+    recipes,
     rlang,
     rmarkdown,
     sparsegl,
@@ -123,6 +124,9 @@ Collate:
     'nested_cv.R'
     'study_tools.R'
     'stabl_accessors.R'
+    'interpretation.R'
+    'preprocessing.R'
+    'analysis_workflow.R'
     's3_methods.R'
     'environment_stability.R'
     'visualization.R'

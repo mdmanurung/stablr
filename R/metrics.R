@@ -599,6 +599,67 @@ fscore_similarity <- function(list1, list2, beta = 1) {
   )
 }
 
+# ── Binary probability metrics (validated workflows) ────────────────────────
+
+# Brier score for P(event): mean((y_event - p)^2).  Lower is better.
+.brier_score <- function(y_event, probability) {
+  mean((y_event - probability)^2)
+}
+
+# Clipped log loss for P(event); probabilities are clipped to [eps, 1 - eps]
+# so a confidently wrong prediction is heavily but finitely penalised.
+.log_loss_clipped <- function(y_event, probability, eps = 1e-15) {
+  p <- pmin(pmax(probability, eps), 1 - eps)
+  -mean(y_event * log(p) + (1 - y_event) * log(1 - p))
+}
+
+# Rank-based AUROC (Mann-Whitney U with average ranks for ties).  Returns
+# NA_real_ when the truth contains a single class: the AUC is undefined
+# there, and NA is the explicit diagnostic rather than a fabricated value.
+.auroc <- function(y_event, probability) {
+  if (length(unique(y_event)) < 2L) return(NA_real_)
+  r <- rank(probability, ties.method = "average")
+  n1 <- sum(y_event == 1L)
+  n0 <- length(y_event) - n1
+  unname((sum(r[y_event == 1L]) - n1 * (n1 + 1) / 2) / (n1 * n0))
+}
+
+# Binary probability metrics with explicit event-class mapping.  `truth` must
+# have exactly two levels; `probability` is P(truth == event_class).
+.binary_probability_metrics <- function(truth, probability, event_class) {
+  # Preserve the declared level set: a single-class assessment fold still has
+  # two levels, and AUROC must return its diagnostic NA rather than error.
+  truth <- if (is.factor(truth)) {
+    factor(truth, levels = levels(truth))
+  } else {
+    factor(truth)
+  }
+  if (nlevels(truth) != 2L) {
+    stop("Binary probability metrics require exactly two outcome classes.",
+         call. = FALSE)
+  }
+  event_class <- as.character(event_class)
+  if (!event_class %in% levels(truth)) {
+    stop("`event_class` must be one of the outcome levels.", call. = FALSE)
+  }
+  if (length(probability) != length(truth) || anyNA(probability)) {
+    stop("`probability` must be complete and aligned to `truth`.",
+         call. = FALSE)
+  }
+  if (any(probability < 0 | probability > 1)) {
+    stop("`probability` must lie in [0, 1].", call. = FALSE)
+  }
+  y_event <- as.integer(truth == event_class)
+  list(
+    brier = .brier_score(y_event, probability),
+    log_loss = .log_loss_clipped(y_event, probability),
+    auroc = .auroc(y_event, probability),
+    event_class = event_class,
+    n = length(truth),
+    n_events = sum(y_event)
+  )
+}
+
 # ── Deprecation shims (0.3.0 API overhaul) ────────────────────────────────────
 # The 0.3.0 rename scheme: `*_similarity()` for a pair, `*_similarity_matrix()`
 # for an all-pairs matrix, `*_similarity_pairwise()` for the vector of unique

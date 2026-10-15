@@ -57,7 +57,8 @@ the same group are assigned to the same assessment fold.}
 \item{base_learner}{Passed to \code{\link[=stabl_fit]{stabl_fit()}}.}
 
 \item{family}{Character; \code{glmnet} response family (\code{"gaussian"},
-\code{"binomial"}, \code{"multinomial"}, or \code{"cox"}). Default: \code{"gaussian"}.}
+\code{"binomial"}, \code{"multinomial"}, or \code{"cox"}), or \code{"ordinal"} for
+\code{base_learner = "ordinal"}. Default: \code{"gaussian"}.}
 
 \item{n_bootstraps}{Passed to \code{\link[=stabl_fit]{stabl_fit()}}.}
 

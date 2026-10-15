@@ -1,29 +1,6 @@
-.interface_source_root <- function() {
-  candidates <- unique(c(
-    normalizePath(testthat::test_path("..", ".."), mustWork = FALSE),
-    normalizePath(getwd(), mustWork = FALSE),
-    normalizePath(file.path(getwd(), ".."), mustWork = FALSE)
-  ))
-  for (candidate in candidates) {
-    if (file.exists(file.path(candidate, "NAMESPACE")) &&
-        dir.exists(file.path(candidate, "inst", "release"))) {
-      return(candidate)
-    }
-  }
-  testthat::skip("package source interface audit is not available")
-}
-
-.read_interface_audit <- function() {
-  utils::read.csv(
-    file.path(
-      .interface_source_root(), "inst", "release",
-      "public-interface-audit.csv"
-    ),
-    stringsAsFactors = FALSE,
-    check.names = FALSE,
-    na.strings = character()
-  )
-}
+# Audit helpers (.interface_source_root, .read_interface_audit) live in
+# helper-interface-audit.R so multiple test files share the same
+# skip-guarded source-root lookup.
 
 test_that("public-interface audit exactly covers NAMESPACE", {
   root <- .interface_source_root()
@@ -49,8 +26,8 @@ test_that("public-interface audit exactly covers NAMESPACE", {
     s3_parts, function(x) paste0(x[[1L]], ".", x[[2L]]), character(1L)
   )
 
-  expect_length(exports, 67L)
-  expect_length(s3, 33L)
+  expect_length(exports, 72L)
+  expect_length(s3, 40L)
   expect_setequal(audit$interface[audit$kind == "export"], exports)
   expect_setequal(audit$interface[audit$kind == "s3"], s3)
 })

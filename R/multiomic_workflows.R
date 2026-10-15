@@ -2040,6 +2040,10 @@ stabl_multiomic_stacked <- function(
     }
     if (n_sel == 0L) return(fallback_result())
 
+    # A degenerate one-class training outcome cannot identify a multinomial
+    # fit; return the training-derived class priors instead of failing.
+    if (length(unique(y_train)) < 2L) return(fallback_result())
+
     downstream_folds <- min(5L, min(table(y_train)))
     if (downstream_folds < 3L) {
       .abort_numerical_infeasibility(
@@ -2084,7 +2088,16 @@ stabl_multiomic_stacked <- function(
   }
 
   if (n_sel == 0L) {
-    fallback <- if (task_type == "binary") 0.5 else y_train_mean
+    # Training-derived fallback: binary uses the training event prevalence
+    # (callers pass the outcome in fixed 0/1 event coding; see
+    # .late_fusion_binary_outcome()), regression uses the training mean.
+    # The constant is identical for training and validation predictions so
+    # the two baselines always agree.
+    fallback <- if (task_type == "binary") {
+      mean(as.numeric(unname(y_train)))
+    } else {
+      y_train_mean
+    }
     train_preds <- rep(fallback, nrow(x_train_sel))
     valid_preds <- if (!is.null(x_valid_sel)) rep(fallback, nrow(x_valid_sel)) else NULL
     return(list(train_preds = train_preds, valid_preds = valid_preds, model = NULL))

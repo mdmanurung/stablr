@@ -1,5 +1,15 @@
 # Leakage-safe late fusion.  The historical implementation remains in
 # multiomic_workflows.R because it is also the public Python-parity path.
+#
+# OOF semantics (audit note, PR0a): the `oof_predictions` field is a
+# *base-model* OOF matrix — each omic's downstream predictor is cross-fitted,
+# so row i's per-omic predictions come from models fitted without row i.
+# The stacking weights are then optimised on those OOF predictions, so the
+# stacked prediction is NOT a full-stack OOF prediction for the fused rule.
+# Do not use `oof_predictions` (or the stacked score derived from it) to
+# train or evaluate a calibrator unless the stack-weight optimisation itself
+# is cross-fitted.  Aliases (`train_predictions`, `score`) and all callers
+# are preserved unchanged.
 
 .late_fusion_add_mode_fields <- function(result, training_mode) {
   if (!training_mode %in% c("oof", "python_legacy")) {
@@ -265,6 +275,11 @@
       empty, y_train, empty_valid, y_mean, task_type, levels
     )
   }
+  # Binary fallback alignment: the prevalence override applies exactly once.
+  # It fires only when a fallback reason was recorded (selector or downstream
+  # fit error).  The plain zero-selected-features path inside
+  # .late_fusion_fit_omic() already returns the training event prevalence
+  # with fallback_reason left NULL, so this block must not re-apply there.
   if (!is.null(fallback_reason) && identical(task_type, "binary")) {
     prior <- mean(as.numeric(y_train))
     out$train_preds <- rep(prior, nrow(x_train_sel))

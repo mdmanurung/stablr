@@ -432,3 +432,39 @@ test_that("performance_by_study pools per-study held-out predictions", {
   ))
   expect_null(res_iid$performance_by_study)
 })
+
+# ── PR3: preprocessing under study-disjoint folds ────────────────────────────
+
+test_that("held-out studies never enter fold-fitted preprocessing", {
+  fixture <- .make_study_fixture(c(6L, 6L, 6L, 6L), seed = 11L)
+  args <- list(
+    x_list = fixture$x_list, y = fixture$y,
+    candidates = list(list(name = "rna", blocks = "rna")),
+    lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+    outer_v = 4L, inner_v = 2L, n_bootstraps = 3L,
+    artificial_type = NULL, hard_threshold = 1e-9, sample_fraction = 1,
+    random_state = 12L,
+    study_labels = fixture$study_labels,
+    preprocessing = c("center", "scale"),
+    keep_fold_predictors = TRUE
+  )
+  fit <- suppressWarnings(do.call(stabl_multiomic_nested_cv, args))
+
+  # Shift every feature of the first fold's held-out study by a large
+  # constant: fold-1's training-fitted transform must be bit-identical.
+  fold1_valid <- fit$outer_folds[[1L]]$valid_ids
+  x2 <- fixture$x_list
+  x2$rna[fold1_valid, ] <- x2$rna[fold1_valid, ] + 1e6
+  args2 <- args
+  args2$x_list <- x2
+  fit2 <- suppressWarnings(do.call(stabl_multiomic_nested_cv, args2))
+
+  pp1 <- fit$fold_results[[1L]]$fit$preprocessing
+  pp2 <- fit2$fold_results[[1L]]$fit$preprocessing
+  expect_identical(pp1$params$center$means, pp2$params$center$means)
+  expect_identical(pp1$params$scale$sds, pp2$params$scale$sds)
+  expect_identical(
+    fit$fold_results[[1L]]$fit$selected_features,
+    fit2$fold_results[[1L]]$fit$selected_features
+  )
+})
