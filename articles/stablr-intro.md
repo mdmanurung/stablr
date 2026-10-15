@@ -24,24 +24,23 @@
 
 ## 1 Introduction
 
-In high-dimensional biomarker screens the number of candidate variables
-typically exceeds the number of samples. A sparse model returns a short
-list of features, but a single fit does not indicate whether the list is
-stable or an artifact of one particular sample.
+In high-dimensional biomarker screens, candidate variables usually
+outnumber samples. A sparse model returns a short list of features. But
+a single fit does not show whether the list is stable. The list can be
+an artifact of one particular sample.
 
 STABL (Stability-based Thresholding and Aggregation for Biomarker
-discovery via LASSO) reformulates this one-shot question as a repeated
-experiment. The method resamples the data, fits a sparse learner across
-a penalty grid, records how often each feature is selected, and
-calibrates the result against artificial decoy features. The central
-object is therefore not a single coefficient vector but a frequency: the
-proportion of perturbed datasets in which a feature survives.
+discovery via LASSO) turns this one-shot question into a repeated
+experiment. The method resamples the data. It fits a sparse learner
+across a penalty grid. It records how often each feature is selected. It
+then calibrates the result against artificial decoy features. The
+central object is a frequency, not a coefficient vector. The frequency
+is the proportion of perturbed datasets in which a feature survives.
 
-The `stablr` package is implemented natively in R without a Python
-runtime and is built around the `glmnet` ecosystem. This introductory
-vignette uses small simulated datasets, random-permutation decoys, and
-modest bootstrap counts so that the examples remain quick enough for
-routine package builds.
+The `stablr` package is native R. It has no Python runtime. It builds on
+the `glmnet` ecosystem. This vignette uses small simulated datasets,
+random-permutation decoys, and modest bootstrap counts. The examples
+then stay quick enough for routine package builds.
 
 The workflow consists of four steps:
 
@@ -52,10 +51,10 @@ The workflow consists of four steps:
     [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md).
 4.  Inspect selected features, stability scores, and diagnostic plots.
 
-The fitted object is a ranked feature-selection result rather than a
-final prediction model. It records which features cross the stability
-threshold, how often each feature was selected, and how those selections
-compare with the decoys.
+The fitted object is a ranked feature-selection result, not a prediction
+model. It records which features cross the stability threshold. It
+records how often each feature was selected. It also records how those
+selections compare with the decoys.
 
 ## 2 Installation
 
@@ -69,7 +68,7 @@ after cloning.
 devtools::install(".")
 ```
 
-The package is attached to the R session as follows.
+Attach the package to the R session as follows.
 
 ``` r
 
@@ -78,7 +77,7 @@ library(stablr)
 
 ## 3 Scope of the vignette
 
-This vignette is the entry point to the package and covers the
+This vignette is the entry point to the package. It covers the
 single-omic case:
 
 1.  preparing the input objects expected by
@@ -98,8 +97,8 @@ single-omic case:
 
 ## 4 Input data format
 
-The method expects ordinary R objects. Samples occupy rows, features
-occupy columns, and the outcome is aligned to the same sample order.
+The method expects ordinary R objects. Samples occupy rows. Features
+occupy columns. The outcome aligns to the same sample order.
 
 | Object | Expected shape | Notes |
 |----|----|----|
@@ -108,20 +107,18 @@ occupy columns, and the outcome is aligned to the same sample order.
 | `lambda_grid` | data frame returned by [`auto_lambda_grid()`](https://mdmanurung.github.io/stablr/reference/auto_lambda_grid.md) | Each row defines a sparse model setting evaluated during bootstrapping. |
 
 If `x` has row names and `y` has names, both must contain the same
-unique sample identifiers; their order may differ, because `stablr`
-aligns the outcome to predictor rows by identifier. In biomarker work a
-silent sample mismatch is worse than a model error, because it can
-appear entirely plausible.
+unique sample identifiers. Their order can differ. `stablr` aligns the
+outcome to predictor rows by identifier. A silent sample mismatch is
+worse than a model error. A mismatch can look entirely plausible.
 
 ## 5 Binary classification
 
 ### 5.1 Simulated data
 
-The first experiment is binary classification. The simulation is
-constructed so that the truth is known: 120 samples, 24 candidate
-features, and only five real signals (`B1` to `B5`); the remaining
-features are noise. The question is whether stability selection recovers
-the planted features.
+The first experiment is binary classification. The simulation has a
+known truth: 120 samples, 24 candidate features, and only five real
+signals (`B1` to `B5`). The remaining features are noise. The question
+is whether stability selection recovers the planted features.
 
 ``` r
 
@@ -146,18 +143,18 @@ signal_features_bin
 #> [1] "B1" "B2" "B3" "B4" "B5"
 ```
 
-The [`table()`](https://rdrr.io/r/base/table.html) output provides a
-quick check on class balance. A badly imbalanced screen can still be
-useful, but its selected features require more care in interpretation.
+The [`table()`](https://rdrr.io/r/base/table.html) output gives a quick
+check on class balance. A badly imbalanced screen can still be useful.
+But interpret its selected features with more care.
 
 ### 5.2 Fitting STABL
 
-Two steps are involved. First,
+The fit has two steps. First,
 [`auto_lambda_grid()`](https://mdmanurung.github.io/stablr/reference/auto_lambda_grid.md)
-obtains a data-dependent penalty path from `glmnet`; each row of the
-grid becomes one sparse model configuration. Second,
+obtains a data-dependent penalty path from `glmnet`. Each grid row
+becomes one sparse model configuration. Second,
 [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
-repeats the fit across bootstrap samples and counts feature selections.
+repeats the fit across bootstrap samples. It counts feature selections.
 
 The main arguments are:
 
@@ -178,23 +175,22 @@ Supported artificial-feature settings are:
 | `"knockoff_mvr"` | Model-X MVR Gaussian knockoffs. |
 | `NULL` | No artificial features; FDP diagnostics are unavailable. |
 
-All knockoff modes fail closed above 3,000 predictors because the
-package does not claim a globally valid chunked construction.
-Random-permutation controls do not have that dimensional restriction.
+All knockoff modes fail closed above 3,000 predictors. The package does
+not claim a globally valid chunked construction. Random-permutation
+controls do not have that dimensional restriction.
 
 Scalar tuning arguments such as `n_bootstraps` and `random_state` must
 be finite integer-like scalars. Plot titles, output paths, and
 file-format arguments must be non-empty character scalars.
 
-The example uses `n_bootstraps = 50` and keeps the strong-penalty end of
-a 20-point lambda path, which keeps the runtime short and the selected
-set compact. Lower penalties admit more features; this can be useful for
-diagnostics but can hide a small planted signal in a short introductory
-run. Final analyses should use more bootstrap resamples and should
-verify that the selected features are not an artifact of one narrow grid
-choice.
+The example uses `n_bootstraps = 50`. It keeps the strong-penalty end of
+a 20-point lambda path. This keeps the runtime short and the selected
+set compact. Lower penalties admit more features. That helps
+diagnostics. But it can hide a small planted signal in a short run.
+Final analyses should use more bootstrap resamples. They should also
+verify that the selections are not an artifact of one narrow grid.
 
-The model is fitted with 50 bootstrap replicates and random-permutation
+We fit the model with 50 bootstrap replicates and random-permutation
 decoys.
 
 ``` r
@@ -225,37 +221,37 @@ fit_bin
 
 The printed summary reports three key numbers:
 
-- **Stability threshold** — the minimum selection frequency a feature
-  must reach to be called a biomarker (e.g. `0.7` means selected in \>=
-  70% of bootstraps).
-- **n selected** — features passing the threshold; for the 5-signal data
-  a small number close to 5 is expected.
-- **FDP+ estimate** — estimated upper bound on the false-discovery
-  proportion among selected features. With only five planted signals and
-  the additive `+1` FDP+ correction, the best possible value for a
-  perfect five-feature selection is `1 / 5 = 0.2`; larger real analyses
-  can support smaller values.
+- **Stability threshold** — the minimum selection frequency for a
+  biomarker call. For example, `0.7` means selected in 70% of
+  bootstraps.
+- **n selected** — features that pass the threshold. For the 5-signal
+  data, expect a small number close to 5.
+- **FDP+ estimate** — an estimated upper bound on the false-discovery
+  proportion among selected features. With five planted signals and the
+  additive `+1` correction, a perfect five-feature selection has the
+  best value `1 / 5 = 0.2`. Larger real analyses can support smaller
+  values.
 
-In real data these numbers are a screening summary, not a verdict. The
-most convincing fits have a selected set of plausible size, a visible
-gap between selected and unselected stability scores, and features that
-survive domain review.
+On real data, these numbers are a screening summary, not a verdict. The
+most convincing fits have three properties. The selected set has a
+plausible size. The stability scores show a visible gap between selected
+and unselected features. The features survive domain review.
 
 ### 5.3 Inspecting the results
 
 [`get_feature_names_out()`](https://mdmanurung.github.io/stablr/reference/get_feature_names_out.md)
 returns the selected biomarker names.
 [`get_support()`](https://mdmanurung.github.io/stablr/reference/get_support.md)
-returns the same decision as a named logical vector, which is useful
-when the original matrix must be subset.
+returns the same decision as a named logical vector. Use it to subset
+the original matrix.
 [`get_importances()`](https://mdmanurung.github.io/stablr/reference/get_importances.md)
-retains the fuller story: a stability score for every feature, sorted
-from most to least persistent.
+keeps the fuller story: a stability score for every feature, sorted from
+most to least persistent.
 
-Because the data are simulated, the selected set can be compared with
-the planted truth. In a real experiment the analogous evidence comes
-from independent validation, biological mechanism, and the shape of the
-stability-score gap.
+The data are simulated. So you can compare the selected set with the
+planted truth. In a real experiment, use three analogous evidence
+sources: independent validation, biological mechanism, and the shape of
+the stability-score gap.
 
 ``` r
 
@@ -284,15 +280,14 @@ head(get_importances(fit_bin), 10)
 ```
 
 The two [`setdiff()`](https://rdrr.io/r/base/sets.html) calls are a
-luxury of simulation. They show what STABL is asked to do: separate
-repeatable signal from features that look favourable in a single fit
-only.
+luxury of simulation. They show the task of STABL: separate repeatable
+signal from features that look good in one fit only.
 
 ### 5.4 Visualisation
 
 In the stability path, each curve is the selection frequency of one
-feature along the lambda path. A useful fit usually shows a small group
-of curves lifting away from the background; in this simulation `B1` to
+feature along the lambda path. A useful fit shows a small group of
+curves that lift away from the background. In this simulation, `B1` to
 `B5` should form that upper band.
 
 ``` r
@@ -303,10 +298,10 @@ plot_stabl_path(fit_bin, title = "Binary classification - stability path")
 ![Stability path for binary
 classification](stablr-intro_files/figure-html/plot-binary-1.png)
 
-The plotting helpers return ordinary `ggplot` objects, so the same
-figure can be displayed, modified, or saved.
+The plotting helpers return ordinary `ggplot` objects. You can display,
+modify, or save the same figure.
 
-The stability path can be written to file as follows.
+You can write the stability path to file as follows.
 
 ``` r
 
@@ -317,15 +312,15 @@ ggplot2::ggsave("stability-path.png", path_plot, width = 7, height = 5)
 
 The FDP+ diagnostic is drawn with
 [`plot_fdr_graph()`](https://mdmanurung.github.io/stablr/reference/plot_fdr_graph.md).
-The function retains its historical name, but the plotted quantity is
-FDP+. At threshold t, the numerator is the artificial-feature exceedance
-count adjusted for the injected proportion, plus one; the denominator is
-the real-feature exceedance count, bounded below by one. The fitted
-threshold is the first grid value attaining the minimum FDP+. The
-vertical dashed line marks that threshold, while the horizontal line is
-a visual target only. In this tiny five-signal simulation the FDP+ lower
-bound is `1 / 5 = 0.2`, so the graph is a calibration diagnostic, not a
-universal false-discovery guarantee.
+The function keeps its historical name. The plotted quantity is FDP+. At
+threshold t, the numerator is the artificial-feature exceedance count,
+adjusted for the injected proportion, plus one. The denominator is the
+real-feature exceedance count, bounded below by one. The fitted
+threshold is the first grid value with the minimum FDP+. The vertical
+dashed line marks that threshold. The horizontal line is a visual target
+only. In this five-signal simulation, the FDP+ lower bound is
+`1 / 5 = 0.2`. The graph is a calibration diagnostic, not a universal
+false-discovery guarantee.
 
 ``` r
 
@@ -335,7 +330,7 @@ plot_fdr_graph(fit_bin, title = "Binary classification - FDR estimate")
 ![FDR estimate graph for binary
 classification](stablr-intro_files/figure-html/fdr-binary-1.png)
 
-The diagnostic can also be written to file.
+You can also write the diagnostic to file.
 
 ``` r
 
@@ -349,9 +344,9 @@ ggplot2::ggsave("fdr-graph.png", fdr_plot, width = 7, height = 5)
 ### 6.1 Simulated data
 
 Regression replaces class membership with a continuous outcome. The
-structure is unchanged: a known signal is planted, noise is added, and
-STABL is asked to find the features that recur across resamples. The
-true features here are `R1` to `R5`.
+structure stays the same. The simulation plants a known signal and adds
+noise. STABL finds the features that recur across resamples. The true
+features here are `R1` to `R5`.
 
 ``` r
 
@@ -374,9 +369,9 @@ The printed vector names the five planted features.
 
 ### 6.2 Fitting STABL
 
-The code mirrors the binary example. Moving from classification to
-regression requires changing `family`, rebuilding the lambda grid for
-the new outcome, and refitting.
+The code mirrors the binary example. To move from classification to
+regression: change `family`, rebuild the lambda grid for the new
+outcome, and refit.
 
 ``` r
 
@@ -410,8 +405,8 @@ threshold, the number of selected features, and the FDP+ estimate.
 ### 6.3 Results
 
 The strongest scores should concentrate on `R1` to `R5`. Their exact
-scores need not match the binary example, because the Gaussian loss
-changes the effective sparsity of each bootstrap model.
+scores need not match the binary example. The Gaussian loss changes the
+effective sparsity of each bootstrap model.
 
 ``` r
 
@@ -432,15 +427,14 @@ head(get_importances(fit_reg), 10)
 ```
 
 The selected feature names are the thresholded screening result. The
-full importance vector is often just as useful, because features just
-below the threshold may suggest a continuum rather than a sharp
-boundary.
+full importance vector is often just as useful. Features just below the
+threshold can suggest a continuum, not a sharp boundary.
 
 ### 6.4 Visualisation
 
-The stability path should echo the binary case: the planted features
+The stability path should echo the binary case. The planted features
 lift away from the background. Differences in curve height reflect the
-model family, not a change in the definition of stability.
+model family. The definition of stability does not change.
 
 ``` r
 
@@ -452,25 +446,23 @@ regression](stablr-intro_files/figure-html/plot-reg-1.png)
 
 ## 7 Alternative base learners
 
-The default base learner is the lasso. Other sparse learners are useful
-when the geometry of the feature space changes. The following examples
-reuse the binary simulation so that the learner choice is the only
-varying factor.
+The default base learner is the lasso. Other sparse learners help when
+the geometry of the feature space changes. The examples reuse the binary
+simulation. The learner choice is then the only varying factor.
 
 ### 7.1 Adaptive lasso
 
 The adaptive lasso re-weights the L1 penalty. Features with small
-coefficients in a preliminary ridge fit are penalised more heavily,
-which can sharpen the contrast between persistent signal and unstable
-noise.
+coefficients in a preliminary ridge fit get heavier penalties. This can
+sharpen the contrast between persistent signal and unstable noise.
 
-Adaptive lasso is preferred when a sparse true signal is expected and a
-tighter biomarker list with fewer borderline features is desired.
-Features `B1` to `B5` should remain among the strongest-ranked, and
+Prefer the adaptive lasso when you expect a sparse true signal and want
+a tighter biomarker list with fewer borderline features. Features `B1`
+to `B5` should stay among the strongest-ranked.
 [`get_importances()`](https://mdmanurung.github.io/stablr/reference/get_importances.md)
-will typically show higher scores for true features than plain lasso.
-Borderline noise features can still appear, because this variant uses a
-broader introductory lambda grid.
+typically gives higher scores for true features than plain lasso.
+Borderline noise features can still appear. This variant uses a broader
+introductory lambda grid.
 
 ``` r
 
@@ -502,17 +494,16 @@ ranking.
 ### 7.2 Elastic net
 
 Elastic net interpolates between the lasso (`alpha = 1`) and ridge
-(`alpha = 0`). The L2 component allows correlated features to be
-selected together, which is useful when biomarkers form modules rather
-than isolated hits.
+(`alpha = 0`). The L2 component lets the model select correlated
+features together. This helps when biomarkers form modules, not isolated
+hits.
 
-Passing multiple `l1_ratio` values to
-[`auto_lambda_grid()`](https://mdmanurung.github.io/stablr/reference/auto_lambda_grid.md)
-makes STABL sweep the (lambda, alpha) grid jointly, exploring both the
-sparsity level and the L1/L2 mix in every bootstrap. Elastic net is
-preferred over plain lasso when features are highly correlated and an
-arbitrary single representative from a correlated group should not be
-chosen.
+Pass multiple `l1_ratio` values to
+[`auto_lambda_grid()`](https://mdmanurung.github.io/stablr/reference/auto_lambda_grid.md).
+STABL then sweeps the (lambda, alpha) grid jointly. Every bootstrap
+explores the sparsity level and the L1/L2 mix. Prefer elastic net over
+plain lasso when features are highly correlated. It avoids choosing one
+arbitrary representative from a correlated group.
 
 ``` r
 
@@ -543,10 +534,10 @@ The printed names are the features selected by the elastic-net fit.
 
 ### 7.3 Choosing a base learner: what the benchmarks show
 
-The bundled benchmarks measure how each learner and artificial-feature
-pairing controls the false discovery proportion on simulated data. Three
-numbers matter when you pick a pairing. Read them as measured
-calibration evidence, not as guarantees for your dataset.
+The bundled benchmarks measure how each learner and decoy pairing
+controls the false discovery proportion on simulated data. Three numbers
+matter when you pick a pairing. Read them as measured calibration
+evidence, not as guarantees for your dataset.
 
 | Base learner | Artificial features | Measured mean FDP | Guidance |
 |----|----|----|----|
@@ -558,32 +549,32 @@ calibration evidence, not as guarantees for your dataset.
 Two rules follow from the table. First, pair the random forest with
 equicorrelated knockoffs when you need calibrated selection with
 correlated features. Second, read every FDP+ estimate against the design
-of your own data; the benchmarks are simulations, and no benchmark
-proves calibration on your dataset.
+of your own data. The benchmarks are simulations. No benchmark proves
+calibration on your dataset.
 
 ## 8 Interpretation of the FDP+ estimate
 
 [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
-chooses its stability threshold by minimizing an FDP+ surrogate: at each
-candidate threshold it estimates the false-discovery proportion among
-selected features from the artificial (decoy) features and keeps the
-first minimizer along the grid. Three caveats apply:
+chooses its stability threshold by minimizing an FDP+ surrogate. At each
+candidate threshold, it estimates the false-discovery proportion among
+selected features from the decoy features. It keeps the first minimizer
+along the grid. Three caveats apply:
 
 - **Not a universal FDR guarantee.** The fitted threshold minimizes an
-  observed diagnostic curve; neither it nor the plotted `fdr_target`
+  observed diagnostic curve. Neither it nor the plotted `fdr_target`
   line controls false discoveries by construction.
 - **Calibration depends on fair null competitors.** The FDP+ estimate is
-  only as good as the artificial features: they must behave as
+  only as good as the artificial features. The decoys must behave as
   exchangeable nulls for the real features under the base learner.
   Poorly matched decoys distort the estimate.
 - **`FDRs_` / `min_fdr_` are names, not promises.** These fitted fields
-  keep their historical Python-parity names; they contain FDP+
+  keep their historical Python-parity names. They contain FDP+
   estimates, not guaranteed false-discovery rates.
 
 ## 9 Next steps
 
-This vignette has covered the core idea: repeat the sparse fit, count
-what survives, and calibrate that survival against decoys. The following
+This vignette covered the core idea. Repeat the sparse fit. Count what
+survives. Calibrate that survival against decoys. The following
 extensions are available:
 
 - Use more bootstraps for final analyses, typically hundreds rather than

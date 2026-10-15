@@ -89,7 +89,8 @@
 <li>7 Exporting results to disk</li>
 <li>8 Outer cross-validation for multi-omic workflows</li>
 <li>9 Cooperative coefficient paths</li>
-<li>10 Related vignettes</li>
+<li>10 Interpreting a fitted selection</li>
+<li>11 Related vignettes</li>
 </ul>
 </div>
 <div class="section level2">
@@ -155,6 +156,10 @@ listed in the table below.</p>
 <td>
 <code><a href="../reference/get_cooperative_features.html">get_cooperative_features()</a></code>, <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> on
 native fits</td>
+</tr>
+<tr class="odd">
+<td>Biomarker interpretation</td>
+<td><code><a href="../reference/stabl_interpret.html">stabl_interpret()</a></code></td>
 </tr>
 </tbody>
 </table>
@@ -615,7 +620,54 @@ whose paths persist over a wide range of lambda values are the
 candidates for stable cross-view selection.</p>
 </div>
 <div class="section level2">
-<h2 id="related-vignettes">10 Related vignettes<a class="anchor" aria-label="anchor" href="#related-vignettes"></a>
+<h2 id="interpreting-a-fitted-selection">10 Interpreting a fitted selection<a class="anchor" aria-label="anchor" href="#interpreting-a-fitted-selection"></a>
+</h2>
+<p>A STABL fit answers one question: which features are stable. It does
+not answer three others. How large is each effect? Which features are
+redundant? How much does the fitted model rely on each feature?
+<code><a href="../reference/stabl_interpret.html">stabl_interpret()</a></code> answers these three questions for an
+existing fit. It does not re-run STABL.</p>
+<p>The function returns one evidence table. Each row is a feature. The
+columns record four separate dimensions: the stability score, a
+conditional signed effect, a correlation group, and a permutation
+importance. These dimensions are different quantities. They are never
+merged into one score.</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">11L</span><span class="op">)</span></span>
+<span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">120</span></span>
+<span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span> <span class="op">*</span> <span class="fl">8</span><span class="op">)</span>, <span class="va">n</span>, <span class="fl">8</span>,</span>
+<span>            dimnames <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"s"</span>, <span class="fl">1</span><span class="op">:</span><span class="va">n</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"f"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">8</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co"># f1 and f2 are correlated substitutes; f3 is an independent signal.</span></span>
+<span><span class="va">x</span><span class="op">[</span>, <span class="st">"f2"</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">x</span><span class="op">[</span>, <span class="st">"f1"</span><span class="op">]</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span>, sd <span class="op">=</span> <span class="fl">0.1</span><span class="op">)</span></span>
+<span><span class="va">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/setNames.html" class="external-link">setNames</a></span><span class="op">(</span><span class="fl">0.9</span> <span class="op">*</span> <span class="va">x</span><span class="op">[</span>, <span class="st">"f1"</span><span class="op">]</span> <span class="op">+</span> <span class="fl">0.7</span> <span class="op">*</span> <span class="va">x</span><span class="op">[</span>, <span class="st">"f3"</span><span class="op">]</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span>, sd <span class="op">=</span> <span class="fl">0.6</span><span class="op">)</span>,</span>
+<span>              <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stabl_fit.html">stabl_fit</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, lambda_grid <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>lambda <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.3</span>, <span class="fl">0.1</span>, <span class="fl">0.05</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>                 n_bootstraps <span class="op">=</span> <span class="fl">30L</span>, artificial_type <span class="op">=</span> <span class="st">"random_permutation"</span>,</span>
+<span>                 random_state <span class="op">=</span> <span class="fl">11L</span><span class="op">)</span></span>
+<span><span class="va">ins</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stabl_interpret.html">stabl_interpret</a></span><span class="op">(</span><span class="va">fit</span>, <span class="va">x</span>, <span class="va">y</span>, family <span class="op">=</span> <span class="st">"gaussian"</span>, n_repeats <span class="op">=</span> <span class="fl">10L</span>,</span>
+<span>                       random_state <span class="op">=</span> <span class="fl">12L</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">ins</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"feature"</span>, <span class="st">"stability"</span>, <span class="st">"coefficient"</span>, <span class="st">"effect_direction"</span>,</span>
+<span>                 <span class="st">"correlation_group"</span>, <span class="st">"permutation_importance"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="co">#&gt;   feature stability coefficient effect_direction correlation_group</span></span>
+<span><span class="co">#&gt; 1      f1 1.0000000   0.8203401         positive                 1</span></span>
+<span><span class="co">#&gt; 2      f3 1.0000000   0.7461937         positive                 2</span></span>
+<span><span class="co">#&gt; 3      f4 0.8666667  -0.1098863         negative                 3</span></span>
+<span><span class="co">#&gt;   permutation_importance</span></span>
+<span><span class="co">#&gt; 1             1.20393985</span></span>
+<span><span class="co">#&gt; 2             1.02350888</span></span>
+<span><span class="co">#&gt; 3             0.02283146</span></span></code></pre></div>
+<p>Three readings matter. First, a feature can be highly stable yet have
+a small conditional effect. This happens when a correlated substitute
+shares the signal. Second, the correlation group flags such substitutes.
+It is a grouping of observed biomarkers, not a claim of biological
+equivalence. Third, the permutation importance is apparent: it is
+measured on the fitting data, so it is optimistic. All effects and
+importances here are post-selection and descriptive. They are not
+selection-adjusted inference.</p>
+</div>
+<div class="section level2">
+<h2 id="related-vignettes">11 Related vignettes<a class="anchor" aria-label="anchor" href="#related-vignettes"></a>
 </h2>
 <p>The following vignettes and documents cover the remaining
 workflows.</p>

@@ -78,7 +78,8 @@ print(x, ...)
 - family:
 
   Character; `glmnet` response family (`"gaussian"`, `"binomial"`,
-  `"multinomial"`, or `"cox"`). Default: `"gaussian"`.
+  `"multinomial"`, or `"cox"`), or `"ordinal"` for
+  `base_learner = "ordinal"`. Default: `"gaussian"`.
 
 - n_bootstraps:
 

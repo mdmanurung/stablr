@@ -31,6 +31,10 @@ stabl_multiomic_nested_cv(
   workers = 1L,
   cv_workers = 1L,
   study_labels = NULL,
+  preprocessing = NULL,
+  event_class = NULL,
+  return_probabilities = FALSE,
+  keep_fold_predictors = FALSE,
   ...
 )
 
@@ -161,6 +165,39 @@ print(x, ...)
   the CV folds only: within-training bootstrap resampling is untouched,
   so `bootstrap_strata` (sampling design) and SGL `feature_groups`
   (feature grouping) remain orthogonal to `study_labels` (CV unit).
+
+- preprocessing:
+
+  Optional fold-safe preprocessing specification: `NULL` (default;
+  identity, legacy behaviour), a character vector of transforms for
+  [`stabl_preprocess_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_preprocess_fit.md)
+  (`"zv"`, `"impute_median"`, `"center"`, `"scale"`), or an unprepped
+  [`recipes::recipe()`](https://recipes.tidymodels.org/reference/recipe.html)
+  (requires the `recipes` package). The transform is fitted anew on
+  every inner- and outer-training split and applied unchanged to the
+  corresponding held-out rows; a fitted `stabl_preprocessing` object is
+  rejected because it would leak information across folds. Recipe steps
+  see the block-prefixed candidate columns (`block::feature`).
+
+- event_class:
+
+  For binary outcomes, the level treated as the event when
+  `return_probabilities = TRUE`; defaults to the second level of `y`.
+
+- return_probabilities:
+
+  Logical; when `TRUE` and `y` is binary, each outer held-out prediction
+  gains an `event_probability` column giving P(`event_class`) from the
+  fold-trained selected-feature predictor, and the object records the
+  `event_class`. Hard-class columns are unchanged.
+
+- keep_fold_predictors:
+
+  Logical; when `TRUE`, each outer fold's fitted downstream predictor
+  (with a `predict_event_prob()` closure for binary outcomes) and its
+  fold-fitted preprocessing transform are retained in `fold_results`,
+  enabling held-out permutation importance with the same fold-trained
+  predictor. Defaults to `FALSE` (legacy behaviour).
 
 - ...:
 

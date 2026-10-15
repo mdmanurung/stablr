@@ -161,6 +161,24 @@ Decoy-feature generation for FDP+ calibration.
 - [`load_ool_data()`](https://mdmanurung.github.io/stablr/reference/load_ool_data.md)
   : Load the Onset of Labor example dataset
 
+## Analysis Workflow
+
+Explicit exploratory/validated analysis with canonical evidence tables
+and fold-safe preprocessing.
+
+- [`stabl_analyze()`](https://mdmanurung.github.io/stablr/reference/stabl_analyze.md)
+  [`print(`*`<stabl_analysis>`*`)`](https://mdmanurung.github.io/stablr/reference/stabl_analyze.md)
+  [`summary(`*`<stabl_analysis>`*`)`](https://mdmanurung.github.io/stablr/reference/stabl_analyze.md)
+  : STABL analysis with an explicit evidence mode
+- [`stabl_interpret()`](https://mdmanurung.github.io/stablr/reference/stabl_interpret.md)
+  : Interpret a fitted STABL selection
+- [`stabl_preprocess_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_preprocess_fit.md)
+  : Fit a fold-safe preprocessing transform on training data
+- [`stabl_preprocess_apply()`](https://mdmanurung.github.io/stablr/reference/stabl_preprocess_apply.md)
+  : Apply a fitted preprocessing transform
+- [`stabl_preprocess_fit_recipes()`](https://mdmanurung.github.io/stablr/reference/stabl_preprocess_fit_recipes.md)
+  : Fit a preprocessing transform from a recipes recipe
+
 ## Visualization
 
 - [`plot_stabl_path()`](https://mdmanurung.github.io/stablr/reference/plot_stabl_path.md)

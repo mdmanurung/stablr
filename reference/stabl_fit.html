@@ -128,7 +128,10 @@ data-driven grid via <code><a href="auto_lambda_grid.html">auto_lambda_grid()</a
 via <code>ranger</code>; requires <code>lambda_grid</code> from <code><a href="auto_rf_threshold_grid.html">auto_rf_threshold_grid()</a></code> or
 <code>"auto"</code>), or <code>"oblique_rf"</code> (oblique random forest via <code>aorsf</code>;
 requires <code>lambda_grid</code> from <code><a href="auto_oblique_threshold_grid.html">auto_oblique_threshold_grid()</a></code> or
-<code>"auto"</code>). Default: <code>"lasso"</code>. <code>"rf"</code> and <code>"oblique_rf"</code> are experimental
+<code>"auto"</code>), or <code>"ordinal"</code> (elastic-net cumulative logit via <code>ordinalNet</code>
+for ordered-band outcomes; requires a factor <code>y</code> and
+<code><a href="auto_ordinal_lambda_grid.html">auto_ordinal_lambda_grid()</a></code> or <code>"auto"</code>). Default: <code>"lasso"</code>. <code>"rf"</code>,
+<code>"oblique_rf"</code>, and <code>"ordinal"</code> are experimental
 extensions beyond Python STABL: FDP+ calibration for (oblique) random
 forests is empirical, not guaranteed, and is validated separately (see
 the package's RF validation study); they must be paired with model-X
@@ -139,7 +142,8 @@ spread across the linear combinations used in each split.</p></dd>
 
 <dt id="arg-family">family<a class="anchor" aria-label="anchor" href="#arg-family"></a></dt>
 <dd><p>Character; <code>glmnet</code> response family (<code>"gaussian"</code>,
-<code>"binomial"</code>, <code>"multinomial"</code>, or <code>"cox"</code>). Default: <code>"gaussian"</code>.</p></dd>
+<code>"binomial"</code>, <code>"multinomial"</code>, or <code>"cox"</code>), or <code>"ordinal"</code> for
+<code>base_learner = "ordinal"</code>. Default: <code>"gaussian"</code>.</p></dd>
 
 
 <dt id="arg-n-bootstraps">n_bootstraps<a class="anchor" aria-label="anchor" href="#arg-n-bootstraps"></a></dt>

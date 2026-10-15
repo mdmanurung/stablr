@@ -11,7 +11,8 @@
 - 7 Exporting results to disk
 - 8 Outer cross-validation for multi-omic workflows
 - 9 Cooperative coefficient paths
-- 10 Related vignettes
+- 10 Interpreting a fitted selection
+- 11 Related vignettes
 
 ## 1 Scope of this vignette
 
@@ -31,6 +32,7 @@ table below.
 | Disk export | [`export_stabl_to_csv()`](https://mdmanurung.github.io/stablr/reference/export_stabl_to_csv.md), [`save_stabl_results()`](https://mdmanurung.github.io/stablr/reference/save_stabl_results.md) |
 | Outer multi-omic CV | [`stabl_multiomic_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_cv.md) |
 | Cooperative diagnostics | [`get_cooperative_features()`](https://mdmanurung.github.io/stablr/reference/get_cooperative_features.md), [`plot()`](https://rdrr.io/r/graphics/plot.default.html) on native fits |
+| Biomarker interpretation | [`stabl_interpret()`](https://mdmanurung.github.io/stablr/reference/stabl_interpret.md) |
 
 The examples use small simulated data so that the vignette remains fast
 during `R CMD check`. The package is loaded as follows.
@@ -530,7 +532,59 @@ displays the coefficient paths of the fitted multiview model. Features
 whose paths persist over a wide range of lambda values are the
 candidates for stable cross-view selection.
 
-## 10 Related vignettes
+## 10 Interpreting a fitted selection
+
+A STABL fit answers one question: which features are stable. It does not
+answer three others. How large is each effect? Which features are
+redundant? How much does the fitted model rely on each feature?
+[`stabl_interpret()`](https://mdmanurung.github.io/stablr/reference/stabl_interpret.md)
+answers these three questions for an existing fit. It does not re-run
+STABL.
+
+The function returns one evidence table. Each row is a feature. The
+columns record four separate dimensions: the stability score, a
+conditional signed effect, a correlation group, and a permutation
+importance. These dimensions are different quantities. They are never
+merged into one score.
+
+``` r
+
+set.seed(11L)
+n <- 120
+x <- matrix(rnorm(n * 8), n, 8,
+            dimnames = list(paste0("s", 1:n), paste0("f", 1:8)))
+# f1 and f2 are correlated substitutes; f3 is an independent signal.
+x[, "f2"] <- x[, "f1"] + rnorm(n, sd = 0.1)
+y <- setNames(0.9 * x[, "f1"] + 0.7 * x[, "f3"] + rnorm(n, sd = 0.6),
+              rownames(x))
+
+fit <- stabl_fit(x, y, lambda_grid = data.frame(lambda = c(0.3, 0.1, 0.05)),
+                 n_bootstraps = 30L, artificial_type = "random_permutation",
+                 random_state = 11L)
+ins <- stabl_interpret(fit, x, y, family = "gaussian", n_repeats = 10L,
+                       random_state = 12L)
+summary(ins)[, c("feature", "stability", "coefficient", "effect_direction",
+                 "correlation_group", "permutation_importance")]
+#>   feature stability coefficient effect_direction correlation_group
+#> 1      f1 1.0000000   0.8203401         positive                 1
+#> 2      f3 1.0000000   0.7461937         positive                 2
+#> 3      f4 0.8666667  -0.1098863         negative                 3
+#>   permutation_importance
+#> 1             1.20393985
+#> 2             1.02350888
+#> 3             0.02283146
+```
+
+Three readings matter. First, a feature can be highly stable yet have a
+small conditional effect. This happens when a correlated substitute
+shares the signal. Second, the correlation group flags such substitutes.
+It is a grouping of observed biomarkers, not a claim of biological
+equivalence. Third, the permutation importance is apparent: it is
+measured on the fitting data, so it is optimistic. All effects and
+importances here are post-selection and descriptive. They are not
+selection-adjusted inference.
+
+## 11 Related vignettes
 
 The following vignettes and documents cover the remaining workflows.
 

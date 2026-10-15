@@ -4,6 +4,16 @@
 
 ### Maturity benchmarks
 
+- Interpretation/validated-workflow benchmark committed (IV, 110 runs,
+  predeclared gates): effect-direction recovery 1.00, null validated
+  AUROC centred at chance (median 0.473), leaky full-data selection
+  directionally optimistic over nested (+0.015 mean AUROC), one-feature
+  folds non-degenerate. Redundancy co-selection gate NOT met (0.60):
+  correlated substitutes are always grouped when co-selected (10/10),
+  but FDP+ selection prunes members in 4/10 seeds. Adverse result
+  committed (inst/benchmarks/iv_summary.md; Gate B report in
+  docs/plans/).
+
 - Ordinal regression learner (`base_learner = "ordinal"`, `ordinalNet`
   proportional-odds): simulated calibration (10 seeds x 2 designs) gives
   knockoff_equi mean FDP+ 0.00 (nominal 0.1) but mean TPR 0.37 –

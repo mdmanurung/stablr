@@ -76,11 +76,14 @@ print(x, ...)
   or `"auto"`), or `"oblique_rf"` (oblique random forest via `aorsf`;
   requires `lambda_grid` from
   [`auto_oblique_threshold_grid()`](https://mdmanurung.github.io/stablr/reference/auto_oblique_threshold_grid.md)
-  or `"auto"`). Default: `"lasso"`. `"rf"` and `"oblique_rf"` are
-  experimental extensions beyond Python STABL: FDP+ calibration for
-  (oblique) random forests is empirical, not guaranteed, and is
-  validated separately (see the package's RF validation study); they
-  must be paired with model-X knockoff artificial features. For
+  or `"auto"`), or `"ordinal"` (elastic-net cumulative logit via
+  `ordinalNet` for ordered-band outcomes; requires a factor `y` and
+  [`auto_ordinal_lambda_grid()`](https://mdmanurung.github.io/stablr/reference/auto_ordinal_lambda_grid.md)
+  or `"auto"`). Default: `"lasso"`. `"rf"`, `"oblique_rf"`, and
+  `"ordinal"` are experimental extensions beyond Python STABL: FDP+
+  calibration for (oblique) random forests is empirical, not guaranteed,
+  and is validated separately (see the package's RF validation study);
+  they must be paired with model-X knockoff artificial features. For
   `"oblique_rf"` the per-feature selection frequencies are noisier than
   for `"rf"` because importance is spread across the linear combinations
   used in each split.
@@ -88,7 +91,8 @@ print(x, ...)
 - family:
 
   Character; `glmnet` response family (`"gaussian"`, `"binomial"`,
-  `"multinomial"`, or `"cox"`). Default: `"gaussian"`.
+  `"multinomial"`, or `"cox"`), or `"ordinal"` for
+  `base_learner = "ordinal"`. Default: `"gaussian"`.
 
 - n_bootstraps:
 

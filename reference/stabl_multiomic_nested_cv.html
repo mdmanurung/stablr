@@ -87,6 +87,10 @@ fold.</p>
 <span>  workers <span class="op">=</span> <span class="fl">1L</span>,</span>
 <span>  cv_workers <span class="op">=</span> <span class="fl">1L</span>,</span>
 <span>  study_labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  preprocessing <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  event_class <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  return_probabilities <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  keep_fold_predictors <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span>
 <span></span>
@@ -208,6 +212,38 @@ disjointness concerns the CV folds only: within-training bootstrap
 resampling is untouched, so <code>bootstrap_strata</code> (sampling design) and SGL
 <code>feature_groups</code> (feature grouping) remain orthogonal to <code>study_labels</code>
 (CV unit).</p></dd>
+
+
+<dt id="arg-preprocessing">preprocessing<a class="anchor" aria-label="anchor" href="#arg-preprocessing"></a></dt>
+<dd><p>Optional fold-safe preprocessing specification:
+<code>NULL</code> (default; identity, legacy behaviour), a character vector of
+transforms for <code><a href="stabl_preprocess_fit.html">stabl_preprocess_fit()</a></code> (<code>"zv"</code>, <code>"impute_median"</code>,
+<code>"center"</code>, <code>"scale"</code>), or an unprepped <code><a href="https://recipes.tidymodels.org/reference/recipe.html" class="external-link">recipes::recipe()</a></code> (requires the
+<code>recipes</code> package).  The transform is fitted anew on every inner- and
+outer-training split and applied unchanged to the corresponding
+held-out rows; a fitted <code>stabl_preprocessing</code> object is rejected because
+it would leak information across folds.  Recipe steps see the
+block-prefixed candidate columns (<code>block::feature</code>).</p></dd>
+
+
+<dt id="arg-event-class">event_class<a class="anchor" aria-label="anchor" href="#arg-event-class"></a></dt>
+<dd><p>For binary outcomes, the level treated as the event
+when <code>return_probabilities = TRUE</code>; defaults to the second level of <code>y</code>.</p></dd>
+
+
+<dt id="arg-return-probabilities">return_probabilities<a class="anchor" aria-label="anchor" href="#arg-return-probabilities"></a></dt>
+<dd><p>Logical; when <code>TRUE</code> and <code>y</code> is binary, each
+outer held-out prediction gains an <code>event_probability</code> column giving
+P(<code>event_class</code>) from the fold-trained selected-feature predictor, and
+the object records the <code>event_class</code>.  Hard-class columns are unchanged.</p></dd>
+
+
+<dt id="arg-keep-fold-predictors">keep_fold_predictors<a class="anchor" aria-label="anchor" href="#arg-keep-fold-predictors"></a></dt>
+<dd><p>Logical; when <code>TRUE</code>, each outer fold's fitted
+downstream predictor (with a <code>predict_event_prob()</code> closure for binary
+outcomes) and its fold-fitted preprocessing transform are retained in
+<code>fold_results</code>, enabling held-out permutation importance with the same
+fold-trained predictor.  Defaults to <code>FALSE</code> (legacy behaviour).</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

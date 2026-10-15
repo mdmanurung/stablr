@@ -42,6 +42,12 @@ A `ggplot` object.
 When the lambda grid contains an `alpha` column (elastic-net mixed-alpha
 path), the plot is automatically faceted by `alpha`.
 
+The path is always drawn in decreasing-lambda order (high penalty on the
+left, low penalty on the right) within each `alpha` level, independently
+of the row order of the supplied lambda grid. The x-axis is the position
+along that ordered path, so auto grids (log-spaced lambda) are evenly
+spaced.
+
 ## Examples
 
 ``` r

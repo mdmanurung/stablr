@@ -73,8 +73,10 @@
 <url><loc>https://mdmanurung.github.io/stablr/reference/save_stabl_results.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/scatterplot_features.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/stabl.html</loc></url>
+<url><loc>https://mdmanurung.github.io/stablr/reference/stabl_analyze.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/stabl_environment_stability.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/stabl_fit.html</loc></url>
+<url><loc>https://mdmanurung.github.io/stablr/reference/stabl_interpret.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/stabl_multiomic_cv.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/stabl_multiomic_nested_cv.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/stabl_multiomic_scheme_comparison.html</loc></url>
@@ -83,6 +85,9 @@
 <url><loc>https://mdmanurung.github.io/stablr/reference/stabl_multiomic_study_diagnostics.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/stabl_multiomic_study_split.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/stabl_multiomic_train_validate.html</loc></url>
+<url><loc>https://mdmanurung.github.io/stablr/reference/stabl_preprocess_apply.html</loc></url>
+<url><loc>https://mdmanurung.github.io/stablr/reference/stabl_preprocess_fit.html</loc></url>
+<url><loc>https://mdmanurung.github.io/stablr/reference/stabl_preprocess_fit_recipes.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/stablr-package.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/stacked_multi_omic.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/summary.stabl.html</loc></url>
