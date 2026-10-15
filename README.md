@@ -54,6 +54,31 @@ reliability and transportability are measured rather than assumed.
 
 <img src="man/figures/workflow.png" align="center" alt="stablr workflow" style="padding-left:10px;" />
 
+### Analysis modes (binary outcomes)
+
+`stabl_analyze()` makes the evidence level explicit via a required `mode`
+argument. `mode = "exploratory"` fits STABL on the full data and returns a
+canonical interpretation table (`stabl_interpret()`) labelled
+`post_selection_descriptive` — coefficients, stability, effect directions,
+and correlation groups describe the fitting data and are not predictive
+evidence. `mode = "validated"` (binary only) runs nested cross-validation
+with fold-fitted preprocessing (`stabl_preprocess_fit()` /
+`stabl_preprocess_apply()`) and returns held-out predictions, pooled and
+per-repeat performance (accuracy, balanced error rate, macro-F1, MCC,
+Brier, log-loss, AUROC), and held-out permutation importance labelled
+`cross_validated`.
+
+Evidence status (simulation-only, predeclared gates,
+`inst/benchmarks/iv_summary.md`): effect-direction recovery 1.00; null
+validated AUROC centred at chance (median 0.473); leaky full-data
+selection is directionally optimistic over nested validation (+0.015 mean
+AUROC); one-feature folds produce non-degenerate probabilities. One
+predeclared criterion was NOT met: correlated substitutes are always
+assigned to a single correlation group when co-selected, but FDP+
+selection retains all members of a correlated block in only 60% of runs —
+do not expect complete co-selection of redundant features. Multiclass and
+ordinal graduation remain reserved (WS-9 ordinal graduation NOT met).
+
 ## Technical intro
 
 `stablr` is R-native without a Python runtime. The core STABL method is
