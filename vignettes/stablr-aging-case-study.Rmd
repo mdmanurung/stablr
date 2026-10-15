@@ -330,8 +330,21 @@ evaluation. The selected column is a post-selection estimate, because the
 predicts age with MAE between 6.7 years (SoundLife) and 15.6 years (CIMA).
 The selected-feature model helps two cohorts clearly: CIMA (15.6 to 7.6
 years) and UCSF (13.4 to 10.8 years). It hurts two others: OneK1K (15.5 to
-17.7 years) and SoundLife (6.7 to 9.6 years). The remaining intervals
-overlap. The overall means (12.1 and 11.7 years) hide this heterogeneity.
+17.7 years) and SoundLife (6.7 to 9.6 years). The overall means (12.1 and
+11.7 years) hide this heterogeneity.
+
+A paired per-donor comparison makes this precise (Table 4). For each
+donor, we take the difference of absolute errors (all-feature minus
+selected; positive favors the panel). The improvement is 8.0 years
+[7.3, 8.7] in CIMA and 2.6 [1.9, 3.3] in UCSF. The loss is 2.2
+[−2.5, −1.9] in OneK1K and 2.8 [−3.9, −1.6] in SoundLife. ABF300, KCL,
+and SPAC show no clear difference. Pooled over all donors, the panel
+improves the MAE by 0.5 years [0.3, 0.7]. The paired intervals resolve
+the overlap of the marginal intervals in Table 3: the UCSF improvement is
+real. One caveat: the two models differ in covariates. The all-feature
+model includes sex; the selected panel does not (sex was not selected).
+The paired comparison mixes a change of feature set with a change of
+covariate set.
 
 Table 3: LOCO age prediction. MAE in years with 95% bootstrap intervals.
 The all-feature column is a genuine held-out evaluation. The selected
@@ -348,6 +361,23 @@ eight cohorts, so its error is optimistic for the full workflow.
 | SoundLife | 96 | 6.75 [5.72, 7.78] | 9.56 [8.32, 10.94] |
 | SPAC | 33 | 12.33 [9.62, 15.28] | 14.32 [11.16, 17.31] |
 | UCSF | 99 | 13.41 [11.93, 14.88] | 10.83 [9.53, 12.17] |
+
+Table 4: Paired per-donor MAE difference (all-feature minus selected
+panel), in years, with 95% bootstrap intervals (2,000 donor-level
+resamples per cohort; the pooled interval uses cohort-stratified
+resampling). Positive values favor the selected panel.
+
+| Cohort | n | Difference (95% CI) |
+|---|---|---|
+| ABF300 | 166 | −0.13 [−0.92, 0.62] |
+| AIDA | 625 | +0.49 [0.08, 0.89] |
+| CIMA | 421 | +7.98 [7.30, 8.67] |
+| KCL | 188 | −0.60 [−1.57, 0.32] |
+| OneK1K | 981 | −2.18 [−2.47, −1.90] |
+| SoundLife | 96 | −2.81 [−3.92, −1.65] |
+| SPAC | 33 | −1.99 [−4.35, 0.44] |
+| UCSF | 99 | +2.59 [1.91, 3.27] |
+| Pooled | 2609 | +0.50 [0.29, 0.70] |
 
 ![Leave-one-cohort-out age MAE with 95% bootstrap intervals, by held-out cohort and model.](figures/ws8_mae_forest.png)
 
@@ -420,8 +450,10 @@ but fail min-agg. The two rules select different feature types. A reader
 who needs a compact panel can take the replicable core. A reader who needs
 the full panel must treat the periphery as hypotheses.
 
-Third, prediction quality is cohort-specific. The selected panel halves
-the error in CIMA. It clearly helps UCSF. It hurts OneK1K and SoundLife.
+Third, prediction quality is cohort-specific. The paired per-donor
+differences (Section 5) confirm the pattern: the selected panel improves
+CIMA by 8.0 years and UCSF by 2.6, and worsens OneK1K by 2.2 and
+SoundLife by 2.8.
 Cohort identity is the largest variance component of the atlas. No
 composition-only model will calibrate uniformly across such cohorts. The
 LOCO design makes this cost visible. A pooled metric would hide it.
