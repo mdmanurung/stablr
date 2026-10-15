@@ -93,6 +93,8 @@ estimation.}
 
 \item{...}{Additional arguments passed to \code{\link[=stabl_fit]{stabl_fit()}} (and, in validated
 mode, to \code{\link[=stabl_multiomic_nested_cv]{stabl_multiomic_nested_cv()}}).}
+
+\item{object}{A \code{"stabl_analysis"} object (for \code{summary}).}
 }
 \value{
 An object of class \code{"stabl_analysis"} with a \code{mode} field.

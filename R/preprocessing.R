@@ -171,16 +171,18 @@ stabl_preprocess_apply.stabl_preprocessing <- function(object, x, ...) {
   if ("impute_median" %in% object$transforms) {
     meds <- p$impute_median$medians
     for (j in seq_along(retained)) {
-      idx <- is.na(x[, j])
-      if (any(idx)) {
-        if (!is.finite(meds[j])) {
-          stop(sprintf(
-            "Feature %s is entirely missing in training and cannot be imputed.",
-            retained[j]),
-            call. = FALSE)
-        }
-        x[idx, j] <- meds[j]
+      # Fail closed whenever training had no information for a feature:
+      # imputation cannot invent a training median, and sweeping the
+      # downstream center/scale parameters (themselves NA) would silently
+      # emit an all-NA column.
+      if (!is.finite(meds[j])) {
+        stop(sprintf(
+          "Feature %s is entirely missing in training and cannot be imputed.",
+          retained[j]),
+          call. = FALSE)
       }
+      idx <- is.na(x[, j])
+      if (any(idx)) x[idx, j] <- meds[j]
     }
   }
   if ("center" %in% object$transforms) {

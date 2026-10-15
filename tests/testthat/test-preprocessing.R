@@ -97,15 +97,42 @@ test_that("unsupported transforms are rejected", {
   )
 })
 
-test_that("constant-after-imputation feature scales safely", {
+test_that("all-missing-in-training feature fails closed on apply", {
   d <- .make_pp_data()
   d$x_tr[, 4L] <- NA_real_  # entirely missing -> median NA
   pp <- stabl_preprocess_fit(
     d$x_tr, transforms = c("impute_median", "center", "scale")
   )
-  # SD guard: scaling must not produce NaN/Inf for the degenerate feature.
+  # No training information exists for this feature; imputation cannot
+  # invent one, so apply must fail closed rather than emit silent garbage
+  # (regression guard for the Windows CI failure of 2026-10-15: the old
+  # check only fired when the NEW data also had missing values).
+  expect_error(
+    suppressWarnings(stabl_preprocess_apply(pp, d$x_tr)),
+    "entirely missing in training"
+  )
+  # Same fail-closed behavior on fully observed new data: the fitted
+  # center/scale parameters for the feature are NA, so the output would be
+  # an all-NA column.
+  expect_error(
+    stabl_preprocess_apply(pp, d$x_as),
+    "entirely missing in training"
+  )
+})
+
+test_that("constant-after-imputation feature scales safely", {
+  d <- .make_pp_data()
+  # f4: observed values all equal with some missing -> constant after
+  # median imputation; the SD guard must keep scaling finite (no NaN/Inf).
+  d$x_tr[, 4L] <- 2.5
+  d$x_tr[sample(seq_len(nrow(d$x_tr)), 10L), 4L] <- NA_real_
+  pp <- stabl_preprocess_fit(
+    d$x_tr, transforms = c("impute_median", "center", "scale")
+  )
   xt <- suppressWarnings(stabl_preprocess_apply(pp, d$x_tr))
   expect_true(all(is.finite(xt[, "f4"])))
+  # (c - c) / 1: centered constant column is exactly zero.
+  expect_true(all(xt[, "f4"] == 0))
 })
 
 test_that("feature order in assessment does not matter", {

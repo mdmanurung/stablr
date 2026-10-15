@@ -415,7 +415,7 @@ plot.stabl_interpretation <- function(x, ...) {
     stop("No selected features to plot.", call. = FALSE)
   }
   ev$feature <- factor(ev$feature, levels = ev$feature[order(ev$stability)])
-  ggplot2::ggplot(ev, ggplot2::aes(x = .data$stability, y = .data$feature)) +
+  ggplot2::ggplot(ev, ggplot2::aes(x = ev$stability, y = ev$feature)) +
     ggplot2::geom_point() +
     ggplot2::labs(x = "Stability score", y = NULL,
                   title = "Selected-feature stability") +

@@ -534,9 +534,15 @@ test_that("binary fallback through the safe wrapper applies prevalence once", {
   ids <- paste0("s", 1:16)
   y <- setNames(c(rep(1L, 5L), rep(0L, 11L)), ids)
   x <- matrix(rnorm(32), 16, 2, dimnames = list(ids, c("x1", "x2")))
-  cond <- stablr:::.abort_numerical_infeasibility(
-    "stablr_learner_numerical_infeasibility",
-    "deliberate selector infeasibility for prevalence test"
+  # .abort_numerical_infeasibility() raises; catch the abort to obtain the
+  # condition object handed to the wrapper (regression fix 2026-10-15: the
+  # bare call errored the test instead of building the condition).
+  cond <- tryCatch(
+    stablr:::.abort_numerical_infeasibility(
+      "stablr_learner_numerical_infeasibility",
+      "deliberate selector infeasibility for prevalence test"
+    ),
+    stablr_numerical_infeasibility = function(e) e
   )
 
   pred <- tryCatch(

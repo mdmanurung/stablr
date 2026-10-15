@@ -727,6 +727,7 @@ print.stabl_analysis <- function(x, ...) {
 #' @describeIn stabl_analyze Return the key evidence table invisibly: the
 #'   interpretation evidence for exploratory mode, or the held-out
 #'   performance and importance summary for validated mode.
+#' @param object A `"stabl_analysis"` object (for `summary`).
 #' @export
 summary.stabl_analysis <- function(object, ...) {
   print(object)
