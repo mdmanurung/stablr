@@ -21,11 +21,15 @@ cat(
 "> **Summary.** We apply the `stablr` environment-stability workflow to a
 > public aging atlas. The atlas has 2,609 donors from eight scRNA-seq
 > cohorts. The workflow finds 24 of 60 features that track age in every
-> cohort. This full-atlas selection is exploratory. Seven of eight
+> cohort. This full-atlas selection is exploratory. Per-cohort knockoff
+> diagnostics (FDP+) are close to 1 on this atlas. The selection bar is
+> therefore a descriptive reproducibility filter, not calibrated error
+> control. Seven of eight
 > age-associated cell types from the source publication pass the selection
 > bar. All eight keep the same direction of effect in all cohorts. Models
-> trained on seven cohorts predict age in the eighth cohort. The mean
-> absolute error is 6.7 to 17.7 years, depending on the held-out cohort.
+> trained on seven cohorts predict age in the eighth cohort. The all-feature
+> model reaches a mean absolute error of 6.7 to 15.6 years, depending on the
+> held-out cohort.
 > The selected-panel model uses features chosen with all eight cohorts.
 > Its error is a post-selection estimate, not complete-pipeline held-out
 > validation. This vignette is an application case study. It is not
@@ -141,9 +145,11 @@ procedure (Hédou et al. 2024) with these settings:
   (`sample_fraction = 1`, `replace = TRUE`).
 - Seed: 20261013.
 
-The min-agg rule is the calibrated aggregation in the WS-5 simulation
-study. That study measured FDP+ between 0.083 and 0.142 across shift and
-drift designs. See `?stabl_environment_stability`.
+The min-agg rule follows the aggregation of the WS-5 simulation study.
+That study measured FDP+ between 0.083 and 0.142 across shift and drift
+designs. Section 4.1 reports the FDP+ diagnostics of this atlas. They do
+not reproduce the WS-5 calibration here. See
+`?stabl_environment_stability`.
 
 ## 3.2 Uncertainty and sign consistency
 
@@ -200,12 +206,48 @@ features that the source publication predeclared as age-associated.
 
 ![Minimum cross-cohort selection frequency (min-agg score) for all 60 features. Blue bars pass the 0.5 bar; grey bars do not. Grey whiskers show the exact 95% Clopper–Pearson interval of the weakest cohort. Crosses mark the eight predeclared features.](figures/ws8_min_scores.png)
 
-Table 1 lists the eight predeclared features. Seven of eight pass the bar.
+## 4.1 The selection bar is not FDR-controlled on this atlas
+
+Each per-cohort fit carries its own knockoff decoys, so each fit has an
+FDP+ diagnostic. The predesign asked for these diagnostics as success
+criterion 2. They were computed inside every fit but not reported. Table 1
+reports them. The result is adverse.
+
+Table 1: Per-environment FDP+ diagnostics (rf + knockoff_equi, 200
+bootstraps). "FDP+ at 0.5 bar" evaluates the diagnostic at the threshold
+of the min-agg rule. The last two columns count features whose
+maximum-over-lambda score passes 0.5.
+
+| Cohort | n | Min FDP+ (threshold) | FDP+ at 0.5 bar | Real ≥ 0.5 | Decoys ≥ 0.5 |
+|---|---|---|---|---|---|
+| ABF300 | 166 | 1.00 (0.99) | 1.03 | 59 | 60 |
+| AIDA | 625 | 1.00 (0.98) | 1.03 | 59 | 60 |
+| CIMA | 421 | 0.92 (0.85) | 1.03 | 59 | 60 |
+| KCL | 188 | 0.94 (0.85) | 1.05 | 40 | 42 |
+| OneK1K | 981 | 1.02 (1.00) | 1.03 | 59 | 60 |
+| SoundLife | 96 | 0.89 (0.93) | 1.04 | 56 | 57 |
+| SPAC | 33 | 0.95 (0.77) | 1.03 | 36 | 38 |
+| UCSF | 99 | 0.89 (0.55) | 1.04 | 48 | 51 |
+
+In every cohort, decoy features pass the 0.5 bar as often as real
+features. Even the best threshold per cohort leaves FDP+ between 0.89 and
+1.02. The WS-5 calibration (0.083 to 0.142) does not transfer to this
+atlas. Plausible causes include the compositional feature space, the
+max-over-lambda score, and cohorts with fewer donors than features. This
+case study does not pick a cause.
+
+The reading changes accordingly. On this atlas, the min-agg rule is a
+descriptive reproducibility filter. It is not calibrated FDR control. The
+evidence for the selected panel is the sign consistency below, the
+agreement with the predeclared features, and the held-out prediction
+results. It is not the knockoff calibration.
+
+Table 2 lists the eight predeclared features. Seven of eight pass the bar.
 The near-miss is CD8+ Tem GZMB+ with a score of 0.445. Its interval
 includes 0.5. The data cannot separate it from the bar. The predeclared
 rule does not select it.
 
-Table 1: Predeclared features under the min-agg rule. The interval is the
+Table 2: Predeclared features under the min-agg rule. The interval is the
 exact 95% Clopper–Pearson interval of the weakest cohort. The sign test is
 exact and two-sided. All rows have the same sign in 8 of 8 cohorts
 (p = 0.0078).
@@ -244,7 +286,7 @@ does not reproduce the full 24-feature panel.
 
 # 5 Result: age prediction on held-out cohorts
 
-Table 2 and Figure 3 give the LOCO results. Read the two columns as
+Table 3 and Figure 3 give the LOCO results. Read the two columns as
 different estimands. The all-feature column is a genuine held-out
 evaluation. The selected column is a post-selection estimate, because the
 24 features were chosen with all eight cohorts. The all-feature model
@@ -254,7 +296,7 @@ years) and UCSF (13.4 to 10.8 years). It hurts two others: OneK1K (15.5 to
 17.7 years) and SoundLife (6.7 to 9.6 years). The remaining intervals
 overlap. The overall means (12.1 and 11.7 years) hide this heterogeneity.
 
-Table 2: LOCO age prediction. MAE in years with 95% bootstrap intervals.
+Table 3: LOCO age prediction. MAE in years with 95% bootstrap intervals.
 The all-feature column is a genuine held-out evaluation. The selected
 column is a post-selection estimate: the 24 features were chosen with all
 eight cohorts, so its error is optimistic for the full workflow.
@@ -349,7 +391,9 @@ Four limits bound the conclusions.
    evidence for the random-forest learner is simulation-based (WS-2). That
    evidence covers gaussian problems with up to a few dozen predictors.
    This panel has 60 features. The showcase demonstrates the workflow on
-   real data. It does not add calibration guarantees.
+   real data. It does not add calibration guarantees. On this atlas, the
+   per-cohort FDP+ diagnostics are close to 1 (Section 4.1). The
+   selection bar is a descriptive filter here.
 2. **Selected-panel LOCO is post-selection.** The 24 consistent features
    were chosen with all eight cohorts. The selected-panel LOCO error is
    therefore apparent for the selection procedure, not an unbiased
