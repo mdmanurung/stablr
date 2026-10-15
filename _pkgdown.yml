@@ -150,6 +150,16 @@ reference:
   - stabl_multiomic_selection_stability
   - load_ool_data
 
+- title: Analysis Workflow
+  desc: Explicit exploratory/validated analysis with canonical evidence
+    tables and fold-safe preprocessing.
+  contents:
+  - stabl_analyze
+  - stabl_interpret
+  - stabl_preprocess_fit
+  - stabl_preprocess_apply
+  - stabl_preprocess_fit_recipes
+
 - title: Visualization
   contents:
   - plot_stabl_path
