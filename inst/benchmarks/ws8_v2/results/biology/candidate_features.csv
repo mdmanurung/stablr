@@ -1,0 +1,5 @@
+"feature","mean_rho","sign_consistent"
+"CT:CD4+ T HLA-DR+ memory",0.326,TRUE
+"CT:CD8+ IFN+ cells",-0.344,TRUE
+"CT:CD8+ HLA-DR+",0.201,TRUE
+"CT:CD8+ Tcm CCR4+",0.225,TRUE
