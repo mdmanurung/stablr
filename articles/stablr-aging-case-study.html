@@ -81,15 +81,19 @@
 environment-stability workflow to a public aging atlas. The atlas has
 2,609 donors from eight scRNA-seq cohorts. The workflow finds 24 of 60
 features that track age in every cohort. This full-atlas selection is
-exploratory. Seven of eight age-associated cell types from the source
-publication pass the selection bar. All eight keep the same direction of
-effect in all cohorts. Models trained on seven cohorts predict age in
-the eighth cohort. The mean absolute error is 6.7 to 17.7 years,
-depending on the held-out cohort. The selected-panel model uses features
-chosen with all eight cohorts. Its error is a post-selection estimate,
-not complete-pipeline held-out validation. This vignette is an
-application case study. It is not calibration evidence for the
-method.</p>
+exploratory. Per-cohort knockoff diagnostics (FDP+) are close to 1 on
+this atlas. The selection bar is therefore a descriptive reproducibility
+filter, not calibrated error control. Seven of eight age-associated cell
+types from the source publication pass the selection bar. All eight keep
+the same direction of effect in all cohorts. Models trained on seven
+cohorts predict age in the eighth cohort. The all-feature model reaches
+a mean absolute error of 6.7 to 15.6 years, depending on the held-out
+cohort. The selected-panel model uses features chosen with all eight
+cohorts. Its error is a post-selection estimate, not complete-pipeline
+held-out validation. A selection-isolated LOCO that re-selects inside
+each training partition gives a pooled error of 12.3 years. This
+vignette is an application case study. It is not calibration evidence
+for the method.</p>
 </blockquote>
 <div class="section level2">
 <h2 id="contents">Contents<a class="anchor" aria-label="anchor" href="#contents"></a>
@@ -129,7 +133,9 @@ not see?</li>
 The figures and statistics tables come from
 <code>inst/benchmarks/ws8_figures.R</code> and
 <code>inst/benchmarks/ws8_recalibration.R</code>. The pipeline takes
-about 15 minutes. This vignette shows the saved results.</p>
+about 15 minutes. The post-review follow-up analyses add about one hour,
+most of it the selection-isolated LOCO. This vignette shows the saved
+results.</p>
 </div>
 <div class="section level2">
 <h2 id="data">2 Data<a class="anchor" aria-label="anchor" href="#data"></a>
@@ -142,7 +148,7 @@ al. 2026, <em>Immunity</em>). The Artyomov lab single-cell portal
 distributes the atlas (dataset
 <code>pan_atlas_healthy_aging_all_celtypes</code>). We downloaded the
 per-cell annotation table <code>all_cells_metadata.csv.gz</code> on
-2026-10-13. The file has 13,137,776 cells (MD5
+2026-10-13. The file has 13,137,775 cells (MD5
 <code>50651968855bf6ca3efcdf199e2a9fd5</code>). Each row is one cell.
 The columns include donor id, age, sex, CMV status, ancestry, cohort,
 and cell-type annotation.</p>
@@ -213,6 +219,10 @@ equicorrelated knockoff construction. No cell-type feature is constant
 in any cohort.</p>
 <p>The final panel has 60 features. The outcome is donor age in years.
 The environments are the eight cohorts.</p>
+<p>The donor-level count table was derived from the per-cell annotation
+table before the analysis script runs. That derivation script is not
+part of the package source. The predesign predeclares excluding cells
+flagged Bad quality. This vignette cannot verify that step.</p>
 </div>
 </div>
 <div class="section level2">
@@ -249,19 +259,23 @@ ratio.</li>
 (<code>sample_fraction = 1</code>, <code>replace = TRUE</code>).</li>
 <li>Seed: 20261013.</li>
 </ul>
-<p>The min-agg rule is the calibrated aggregation in the WS-5 simulation
+<p>The min-agg rule follows the aggregation of the WS-5 simulation
 study. That study measured FDP+ between 0.083 and 0.142 across shift and
-drift designs. See <code><a href="../reference/stabl_environment_stability.html">?stabl_environment_stability</a></code>.</p>
+drift designs. Section 4.1 reports the FDP+ diagnostics of this atlas.
+They do not reproduce the WS-5 calibration here. See
+<code><a href="../reference/stabl_environment_stability.html">?stabl_environment_stability</a></code>.</p>
 </div>
 <div class="section level3">
 <h3 id="uncertainty-and-sign-consistency">3.2 Uncertainty and sign consistency<a class="anchor" aria-label="anchor" href="#uncertainty-and-sign-consistency"></a>
 </h3>
 <p>The selection frequency is a binomial proportion over 200 resamples.
 For each feature, we report the exact 95% Clopper–Pearson interval of
-the weakest cohort. The weakest cohort sets the min-agg score.</p>
+the weakest cohort. The weakest cohort sets the min-agg score. The
+interval covers one binomial proportion. It does not account for the
+min-agg rule taking the minimum over eight cohorts.</p>
 <p>We also test the direction of each feature with an exact sign test. A
-feature with the same correlation sign in 8 of 8 cohorts has p =
-0.0078.</p>
+feature with the same correlation sign in 8 of 8 cohorts has p = 0.0078.
+The sign test assumes between-cohort independence.</p>
 </div>
 <div class="section level3">
 <h3 id="sensitivity-analysis">3.3 Sensitivity analysis<a class="anchor" aria-label="anchor" href="#sensitivity-analysis"></a>
@@ -289,16 +303,17 @@ feature set or the fit. The selected-panel model is different. The 24
 features were chosen with all eight cohorts, including the held-out one.
 Its LOCO error is therefore a post-selection estimate. It is apparent
 for the selection procedure, not an unbiased held-out error for the full
-workflow. A selection-isolated LOCO, which re-selects features inside
-each seven-cohort training partition, is a separate correction
-(PR5).</p>
+workflow. Section 5.1 reports a selection-isolated LOCO, which
+re-selects features inside each seven-cohort training partition.</p>
 <p>We report three quantities per held-out cohort:</p>
 <ul>
 <li>Mean absolute error (MAE) with 95% bootstrap intervals. The
 intervals use 2,000 donor-level resamples inside the held-out
 cohort.</li>
 <li>Calibration slope. This slope comes from a linear fit of predicted
-age on observed age. A slope of 1 is ideal. A slope below 1 means the
+age on observed age. This is the inverse of the usual
+observed-on-predicted calibration regression. The two agree only at
+perfect calibration. A slope of 1 is ideal. A slope below 1 means the
 predictions shrink toward the middle of the age range.</li>
 <li>Pearson correlation between predicted and observed age.</li>
 </ul>
@@ -319,11 +334,117 @@ bars do not. Grey whiskers show the exact 95% Clopper–Pearson interval
 of the weakest cohort. Crosses mark the eight predeclared
 features.</div>
 </div>
-<p>Table 1 lists the eight predeclared features. Seven of eight pass the
+<div class="section level3">
+<h3 id="the-selection-bar-is-not-fdr-controlled-on-this-atlas">4.1 The selection bar is not FDR-controlled on this atlas<a class="anchor" aria-label="anchor" href="#the-selection-bar-is-not-fdr-controlled-on-this-atlas"></a>
+</h3>
+<p>Each per-cohort fit carries its own knockoff decoys, so each fit has
+an FDP+ diagnostic. The predesign asked for these diagnostics as success
+criterion 2. They were computed inside every fit but not reported. Table
+1 reports them. The result is adverse.</p>
+<p>Table 1: Per-environment FDP+ diagnostics (rf + knockoff_equi, 200
+bootstraps). “FDP+ at 0.5 bar” evaluates the diagnostic at the threshold
+of the min-agg rule. The last two columns count features whose
+maximum-over-lambda score passes 0.5.</p>
+<table style="width:100%;" class="table">
+<colgroup>
+<col width="16%">
+<col width="16%">
+<col width="16%">
+<col width="16%">
+<col width="16%">
+<col width="16%">
+</colgroup>
+<thead><tr class="header">
+<th>Cohort</th>
+<th>n</th>
+<th>Min FDP+ (threshold)</th>
+<th>FDP+ at 0.5 bar</th>
+<th>Real ≥ 0.5</th>
+<th>Decoys ≥ 0.5</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>ABF300</td>
+<td>166</td>
+<td>1.00 (0.99)</td>
+<td>1.03</td>
+<td>59</td>
+<td>60</td>
+</tr>
+<tr class="even">
+<td>AIDA</td>
+<td>625</td>
+<td>1.00 (0.98)</td>
+<td>1.03</td>
+<td>59</td>
+<td>60</td>
+</tr>
+<tr class="odd">
+<td>CIMA</td>
+<td>421</td>
+<td>0.92 (0.85)</td>
+<td>1.03</td>
+<td>59</td>
+<td>60</td>
+</tr>
+<tr class="even">
+<td>KCL</td>
+<td>188</td>
+<td>0.94 (0.85)</td>
+<td>1.05</td>
+<td>40</td>
+<td>42</td>
+</tr>
+<tr class="odd">
+<td>OneK1K</td>
+<td>981</td>
+<td>1.02 (1.00)</td>
+<td>1.03</td>
+<td>59</td>
+<td>60</td>
+</tr>
+<tr class="even">
+<td>SoundLife</td>
+<td>96</td>
+<td>0.89 (0.93)</td>
+<td>1.04</td>
+<td>56</td>
+<td>57</td>
+</tr>
+<tr class="odd">
+<td>SPAC</td>
+<td>33</td>
+<td>0.95 (0.77)</td>
+<td>1.03</td>
+<td>36</td>
+<td>38</td>
+</tr>
+<tr class="even">
+<td>UCSF</td>
+<td>99</td>
+<td>0.89 (0.55)</td>
+<td>1.04</td>
+<td>48</td>
+<td>51</td>
+</tr>
+</tbody>
+</table>
+<p>In every cohort, decoy features pass the 0.5 bar as often as real
+features. Even the best threshold per cohort leaves FDP+ between 0.89
+and 1.02. The WS-5 calibration (0.083 to 0.142) does not transfer to
+this atlas. Plausible causes include the compositional feature space,
+the max-over-lambda score, and cohorts with fewer donors than features.
+This case study does not pick a cause.</p>
+<p>The reading changes accordingly. On this atlas, the min-agg rule is a
+descriptive reproducibility filter. It is not calibrated FDR control.
+The evidence for the selected panel is the sign consistency below, the
+agreement with the predeclared features, and the held-out prediction
+results. It is not the knockoff calibration.</p>
+<p>Table 2 lists the eight predeclared features. Seven of eight pass the
 bar. The near-miss is CD8+ Tem GZMB+ with a score of 0.445. Its interval
 includes 0.5. The data cannot separate it from the bar. The predeclared
 rule does not select it.</p>
-<p>Table 1: Predeclared features under the min-agg rule. The interval is
+<p>Table 2: Predeclared features under the min-agg rule. The interval is
 the exact 95% Clopper–Pearson interval of the weakest cohort. The sign
 test is exact and two-sided. All rows have the same sign in 8 of 8
 cohorts (p = 0.0078).</p>
@@ -403,8 +524,8 @@ consistent features. Three observations matter:</p>
 <li>The top rows are sign-consistent and moderately strong in all
 cohorts. These rows are CD8+ T Naive, CD8+ RTE, CD4+ RTE, and MAIT.</li>
 <li>Only 11 of the 24 consistent features reach sign-test significance
-at 0.05. The panel has a strongly replicable core and a weaker
-periphery.</li>
+at 0.05 (uncorrected; 24 tests). The panel has a strongly replicable
+core and a weaker periphery.</li>
 <li>SPAC (n = 33) flips the sign of several weak features. Small cohorts
 dominate the sign pattern of weak rows.</li>
 </ol>
@@ -418,20 +539,60 @@ rule. CD8+ T Naive is the only feature that both learners select. The
 agreement is partial. The lasso result supports the direction of the
 primary result. It does not reproduce the full 24-feature panel.</p>
 </div>
+<div class="section level3">
+<h3 id="which-cohort-sets-the-bar">4.2 Which cohort sets the bar<a class="anchor" aria-label="anchor" href="#which-cohort-sets-the-bar"></a>
+</h3>
+<p>The min-agg score is a minimum over cohorts. For all 24 selected
+features, that minimum is set by one of the five smallest cohorts. SPAC
+(n = 33) sets it for 10 of 24 features (12 of 24 if ties count; two
+features have a selection frequency of 1.000 in all eight cohorts). UCSF
+(n = 99) sets it for 7, KCL (n = 188) for 4, ABF300 (n = 166) for 2, and
+SoundLife (n = 96) for 1. No minimum is set by one of the three large
+cohorts.</p>
+<p>SPAC is the weakest link. It has fewer donors than features (33 &lt;
+60). The equicorrelated knockoff covariance is therefore a
+positive-definite projection of a rank-deficient sample covariance. A
+bootstrap resample of 33 donors contains about 21 unique donors. The
+claim that a feature “tracks age in every cohort” is limited by SPAC for
+10 of the 24 features.</p>
+</div>
+<div class="section level3">
+<h3 id="sensitivity-min-agg-without-spac">4.3 Sensitivity: min-agg without SPAC<a class="anchor" aria-label="anchor" href="#sensitivity-min-agg-without-spac"></a>
+</h3>
+<p>We repeat the min-agg rule over the seven cohorts without SPAC. The
+panel grows from 24 to 33 features. Nine features join; none leave. The
+predeclared set keeps its status: CD8+ Tem GZMK+ rises from 0.505 to
+0.660; the other seven scores do not change. Given the FDP+ result
+above, neither panel size is calibrated. The sensitivity shows that
+panel membership depends on the smallest cohort. It does not show that
+the larger panel is better.</p>
+</div>
+</div>
 <div class="section level2">
 <h2 id="result-age-prediction-on-held-out-cohorts">5 Result: age prediction on held-out cohorts<a class="anchor" aria-label="anchor" href="#result-age-prediction-on-held-out-cohorts"></a>
 </h2>
-<p>Table 2 and Figure 3 give the LOCO results. Read the two columns as
+<p>Table 3 and Figure 3 give the LOCO results. Read the two columns as
 different estimands. The all-feature column is a genuine held-out
 evaluation. The selected column is a post-selection estimate, because
 the 24 features were chosen with all eight cohorts. The all-feature
 model predicts age with MAE between 6.7 years (SoundLife) and 15.6 years
 (CIMA). The selected-feature model helps two cohorts clearly: CIMA (15.6
 to 7.6 years) and UCSF (13.4 to 10.8 years). It hurts two others: OneK1K
-(15.5 to 17.7 years) and SoundLife (6.7 to 9.6 years). The remaining
-intervals overlap. The overall means (12.1 and 11.7 years) hide this
-heterogeneity.</p>
-<p>Table 2: LOCO age prediction. MAE in years with 95% bootstrap
+(15.5 to 17.7 years) and SoundLife (6.7 to 9.6 years). The overall means
+(12.1 and 11.7 years) hide this heterogeneity.</p>
+<p>A paired per-donor comparison makes this precise (Table 4). For each
+donor, we take the difference of absolute errors (all-feature minus
+selected; positive favors the panel). The improvement is 8.0 years [7.3,
+8.7] in CIMA and 2.6 [1.9, 3.3] in UCSF. The loss is 2.2 [−2.5, −1.9] in
+OneK1K and 2.8 [−3.9, −1.6] in SoundLife. ABF300, KCL, and SPAC show no
+clear difference. Pooled over all donors, the panel improves the MAE by
+0.5 years [0.3, 0.7]. The paired intervals resolve the overlap of the
+marginal intervals in Table 3: the UCSF improvement is real. One caveat:
+the two models differ in covariates. The all-feature model includes sex;
+the selected panel does not (sex was not selected). The paired
+comparison mixes a change of feature set with a change of covariate
+set.</p>
+<p>Table 3: LOCO age prediction. MAE in years with 95% bootstrap
 intervals. The all-feature column is a genuine held-out evaluation. The
 selected column is a post-selection estimate: the 24 features were
 chosen with all eight cohorts, so its error is optimistic for the full
@@ -494,13 +655,71 @@ workflow.</p>
 </tr>
 </tbody>
 </table>
+<p>Table 4: Paired per-donor MAE difference (all-feature minus selected
+panel), in years, with 95% bootstrap intervals (2,000 donor-level
+resamples per cohort; the pooled interval uses cohort-stratified
+resampling). Positive values favor the selected panel.</p>
+<table class="table">
+<thead><tr class="header">
+<th>Cohort</th>
+<th>n</th>
+<th>Difference (95% CI)</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>ABF300</td>
+<td>166</td>
+<td>−0.13 [−0.92, 0.62]</td>
+</tr>
+<tr class="even">
+<td>AIDA</td>
+<td>625</td>
+<td>+0.49 [0.08, 0.89]</td>
+</tr>
+<tr class="odd">
+<td>CIMA</td>
+<td>421</td>
+<td>+7.98 [7.30, 8.67]</td>
+</tr>
+<tr class="even">
+<td>KCL</td>
+<td>188</td>
+<td>−0.60 [−1.57, 0.32]</td>
+</tr>
+<tr class="odd">
+<td>OneK1K</td>
+<td>981</td>
+<td>−2.18 [−2.47, −1.90]</td>
+</tr>
+<tr class="even">
+<td>SoundLife</td>
+<td>96</td>
+<td>−2.81 [−3.92, −1.65]</td>
+</tr>
+<tr class="odd">
+<td>SPAC</td>
+<td>33</td>
+<td>−1.99 [−4.35, 0.44]</td>
+</tr>
+<tr class="even">
+<td>UCSF</td>
+<td>99</td>
+<td>+2.59 [1.91, 3.27]</td>
+</tr>
+<tr class="odd">
+<td>Pooled</td>
+<td>2609</td>
+<td>+0.50 [0.29, 0.70]</td>
+</tr>
+</tbody>
+</table>
 <div class="float">
 <img src="figures/ws8_mae_forest.png" alt="Leave-one-cohort-out age MAE with 95% bootstrap intervals, by held-out cohort and model."><div class="figcaption">Leave-one-cohort-out age MAE with 95% bootstrap
 intervals, by held-out cohort and model.</div>
 </div>
 <p>Figure 4 shows predicted versus observed age for the selected-feature
-model. The correlation is satisfactory in every cohort (r between 0.58
-and 0.78). Every calibration slope is below 1 (0.30 to 0.75). The
+model. The correlation is between 0.58 and 0.78 (r² between 0.34 and
+0.61). Every calibration slope is below 1 (0.30 to 0.75). The
 predictions shrink toward the training range in all cohorts. OneK1K
 shrinks most (slope 0.30). KCL and SoundLife shrink least (0.71 to
 0.75).</p>
@@ -516,20 +735,154 @@ selected-feature model, one panel per held-out cohort. The dashed line
 is the identity line. Annotations give the donor count, the calibration
 slope, and the Pearson r.</div>
 </div>
+<div class="section level3">
+<h3 id="selection-isolated-loco">5.1 Selection-isolated LOCO<a class="anchor" aria-label="anchor" href="#selection-isolated-loco"></a>
+</h3>
+<p>The selected-panel column above is a post-selection estimate. A
+selection-isolated LOCO removes the selection leakage. The protocol is
+predeclared in the predesign addendum 2. Inside each seven-cohort
+training partition, we rerun the full selection (rf + knockoff_equi, 200
+bootstraps, min-agg at 0.5 over the seven training cohorts) and predict
+the eighth cohort with the within-fold panel.</p>
+<p>Table 5: Selection-isolated LOCO. “Panel” is the within-fold panel
+size. “Overlap” counts how many of the 24 full-data panel features the
+fold re-selects. The last two columns repeat Table 3.</p>
+<table style="width:100%;" class="table">
+<colgroup>
+<col width="14%">
+<col width="14%">
+<col width="14%">
+<col width="14%">
+<col width="14%">
+<col width="14%">
+<col width="14%">
+</colgroup>
+<thead><tr class="header">
+<th>Cohort</th>
+<th>n</th>
+<th>Panel</th>
+<th>Overlap</th>
+<th>MAE selection-isolated (95% CI)</th>
+<th>MAE all</th>
+<th>MAE post-selection</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>ABF300</td>
+<td>166</td>
+<td>41</td>
+<td>22</td>
+<td>9.02 [7.97, 10.13]</td>
+<td>9.30</td>
+<td>9.43</td>
+</tr>
+<tr class="even">
+<td>AIDA</td>
+<td>625</td>
+<td>41</td>
+<td>22</td>
+<td>14.38 [13.69, 15.06]</td>
+<td>14.60</td>
+<td>14.11</td>
+</tr>
+<tr class="odd">
+<td>CIMA</td>
+<td>421</td>
+<td>41</td>
+<td>22</td>
+<td>17.04 [16.26, 17.88]</td>
+<td>15.60</td>
+<td>7.62</td>
+</tr>
+<tr class="even">
+<td>KCL</td>
+<td>188</td>
+<td>41</td>
+<td>22</td>
+<td>9.83 [8.78, 10.89]</td>
+<td>9.67</td>
+<td>10.27</td>
+</tr>
+<tr class="odd">
+<td>OneK1K</td>
+<td>981</td>
+<td>29</td>
+<td>22</td>
+<td>17.08 [16.49, 17.67]</td>
+<td>15.47</td>
+<td>17.65</td>
+</tr>
+<tr class="even">
+<td>SoundLife</td>
+<td>96</td>
+<td>29</td>
+<td>22</td>
+<td>7.63 [6.57, 8.85]</td>
+<td>6.75</td>
+<td>9.56</td>
+</tr>
+<tr class="odd">
+<td>SPAC</td>
+<td>33</td>
+<td>32</td>
+<td>22</td>
+<td>12.75 [9.78, 15.83]</td>
+<td>12.33</td>
+<td>14.32</td>
+</tr>
+<tr class="even">
+<td>UCSF</td>
+<td>99</td>
+<td>26</td>
+<td>24</td>
+<td>10.96 [9.66, 12.37]</td>
+<td>13.41</td>
+<td>10.83</td>
+</tr>
+<tr class="odd">
+<td>Pooled</td>
+<td>2609</td>
+<td>—</td>
+<td>—</td>
+<td>12.34</td>
+<td>12.14</td>
+<td>11.72</td>
+</tr>
+</tbody>
+</table>
+<p>Three readings matter.</p>
+<ol style="list-style-type: decimal">
+<li>The pooled complete-pipeline error is 12.3 years. The post-selection
+mean (11.7) was mildly optimistic, as expected. The all-feature mean
+(12.1) is close to the complete-pipeline value.</li>
+<li>The CIMA improvement does not survive selection isolation. The
+within-fold panel has 41 features and predicts CIMA with 17.0 years,
+worse than the all-feature model (15.6). The improvement in Table 3
+(15.6 to 7.6) is specific to the fixed full-data panel. It is a property
+of that panel, not of the workflow.</li>
+<li>The UCSF improvement survives (13.4 to 11.0). The panel core is
+stable: every fold re-selects at least 22 of the 24 full-data features.
+The same two features (CD4+ Treg naive, CD8+ Temra) drop in seven of
+eight folds.</li>
+</ol>
+</div>
 </div>
 <div class="section level2">
 <h2 id="result-per-cohort-recalibration">6 Result: per-cohort recalibration<a class="anchor" aria-label="anchor" href="#result-per-cohort-recalibration"></a>
 </h2>
 <p>The slope gap raises a practical question. Can a per-cohort
 recalibration map fix the compression? We tested this question with a
-nested design. Inside each held-out cohort, we cross-validated the
-recalibration map itself (5 folds, 5 repeats). We compared two maps: a
-linear map and an isotonic (monotone) map. All evaluation is
-out-of-fold.</p>
+nested design. This section recalibrates the selected-panel predictions.
+These are a post-selection estimand (Section 5). The recalibration
+numbers inherit that label. Inside each held-out cohort, we
+cross-validated the recalibration map itself (5 folds, 5 repeats). We
+compared two maps: a linear map and an isotonic (monotone) map. All
+evaluation is out-of-fold.</p>
 <p>Recalibration helps where compression dominates. In OneK1K, linear
-recalibration halves the MAE: from 17.7 to 9.8 years. Isotonic gives 9.6
-years. AIDA improves from 14.1 to 8.1 years. UCSF improves from 10.8 to
-7.0 years. ABF300 does not improve (9.4 to 9.3 years). Its error was
+recalibration halves the selected-panel MAE: from 17.7 to 9.8 years
+(post-selection numbers; the all-feature MAE is 15.5). Isotonic gives
+9.6 years. AIDA improves from 14.1 to 8.1 years. UCSF improves from 10.8
+to 7.0 years. ABF300 does not improve (9.4 to 9.3 years). Its error was
 already scatter, not compression. SPAC gets worse (14.3 to 14.9 years).
 A cohort of 33 donors cannot support a recalibration map.</p>
 <p>The slope gap does not close fully. After linear recalibration, the
@@ -551,12 +904,14 @@ recalibration.</div>
 <h2 id="discussion">7 Discussion<a class="anchor" aria-label="anchor" href="#discussion"></a>
 </h2>
 <p>Three findings generalize beyond this atlas.</p>
-<p>First, the strongly replicable core is small. Five features combine a
-near-1 selection frequency in every cohort with sign-consistent,
-moderate correlations. These features are CD8+ T Naive, CD8+ RTE, CD4+
-RTE, CD4+ Temra, and MAIT. This core matches the biology of the source
-publication. Thymic involution and T-cell compartment restructuring are
-the most reproducible immune-aging signatures.</p>
+<p>First, the strongly replicable core is small. Three features have a
+selection frequency of at least 0.99 in every cohort: CD8+ T Naive, CD8+
+RTE, and CD4+ RTE. Two more clear 0.8: CD4+ T HLA-DR+ memory (0.82) and
+CD8+ IFN+ cells (0.81). The predeclared CD4+ Temra (0.755) and MAIT
+(0.740) pass the bar, but their selection frequency is not near 1. The
+near-1 core matches the biology of the source publication. Thymic
+involution and T-cell compartment restructuring are the most
+reproducible immune-aging signatures.</p>
 <p>Second, selection frequency and effect size are different quantities.
 The min-agg bar asks for replicable selection. It does not ask for a
 large or sign-stable correlation. Eleven of the 24 consistent features
@@ -567,12 +922,15 @@ features pass that vote but fail min-agg. The two rules select different
 feature types. A reader who needs a compact panel can take the
 replicable core. A reader who needs the full panel must treat the
 periphery as hypotheses.</p>
-<p>Third, prediction quality is cohort-specific. The selected panel
-halves the error in CIMA. It clearly helps UCSF. It hurts OneK1K and
-SoundLife. Cohort identity is the largest variance component of the
-atlas. No composition-only model will calibrate uniformly across such
-cohorts. The LOCO design makes this cost visible. A pooled metric would
-hide it.</p>
+<p>Third, prediction quality is cohort-specific. The paired per-donor
+differences (Section 5) confirm the pattern: the selected panel improves
+CIMA by 8.0 years and UCSF by 2.6, and worsens OneK1K by 2.2 and
+SoundLife by 2.8. The selection-isolated LOCO tempers the CIMA result:
+that improvement is specific to the fixed full-data panel and does not
+survive complete-pipeline isolation (Section 5.1). Cohort identity is
+the largest variance component of the atlas. No composition-only model
+will calibrate uniformly across such cohorts. The LOCO design makes this
+cost visible. A pooled metric would hide it.</p>
 </div>
 <div class="section level2">
 <h2 id="limits">8 Limits<a class="anchor" aria-label="anchor" href="#limits"></a>
@@ -585,7 +943,8 @@ The calibration evidence for the random-forest learner is
 simulation-based (WS-2). That evidence covers gaussian problems with up
 to a few dozen predictors. This panel has 60 features. The showcase
 demonstrates the workflow on real data. It does not add calibration
-guarantees.</li>
+guarantees. On this atlas, the per-cohort FDP+ diagnostics are close to
+1 (Section 4.1). The selection bar is a descriptive filter here.</li>
 <li>
 <strong>Selected-panel LOCO is post-selection.</strong> The 24
 consistent features were chosen with all eight cohorts. The
@@ -593,12 +952,13 @@ selected-panel LOCO error is therefore apparent for the selection
 procedure, not an unbiased held-out error for the full workflow. The
 all-feature LOCO column is the genuine held-out evaluation here. A
 selection-isolated LOCO that re-selects features inside each training
-partition is a separate correction (PR5).</li>
+partition is reported in Section 5.1.</li>
 <li>
 <strong>The min-agg rule is conservative by design.</strong> A
 feature must pass the bar in every cohort. Features with cohort-specific
 signal fail the bar. Their biology can still be real. CD8+ Tem GZMB+
-(score 0.445) is the predeclared example.</li>
+(score 0.445) is the predeclared example. The min-agg score is set by
+the smallest cohorts for all 24 features (Section 4.2).</li>
 <li>
 <strong>Composition features are relative.</strong> Logit
 proportions measure a cell type against all typed cells. An increase in
@@ -632,6 +992,17 @@ and <code>inst/benchmarks/ws8_recalibration.R</code>. Outputs:
 <code>ws8_rule_comparison.csv</code>,
 <code>ws8_recalibration.csv</code>, and
 <code>vignettes/figures/</code>.</li>
+<li>Post-review follow-ups (2026-10-15): <code>ws8_review_fdp.R</code>
+(<code>ws8_fdp_diagnostics.csv</code>),
+<code>ws8_review_sensitivity_nospac.R</code>
+(<code>ws8_binding_cohorts.csv</code>,
+<code>ws8_minagg_sensitivity_nospac.csv</code>),
+<code>ws8_review_paired_mae.R</code>
+(<code>ws8_paired_mae_diff.csv</code>), and
+<code>ws8_loco_selection_isolated.R</code>
+(<code>ws8_loco_silo.csv</code>,
+<code>ws8_loco_silo_features.csv</code>). All read the objects saved by
+the pipeline script; only the last refits.</li>
 <li>Software: R 4.4.2; <code>stablr</code> 0.3.0 (this branch);
 <code>ranger</code>, <code>glmnet</code>, <code>knockoff</code>.</li>
 </ul>
