@@ -284,6 +284,32 @@ T Naive is the only feature that both learners select. The agreement is
 partial. The lasso result supports the direction of the primary result. It
 does not reproduce the full 24-feature panel.
 
+## 4.2 Which cohort sets the bar
+
+The min-agg score is a minimum over cohorts. For all 24 selected features,
+that minimum is set by one of the five smallest cohorts. SPAC (n = 33)
+sets it for 10 of 24 features (12 of 24 if ties count; two features have a
+selection frequency of 1.000 in all eight cohorts). UCSF (n = 99) sets it
+for 7, KCL (n = 188) for 4, ABF300 (n = 166) for 2, and SoundLife
+(n = 96) for 1. No minimum is set by one of the three large cohorts.
+
+SPAC is the weakest link. It has fewer donors than features (33 < 60).
+The equicorrelated knockoff covariance is therefore a positive-definite
+projection of a rank-deficient sample covariance. A bootstrap resample of
+33 donors contains about 21 unique donors. The claim that a feature
+"tracks age in every cohort" is limited by SPAC for 10 of the 24
+features.
+
+## 4.3 Sensitivity: min-agg without SPAC
+
+We repeat the min-agg rule over the seven cohorts without SPAC. The panel
+grows from 24 to 33 features. Nine features join; none leave. The
+predeclared set keeps its status: CD8+ Tem GZMK+ rises from 0.505 to
+0.660; the other seven scores do not change. Given the FDP+ result above,
+neither panel size is calibrated. The sensitivity shows that panel
+membership depends on the smallest cohort. It does not show that the
+larger panel is better.
+
 # 5 Result: age prediction on held-out cohorts
 
 Table 3 and Figure 3 give the LOCO results. Read the two columns as
@@ -404,7 +430,8 @@ Four limits bound the conclusions.
 3. **The min-agg rule is conservative by design.** A feature must pass the
    bar in every cohort. Features with cohort-specific signal fail the bar.
    Their biology can still be real. CD8+ Tem GZMB+ (score 0.445) is the
-   predeclared example.
+   predeclared example. The min-agg score is set by the smallest cohorts
+   for all 24 features (Section 4.2).
 4. **Composition features are relative.** Logit proportions measure a cell
    type against all typed cells. An increase in one compartment
    mechanically dilutes the others. The direction claims are about
