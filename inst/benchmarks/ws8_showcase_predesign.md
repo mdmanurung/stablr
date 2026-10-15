@@ -110,3 +110,105 @@ corrected numbers are inserted until the rerun completes.
 **Preservation.** All historical MAE values, figures, CSVs, and the dataset
 are preserved unchanged. The vignette and `ws8_summary.md` carry updated
 evidence labels only; no historical result was edited or regenerated.
+
+---
+
+## Addendum 2 — execution deviations and post-review analyses (dated 2026-10-15)
+
+An adversarial review of the vignette and artifacts found deviations from
+this predesign and reporting gaps. This addendum documents them, records the
+follow-up analyses executed on 2026-10-15, and predeclares the
+selection-isolated LOCO protocol before its run. The historical
+preregistration above is preserved unchanged.
+
+### Execution deviations (review finding F7)
+
+1. **Cohort sizes.** This predesign says "per-cohort n between 188 and
+   981". The executed data has SPAC 33, SoundLife 96, and UCSF 99. The
+   claim was wrong when written.
+2. **Model (b).** Predeclared as "a linear model". Executed as ridge
+   (`glmnet`, alpha = 0, 5-fold internal CV, `lambda.min`).
+3. **Model (a) feature count.** Predeclared as 59 cell-type features.
+   Executed with 60: the 59 cell types plus `COV:sex`.
+4. **Stability-path figure.** Promised under Outputs; not delivered.
+5. **Reduced-clock comparator.** The 8.9 y reduced-clock MAE was promised
+   as comparator context; the vignette cited only the 8.2 y full-clock
+   value. The vignette now states both are not directly comparable to this
+   protocol.
+6. **Covariate reporting.** The predesign promises covariates are "never
+   dropped silently". CMV and the two ancestry indicators were dropped
+   (zero variance inside at least one cohort) and are disclosed in the
+   vignette. Sex entered the all-feature model; whether it survived
+   selection was not stated. It did not: the 24-feature panel contains no
+   sex feature. The vignette now states this.
+
+### Reproducibility gap (review finding F9)
+
+The donor-level count table (`donor_celltype_counts.tsv`,
+`donor_meta.tsv`) was derived from `all_cells_metadata.csv.gz` before
+`ws8_aging_showcase.R` runs. The derivation script is not archived in the
+repository, so the predeclared exclusion of the `Bad quality` class cannot
+be verified from the package source. The vignette states this gap instead
+of asserting the exclusion.
+
+### Review correction
+
+The review stated SPAC is the binding cohort for 14 of the 24 selected
+features. The artifact-backed count is **10 of 24 by strict argmin** (12 of
+24 counting ties; two features have a selection frequency of 1.000 in all
+eight cohorts, so all eight cohorts tie at the minimum). The vignette uses
+the corrected counts.
+
+### Criterion 2 closure: per-environment FDP+ diagnostics (executed)
+
+The FDP+ diagnostics were computed inside every per-environment `stabl_fit`
+(field `min_fdr_`) but never extracted or reported.
+`ws8_review_fdp.R` extracts them (`ws8_fdp_diagnostics.csv`). Result:
+**adverse**. FDP+ at the 0.5 bar is 1.03–1.05 in every cohort (decoy
+features pass the bar as often as real features); the minimum over the
+threshold grid is 0.89–1.02. The WS-5 calibration (0.083–0.142) does not
+transfer to this atlas. The vignette reports the min-agg rule as a
+descriptive reproducibility filter, not calibrated FDR control.
+
+### Min-agg sensitivity without SPAC (executed)
+
+`ws8_review_sensitivity_nospac.R` recomputes the min-agg rule over the
+seven cohorts excluding SPAC (`ws8_minagg_sensitivity_nospac.csv`,
+`ws8_binding_cohorts.csv`). Result: the panel grows from 24 to 33
+features; 9 features join, none leave; CD8+ Tem GZMK+ rises 0.505 → 0.660;
+the other seven predeclared scores are unchanged. Given the FDP+ result,
+neither panel size is calibrated; the sensitivity shows panel membership
+depends on the smallest cohort.
+
+### Paired per-donor MAE differences (executed)
+
+`ws8_review_paired_mae.R` computes the per-donor difference of absolute
+errors (all-feature minus selected panel) with 2,000-resample bootstrap
+intervals, seed 20261013 (`ws8_paired_mae_diff.csv`). Result: CIMA +7.98
+[7.30, 8.67], UCSF +2.59 [1.91, 3.27], OneK1K −2.18 [−2.47, −1.90],
+SoundLife −2.81 [−3.92, −1.65]; ABF300, KCL, SPAC inconclusive; pooled
++0.50 [0.29, 0.70]. The paired intervals resolve the marginal-interval
+overlap at UCSF. The covariate asymmetry (sex in the all-feature model
+only) is disclosed as a confounder of the comparison.
+
+### Selection-isolated LOCO (PR5) — protocol predeclared before the run
+
+For each held-out cohort h, in fixed alphabetical order:
+
+1. Partition: train on the other seven cohorts; hold out h.
+2. Selection: `stabl_environment_stability()` on the training partition
+   with the primary settings (rf, `knockoff_equi`, 200 bootstraps,
+   `sample_fraction = 1`, `replace = TRUE`, `random_state = 20261013`).
+3. Panel: min-agg rule at >= 0.5 over the seven **training** cohorts.
+4. Prediction: ridge (`glmnet`, alpha = 0, `nfolds = 5`, `lambda.min`) on
+   the within-fold panel; predict h.
+5. Primary endpoint: per-cohort MAE, compared with the all-feature and
+   post-selection panel columns. Secondary: per-fold panel size, overlap
+   with the full-data panel, calibration slope.
+6. Fallback: if a fold selects no features, the fold uses the all-feature
+   model and is flagged in the output.
+
+Script: `ws8_loco_selection_isolated.R`. Output:
+`ws8_loco_silo.csv` (per-cohort results) and
+`ws8_loco_silo_features.csv` (per-fold panels). No corrected number enters
+the vignette until this run completes.
