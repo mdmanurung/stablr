@@ -1,0 +1,921 @@
+"scenario","rep","cohort","feature","beta"
+"s1a_hom",1,"ABF300","CD8+ Tem GZMK+",0.0929525762976317
+"s1a_hom",1,"ABF300","NK CD56dim CD57+",0.19002904322693
+"s1a_hom",1,"ABF300","CD8+ Tcm CCR4-",-0.110791322197798
+"s1a_hom",1,"ABF300","CD4+ Th1/Th17",0.0752435999523755
+"s1a_hom",1,"ABF300","CD8+ Trm",-0.14869547198029
+"s1a_hom",1,"ABF300","gd T Vd1 GZMB+",0.189138736903504
+"s1a_hom",1,"ABF300","B Switched memory",-0.119333351734634
+"s1a_hom",1,"ABF300","CD4+ Treg naive",-0.0609581709726099
+"s1a_hom",1,"ABF300","B Non-switched memory",-0.128513528046082
+"s1a_hom",1,"ABF300","NK CD56dim CD57int",0.0816071927101261
+"s1a_hom",1,"AIDA","CD8+ Tem GZMK+",0.0929525762976317
+"s1a_hom",1,"AIDA","NK CD56dim CD57+",0.19002904322693
+"s1a_hom",1,"AIDA","CD8+ Tcm CCR4-",-0.110791322197798
+"s1a_hom",1,"AIDA","CD4+ Th1/Th17",0.0752435999523755
+"s1a_hom",1,"AIDA","CD8+ Trm",-0.14869547198029
+"s1a_hom",1,"AIDA","gd T Vd1 GZMB+",0.189138736903504
+"s1a_hom",1,"AIDA","B Switched memory",-0.119333351734634
+"s1a_hom",1,"AIDA","CD4+ Treg naive",-0.0609581709726099
+"s1a_hom",1,"AIDA","B Non-switched memory",-0.128513528046082
+"s1a_hom",1,"AIDA","NK CD56dim CD57int",0.0816071927101261
+"s1a_hom",1,"CIMA","CD8+ Tem GZMK+",0.0929525762976317
+"s1a_hom",1,"CIMA","NK CD56dim CD57+",0.19002904322693
+"s1a_hom",1,"CIMA","CD8+ Tcm CCR4-",-0.110791322197798
+"s1a_hom",1,"CIMA","CD4+ Th1/Th17",0.0752435999523755
+"s1a_hom",1,"CIMA","CD8+ Trm",-0.14869547198029
+"s1a_hom",1,"CIMA","gd T Vd1 GZMB+",0.189138736903504
+"s1a_hom",1,"CIMA","B Switched memory",-0.119333351734634
+"s1a_hom",1,"CIMA","CD4+ Treg naive",-0.0609581709726099
+"s1a_hom",1,"CIMA","B Non-switched memory",-0.128513528046082
+"s1a_hom",1,"CIMA","NK CD56dim CD57int",0.0816071927101261
+"s1a_hom",1,"KCL","CD8+ Tem GZMK+",0.0929525762976317
+"s1a_hom",1,"KCL","NK CD56dim CD57+",0.19002904322693
+"s1a_hom",1,"KCL","CD8+ Tcm CCR4-",-0.110791322197798
+"s1a_hom",1,"KCL","CD4+ Th1/Th17",0.0752435999523755
+"s1a_hom",1,"KCL","CD8+ Trm",-0.14869547198029
+"s1a_hom",1,"KCL","gd T Vd1 GZMB+",0.189138736903504
+"s1a_hom",1,"KCL","B Switched memory",-0.119333351734634
+"s1a_hom",1,"KCL","CD4+ Treg naive",-0.0609581709726099
+"s1a_hom",1,"KCL","B Non-switched memory",-0.128513528046082
+"s1a_hom",1,"KCL","NK CD56dim CD57int",0.0816071927101261
+"s1a_hom",1,"OneK1K","CD8+ Tem GZMK+",0.0929525762976317
+"s1a_hom",1,"OneK1K","NK CD56dim CD57+",0.19002904322693
+"s1a_hom",1,"OneK1K","CD8+ Tcm CCR4-",-0.110791322197798
+"s1a_hom",1,"OneK1K","CD4+ Th1/Th17",0.0752435999523755
+"s1a_hom",1,"OneK1K","CD8+ Trm",-0.14869547198029
+"s1a_hom",1,"OneK1K","gd T Vd1 GZMB+",0.189138736903504
+"s1a_hom",1,"OneK1K","B Switched memory",-0.119333351734634
+"s1a_hom",1,"OneK1K","CD4+ Treg naive",-0.0609581709726099
+"s1a_hom",1,"OneK1K","B Non-switched memory",-0.128513528046082
+"s1a_hom",1,"OneK1K","NK CD56dim CD57int",0.0816071927101261
+"s1a_hom",1,"SoundLife","CD8+ Tem GZMK+",0.0929525762976317
+"s1a_hom",1,"SoundLife","NK CD56dim CD57+",0.19002904322693
+"s1a_hom",1,"SoundLife","CD8+ Tcm CCR4-",-0.110791322197798
+"s1a_hom",1,"SoundLife","CD4+ Th1/Th17",0.0752435999523755
+"s1a_hom",1,"SoundLife","CD8+ Trm",-0.14869547198029
+"s1a_hom",1,"SoundLife","gd T Vd1 GZMB+",0.189138736903504
+"s1a_hom",1,"SoundLife","B Switched memory",-0.119333351734634
+"s1a_hom",1,"SoundLife","CD4+ Treg naive",-0.0609581709726099
+"s1a_hom",1,"SoundLife","B Non-switched memory",-0.128513528046082
+"s1a_hom",1,"SoundLife","NK CD56dim CD57int",0.0816071927101261
+"s1a_hom",1,"SPAC","CD8+ Tem GZMK+",0.0929525762976317
+"s1a_hom",1,"SPAC","NK CD56dim CD57+",0.19002904322693
+"s1a_hom",1,"SPAC","CD8+ Tcm CCR4-",-0.110791322197798
+"s1a_hom",1,"SPAC","CD4+ Th1/Th17",0.0752435999523755
+"s1a_hom",1,"SPAC","CD8+ Trm",-0.14869547198029
+"s1a_hom",1,"SPAC","gd T Vd1 GZMB+",0.189138736903504
+"s1a_hom",1,"SPAC","B Switched memory",-0.119333351734634
+"s1a_hom",1,"SPAC","CD4+ Treg naive",-0.0609581709726099
+"s1a_hom",1,"SPAC","B Non-switched memory",-0.128513528046082
+"s1a_hom",1,"SPAC","NK CD56dim CD57int",0.0816071927101261
+"s1a_hom",1,"UCSF","CD8+ Tem GZMK+",0.0929525762976317
+"s1a_hom",1,"UCSF","NK CD56dim CD57+",0.19002904322693
+"s1a_hom",1,"UCSF","CD8+ Tcm CCR4-",-0.110791322197798
+"s1a_hom",1,"UCSF","CD4+ Th1/Th17",0.0752435999523755
+"s1a_hom",1,"UCSF","CD8+ Trm",-0.14869547198029
+"s1a_hom",1,"UCSF","gd T Vd1 GZMB+",0.189138736903504
+"s1a_hom",1,"UCSF","B Switched memory",-0.119333351734634
+"s1a_hom",1,"UCSF","CD4+ Treg naive",-0.0609581709726099
+"s1a_hom",1,"UCSF","B Non-switched memory",-0.128513528046082
+"s1a_hom",1,"UCSF","NK CD56dim CD57int",0.0816071927101261
+"s1a_hom",2,"ABF300","CD8+ Tem GZMK+",0.134286595765802
+"s1a_hom",2,"ABF300","NK CD56dim CD57+",0.143281204529125
+"s1a_hom",2,"ABF300","CD8+ Tcm CCR4-",-0.0735167781547287
+"s1a_hom",2,"ABF300","CD4+ Th1/Th17",0.111771086638291
+"s1a_hom",2,"ABF300","CD8+ Trm",-0.0994806363008799
+"s1a_hom",2,"ABF300","gd T Vd1 GZMB+",0.183649393591545
+"s1a_hom",2,"ABF300","B Switched memory",-0.0815442821476939
+"s1a_hom",2,"ABF300","CD4+ Treg naive",-0.0852271791072153
+"s1a_hom",2,"ABF300","B Non-switched memory",-0.131912002238045
+"s1a_hom",2,"ABF300","NK CD56dim CD57int",0.103891479654199
+"s1a_hom",2,"AIDA","CD8+ Tem GZMK+",0.134286595765802
+"s1a_hom",2,"AIDA","NK CD56dim CD57+",0.143281204529125
+"s1a_hom",2,"AIDA","CD8+ Tcm CCR4-",-0.0735167781547287
+"s1a_hom",2,"AIDA","CD4+ Th1/Th17",0.111771086638291
+"s1a_hom",2,"AIDA","CD8+ Trm",-0.0994806363008799
+"s1a_hom",2,"AIDA","gd T Vd1 GZMB+",0.183649393591545
+"s1a_hom",2,"AIDA","B Switched memory",-0.0815442821476939
+"s1a_hom",2,"AIDA","CD4+ Treg naive",-0.0852271791072153
+"s1a_hom",2,"AIDA","B Non-switched memory",-0.131912002238045
+"s1a_hom",2,"AIDA","NK CD56dim CD57int",0.103891479654199
+"s1a_hom",2,"CIMA","CD8+ Tem GZMK+",0.134286595765802
+"s1a_hom",2,"CIMA","NK CD56dim CD57+",0.143281204529125
+"s1a_hom",2,"CIMA","CD8+ Tcm CCR4-",-0.0735167781547287
+"s1a_hom",2,"CIMA","CD4+ Th1/Th17",0.111771086638291
+"s1a_hom",2,"CIMA","CD8+ Trm",-0.0994806363008799
+"s1a_hom",2,"CIMA","gd T Vd1 GZMB+",0.183649393591545
+"s1a_hom",2,"CIMA","B Switched memory",-0.0815442821476939
+"s1a_hom",2,"CIMA","CD4+ Treg naive",-0.0852271791072153
+"s1a_hom",2,"CIMA","B Non-switched memory",-0.131912002238045
+"s1a_hom",2,"CIMA","NK CD56dim CD57int",0.103891479654199
+"s1a_hom",2,"KCL","CD8+ Tem GZMK+",0.134286595765802
+"s1a_hom",2,"KCL","NK CD56dim CD57+",0.143281204529125
+"s1a_hom",2,"KCL","CD8+ Tcm CCR4-",-0.0735167781547287
+"s1a_hom",2,"KCL","CD4+ Th1/Th17",0.111771086638291
+"s1a_hom",2,"KCL","CD8+ Trm",-0.0994806363008799
+"s1a_hom",2,"KCL","gd T Vd1 GZMB+",0.183649393591545
+"s1a_hom",2,"KCL","B Switched memory",-0.0815442821476939
+"s1a_hom",2,"KCL","CD4+ Treg naive",-0.0852271791072153
+"s1a_hom",2,"KCL","B Non-switched memory",-0.131912002238045
+"s1a_hom",2,"KCL","NK CD56dim CD57int",0.103891479654199
+"s1a_hom",2,"OneK1K","CD8+ Tem GZMK+",0.134286595765802
+"s1a_hom",2,"OneK1K","NK CD56dim CD57+",0.143281204529125
+"s1a_hom",2,"OneK1K","CD8+ Tcm CCR4-",-0.0735167781547287
+"s1a_hom",2,"OneK1K","CD4+ Th1/Th17",0.111771086638291
+"s1a_hom",2,"OneK1K","CD8+ Trm",-0.0994806363008799
+"s1a_hom",2,"OneK1K","gd T Vd1 GZMB+",0.183649393591545
+"s1a_hom",2,"OneK1K","B Switched memory",-0.0815442821476939
+"s1a_hom",2,"OneK1K","CD4+ Treg naive",-0.0852271791072153
+"s1a_hom",2,"OneK1K","B Non-switched memory",-0.131912002238045
+"s1a_hom",2,"OneK1K","NK CD56dim CD57int",0.103891479654199
+"s1a_hom",2,"SoundLife","CD8+ Tem GZMK+",0.134286595765802
+"s1a_hom",2,"SoundLife","NK CD56dim CD57+",0.143281204529125
+"s1a_hom",2,"SoundLife","CD8+ Tcm CCR4-",-0.0735167781547287
+"s1a_hom",2,"SoundLife","CD4+ Th1/Th17",0.111771086638291
+"s1a_hom",2,"SoundLife","CD8+ Trm",-0.0994806363008799
+"s1a_hom",2,"SoundLife","gd T Vd1 GZMB+",0.183649393591545
+"s1a_hom",2,"SoundLife","B Switched memory",-0.0815442821476939
+"s1a_hom",2,"SoundLife","CD4+ Treg naive",-0.0852271791072153
+"s1a_hom",2,"SoundLife","B Non-switched memory",-0.131912002238045
+"s1a_hom",2,"SoundLife","NK CD56dim CD57int",0.103891479654199
+"s1a_hom",2,"SPAC","CD8+ Tem GZMK+",0.134286595765802
+"s1a_hom",2,"SPAC","NK CD56dim CD57+",0.143281204529125
+"s1a_hom",2,"SPAC","CD8+ Tcm CCR4-",-0.0735167781547287
+"s1a_hom",2,"SPAC","CD4+ Th1/Th17",0.111771086638291
+"s1a_hom",2,"SPAC","CD8+ Trm",-0.0994806363008799
+"s1a_hom",2,"SPAC","gd T Vd1 GZMB+",0.183649393591545
+"s1a_hom",2,"SPAC","B Switched memory",-0.0815442821476939
+"s1a_hom",2,"SPAC","CD4+ Treg naive",-0.0852271791072153
+"s1a_hom",2,"SPAC","B Non-switched memory",-0.131912002238045
+"s1a_hom",2,"SPAC","NK CD56dim CD57int",0.103891479654199
+"s1a_hom",2,"UCSF","CD8+ Tem GZMK+",0.134286595765802
+"s1a_hom",2,"UCSF","NK CD56dim CD57+",0.143281204529125
+"s1a_hom",2,"UCSF","CD8+ Tcm CCR4-",-0.0735167781547287
+"s1a_hom",2,"UCSF","CD4+ Th1/Th17",0.111771086638291
+"s1a_hom",2,"UCSF","CD8+ Trm",-0.0994806363008799
+"s1a_hom",2,"UCSF","gd T Vd1 GZMB+",0.183649393591545
+"s1a_hom",2,"UCSF","B Switched memory",-0.0815442821476939
+"s1a_hom",2,"UCSF","CD4+ Treg naive",-0.0852271791072153
+"s1a_hom",2,"UCSF","B Non-switched memory",-0.131912002238045
+"s1a_hom",2,"UCSF","NK CD56dim CD57int",0.103891479654199
+"s1a_hom",3,"ABF300","CD8+ Tem GZMK+",0.0904465309579956
+"s1a_hom",3,"ABF300","NK CD56dim CD57+",0.117753719950998
+"s1a_hom",3,"ABF300","CD8+ Tcm CCR4-",-0.105889747976533
+"s1a_hom",3,"ABF300","CD4+ Th1/Th17",0.0824166602177718
+"s1a_hom",3,"ABF300","CD8+ Trm",-0.105900768786802
+"s1a_hom",3,"ABF300","gd T Vd1 GZMB+",0.174470572407221
+"s1a_hom",3,"ABF300","B Switched memory",-0.125944212815182
+"s1a_hom",3,"ABF300","CD4+ Treg naive",-0.101019465192974
+"s1a_hom",3,"ABF300","B Non-switched memory",-0.0986915194054334
+"s1a_hom",3,"ABF300","NK CD56dim CD57int",0.144644984218835
+"s1a_hom",3,"AIDA","CD8+ Tem GZMK+",0.0904465309579956
+"s1a_hom",3,"AIDA","NK CD56dim CD57+",0.117753719950998
+"s1a_hom",3,"AIDA","CD8+ Tcm CCR4-",-0.105889747976533
+"s1a_hom",3,"AIDA","CD4+ Th1/Th17",0.0824166602177718
+"s1a_hom",3,"AIDA","CD8+ Trm",-0.105900768786802
+"s1a_hom",3,"AIDA","gd T Vd1 GZMB+",0.174470572407221
+"s1a_hom",3,"AIDA","B Switched memory",-0.125944212815182
+"s1a_hom",3,"AIDA","CD4+ Treg naive",-0.101019465192974
+"s1a_hom",3,"AIDA","B Non-switched memory",-0.0986915194054334
+"s1a_hom",3,"AIDA","NK CD56dim CD57int",0.144644984218835
+"s1a_hom",3,"CIMA","CD8+ Tem GZMK+",0.0904465309579956
+"s1a_hom",3,"CIMA","NK CD56dim CD57+",0.117753719950998
+"s1a_hom",3,"CIMA","CD8+ Tcm CCR4-",-0.105889747976533
+"s1a_hom",3,"CIMA","CD4+ Th1/Th17",0.0824166602177718
+"s1a_hom",3,"CIMA","CD8+ Trm",-0.105900768786802
+"s1a_hom",3,"CIMA","gd T Vd1 GZMB+",0.174470572407221
+"s1a_hom",3,"CIMA","B Switched memory",-0.125944212815182
+"s1a_hom",3,"CIMA","CD4+ Treg naive",-0.101019465192974
+"s1a_hom",3,"CIMA","B Non-switched memory",-0.0986915194054334
+"s1a_hom",3,"CIMA","NK CD56dim CD57int",0.144644984218835
+"s1a_hom",3,"KCL","CD8+ Tem GZMK+",0.0904465309579956
+"s1a_hom",3,"KCL","NK CD56dim CD57+",0.117753719950998
+"s1a_hom",3,"KCL","CD8+ Tcm CCR4-",-0.105889747976533
+"s1a_hom",3,"KCL","CD4+ Th1/Th17",0.0824166602177718
+"s1a_hom",3,"KCL","CD8+ Trm",-0.105900768786802
+"s1a_hom",3,"KCL","gd T Vd1 GZMB+",0.174470572407221
+"s1a_hom",3,"KCL","B Switched memory",-0.125944212815182
+"s1a_hom",3,"KCL","CD4+ Treg naive",-0.101019465192974
+"s1a_hom",3,"KCL","B Non-switched memory",-0.0986915194054334
+"s1a_hom",3,"KCL","NK CD56dim CD57int",0.144644984218835
+"s1a_hom",3,"OneK1K","CD8+ Tem GZMK+",0.0904465309579956
+"s1a_hom",3,"OneK1K","NK CD56dim CD57+",0.117753719950998
+"s1a_hom",3,"OneK1K","CD8+ Tcm CCR4-",-0.105889747976533
+"s1a_hom",3,"OneK1K","CD4+ Th1/Th17",0.0824166602177718
+"s1a_hom",3,"OneK1K","CD8+ Trm",-0.105900768786802
+"s1a_hom",3,"OneK1K","gd T Vd1 GZMB+",0.174470572407221
+"s1a_hom",3,"OneK1K","B Switched memory",-0.125944212815182
+"s1a_hom",3,"OneK1K","CD4+ Treg naive",-0.101019465192974
+"s1a_hom",3,"OneK1K","B Non-switched memory",-0.0986915194054334
+"s1a_hom",3,"OneK1K","NK CD56dim CD57int",0.144644984218835
+"s1a_hom",3,"SoundLife","CD8+ Tem GZMK+",0.0904465309579956
+"s1a_hom",3,"SoundLife","NK CD56dim CD57+",0.117753719950998
+"s1a_hom",3,"SoundLife","CD8+ Tcm CCR4-",-0.105889747976533
+"s1a_hom",3,"SoundLife","CD4+ Th1/Th17",0.0824166602177718
+"s1a_hom",3,"SoundLife","CD8+ Trm",-0.105900768786802
+"s1a_hom",3,"SoundLife","gd T Vd1 GZMB+",0.174470572407221
+"s1a_hom",3,"SoundLife","B Switched memory",-0.125944212815182
+"s1a_hom",3,"SoundLife","CD4+ Treg naive",-0.101019465192974
+"s1a_hom",3,"SoundLife","B Non-switched memory",-0.0986915194054334
+"s1a_hom",3,"SoundLife","NK CD56dim CD57int",0.144644984218835
+"s1a_hom",3,"SPAC","CD8+ Tem GZMK+",0.0904465309579956
+"s1a_hom",3,"SPAC","NK CD56dim CD57+",0.117753719950998
+"s1a_hom",3,"SPAC","CD8+ Tcm CCR4-",-0.105889747976533
+"s1a_hom",3,"SPAC","CD4+ Th1/Th17",0.0824166602177718
+"s1a_hom",3,"SPAC","CD8+ Trm",-0.105900768786802
+"s1a_hom",3,"SPAC","gd T Vd1 GZMB+",0.174470572407221
+"s1a_hom",3,"SPAC","B Switched memory",-0.125944212815182
+"s1a_hom",3,"SPAC","CD4+ Treg naive",-0.101019465192974
+"s1a_hom",3,"SPAC","B Non-switched memory",-0.0986915194054334
+"s1a_hom",3,"SPAC","NK CD56dim CD57int",0.144644984218835
+"s1a_hom",3,"UCSF","CD8+ Tem GZMK+",0.0904465309579956
+"s1a_hom",3,"UCSF","NK CD56dim CD57+",0.117753719950998
+"s1a_hom",3,"UCSF","CD8+ Tcm CCR4-",-0.105889747976533
+"s1a_hom",3,"UCSF","CD4+ Th1/Th17",0.0824166602177718
+"s1a_hom",3,"UCSF","CD8+ Trm",-0.105900768786802
+"s1a_hom",3,"UCSF","gd T Vd1 GZMB+",0.174470572407221
+"s1a_hom",3,"UCSF","B Switched memory",-0.125944212815182
+"s1a_hom",3,"UCSF","CD4+ Treg naive",-0.101019465192974
+"s1a_hom",3,"UCSF","B Non-switched memory",-0.0986915194054334
+"s1a_hom",3,"UCSF","NK CD56dim CD57int",0.144644984218835
+"s1a_hom",4,"ABF300","CD8+ Tem GZMK+",0.0786361295130984
+"s1a_hom",4,"ABF300","NK CD56dim CD57+",0.146927548699726
+"s1a_hom",4,"ABF300","CD8+ Tcm CCR4-",-0.0788176414046961
+"s1a_hom",4,"ABF300","CD4+ Th1/Th17",0.114237856859509
+"s1a_hom",4,"ABF300","CD8+ Trm",-0.148385784334654
+"s1a_hom",4,"ABF300","gd T Vd1 GZMB+",0.134711711976062
+"s1a_hom",4,"ABF300","B Switched memory",-0.0925431259339377
+"s1a_hom",4,"ABF300","CD4+ Treg naive",-0.0750249972523173
+"s1a_hom",4,"ABF300","B Non-switched memory",-0.0880797777899894
+"s1a_hom",4,"ABF300","NK CD56dim CD57int",0.134782901643561
+"s1a_hom",4,"AIDA","CD8+ Tem GZMK+",0.0786361295130984
+"s1a_hom",4,"AIDA","NK CD56dim CD57+",0.146927548699726
+"s1a_hom",4,"AIDA","CD8+ Tcm CCR4-",-0.0788176414046961
+"s1a_hom",4,"AIDA","CD4+ Th1/Th17",0.114237856859509
+"s1a_hom",4,"AIDA","CD8+ Trm",-0.148385784334654
+"s1a_hom",4,"AIDA","gd T Vd1 GZMB+",0.134711711976062
+"s1a_hom",4,"AIDA","B Switched memory",-0.0925431259339377
+"s1a_hom",4,"AIDA","CD4+ Treg naive",-0.0750249972523173
+"s1a_hom",4,"AIDA","B Non-switched memory",-0.0880797777899894
+"s1a_hom",4,"AIDA","NK CD56dim CD57int",0.134782901643561
+"s1a_hom",4,"CIMA","CD8+ Tem GZMK+",0.0786361295130984
+"s1a_hom",4,"CIMA","NK CD56dim CD57+",0.146927548699726
+"s1a_hom",4,"CIMA","CD8+ Tcm CCR4-",-0.0788176414046961
+"s1a_hom",4,"CIMA","CD4+ Th1/Th17",0.114237856859509
+"s1a_hom",4,"CIMA","CD8+ Trm",-0.148385784334654
+"s1a_hom",4,"CIMA","gd T Vd1 GZMB+",0.134711711976062
+"s1a_hom",4,"CIMA","B Switched memory",-0.0925431259339377
+"s1a_hom",4,"CIMA","CD4+ Treg naive",-0.0750249972523173
+"s1a_hom",4,"CIMA","B Non-switched memory",-0.0880797777899894
+"s1a_hom",4,"CIMA","NK CD56dim CD57int",0.134782901643561
+"s1a_hom",4,"KCL","CD8+ Tem GZMK+",0.0786361295130984
+"s1a_hom",4,"KCL","NK CD56dim CD57+",0.146927548699726
+"s1a_hom",4,"KCL","CD8+ Tcm CCR4-",-0.0788176414046961
+"s1a_hom",4,"KCL","CD4+ Th1/Th17",0.114237856859509
+"s1a_hom",4,"KCL","CD8+ Trm",-0.148385784334654
+"s1a_hom",4,"KCL","gd T Vd1 GZMB+",0.134711711976062
+"s1a_hom",4,"KCL","B Switched memory",-0.0925431259339377
+"s1a_hom",4,"KCL","CD4+ Treg naive",-0.0750249972523173
+"s1a_hom",4,"KCL","B Non-switched memory",-0.0880797777899894
+"s1a_hom",4,"KCL","NK CD56dim CD57int",0.134782901643561
+"s1a_hom",4,"OneK1K","CD8+ Tem GZMK+",0.0786361295130984
+"s1a_hom",4,"OneK1K","NK CD56dim CD57+",0.146927548699726
+"s1a_hom",4,"OneK1K","CD8+ Tcm CCR4-",-0.0788176414046961
+"s1a_hom",4,"OneK1K","CD4+ Th1/Th17",0.114237856859509
+"s1a_hom",4,"OneK1K","CD8+ Trm",-0.148385784334654
+"s1a_hom",4,"OneK1K","gd T Vd1 GZMB+",0.134711711976062
+"s1a_hom",4,"OneK1K","B Switched memory",-0.0925431259339377
+"s1a_hom",4,"OneK1K","CD4+ Treg naive",-0.0750249972523173
+"s1a_hom",4,"OneK1K","B Non-switched memory",-0.0880797777899894
+"s1a_hom",4,"OneK1K","NK CD56dim CD57int",0.134782901643561
+"s1a_hom",4,"SoundLife","CD8+ Tem GZMK+",0.0786361295130984
+"s1a_hom",4,"SoundLife","NK CD56dim CD57+",0.146927548699726
+"s1a_hom",4,"SoundLife","CD8+ Tcm CCR4-",-0.0788176414046961
+"s1a_hom",4,"SoundLife","CD4+ Th1/Th17",0.114237856859509
+"s1a_hom",4,"SoundLife","CD8+ Trm",-0.148385784334654
+"s1a_hom",4,"SoundLife","gd T Vd1 GZMB+",0.134711711976062
+"s1a_hom",4,"SoundLife","B Switched memory",-0.0925431259339377
+"s1a_hom",4,"SoundLife","CD4+ Treg naive",-0.0750249972523173
+"s1a_hom",4,"SoundLife","B Non-switched memory",-0.0880797777899894
+"s1a_hom",4,"SoundLife","NK CD56dim CD57int",0.134782901643561
+"s1a_hom",4,"SPAC","CD8+ Tem GZMK+",0.0786361295130984
+"s1a_hom",4,"SPAC","NK CD56dim CD57+",0.146927548699726
+"s1a_hom",4,"SPAC","CD8+ Tcm CCR4-",-0.0788176414046961
+"s1a_hom",4,"SPAC","CD4+ Th1/Th17",0.114237856859509
+"s1a_hom",4,"SPAC","CD8+ Trm",-0.148385784334654
+"s1a_hom",4,"SPAC","gd T Vd1 GZMB+",0.134711711976062
+"s1a_hom",4,"SPAC","B Switched memory",-0.0925431259339377
+"s1a_hom",4,"SPAC","CD4+ Treg naive",-0.0750249972523173
+"s1a_hom",4,"SPAC","B Non-switched memory",-0.0880797777899894
+"s1a_hom",4,"SPAC","NK CD56dim CD57int",0.134782901643561
+"s1a_hom",4,"UCSF","CD8+ Tem GZMK+",0.0786361295130984
+"s1a_hom",4,"UCSF","NK CD56dim CD57+",0.146927548699726
+"s1a_hom",4,"UCSF","CD8+ Tcm CCR4-",-0.0788176414046961
+"s1a_hom",4,"UCSF","CD4+ Th1/Th17",0.114237856859509
+"s1a_hom",4,"UCSF","CD8+ Trm",-0.148385784334654
+"s1a_hom",4,"UCSF","gd T Vd1 GZMB+",0.134711711976062
+"s1a_hom",4,"UCSF","B Switched memory",-0.0925431259339377
+"s1a_hom",4,"UCSF","CD4+ Treg naive",-0.0750249972523173
+"s1a_hom",4,"UCSF","B Non-switched memory",-0.0880797777899894
+"s1a_hom",4,"UCSF","NK CD56dim CD57int",0.134782901643561
+"s1a_hom",5,"ABF300","CD8+ Tem GZMK+",0.12438388433584
+"s1a_hom",5,"ABF300","NK CD56dim CD57+",0.184711206718681
+"s1a_hom",5,"ABF300","CD8+ Tcm CCR4-",-0.0970265365750873
+"s1a_hom",5,"ABF300","CD4+ Th1/Th17",0.0949359511260086
+"s1a_hom",5,"ABF300","CD8+ Trm",-0.12945101163409
+"s1a_hom",5,"ABF300","gd T Vd1 GZMB+",0.218949552417736
+"s1a_hom",5,"ABF300","B Switched memory",-0.123716456920295
+"s1a_hom",5,"ABF300","CD4+ Treg naive",-0.0616578307218668
+"s1a_hom",5,"ABF300","B Non-switched memory",-0.0861904565604357
+"s1a_hom",5,"ABF300","NK CD56dim CD57int",0.11541398515805
+"s1a_hom",5,"AIDA","CD8+ Tem GZMK+",0.12438388433584
+"s1a_hom",5,"AIDA","NK CD56dim CD57+",0.184711206718681
+"s1a_hom",5,"AIDA","CD8+ Tcm CCR4-",-0.0970265365750873
+"s1a_hom",5,"AIDA","CD4+ Th1/Th17",0.0949359511260086
+"s1a_hom",5,"AIDA","CD8+ Trm",-0.12945101163409
+"s1a_hom",5,"AIDA","gd T Vd1 GZMB+",0.218949552417736
+"s1a_hom",5,"AIDA","B Switched memory",-0.123716456920295
+"s1a_hom",5,"AIDA","CD4+ Treg naive",-0.0616578307218668
+"s1a_hom",5,"AIDA","B Non-switched memory",-0.0861904565604357
+"s1a_hom",5,"AIDA","NK CD56dim CD57int",0.11541398515805
+"s1a_hom",5,"CIMA","CD8+ Tem GZMK+",0.12438388433584
+"s1a_hom",5,"CIMA","NK CD56dim CD57+",0.184711206718681
+"s1a_hom",5,"CIMA","CD8+ Tcm CCR4-",-0.0970265365750873
+"s1a_hom",5,"CIMA","CD4+ Th1/Th17",0.0949359511260086
+"s1a_hom",5,"CIMA","CD8+ Trm",-0.12945101163409
+"s1a_hom",5,"CIMA","gd T Vd1 GZMB+",0.218949552417736
+"s1a_hom",5,"CIMA","B Switched memory",-0.123716456920295
+"s1a_hom",5,"CIMA","CD4+ Treg naive",-0.0616578307218668
+"s1a_hom",5,"CIMA","B Non-switched memory",-0.0861904565604357
+"s1a_hom",5,"CIMA","NK CD56dim CD57int",0.11541398515805
+"s1a_hom",5,"KCL","CD8+ Tem GZMK+",0.12438388433584
+"s1a_hom",5,"KCL","NK CD56dim CD57+",0.184711206718681
+"s1a_hom",5,"KCL","CD8+ Tcm CCR4-",-0.0970265365750873
+"s1a_hom",5,"KCL","CD4+ Th1/Th17",0.0949359511260086
+"s1a_hom",5,"KCL","CD8+ Trm",-0.12945101163409
+"s1a_hom",5,"KCL","gd T Vd1 GZMB+",0.218949552417736
+"s1a_hom",5,"KCL","B Switched memory",-0.123716456920295
+"s1a_hom",5,"KCL","CD4+ Treg naive",-0.0616578307218668
+"s1a_hom",5,"KCL","B Non-switched memory",-0.0861904565604357
+"s1a_hom",5,"KCL","NK CD56dim CD57int",0.11541398515805
+"s1a_hom",5,"OneK1K","CD8+ Tem GZMK+",0.12438388433584
+"s1a_hom",5,"OneK1K","NK CD56dim CD57+",0.184711206718681
+"s1a_hom",5,"OneK1K","CD8+ Tcm CCR4-",-0.0970265365750873
+"s1a_hom",5,"OneK1K","CD4+ Th1/Th17",0.0949359511260086
+"s1a_hom",5,"OneK1K","CD8+ Trm",-0.12945101163409
+"s1a_hom",5,"OneK1K","gd T Vd1 GZMB+",0.218949552417736
+"s1a_hom",5,"OneK1K","B Switched memory",-0.123716456920295
+"s1a_hom",5,"OneK1K","CD4+ Treg naive",-0.0616578307218668
+"s1a_hom",5,"OneK1K","B Non-switched memory",-0.0861904565604357
+"s1a_hom",5,"OneK1K","NK CD56dim CD57int",0.11541398515805
+"s1a_hom",5,"SoundLife","CD8+ Tem GZMK+",0.12438388433584
+"s1a_hom",5,"SoundLife","NK CD56dim CD57+",0.184711206718681
+"s1a_hom",5,"SoundLife","CD8+ Tcm CCR4-",-0.0970265365750873
+"s1a_hom",5,"SoundLife","CD4+ Th1/Th17",0.0949359511260086
+"s1a_hom",5,"SoundLife","CD8+ Trm",-0.12945101163409
+"s1a_hom",5,"SoundLife","gd T Vd1 GZMB+",0.218949552417736
+"s1a_hom",5,"SoundLife","B Switched memory",-0.123716456920295
+"s1a_hom",5,"SoundLife","CD4+ Treg naive",-0.0616578307218668
+"s1a_hom",5,"SoundLife","B Non-switched memory",-0.0861904565604357
+"s1a_hom",5,"SoundLife","NK CD56dim CD57int",0.11541398515805
+"s1a_hom",5,"SPAC","CD8+ Tem GZMK+",0.12438388433584
+"s1a_hom",5,"SPAC","NK CD56dim CD57+",0.184711206718681
+"s1a_hom",5,"SPAC","CD8+ Tcm CCR4-",-0.0970265365750873
+"s1a_hom",5,"SPAC","CD4+ Th1/Th17",0.0949359511260086
+"s1a_hom",5,"SPAC","CD8+ Trm",-0.12945101163409
+"s1a_hom",5,"SPAC","gd T Vd1 GZMB+",0.218949552417736
+"s1a_hom",5,"SPAC","B Switched memory",-0.123716456920295
+"s1a_hom",5,"SPAC","CD4+ Treg naive",-0.0616578307218668
+"s1a_hom",5,"SPAC","B Non-switched memory",-0.0861904565604357
+"s1a_hom",5,"SPAC","NK CD56dim CD57int",0.11541398515805
+"s1a_hom",5,"UCSF","CD8+ Tem GZMK+",0.12438388433584
+"s1a_hom",5,"UCSF","NK CD56dim CD57+",0.184711206718681
+"s1a_hom",5,"UCSF","CD8+ Tcm CCR4-",-0.0970265365750873
+"s1a_hom",5,"UCSF","CD4+ Th1/Th17",0.0949359511260086
+"s1a_hom",5,"UCSF","CD8+ Trm",-0.12945101163409
+"s1a_hom",5,"UCSF","gd T Vd1 GZMB+",0.218949552417736
+"s1a_hom",5,"UCSF","B Switched memory",-0.123716456920295
+"s1a_hom",5,"UCSF","CD4+ Treg naive",-0.0616578307218668
+"s1a_hom",5,"UCSF","B Non-switched memory",-0.0861904565604357
+"s1a_hom",5,"UCSF","NK CD56dim CD57int",0.11541398515805
+"s1b_het",1,"ABF300","CD8+ Tem GZMK+",-0.0355113012321618
+"s1b_het",1,"ABF300","NK CD56dim CD57+",0.0760971837746805
+"s1b_het",1,"ABF300","CD8+ Tcm CCR4-",-0.0691808627986191
+"s1b_het",1,"ABF300","CD4+ Th1/Th17",0.0690056473531182
+"s1b_het",1,"ABF300","CD8+ Trm",-0.141362634989246
+"s1b_het",1,"ABF300","gd T Vd1 GZMB+",0.190818073344027
+"s1b_het",1,"ABF300","B Switched memory",-0.119942071541958
+"s1b_het",1,"ABF300","CD4+ Treg naive",-0.0784675064957121
+"s1b_het",1,"ABF300","B Non-switched memory",-0.111185070491374
+"s1b_het",1,"ABF300","NK CD56dim CD57int",0.0822246239387718
+"s1b_het",1,"AIDA","CD8+ Tem GZMK+",-0.0254637171912627
+"s1b_het",1,"AIDA","NK CD56dim CD57+",0.0232665672994892
+"s1b_het",1,"AIDA","CD8+ Tcm CCR4-",-0.0691808627986191
+"s1b_het",1,"AIDA","CD4+ Th1/Th17",0.0690056473531182
+"s1b_het",1,"AIDA","CD8+ Trm",-0.141362634989246
+"s1b_het",1,"AIDA","gd T Vd1 GZMB+",0.190818073344027
+"s1b_het",1,"AIDA","B Switched memory",-0.119942071541958
+"s1b_het",1,"AIDA","CD4+ Treg naive",-0.0784675064957121
+"s1b_het",1,"AIDA","B Non-switched memory",-0.111185070491374
+"s1b_het",1,"AIDA","NK CD56dim CD57int",0.0822246239387718
+"s1b_het",1,"CIMA","CD8+ Tem GZMK+",0.11717888520942
+"s1b_het",1,"CIMA","NK CD56dim CD57+",0.206581786088043
+"s1b_het",1,"CIMA","CD8+ Tcm CCR4-",-0.0691808627986191
+"s1b_het",1,"CIMA","CD4+ Th1/Th17",0.0690056473531182
+"s1b_het",1,"CIMA","CD8+ Trm",-0.141362634989246
+"s1b_het",1,"CIMA","gd T Vd1 GZMB+",0.190818073344027
+"s1b_het",1,"CIMA","B Switched memory",-0.119942071541958
+"s1b_het",1,"CIMA","CD4+ Treg naive",-0.0784675064957121
+"s1b_het",1,"CIMA","B Non-switched memory",-0.111185070491374
+"s1b_het",1,"CIMA","NK CD56dim CD57int",0.0822246239387718
+"s1b_het",1,"KCL","CD8+ Tem GZMK+",0.140861959167992
+"s1b_het",1,"KCL","NK CD56dim CD57+",-0.00612912606677605
+"s1b_het",1,"KCL","CD8+ Tcm CCR4-",-0.0691808627986191
+"s1b_het",1,"KCL","CD4+ Th1/Th17",0.0690056473531182
+"s1b_het",1,"KCL","CD8+ Trm",-0.141362634989246
+"s1b_het",1,"KCL","gd T Vd1 GZMB+",0.190818073344027
+"s1b_het",1,"KCL","B Switched memory",-0.119942071541958
+"s1b_het",1,"KCL","CD4+ Treg naive",-0.0784675064957121
+"s1b_het",1,"KCL","B Non-switched memory",-0.111185070491374
+"s1b_het",1,"KCL","NK CD56dim CD57int",0.0822246239387718
+"s1b_het",1,"OneK1K","CD8+ Tem GZMK+",-0.0202582654264898
+"s1b_het",1,"OneK1K","NK CD56dim CD57+",-0.00178104245639705
+"s1b_het",1,"OneK1K","CD8+ Tcm CCR4-",-0.0691808627986191
+"s1b_het",1,"OneK1K","CD4+ Th1/Th17",0.0690056473531182
+"s1b_het",1,"OneK1K","CD8+ Trm",-0.141362634989246
+"s1b_het",1,"OneK1K","gd T Vd1 GZMB+",0.190818073344027
+"s1b_het",1,"OneK1K","B Switched memory",-0.119942071541958
+"s1b_het",1,"OneK1K","CD4+ Treg naive",-0.0784675064957121
+"s1b_het",1,"OneK1K","B Non-switched memory",-0.111185070491374
+"s1b_het",1,"OneK1K","NK CD56dim CD57int",0.0822246239387718
+"s1b_het",1,"SoundLife","CD8+ Tem GZMK+",0.122884840264545
+"s1b_het",1,"SoundLife","NK CD56dim CD57+",-0.00152678935414656
+"s1b_het",1,"SoundLife","CD8+ Tcm CCR4-",-0.0691808627986191
+"s1b_het",1,"SoundLife","CD4+ Th1/Th17",0.0690056473531182
+"s1b_het",1,"SoundLife","CD8+ Trm",-0.141362634989246
+"s1b_het",1,"SoundLife","gd T Vd1 GZMB+",0.190818073344027
+"s1b_het",1,"SoundLife","B Switched memory",-0.119942071541958
+"s1b_het",1,"SoundLife","CD4+ Treg naive",-0.0784675064957121
+"s1b_het",1,"SoundLife","B Non-switched memory",-0.111185070491374
+"s1b_het",1,"SoundLife","NK CD56dim CD57int",0.0822246239387718
+"s1b_het",1,"SPAC","CD8+ Tem GZMK+",-0.151585465402825
+"s1b_het",1,"SPAC","NK CD56dim CD57+",-0.0361529175335362
+"s1b_het",1,"SPAC","CD8+ Tcm CCR4-",-0.0691808627986191
+"s1b_het",1,"SPAC","CD4+ Th1/Th17",0.0690056473531182
+"s1b_het",1,"SPAC","CD8+ Trm",-0.141362634989246
+"s1b_het",1,"SPAC","gd T Vd1 GZMB+",0.190818073344027
+"s1b_het",1,"SPAC","B Switched memory",-0.119942071541958
+"s1b_het",1,"SPAC","CD4+ Treg naive",-0.0784675064957121
+"s1b_het",1,"SPAC","B Non-switched memory",-0.111185070491374
+"s1b_het",1,"SPAC","NK CD56dim CD57int",0.0822246239387718
+"s1b_het",1,"UCSF","CD8+ Tem GZMK+",0.00111060657162347
+"s1b_het",1,"UCSF","NK CD56dim CD57+",0.0412167694159975
+"s1b_het",1,"UCSF","CD8+ Tcm CCR4-",-0.0691808627986191
+"s1b_het",1,"UCSF","CD4+ Th1/Th17",0.0690056473531182
+"s1b_het",1,"UCSF","CD8+ Trm",-0.141362634989246
+"s1b_het",1,"UCSF","gd T Vd1 GZMB+",0.190818073344027
+"s1b_het",1,"UCSF","B Switched memory",-0.119942071541958
+"s1b_het",1,"UCSF","CD4+ Treg naive",-0.0784675064957121
+"s1b_het",1,"UCSF","B Non-switched memory",-0.111185070491374
+"s1b_het",1,"UCSF","NK CD56dim CD57int",0.0822246239387718
+"s1b_het",2,"ABF300","CD8+ Tem GZMK+",-0.0237211840830087
+"s1b_het",2,"ABF300","NK CD56dim CD57+",0.0216743895537872
+"s1b_het",2,"ABF300","CD8+ Tcm CCR4-",-0.0990695487350499
+"s1b_het",2,"ABF300","CD4+ Th1/Th17",0.106123974012977
+"s1b_het",2,"ABF300","CD8+ Trm",-0.145400314660871
+"s1b_het",2,"ABF300","gd T Vd1 GZMB+",0.123104592157828
+"s1b_het",2,"ABF300","B Switched memory",-0.0771556297550327
+"s1b_het",2,"ABF300","CD4+ Treg naive",-0.0567160732296572
+"s1b_het",2,"ABF300","B Non-switched memory",-0.134773322978916
+"s1b_het",2,"ABF300","NK CD56dim CD57int",0.0971137808907691
+"s1b_het",2,"AIDA","CD8+ Tem GZMK+",0.109160099675006
+"s1b_het",2,"AIDA","NK CD56dim CD57+",0.19244498119358
+"s1b_het",2,"AIDA","CD8+ Tcm CCR4-",-0.0990695487350499
+"s1b_het",2,"AIDA","CD4+ Th1/Th17",0.106123974012977
+"s1b_het",2,"AIDA","CD8+ Trm",-0.145400314660871
+"s1b_het",2,"AIDA","gd T Vd1 GZMB+",0.123104592157828
+"s1b_het",2,"AIDA","B Switched memory",-0.0771556297550327
+"s1b_het",2,"AIDA","CD4+ Treg naive",-0.0567160732296572
+"s1b_het",2,"AIDA","B Non-switched memory",-0.134773322978916
+"s1b_het",2,"AIDA","NK CD56dim CD57int",0.0971137808907691
+"s1b_het",2,"CIMA","CD8+ Tem GZMK+",0.131222493503962
+"s1b_het",2,"CIMA","NK CD56dim CD57+",-0.00570969770854388
+"s1b_het",2,"CIMA","CD8+ Tcm CCR4-",-0.0990695487350499
+"s1b_het",2,"CIMA","CD4+ Th1/Th17",0.106123974012977
+"s1b_het",2,"CIMA","CD8+ Trm",-0.145400314660871
+"s1b_het",2,"CIMA","gd T Vd1 GZMB+",0.123104592157828
+"s1b_het",2,"CIMA","B Switched memory",-0.0771556297550327
+"s1b_het",2,"CIMA","CD4+ Treg naive",-0.0567160732296572
+"s1b_het",2,"CIMA","B Non-switched memory",-0.134773322978916
+"s1b_het",2,"CIMA","NK CD56dim CD57int",0.0971137808907691
+"s1b_het",2,"KCL","CD8+ Tem GZMK+",-0.0188719517961465
+"s1b_het",2,"KCL","NK CD56dim CD57+",-0.00165916215808213
+"s1b_het",2,"KCL","CD8+ Tcm CCR4-",-0.0990695487350499
+"s1b_het",2,"KCL","CD4+ Th1/Th17",0.106123974012977
+"s1b_het",2,"KCL","CD8+ Trm",-0.145400314660871
+"s1b_het",2,"KCL","gd T Vd1 GZMB+",0.123104592157828
+"s1b_het",2,"KCL","B Switched memory",-0.0771556297550327
+"s1b_het",2,"KCL","CD4+ Treg naive",-0.0567160732296572
+"s1b_het",2,"KCL","B Non-switched memory",-0.134773322978916
+"s1b_het",2,"KCL","NK CD56dim CD57int",0.0971137808907691
+"s1b_het",2,"OneK1K","CD8+ Tem GZMK+",0.114475584810791
+"s1b_het",2,"OneK1K","NK CD56dim CD57+",-0.00142230810425886
+"s1b_het",2,"OneK1K","CD8+ Tcm CCR4-",-0.0990695487350499
+"s1b_het",2,"OneK1K","CD4+ Th1/Th17",0.106123974012977
+"s1b_het",2,"OneK1K","CD8+ Trm",-0.145400314660871
+"s1b_het",2,"OneK1K","gd T Vd1 GZMB+",0.123104592157828
+"s1b_het",2,"OneK1K","B Switched memory",-0.0771556297550327
+"s1b_het",2,"OneK1K","CD4+ Treg naive",-0.0567160732296572
+"s1b_het",2,"OneK1K","B Non-switched memory",-0.134773322978916
+"s1b_het",2,"OneK1K","NK CD56dim CD57int",0.0971137808907691
+"s1b_het",2,"SoundLife","CD8+ Tem GZMK+",-0.14121216875448
+"s1b_het",2,"SoundLife","NK CD56dim CD57+",-0.0336789010618257
+"s1b_het",2,"SoundLife","CD8+ Tcm CCR4-",-0.0990695487350499
+"s1b_het",2,"SoundLife","CD4+ Th1/Th17",0.106123974012977
+"s1b_het",2,"SoundLife","CD8+ Trm",-0.145400314660871
+"s1b_het",2,"SoundLife","gd T Vd1 GZMB+",0.123104592157828
+"s1b_het",2,"SoundLife","B Switched memory",-0.0771556297550327
+"s1b_het",2,"SoundLife","CD4+ Treg naive",-0.0567160732296572
+"s1b_het",2,"SoundLife","B Non-switched memory",-0.134773322978916
+"s1b_het",2,"SoundLife","NK CD56dim CD57int",0.0971137808907691
+"s1b_het",2,"SPAC","CD8+ Tem GZMK+",0.00103460554212875
+"s1b_het",2,"SPAC","NK CD56dim CD57+",0.0383962234295973
+"s1b_het",2,"SPAC","CD8+ Tcm CCR4-",-0.0990695487350499
+"s1b_het",2,"SPAC","CD4+ Th1/Th17",0.106123974012977
+"s1b_het",2,"SPAC","CD8+ Trm",-0.145400314660871
+"s1b_het",2,"SPAC","gd T Vd1 GZMB+",0.123104592157828
+"s1b_het",2,"SPAC","B Switched memory",-0.0771556297550327
+"s1b_het",2,"SPAC","CD4+ Treg naive",-0.0567160732296572
+"s1b_het",2,"SPAC","B Non-switched memory",-0.134773322978916
+"s1b_het",2,"SPAC","NK CD56dim CD57int",0.0971137808907691
+"s1b_het",2,"UCSF","CD8+ Tem GZMK+",0.0533203141428601
+"s1b_het",2,"UCSF","NK CD56dim CD57+",0.0607404242679827
+"s1b_het",2,"UCSF","CD8+ Tcm CCR4-",-0.0990695487350499
+"s1b_het",2,"UCSF","CD4+ Th1/Th17",0.106123974012977
+"s1b_het",2,"UCSF","CD8+ Trm",-0.145400314660871
+"s1b_het",2,"UCSF","gd T Vd1 GZMB+",0.123104592157828
+"s1b_het",2,"UCSF","B Switched memory",-0.0771556297550327
+"s1b_het",2,"UCSF","CD4+ Treg naive",-0.0567160732296572
+"s1b_het",2,"UCSF","B Non-switched memory",-0.134773322978916
+"s1b_het",2,"UCSF","NK CD56dim CD57int",0.0971137808907691
+"s1b_het",3,"ABF300","CD8+ Tem GZMK+",0.108836738826391
+"s1b_het",3,"ABF300","NK CD56dim CD57+",0.191874908679762
+"s1b_het",3,"ABF300","CD8+ Tcm CCR4-",-0.0901627385616448
+"s1b_het",3,"ABF300","CD4+ Th1/Th17",0.0664807001546986
+"s1b_het",3,"ABF300","CD8+ Trm",-0.141125969560764
+"s1b_het",3,"ABF300","gd T Vd1 GZMB+",0.174071882637274
+"s1b_het",3,"ABF300","B Switched memory",-0.0917516528913115
+"s1b_het",3,"ABF300","CD4+ Treg naive",-0.089520107935941
+"s1b_het",3,"ABF300","B Non-switched memory",-0.130446342777024
+"s1b_het",3,"ABF300","NK CD56dim CD57int",0.106129744991839
+"s1b_het",3,"AIDA","CD8+ Tem GZMK+",0.130833778057722
+"s1b_het",3,"AIDA","NK CD56dim CD57+",-0.00569278408624172
+"s1b_het",3,"AIDA","CD8+ Tcm CCR4-",-0.0901627385616448
+"s1b_het",3,"AIDA","CD4+ Th1/Th17",0.0664807001546986
+"s1b_het",3,"AIDA","CD8+ Trm",-0.141125969560764
+"s1b_het",3,"AIDA","gd T Vd1 GZMB+",0.174071882637274
+"s1b_het",3,"AIDA","B Switched memory",-0.0917516528913115
+"s1b_het",3,"AIDA","CD4+ Treg naive",-0.089520107935941
+"s1b_het",3,"AIDA","B Non-switched memory",-0.130446342777024
+"s1b_het",3,"AIDA","NK CD56dim CD57int",0.106129744991839
+"s1b_het",3,"CIMA","CD8+ Tem GZMK+",-0.0188160481246952
+"s1b_het",3,"CIMA","NK CD56dim CD57+",-0.00165424728456128
+"s1b_het",3,"CIMA","CD8+ Tcm CCR4-",-0.0901627385616448
+"s1b_het",3,"CIMA","CD4+ Th1/Th17",0.0664807001546986
+"s1b_het",3,"CIMA","CD8+ Trm",-0.141125969560764
+"s1b_het",3,"CIMA","gd T Vd1 GZMB+",0.174071882637274
+"s1b_het",3,"CIMA","B Switched memory",-0.0917516528913115
+"s1b_het",3,"CIMA","CD4+ Treg naive",-0.089520107935941
+"s1b_het",3,"CIMA","B Non-switched memory",-0.130446342777024
+"s1b_het",3,"CIMA","NK CD56dim CD57int",0.106129744991839
+"s1b_het",3,"KCL","CD8+ Tem GZMK+",0.114136478100919
+"s1b_het",3,"KCL","NK CD56dim CD57+",-0.00141809485457372
+"s1b_het",3,"KCL","CD8+ Tcm CCR4-",-0.0901627385616448
+"s1b_het",3,"KCL","CD4+ Th1/Th17",0.0664807001546986
+"s1b_het",3,"KCL","CD8+ Trm",-0.141125969560764
+"s1b_het",3,"KCL","gd T Vd1 GZMB+",0.174071882637274
+"s1b_het",3,"KCL","B Switched memory",-0.0917516528913115
+"s1b_het",3,"KCL","CD4+ Treg naive",-0.089520107935941
+"s1b_het",3,"KCL","B Non-switched memory",-0.130446342777024
+"s1b_het",3,"KCL","NK CD56dim CD57int",0.106129744991839
+"s1b_het",3,"OneK1K","CD8+ Tem GZMK+",-0.140793861269794
+"s1b_het",3,"OneK1K","NK CD56dim CD57+",-0.033579135322694
+"s1b_het",3,"OneK1K","CD8+ Tcm CCR4-",-0.0901627385616448
+"s1b_het",3,"OneK1K","CD4+ Th1/Th17",0.0664807001546986
+"s1b_het",3,"OneK1K","CD8+ Trm",-0.141125969560764
+"s1b_het",3,"OneK1K","gd T Vd1 GZMB+",0.174071882637274
+"s1b_het",3,"OneK1K","B Switched memory",-0.0917516528913115
+"s1b_het",3,"OneK1K","CD4+ Treg naive",-0.089520107935941
+"s1b_het",3,"OneK1K","B Non-switched memory",-0.130446342777024
+"s1b_het",3,"OneK1K","NK CD56dim CD57int",0.106129744991839
+"s1b_het",3,"SoundLife","CD8+ Tem GZMK+",0.00103154076912945
+"s1b_het",3,"SoundLife","NK CD56dim CD57+",0.0382824837442291
+"s1b_het",3,"SoundLife","CD8+ Tcm CCR4-",-0.0901627385616448
+"s1b_het",3,"SoundLife","CD4+ Th1/Th17",0.0664807001546986
+"s1b_het",3,"SoundLife","CD8+ Trm",-0.141125969560764
+"s1b_het",3,"SoundLife","gd T Vd1 GZMB+",0.174071882637274
+"s1b_het",3,"SoundLife","B Switched memory",-0.0917516528913115
+"s1b_het",3,"SoundLife","CD4+ Treg naive",-0.089520107935941
+"s1b_het",3,"SoundLife","B Non-switched memory",-0.130446342777024
+"s1b_het",3,"SoundLife","NK CD56dim CD57int",0.106129744991839
+"s1b_het",3,"SPAC","CD8+ Tem GZMK+",0.0531623653861168
+"s1b_het",3,"SPAC","NK CD56dim CD57+",0.0605604951987075
+"s1b_het",3,"SPAC","CD8+ Tcm CCR4-",-0.0901627385616448
+"s1b_het",3,"SPAC","CD4+ Th1/Th17",0.0664807001546986
+"s1b_het",3,"SPAC","CD8+ Trm",-0.141125969560764
+"s1b_het",3,"SPAC","gd T Vd1 GZMB+",0.174071882637274
+"s1b_het",3,"SPAC","B Switched memory",-0.0917516528913115
+"s1b_het",3,"SPAC","CD4+ Treg naive",-0.089520107935941
+"s1b_het",3,"SPAC","B Non-switched memory",-0.130446342777024
+"s1b_het",3,"SPAC","NK CD56dim CD57int",0.106129744991839
+"s1b_het",3,"UCSF","CD8+ Tem GZMK+",-0.00547920588943217
+"s1b_het",3,"UCSF","NK CD56dim CD57+",0.00734136364337534
+"s1b_het",3,"UCSF","CD8+ Tcm CCR4-",-0.0901627385616448
+"s1b_het",3,"UCSF","CD4+ Th1/Th17",0.0664807001546986
+"s1b_het",3,"UCSF","CD8+ Trm",-0.141125969560764
+"s1b_het",3,"UCSF","gd T Vd1 GZMB+",0.174071882637274
+"s1b_het",3,"UCSF","B Switched memory",-0.0917516528913115
+"s1b_het",3,"UCSF","CD4+ Treg naive",-0.089520107935941
+"s1b_het",3,"UCSF","B Non-switched memory",-0.130446342777024
+"s1b_het",3,"UCSF","NK CD56dim CD57int",0.106129744991839
+"s1b_het",4,"ABF300","CD8+ Tem GZMK+",0.121705431480855
+"s1b_het",4,"ABF300","NK CD56dim CD57+",-0.00529559532583187
+"s1b_het",4,"ABF300","CD8+ Tcm CCR4-",-0.110548477279799
+"s1b_het",4,"ABF300","CD4+ Th1/Th17",0.0877020773218394
+"s1b_het",4,"ABF300","CD8+ Trm",-0.0914494455783756
+"s1b_het",4,"ABF300","gd T Vd1 GZMB+",0.122113328922452
+"s1b_het",4,"ABF300","B Switched memory",-0.082426756278048
+"s1b_het",4,"ABF300","CD4+ Treg naive",-0.0673760966798375
+"s1b_het",4,"ABF300","B Non-switched memory",-0.0988621813102823
+"s1b_het",4,"ABF300","NK CD56dim CD57int",0.0905419417495051
+"s1b_het",4,"AIDA","CD8+ Tem GZMK+",-0.0175032418216208
+"s1b_het",4,"AIDA","NK CD56dim CD57+",-0.00153882951736469
+"s1b_het",4,"AIDA","CD8+ Tcm CCR4-",-0.110548477279799
+"s1b_het",4,"AIDA","CD4+ Th1/Th17",0.0877020773218394
+"s1b_het",4,"AIDA","CD8+ Trm",-0.0914494455783756
+"s1b_het",4,"AIDA","gd T Vd1 GZMB+",0.122113328922452
+"s1b_het",4,"AIDA","B Switched memory",-0.082426756278048
+"s1b_het",4,"AIDA","CD4+ Treg naive",-0.0673760966798375
+"s1b_het",4,"AIDA","B Non-switched memory",-0.0988621813102823
+"s1b_het",4,"AIDA","NK CD56dim CD57int",0.0905419417495051
+"s1b_het",4,"CIMA","CD8+ Tem GZMK+",0.106173111570997
+"s1b_het",4,"CIMA","NK CD56dim CD57+",-0.00131915357577255
+"s1b_het",4,"CIMA","CD8+ Tcm CCR4-",-0.110548477279799
+"s1b_het",4,"CIMA","CD4+ Th1/Th17",0.0877020773218394
+"s1b_het",4,"CIMA","CD8+ Trm",-0.0914494455783756
+"s1b_het",4,"CIMA","gd T Vd1 GZMB+",0.122113328922452
+"s1b_het",4,"CIMA","B Switched memory",-0.082426756278048
+"s1b_het",4,"CIMA","CD4+ Treg naive",-0.0673760966798375
+"s1b_het",4,"CIMA","B Non-switched memory",-0.0988621813102823
+"s1b_het",4,"CIMA","NK CD56dim CD57int",0.0905419417495051
+"s1b_het",4,"KCL","CD8+ Tem GZMK+",-0.130970594062766
+"s1b_het",4,"KCL","NK CD56dim CD57+",-0.0312363000891061
+"s1b_het",4,"KCL","CD8+ Tcm CCR4-",-0.110548477279799
+"s1b_het",4,"KCL","CD4+ Th1/Th17",0.0877020773218394
+"s1b_het",4,"KCL","CD8+ Trm",-0.0914494455783756
+"s1b_het",4,"KCL","gd T Vd1 GZMB+",0.122113328922452
+"s1b_het",4,"KCL","B Switched memory",-0.082426756278048
+"s1b_het",4,"KCL","CD4+ Treg naive",-0.0673760966798375
+"s1b_het",4,"KCL","B Non-switched memory",-0.0988621813102823
+"s1b_het",4,"KCL","NK CD56dim CD57int",0.0905419417495051
+"s1b_het",4,"OneK1K","CD8+ Tem GZMK+",0.000959569587156654
+"s1b_het",4,"OneK1K","NK CD56dim CD57+",0.0356114932352918
+"s1b_het",4,"OneK1K","CD8+ Tcm CCR4-",-0.110548477279799
+"s1b_het",4,"OneK1K","CD4+ Th1/Th17",0.0877020773218394
+"s1b_het",4,"OneK1K","CD8+ Trm",-0.0914494455783756
+"s1b_het",4,"OneK1K","gd T Vd1 GZMB+",0.122113328922452
+"s1b_het",4,"OneK1K","B Switched memory",-0.082426756278048
+"s1b_het",4,"OneK1K","CD4+ Treg naive",-0.0673760966798375
+"s1b_het",4,"OneK1K","B Non-switched memory",-0.0988621813102823
+"s1b_het",4,"OneK1K","NK CD56dim CD57int",0.0905419417495051
+"s1b_het",4,"SoundLife","CD8+ Tem GZMK+",0.0494531971323621
+"s1b_het",4,"SoundLife","NK CD56dim CD57+",0.0563351552502076
+"s1b_het",4,"SoundLife","CD8+ Tcm CCR4-",-0.110548477279799
+"s1b_het",4,"SoundLife","CD4+ Th1/Th17",0.0877020773218394
+"s1b_het",4,"SoundLife","CD8+ Trm",-0.0914494455783756
+"s1b_het",4,"SoundLife","gd T Vd1 GZMB+",0.122113328922452
+"s1b_het",4,"SoundLife","B Switched memory",-0.082426756278048
+"s1b_het",4,"SoundLife","CD4+ Treg naive",-0.0673760966798375
+"s1b_het",4,"SoundLife","B Non-switched memory",-0.0988621813102823
+"s1b_het",4,"SoundLife","NK CD56dim CD57int",0.0905419417495051
+"s1b_het",4,"SPAC","CD8+ Tem GZMK+",-0.00509691860042124
+"s1b_het",4,"SPAC","NK CD56dim CD57+",0.00682915255631209
+"s1b_het",4,"SPAC","CD8+ Tcm CCR4-",-0.110548477279799
+"s1b_het",4,"SPAC","CD4+ Th1/Th17",0.0877020773218394
+"s1b_het",4,"SPAC","CD8+ Trm",-0.0914494455783756
+"s1b_het",4,"SPAC","gd T Vd1 GZMB+",0.122113328922452
+"s1b_het",4,"SPAC","B Switched memory",-0.082426756278048
+"s1b_het",4,"SPAC","CD4+ Treg naive",-0.0673760966798375
+"s1b_het",4,"SPAC","B Non-switched memory",-0.0988621813102823
+"s1b_het",4,"SPAC","NK CD56dim CD57int",0.0905419417495051
+"s1b_het",4,"UCSF","CD8+ Tem GZMK+",0.241948724976371
+"s1b_het",4,"UCSF","NK CD56dim CD57+",-0.000319726490516605
+"s1b_het",4,"UCSF","CD8+ Tcm CCR4-",-0.110548477279799
+"s1b_het",4,"UCSF","CD4+ Th1/Th17",0.0877020773218394
+"s1b_het",4,"UCSF","CD8+ Trm",-0.0914494455783756
+"s1b_het",4,"UCSF","gd T Vd1 GZMB+",0.122113328922452
+"s1b_het",4,"UCSF","B Switched memory",-0.082426756278048
+"s1b_het",4,"UCSF","CD4+ Treg naive",-0.0673760966798375
+"s1b_het",4,"UCSF","B Non-switched memory",-0.0988621813102823
+"s1b_het",4,"UCSF","NK CD56dim CD57int",0.0905419417495051
+"s1b_het",5,"ABF300","CD8+ Tem GZMK+",-0.0221054346122249
+"s1b_het",5,"ABF300","NK CD56dim CD57+",-0.00194343971374766
+"s1b_het",5,"ABF300","CD8+ Tcm CCR4-",-0.0847750786132753
+"s1b_het",5,"ABF300","CD4+ Th1/Th17",0.0696065783303688
+"s1b_het",5,"ABF300","CD8+ Trm",-0.130441211286406
+"s1b_het",5,"ABF300","gd T Vd1 GZMB+",0.174172049288103
+"s1b_het",5,"ABF300","B Switched memory",-0.120550424773166
+"s1b_het",5,"ABF300","CD4+ Treg naive",-0.0880005312704077
+"s1b_het",5,"ABF300","B Non-switched memory",-0.119800549463892
+"s1b_het",5,"ABF300","NK CD56dim CD57int",0.11203820345163
+"s1b_het",5,"AIDA","CD8+ Tem GZMK+",0.134089604618843
+"s1b_het",5,"AIDA","NK CD56dim CD57+",-0.00166600355579287
+"s1b_het",5,"AIDA","CD8+ Tcm CCR4-",-0.0847750786132753
+"s1b_het",5,"AIDA","CD4+ Th1/Th17",0.0696065783303688
+"s1b_het",5,"AIDA","CD8+ Trm",-0.130441211286406
+"s1b_het",5,"AIDA","gd T Vd1 GZMB+",0.174172049288103
+"s1b_het",5,"AIDA","B Switched memory",-0.120550424773166
+"s1b_het",5,"AIDA","CD4+ Treg naive",-0.0880005312704077
+"s1b_het",5,"AIDA","B Non-switched memory",-0.119800549463892
+"s1b_het",5,"AIDA","NK CD56dim CD57int",0.11203820345163
+"s1b_het",5,"CIMA","CD8+ Tem GZMK+",-0.165407181862876
+"s1b_het",5,"CIMA","NK CD56dim CD57+",-0.0394493772173474
+"s1b_het",5,"CIMA","CD8+ Tcm CCR4-",-0.0847750786132753
+"s1b_het",5,"CIMA","CD4+ Th1/Th17",0.0696065783303688
+"s1b_het",5,"CIMA","CD8+ Trm",-0.130441211286406
+"s1b_het",5,"CIMA","gd T Vd1 GZMB+",0.174172049288103
+"s1b_het",5,"CIMA","B Switched memory",-0.120550424773166
+"s1b_het",5,"CIMA","CD4+ Treg naive",-0.0880005312704077
+"s1b_het",5,"CIMA","B Non-switched memory",-0.119800549463892
+"s1b_het",5,"CIMA","NK CD56dim CD57int",0.11203820345163
+"s1b_het",5,"KCL","CD8+ Tem GZMK+",0.00121187280510342
+"s1b_het",5,"KCL","NK CD56dim CD57+",0.0449749562497639
+"s1b_het",5,"KCL","CD8+ Tcm CCR4-",-0.0847750786132753
+"s1b_het",5,"KCL","CD4+ Th1/Th17",0.0696065783303688
+"s1b_het",5,"KCL","CD8+ Trm",-0.130441211286406
+"s1b_het",5,"KCL","gd T Vd1 GZMB+",0.174172049288103
+"s1b_het",5,"KCL","B Switched memory",-0.120550424773166
+"s1b_het",5,"KCL","CD4+ Treg naive",-0.0880005312704077
+"s1b_het",5,"KCL","B Non-switched memory",-0.119800549463892
+"s1b_het",5,"KCL","NK CD56dim CD57int",0.11203820345163
+"s1b_het",5,"OneK1K","CD8+ Tem GZMK+",0.0624561110859218
+"s1b_het",5,"OneK1K","NK CD56dim CD57+",0.0711475681730419
+"s1b_het",5,"OneK1K","CD8+ Tcm CCR4-",-0.0847750786132753
+"s1b_het",5,"OneK1K","CD4+ Th1/Th17",0.0696065783303688
+"s1b_het",5,"OneK1K","CD8+ Trm",-0.130441211286406
+"s1b_het",5,"OneK1K","gd T Vd1 GZMB+",0.174172049288103
+"s1b_het",5,"OneK1K","B Switched memory",-0.120550424773166
+"s1b_het",5,"OneK1K","CD4+ Treg naive",-0.0880005312704077
+"s1b_het",5,"OneK1K","B Non-switched memory",-0.119800549463892
+"s1b_het",5,"OneK1K","NK CD56dim CD57int",0.11203820345163
+"s1b_het",5,"SoundLife","CD8+ Tem GZMK+",-0.00643707045778629
+"s1b_het",5,"SoundLife","NK CD56dim CD57+",0.00862476716193176
+"s1b_het",5,"SoundLife","CD8+ Tcm CCR4-",-0.0847750786132753
+"s1b_het",5,"SoundLife","CD4+ Th1/Th17",0.0696065783303688
+"s1b_het",5,"SoundLife","CD8+ Trm",-0.130441211286406
+"s1b_het",5,"SoundLife","gd T Vd1 GZMB+",0.174172049288103
+"s1b_het",5,"SoundLife","B Switched memory",-0.120550424773166
+"s1b_het",5,"SoundLife","CD4+ Treg naive",-0.0880005312704077
+"s1b_het",5,"SoundLife","B Non-switched memory",-0.119800549463892
+"s1b_het",5,"SoundLife","NK CD56dim CD57int",0.11203820345163
+"s1b_het",5,"SPAC","CD8+ Tem GZMK+",0.305565207518861
+"s1b_het",5,"SPAC","NK CD56dim CD57+",-0.000403793371647338
+"s1b_het",5,"SPAC","CD8+ Tcm CCR4-",-0.0847750786132753
+"s1b_het",5,"SPAC","CD4+ Th1/Th17",0.0696065783303688
+"s1b_het",5,"SPAC","CD8+ Trm",-0.130441211286406
+"s1b_het",5,"SPAC","gd T Vd1 GZMB+",0.174172049288103
+"s1b_het",5,"SPAC","B Switched memory",-0.120550424773166
+"s1b_het",5,"SPAC","CD4+ Treg naive",-0.0880005312704077
+"s1b_het",5,"SPAC","B Non-switched memory",-0.119800549463892
+"s1b_het",5,"SPAC","NK CD56dim CD57int",0.11203820345163
+"s1b_het",5,"UCSF","CD8+ Tem GZMK+",-0.0219672364620695
+"s1b_het",5,"UCSF","NK CD56dim CD57+",-0.00955747997734142
+"s1b_het",5,"UCSF","CD8+ Tcm CCR4-",-0.0847750786132753
+"s1b_het",5,"UCSF","CD4+ Th1/Th17",0.0696065783303688
+"s1b_het",5,"UCSF","CD8+ Trm",-0.130441211286406
+"s1b_het",5,"UCSF","gd T Vd1 GZMB+",0.174172049288103
+"s1b_het",5,"UCSF","B Switched memory",-0.120550424773166
+"s1b_het",5,"UCSF","CD4+ Treg naive",-0.0880005312704077
+"s1b_het",5,"UCSF","B Non-switched memory",-0.119800549463892
+"s1b_het",5,"UCSF","NK CD56dim CD57int",0.11203820345163
+"s1d_sparse",1,"ABF300","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",1,"ABF300","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",1,"ABF300","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",1,"AIDA","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",1,"AIDA","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",1,"AIDA","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",1,"CIMA","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",1,"CIMA","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",1,"CIMA","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",1,"KCL","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",1,"KCL","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",1,"KCL","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",1,"OneK1K","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",1,"OneK1K","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",1,"OneK1K","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",1,"SoundLife","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",1,"SoundLife","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",1,"SoundLife","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",1,"SPAC","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",1,"SPAC","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",1,"SPAC","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",1,"UCSF","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",1,"UCSF","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",1,"UCSF","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",2,"ABF300","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",2,"ABF300","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",2,"ABF300","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",2,"AIDA","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",2,"AIDA","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",2,"AIDA","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",2,"CIMA","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",2,"CIMA","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",2,"CIMA","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",2,"KCL","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",2,"KCL","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",2,"KCL","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",2,"OneK1K","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",2,"OneK1K","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",2,"OneK1K","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",2,"SoundLife","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",2,"SoundLife","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",2,"SoundLife","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",2,"SPAC","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",2,"SPAC","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",2,"SPAC","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",2,"UCSF","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",2,"UCSF","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",2,"UCSF","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",3,"ABF300","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",3,"ABF300","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",3,"ABF300","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",3,"AIDA","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",3,"AIDA","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",3,"AIDA","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",3,"CIMA","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",3,"CIMA","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",3,"CIMA","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",3,"KCL","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",3,"KCL","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",3,"KCL","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",3,"OneK1K","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",3,"OneK1K","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",3,"OneK1K","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",3,"SoundLife","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",3,"SoundLife","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",3,"SoundLife","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",3,"SPAC","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",3,"SPAC","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",3,"SPAC","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",3,"UCSF","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",3,"UCSF","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",3,"UCSF","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",4,"ABF300","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",4,"ABF300","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",4,"ABF300","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",4,"AIDA","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",4,"AIDA","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",4,"AIDA","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",4,"CIMA","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",4,"CIMA","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",4,"CIMA","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",4,"KCL","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",4,"KCL","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",4,"KCL","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",4,"OneK1K","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",4,"OneK1K","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",4,"OneK1K","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",4,"SoundLife","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",4,"SoundLife","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",4,"SoundLife","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",4,"SPAC","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",4,"SPAC","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",4,"SPAC","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",4,"UCSF","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",4,"UCSF","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",4,"UCSF","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",5,"ABF300","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",5,"ABF300","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",5,"ABF300","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",5,"AIDA","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",5,"AIDA","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",5,"AIDA","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",5,"CIMA","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",5,"CIMA","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",5,"CIMA","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",5,"KCL","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",5,"KCL","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",5,"KCL","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",5,"OneK1K","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",5,"OneK1K","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",5,"OneK1K","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",5,"SoundLife","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",5,"SoundLife","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",5,"SoundLife","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",5,"SPAC","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",5,"SPAC","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",5,"SPAC","CD8+ Tcm CCR4-",-0.173386276514209
+"s1d_sparse",5,"UCSF","CD8+ Tem GZMK+",0.209995130915371
+"s1d_sparse",5,"UCSF","NK CD56dim CD57+",0.312183720305281
+"s1d_sparse",5,"UCSF","CD8+ Tcm CCR4-",-0.173386276514209

@@ -190,6 +190,37 @@ sel_m5_env_majority <- function(X, y, cohort, covar = NULL, n_boot = 200L, seed 
        detail = esc, detail_type = "sel_freq")
 }
 
+# ---- S2 probe machinery (followup_s1_s2.md; NOT part of the locked matrix) ----
+# Cross-cohort quantile aggregation with the locked M4 tie-break
+# (aggregate desc, mean desc, name asc).  q = 0 reproduces min-aggregation.
+# Quantile type 7 (R default) interpolates between order statistics.
+aggregate_env_scores <- function(esc, q = 0) {
+  agg <- setNames(apply(esc, 1, stats::quantile, probs = q, names = FALSE),
+                  rownames(esc))
+  means <- setNames(rowMeans(esc), rownames(esc))
+  ord <- order(-agg, -means[names(agg)], names(agg))
+  list(ranked = names(agg)[ord], native = names(agg)[agg >= 0.5],
+       scores = agg, mean_scores = means)
+}
+
+# M4 variant factory: quantile q aggregation and/or alternative knockoff
+# construction.  Used by probe selectors M4q10/M4q25/M4mvr below and by
+# benchmarks/ws8_v2/s2b_aggregation_quantile.R (which re-aggregates the
+# persisted M4 env scores without refitting — same seed, same fits).
+make_m4_variant <- function(q = 0, artificial_type = "knockoff_equi") {
+  force(q); force(artificial_type)
+  function(X, y, cohort, covar = NULL, n_boot = 200L, seed = 20261013) {
+    es <- stabl_environment_stability(x = X, y = y, environments = cohort,
+                                      lambda_grid = "auto", base_learner = "rf",
+                                      artificial_type = artificial_type,
+                                      n_bootstraps = n_boot, sample_fraction = 1,
+                                      replace = TRUE, random_state = seed)
+    agg <- aggregate_env_scores(es$env_scores, q)
+    c(agg, list(env_scores = es$env_scores,
+                detail = es$env_scores, detail_type = "sel_freq"))
+  }
+}
+
 # Registry: method id -> selector function.
 ws8v2_selectors <- list(
   M0 = sel_m0_meta,
@@ -197,5 +228,9 @@ ws8v2_selectors <- list(
   M2 = sel_m2_lasso,
   M3 = sel_m3_pooled_stabl,
   M4 = sel_m4_env_stabl,
-  M5 = sel_m5_env_majority
+  M5 = sel_m5_env_majority,
+  # S2 probes — run only via explicit WS8_METHODS subsets
+  M4q10 = make_m4_variant(0.10),
+  M4q25 = make_m4_variant(0.25),
+  M4mvr = make_m4_variant(0, "knockoff_mvr")
 )
