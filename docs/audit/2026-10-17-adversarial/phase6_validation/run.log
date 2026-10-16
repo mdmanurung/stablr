@@ -1,0 +1,135 @@
+=== Phase 6 DGP validation starting ===
+D1_sparse | random_permutation | seed 01 | 0.4 secs
+D1_sparse | random_permutation | seed 02 | 0.3 secs
+D1_sparse | random_permutation | seed 03 | 0.3 secs
+D1_sparse | random_permutation | seed 04 | 0.3 secs
+D1_sparse | random_permutation | seed 05 | 0.3 secs
+D1_sparse | random_permutation | seed 06 | 0.3 secs
+D1_sparse | random_permutation | seed 07 | 0.3 secs
+D1_sparse | random_permutation | seed 08 | 0.3 secs
+D1_sparse | random_permutation | seed 09 | 0.3 secs
+D1_sparse | random_permutation | seed 10 | 0.3 secs
+D1_sparse | random_permutation | seed 11 | 0.3 secs
+D1_sparse | random_permutation | seed 12 | 0.4 secs
+D1_sparse | random_permutation | seed 13 | 0.3 secs
+D1_sparse | random_permutation | seed 14 | 0.3 secs
+D1_sparse | random_permutation | seed 15 | 0.4 secs
+D1_sparse | random_permutation | seed 16 | 0.3 secs
+D1_sparse | random_permutation | seed 17 | 0.3 secs
+D1_sparse | random_permutation | seed 18 | 0.3 secs
+D1_sparse | random_permutation | seed 19 | 0.3 secs
+D1_sparse | random_permutation | seed 20 | 0.3 secs
+D1_sparse | knockoff_equi | seed 01 | 3 secs
+D1_sparse | knockoff_equi | seed 02 | 0.8 secs
+D1_sparse | knockoff_equi | seed 03 | 2 secs
+D1_sparse | knockoff_equi | seed 04 | 0.8 secs
+D1_sparse | knockoff_equi | seed 05 | 1 secs
+D1_sparse | knockoff_equi | seed 06 | 2 secs
+D1_sparse | knockoff_equi | seed 07 | 1 secs
+D1_sparse | knockoff_equi | seed 08 | 0.7 secs
+D1_sparse | knockoff_equi | seed 09 | 1 secs
+D1_sparse | knockoff_equi | seed 10 | 2 secs
+D1_sparse | knockoff_equi | seed 11 | 1 secs
+D1_sparse | knockoff_equi | seed 12 | 1 secs
+D1_sparse | knockoff_equi | seed 13 | 4 secs
+D1_sparse | knockoff_equi | seed 14 | 3 secs
+D1_sparse | knockoff_equi | seed 15 | 0.8 secs
+D1_sparse | knockoff_equi | seed 16 | 1 secs
+D1_sparse | knockoff_equi | seed 17 | 1 secs
+D1_sparse | knockoff_equi | seed 18 | 1 secs
+D1_sparse | knockoff_equi | seed 19 | 1 secs
+D1_sparse | knockoff_equi | seed 20 | 1 secs
+D2_null | random_permutation | seed 01 | 0.3 secs
+D2_null | random_permutation | seed 02 | 0.3 secs
+D2_null | random_permutation | seed 03 | 0.3 secs
+D2_null | random_permutation | seed 04 | 0.3 secs
+D2_null | random_permutation | seed 05 | 0.3 secs
+D2_null | random_permutation | seed 06 | 0.3 secs
+D2_null | random_permutation | seed 07 | 0.4 secs
+D2_null | random_permutation | seed 08 | 0.3 secs
+D2_null | random_permutation | seed 09 | 0.3 secs
+D2_null | random_permutation | seed 10 | 0.3 secs
+D2_null | random_permutation | seed 11 | 0.3 secs
+D2_null | random_permutation | seed 12 | 0.3 secs
+D2_null | random_permutation | seed 13 | 0.3 secs
+D2_null | random_permutation | seed 14 | 0.3 secs
+D2_null | random_permutation | seed 15 | 0.3 secs
+D2_null | random_permutation | seed 16 | 0.3 secs
+D2_null | random_permutation | seed 17 | 0.4 secs
+D2_null | random_permutation | seed 18 | 0.3 secs
+D2_null | random_permutation | seed 19 | 0.3 secs
+D2_null | random_permutation | seed 20 | 0.3 secs
+D2_null | knockoff_equi | seed 01 | 1 secs
+D2_null | knockoff_equi | seed 02 | 0.8 secs
+D2_null | knockoff_equi | seed 03 | 2 secs
+D2_null | knockoff_equi | seed 04 | 0.9 secs
+D2_null | knockoff_equi | seed 05 | 1 secs
+D2_null | knockoff_equi | seed 06 | 2 secs
+D2_null | knockoff_equi | seed 07 | 2 secs
+D2_null | knockoff_equi | seed 08 | 0.9 secs
+D2_null | knockoff_equi | seed 09 | 1 secs
+D2_null | knockoff_equi | seed 10 | 1 secs
+D2_null | knockoff_equi | seed 11 | 2 secs
+D2_null | knockoff_equi | seed 12 | 2 secs
+D2_null | knockoff_equi | seed 13 | 2 secs
+D2_null | knockoff_equi | seed 14 | 0.9 secs
+D2_null | knockoff_equi | seed 15 | 1 secs
+D2_null | knockoff_equi | seed 16 | 1 secs
+D2_null | knockoff_equi | seed 17 | 4 secs
+D2_null | knockoff_equi | seed 18 | 2 secs
+D2_null | knockoff_equi | seed 19 | 2 secs
+D2_null | knockoff_equi | seed 20 | 1 secs
+D3_correlated | random_permutation | seed 01 | 0.2 secs
+D3_correlated | random_permutation | seed 02 | 0.2 secs
+D3_correlated | random_permutation | seed 03 | 0.3 secs
+D3_correlated | random_permutation | seed 04 | 0.3 secs
+D3_correlated | random_permutation | seed 05 | 0.2 secs
+D3_correlated | random_permutation | seed 06 | 0.2 secs
+D3_correlated | random_permutation | seed 07 | 0.3 secs
+D3_correlated | random_permutation | seed 08 | 0.2 secs
+D3_correlated | random_permutation | seed 09 | 0.2 secs
+D3_correlated | random_permutation | seed 10 | 0.2 secs
+D3_correlated | random_permutation | seed 11 | 0.3 secs
+D3_correlated | random_permutation | seed 12 | 0.2 secs
+D3_correlated | random_permutation | seed 13 | 0.2 secs
+D3_correlated | random_permutation | seed 14 | 0.2 secs
+D3_correlated | random_permutation | seed 15 | 0.2 secs
+D3_correlated | random_permutation | seed 16 | 0.2 secs
+D3_correlated | random_permutation | seed 17 | 0.2 secs
+D3_correlated | random_permutation | seed 18 | 0.2 secs
+D3_correlated | random_permutation | seed 19 | 0.2 secs
+D3_correlated | random_permutation | seed 20 | 0.3 secs
+D3_correlated | knockoff_equi | seed 01 | 0.9 secs
+D3_correlated | knockoff_equi | seed 02 | 3 secs
+D3_correlated | knockoff_equi | seed 03 | 1 secs
+D3_correlated | knockoff_equi | seed 04 | 0.9 secs
+D3_correlated | knockoff_equi | seed 05 | 0.9 secs
+D3_correlated | knockoff_equi | seed 06 | 2 secs
+D3_correlated | knockoff_equi | seed 07 | 1 secs
+D3_correlated | knockoff_equi | seed 08 | 2 secs
+D3_correlated | knockoff_equi | seed 09 | 2 secs
+D3_correlated | knockoff_equi | seed 10 | 1 secs
+D3_correlated | knockoff_equi | seed 11 | 1 secs
+D3_correlated | knockoff_equi | seed 12 | 1 secs
+D3_correlated | knockoff_equi | seed 13 | 1 secs
+D3_correlated | knockoff_equi | seed 14 | 3 secs
+D3_correlated | knockoff_equi | seed 15 | 2 secs
+D3_correlated | knockoff_equi | seed 16 | 1 secs
+D3_correlated | knockoff_equi | seed 17 | 1 secs
+D3_correlated | knockoff_equi | seed 18 | 0.7 secs
+D3_correlated | knockoff_equi | seed 19 | 0.8 secs
+D3_correlated | knockoff_equi | seed 20 | 1 secs
+
+=== Summary: mean realized FDP vs mean reported min_fdr_ ===
+         design         artificial realized_fdp reported_min_fdr n_selected
+1     D1_sparse      knockoff_equi       0.4584           0.4727       26.4
+2       D2_null      knockoff_equi       0.9181           0.4227       18.2
+3 D3_correlated      knockoff_equi       0.3545           0.5222       27.6
+4     D1_sparse random_permutation       0.2101           0.1487        9.1
+5       D2_null random_permutation       0.9343           0.6624       32.6
+6 D3_correlated random_permutation       0.0315           0.0979       10.2
+
+=== D4: environment-label permutation null ===
+Null DGP, meaningless env labels: max over features of min_score, mean across 10 seeds = 0.168 (sd 0.071)
+
+=== Phase 6 complete ===

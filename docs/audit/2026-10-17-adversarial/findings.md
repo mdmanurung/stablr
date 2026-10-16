@@ -376,3 +376,140 @@ passing assertions / 0 failures / 1 skip (fresh baseline).
 - **Gap (minor):** the single skip (test-rf-adapter.R) means RF tests
   silently vanish in environments without ranger; acceptable for an
   optional-dependency learner, worth noting for coverage accounting.
+
+## Phases 3, 4, 6 integration + F-016 correction (lead auditor, 2026-10-17)
+
+### CORRECTION — F-016 downgraded from P2-crash to P3-fragility (lead-auditor verification)
+
+The Phase 8C claim that `fit$warm$a` (`cooperative-multiview.path.R:657`)
+"crashes any IRLS iteration ≥ 2" is **REFUTED by runtime experiment**. R's
+`$` list operator performs partial matching: `fit$warm` resolves to
+`fit$warm_fit` (the unique element whose name starts with "warm"), so the
+coefficient read succeeds. Instrumented runtime trace (binomial cooperative
+fit, rho = 0.5, 90 `multiview.fit` calls, every call warm-started with a
+`glmnetfit`): completes without error. **P4-F29 (binomial cooperative fails
+on realistic signal) is likewise refuted** — the same probe completed on a
+strong-signal binomial design. The fragility is real and worth fixing
+(`fit$warm$a` → `fit$warm_fit$a`): any future list element whose name starts
+with `warm` and sorts before `warm_fit` silently breaks the read, and
+`fit[["warm", exact = TRUE]]` semantics would crash. No current impact.
+
+### Phase 3 — CV leakage audit (delegated independent pass; report: audit_cv_leakage.md)
+
+**Clean bill on leakage integrity:** feature selection, artificial-feature
+generation, FDP+ threshold resolution, auto lambda grids, fold preprocessing,
+and held-out prediction are strictly fold-training-local in both nested CV
+and `stabl_multiomic_cv`; folds are disjoint, stratified, seed-reproducible;
+the vendored `build_predmat` predicts fold-i-rows with the fold-i model with
+no view misalignment. No path exists for a fold to inherit a full-dataset
+threshold (degenerate FDP+ caps at 1.0 — empty selection, conservative).
+
+- **F-CV-01 (P2, CONFIRMED runtime):** with `random_state = NULL`, nested-CV
+  results depend on `cv_workers` (1 vs 2 give different predictions); under
+  `mclapply` every forked worker inherits the identical `.Random.seed`, so
+  outer folds share correlated RNG streams.
+- **F-CV-02 (P2, CONFIRMED runtime):** `stabl_fit` permanently clobbers the
+  global RNG (bare `set.seed()` calls, never restored) — later unseeded
+  randomness becomes a deterministic function of the last `random_state`.
+- **F-CV-03 (P2, CONFIRMED static):** `stabl_multiomic_cv` reuses one
+  `random_state` for fold construction, every fold's `stabl_fit`, and the
+  cooperative internal foldid — correlated fold noise (not held-out leakage).
+- **F-CV-04 (P2, CONFIRMED static):** `cooperation_selection = "validation"`
+  inside `stabl_multiomic_cv` tunes rho/lambda on the outer assessment fold
+  and reports the tuned predictions as held-out — optimistic metrics, no
+  guard (default `"cv"` is safe). Same defect as P4-F24.
+- **F-CV-05..08 (P3):** nested-seed offset collisions; vendored `cvstats`
+  discards per-fold `nlams` (slightly wrong cvsd at path end, upstream-
+  inherited); latent unseeded internal foldid (unreachable in-package);
+  no repeated-measures fold unit in nested CV except `study_labels`
+  (documented footgun, no warning).
+
+### Phase 4 — multi-omic audit (delegated independent pass; report: audit_multiomic.md)
+
+**Clean bill:** strict name+order alignment across views (runtime-confirmed
+hard error on reversed order); fail-closed duplicate/NULL-threshold handling;
+CV fold integrity across all views simultaneously; no full-data fits in
+evaluation; leakage-safe OOF late fusion; deterministic reruns; correct
+original-scale coefficient restoration in the vendored engine (gaussian and
+binomial rho>0 paths).
+
+- **P4-F24 (P2, CONFIRMED):** cooperative `cooperation_selection="validation"`
+  tunes rho AND lambda on the validation set and reports that metric as
+  `score` — selection-biased (documented but optimistic). = F-CV-04.
+- **P4-F25 (P3, CONFIRMED):** binomial mse is link-scale in the cooperative
+  validation branch vs response-scale in the CV branch.
+- **P4-F26 (P3, CONFIRMED):** early fusion silently reuses the first omic's
+  lambda grid for the fused model.
+- **P4-F27 (P3, CONFIRMED):** `hard_threshold` is global-only; no per-view
+  thresholds.
+- **P4-F28 (P3, CONFIRMED):** seed reuse across folds/omics/cooperative
+  foldid (hygiene; = F-CV-03).
+
+### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
+
+Designs: D1 sparse independent (10/150 signal), D2 pure null, D3
+block-AR(0.6) correlated; 20 seeds each × {random_permutation, knockoff_equi};
+n=100, 100 bootstraps, auto lambda grid (20 values). D4: environment-label
+permutation null (10 seeds).
+
+**Headline result — min_fdr_ is NOT a calibrated estimate of realized FDP in
+several regimes** (mean realized FDP of the FDP+-selected support vs mean
+reported min_fdr_):
+
+| design | artificial | realized FDP | reported min_fdr_ | mean n_selected |
+|---|---|---|---|---|
+| D1_sparse | knockoff_equi | 0.458 | 0.473 | 26.4 |
+| D1_sparse | rand_perm | 0.210 | 0.149 | 9.1 |
+| D2_null | knockoff_equi | 0.918 | 0.423 | 18.2 |
+| D2_null | rand_perm | 0.934 | 0.662 | 32.6 |
+| D3_correlated | knockoff_equi | 0.354 | 0.522 | 27.6 |
+| D3_correlated | rand_perm | 0.031 | 0.098 | 10.2 |
+
+- **F-P6-1 (P1, headline):** on a PURE NULL (no signal), the machinery still
+  selects 18-33 features with realized FDP 0.92-0.93 while reporting
+  min_fdr_ 0.42-0.66 — the estimate is anti-conservative by 1.5-2.2× exactly
+  where a user is most likely to trust an empty result. This is consistent
+  with F-001's semantics (min over a random q+ curve; only the probabilistic
+  bound holds) but quantifies the practical consequence: **an empty support
+  is the only outcome a null dataset cannot produce by this rule**. The
+  package's "diagnostic, not a guarantee" framing is accurate but the degree
+  of null anti-conservatism is material and undocumented.
+- **F-P6-2 (P2):** calibration is regime-dependent in BOTH directions:
+  anti-conservative on independent nulls (both decoy types), approximately
+  calibrated for knockoff_equi on independent signal (0.473 vs 0.458),
+  anti-conservative for rand_perm on independent signal (0.149 vs 0.210),
+  and conservative under block correlation (both types). No single
+  interpretation of min_fdr_ is safe across regimes; the RP-vs-knockoff
+  ordering predicted by F-005/L1 was NOT observed in the correlated design
+  at this signal level (RP was the more conservative there) — the F-005
+  mechanism is assumption-level, and its empirical signature is
+  design-dependent.
+- **F-P6-3 (positive):** D4 environment-label permutation null: max-over-
+  features min_score = 0.168 (sd 0.071) — far below the 0.5 heuristic;
+  `stabl_environment_stability` does not manufacture cross-environment
+  stability on nulls.
+- Caveats: weak-signal regime (per-feature effect 0.25, n=100), 100
+  bootstraps, 20 seeds; realized-FDP-on-null conflates estimate quality with
+  selection behavior; results characterize the DEFAULT threshold rule, not
+  the bound's validity.
+
+## Phase 10-11 — documentation & distribution audit (lead auditor, 2026-10-17)
+
+- **Clean:** dependency hygiene is correct — Imports holds only true hard
+  deps (glmnet, Matrix, matrixStats, methods, RColorBrewer, stats, utils,
+  withr); all optional learners/generators (knockoff, ranger, aorsf,
+  ordinalNet, sparsegl, ggplot2) are Suggests with `.require_pkg()` guards
+  and informative messages. `License: GPL (>= 2)` is consistent with the
+  vendored GPL-2 engine + `inst/COPYING.cooperative` attribution.
+- **Clean:** NEWS.md preserves adverse results verbatim (ordinal graduation
+  bar NOT met; oblique-RF fenced; redundancy co-selection gate NOT met;
+  leaky full-data selection quantified) — exemplary honest changelog
+  practice.
+- **Clean:** 9 vignettes including the aging case study; man/ has 82 pages.
+- **F-P10-1 (P2, carried):** the locked release contract is 0.1.1-era while
+  DESCRIPTION says 0.3.0 (release-contract version skew, from the prior
+  session record) — a distribution-governance defect to resolve before any
+  release (Phase 12-15).
+- **F-P10-2 (P3):** mixOmics/jsonlite/rlang appear in Suggests but are used
+  only by `inst/analysis/release_evidence.R` and vignettes, not by R/.
+  Acceptable practice; worth a comment in DESCRIPTION.
