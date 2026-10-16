@@ -24,8 +24,11 @@ construction was infeasible for the 150-by-1,317 matrix (`n > p` is
 required), so the typed, recorded fallback was `random_permutation` and the
 actual-generator gate also failed. The sealed negative artifact is retained.
 
-Release status for the current candidate is governed by the SCI-04
-null-selected-fraction gate, which is fail-closed at `proposed_unaccepted`
-until an external reviewer accepts the predeclared criterion
-(`inst/analysis/review/SCI-04-independent-review-packet.md`); the fresh
-full-candidate release run then executes at the accepted sample size.
+Release status for the current candidate: the SCI-04 null-selected-fraction
+gate was accepted by the external reviewer on 2026-10-16 (accepted record
+`SCI-04-null-selected-fraction-v2-accepted`; reviewer response in
+`inst/analysis/review/SCI-04-acceptance-record.md`). The release contract now
+pins the accepted Hoeffding criterion (`alpha = 0.05`, `U <= 0.10`, `n = 150`)
+and the gate evaluates instead of failing closed. The remaining release
+blocker is the fresh full-candidate release run at the accepted replicate
+count and assembly of the new Release Evidence Packet.

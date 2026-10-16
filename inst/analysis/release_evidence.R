@@ -249,7 +249,7 @@
     candidate = c(package = "stablr", version = "0.1.1"),
     hash_algorithm = "sha256",
     promotable = FALSE,
-    blockers = "SCI-04-null-selected-fraction-v2-pending-independent-acceptance",
+    blockers = "fresh-release-run-pending",
     dependency_roots = c(
       "jsonlite", "glmnet", "Matrix", "matrixStats", "RColorBrewer",
       "Rcpp", "RcppEigen", "survival", "knockoff"
@@ -268,7 +268,7 @@
     settings = list(
       methodology = list(
         profile = "release",
-        replicates = 100L,
+        replicates = 150L,
         n_bootstraps = 1000L,
         n_lambda = 30L,
         families = c("gaussian", "binomial", "multinomial", "cox"),
@@ -310,7 +310,7 @@
         "methodology-cell-completeness/v1",
         "python-metrics-parity/v1",
         "null-select-any-wilson-v1",
-        "SCI-04-null-selected-fraction-v2-draft",
+        "SCI-04-null-selected-fraction-v2-accepted",
         "null-90pct-collapse-count-v1",
         "signal-mean-fdp-t-v1",
         "signal-tpr-t-v1"
@@ -323,9 +323,7 @@
       )
     ),
     gate_statuses = list(
-      methodology = c(
-        rep("accepted", 3L), "proposed_unaccepted", rep("accepted", 3L)
-      ),
+      methodology = rep("accepted", 7L),
       late_fusion = rep("accepted", 4L)
     )
   )
@@ -439,13 +437,14 @@
   if (identical(validation_id, "methodology") &&
       (!identical(
         selected_fraction$gate_version,
-        "SCI-04-null-selected-fraction-v2-draft"
+        "SCI-04-null-selected-fraction-v2-accepted"
       ) || !identical(
         selected_fraction$decision_status,
-        "proposed_unaccepted"
+        "accepted"
       ))) {
     .release_contract_error(
-      "SCI-04 must remain proposed and unaccepted until independent review."
+      "SCI-04 must reference the accepted decision record ",
+      "SCI-04-null-selected-fraction-v2-accepted."
     )
   }
   invisible(TRUE)
@@ -477,7 +476,9 @@
   }
   if (!identical(contract$promotable, expected$promotable)) {
     .release_contract_error(
-      "The v1 contract must remain non-promotable while SCI-04 is unaccepted."
+      "The contract must remain non-promotable until a fresh release run ",
+      "at the accepted SCI-04 replicate count is executed and a new ",
+      "Release Evidence Packet is assembled."
     )
   }
   blockers <- .release_character_array(contract$blockers, "blockers")

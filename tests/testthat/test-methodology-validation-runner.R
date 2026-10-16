@@ -332,16 +332,20 @@ test_that("release gates are per cell and use replicate-level observations", {
       gates$gate == "null_selected_fraction",
     , drop = FALSE
   ]
-  expect_true(is.na(selected_fraction))
+  # Under the accepted SCI-04 record the gate evaluates the Hoeffding upper
+  # bound: bad cell has mean(X) = 1/20 over n = 100 replicates, so
+  # U = 0.05 + sqrt(log(20) / 200) ~= 0.1724 > 0.10 -> fail (by evaluation).
+  expect_true(is.finite(selected_fraction))
+  expect_equal(selected_fraction, 0.05 + sqrt(log(20) / 200), tolerance = 1e-6)
   expect_identical(
     selected_fraction_row$gate_version,
-    "SCI-04-null-selected-fraction-v2-draft"
+    "SCI-04-null-selected-fraction-v2-accepted"
   )
-  expect_identical(selected_fraction_row$decision_status, "proposed_unaccepted")
+  expect_identical(selected_fraction_row$decision_status, "accepted")
   expect_false(selected_fraction_row$pass)
 })
 
-test_that("SCI-04 statistical decision record is versioned and unaccepted", {
+test_that("SCI-04 decision records: draft immutable, acceptance recorded", {
   source_record <- testthat::test_path(
     "..", "..", "inst", "analysis", "contracts",
     "SCI-04-null-selected-fraction-v2.md"
@@ -356,6 +360,31 @@ test_that("SCI-04 statistical decision record is versioned and unaccepted", {
   expect_true(any(text == "Status: proposed, not accepted"))
   expect_true(grepl("Hoeffding", document, fixed = TRUE))
   expect_true(grepl("must not be implemented", document, fixed = TRUE))
+
+  # The accepted record supersedes (never edits) the draft and carries the
+  # reviewer identity, decision date, and the draft record hash.
+  accepted_record <- testthat::test_path(
+    "..", "..", "inst", "analysis", "contracts",
+    "SCI-04-null-selected-fraction-v2-accepted.md"
+  )
+  accepted <- if (file.exists(accepted_record)) accepted_record else
+    system.file(
+      "analysis", "contracts",
+      "SCI-04-null-selected-fraction-v2-accepted.md",
+      package = "stablr"
+    )
+  expect_true(nzchar(accepted))
+  atext <- paste(readLines(accepted, warn = FALSE), collapse = " ")
+  expect_true(grepl("Status: accepted", atext, fixed = TRUE))
+  expect_true(grepl(
+    "SCI-04-null-selected-fraction-v2-accepted", atext, fixed = TRUE
+  ))
+  expect_true(grepl("Mikhael Dito Manurung", atext, fixed = TRUE))
+  expect_true(grepl("2026-10-16", atext, fixed = TRUE))
+  expect_true(grepl(
+    "ed977c503ada334b9f4467d8663073b36abc206e58c3ce0fd72ef6be6aabaf9d",
+    atext, fixed = TRUE
+  ))
 })
 
 test_that("SCI-05 methodology rows use structured generator provenance", {

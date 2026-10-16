@@ -8,7 +8,7 @@
   "hash_algorithm": "sha256",
   "promotable": false,
   "blockers": [
-    "SCI-04-null-selected-fraction-v2-pending-independent-acceptance"
+    "fresh-release-run-pending"
   ],
   "runtime": {
     "platform": "linux-posix",
@@ -39,7 +39,7 @@
       "adapter": "methodology_validation",
       "settings": {
         "profile": "release",
-        "replicates": 100,
+        "replicates": 150,
         "n_bootstraps": 1000,
         "n_lambda": 30,
         "families": ["gaussian", "binomial", "multinomial", "cox"],
@@ -106,8 +106,8 @@
         },
         {
           "gate_id": "null_selected_fraction",
-          "gate_version": "SCI-04-null-selected-fraction-v2-draft",
-          "decision_status": "proposed_unaccepted"
+          "gate_version": "SCI-04-null-selected-fraction-v2-accepted",
+          "decision_status": "accepted"
         },
         {
           "gate_id": "null_select_90pct",
