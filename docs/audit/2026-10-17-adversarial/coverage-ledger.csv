@@ -1,0 +1,50 @@
+file,exported,n_exported,tests,risk,audit_status
+analysis_workflow.R,stabl_analyze,1,test-analysis-workflow.R; test-multiomic-workflows.R,support,pending
+artificial_features.R,make_artificial_features,1,test-artificial-feature-provenance.R,core,"in-progress: first-pass clean, leads L1/L2/L3"
+bootstrap_helpers.R,sample_bootstrap_indices; group_bootstrap_indices; classic_bootstrap_indices,3,test-bootstrap-group-types.R; test-bootstrap-helpers.R,core,pending
+conditions.R,,0,,support,"tested (token-matcher false lead): infeasibility classification covered by test-nested-cv.R, test-late-fusion-oof.R, test-artificial-feature-provenance.R"
+cooperative-auc.mat.R,,0,test-cooperative-weighted.R,core,pending
+cooperative-auc.R,,0,test-cooperative-weighted.R,core,pending
+cooperative-backend.R,,0,test-cooperative-weighted.R,core,pending
+cooperative-build_predmat.R,,0,test-build-corr-groups.R; test-cooperative-weighted.R,core,pending
+cooperative-cv.elnet.R,,0,test-cooperative-weighted.R,core,pending
+cooperative-cv.glmnetfit.R,,0,test-cooperative-weighted.R,core,pending
+cooperative-cv.lognet.R,,0,test-cooperative-weighted.R,core,pending
+cooperative-cv.multiview.R,,0,test-cooperative-weighted.R; test-multiview-parity.R,core,pending
+cooperative-cvcompute.R,,0,test-cooperative-weighted.R,core,pending
+cooperative-cvstats.R,,0,test-cooperative-weighted.R,core,pending
+cooperative-cvtype.R,,0,test-cooperative-weighted.R,core,pending
+cooperative-family.multiview.R,,0,test-cooperative-weighted.R; test-multiview-parity.R,core,pending
+cooperative-get_start.R,,0,test-cooperative-weighted.R,core,pending
+cooperative-getOptcv.R,,0,test-cooperative-weighted.R,core,pending
+cooperative-multiview.control.R,,0,test-cooperative-weighted.R; test-multiview-parity.R,core,pending
+cooperative-multiview.path.R,,0,test-cooperative-weighted.R; test-multiview-parity.R,core,"audited-8C: F-011..F-016 boundary defects (P0 sparse attrs, NA silent drop, bare jerr, warm$a)"
+cooperative-multiview.R,,0,test-cooperative-weighted.R; test-multiview-parity.R,core,pending
+cooperative-mvglmnet.fit.R,,0,test-cooperative-weighted.R,core,pending
+cooperative-predict.cv.multiview.R,,0,test-cooperative-weighted.R; test-multiview-parity.R,core,pending
+cooperative-predict.multiview.R,,0,test-cooperative-weighted.R; test-multiview-parity.R,core,pending
+cooperative-utils.R,,0,test-cooperative-weighted.R,core,pending
+data_helpers.R,load_ool_data,1,test-bootstrap-helpers.R,support,pending
+environment_stability.R,stabl_environment_stability; get_min_scores,2,test-environment-stability.R,core,pending
+exports.R,export_stabl_to_csv; save_stabl_results,2,,support,"tested (false lead): export paths in test-phase7.R, test-public-interface-audit.R"
+fdp_control.R,compute_fdp_plus,1,,core,"in-progress: tests verified (test-fdp-plus-invariants.R, test-python-parity-fixtures.R, test-stabl-fit.R); first-pass clean, leads L1/L4"
+input_validation.R,validate_sample_alignment; validate_multiomic_inputs,2,test-input-validation.R; test-interpretation-validation.R; test-methodology-validation-runner.R; test-validation-edges.R,support,pending
+interpretation.R,stabl_interpret,1,test-interpretation-validation.R; test-interpretation.R,support,pending
+knockoff_mvr.R,,0,test-knockoff-fixedx-standardization.R; test-knockoff-mvr-provenance.R; test-knockoff-mvr-solver.R,core,pending
+late_fusion.R,,0,test-late-fusion-oof.R,support,pending
+learner_adapters.R,make_glmnet_adapter; make_adaptive_lasso_adapter; make_sgl_adapter; auto_lambda_grid,4,test-learner-adapters.R; test-learner-ordinal.R,support,pending
+learner_oblique_rf.R,make_aorsf_adapter; auto_oblique_threshold_grid,2,test-learner-adapters.R; test-learner-ordinal.R; test-oblique-rf-adapter.R,support,pending
+learner_ordinal.R,make_ordinal_adapter; auto_ordinal_lambda_grid,2,test-learner-adapters.R; test-learner-ordinal.R,support,pending
+learner_rf.R,make_ranger_adapter; auto_rf_threshold_grid,2,test-learner-adapters.R; test-learner-ordinal.R,support,pending
+metrics.R,jaccard_similarity; jaccard_similarity_matrix; adjusted_similarity; adjusted_similarity_pairwise; adjusted_similarity_summary; pearson_similarity; pearson_similarity_pairwise; pearson_similarity_summary; fdr_similarity; tpr_similarity; fscore_similarity; jaccard_matrix; adjusted_similarity_values; adjusted_similarity_measure; pearson_similarity_values; pearson_similarity_measure,16,,support,"tested (false lead): jaccard/adjusted_similarity in test-environment-stability.R, test-stabl-wrapper.R, test-phase7.R"
+multiomic_workflows.R,stabl_multiomic_train_validate; stabl_multiomic_cv; stabl_multiomic_stacked; stacked_multi_omic,4,test-multiomic-guards.R; test-multiomic-workflows.R,support,pending
+nested_cv.R,stabl_multiomic_nested_cv,1,test-nested-cv-study-disjoint.R; test-nested-cv.R,support,pending
+preprocessing.R,stabl_preprocess_fit; stabl_preprocess_apply; stabl_preprocess_fit_recipes,3,test-preprocessing.R,support,pending
+RcppExports.R,,0,,support,verified-8C: registration + arg order checked against C++ signatures (Phase 8C)
+s3_methods.R,,0,,support,"tested (false lead): test-accessors-s3.R, test-stabl-wrapper.R"
+stabl_accessors.R,get_support; get_stabl_scores; get_feature_names; transform_stabl; get_cooperative_features; get_cooperative_diagnostics; get_importances; get_fdrs; get_lambda_grid; get_feature_names_out,10,test-accessors-s3.R; test-stabl-decomposition.R; test-stabl-fit.R; test-stabl-wrapper.R,core,pending
+stabl_fit.R,stabl_fit,1,test-stabl-decomposition.R; test-stabl-fit.R; test-stabl-wrapper.R,core,pending
+stabl.R,stabl; support; feature_names,3,test-stabl-decomposition.R; test-stabl-fit.R; test-stabl-wrapper.R,core,pending
+stablr-package.R,,0,,core,pending
+study_tools.R,stabl_multiomic_study_diagnostics; stabl_multiomic_study_split; stabl_multiomic_scheme_comparison; stabl_multiomic_selection_stability,4,test-nested-cv-study-disjoint.R; test-study-tools.R,support,pending
+visualization.R,plot_stabl_path; plot_fdr_graph; plot_roc; plot_prc; boxplot_features; scatterplot_features,6,test-visualization-golden.R,support,pending
