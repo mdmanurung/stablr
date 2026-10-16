@@ -54,14 +54,16 @@
 
 ### Release governance
 
-- SCI-04 null-selected-fraction gate accepted by the external reviewer
-  (2026-10-16; accepted record
+- SCI-04 null-selected-fraction gate accepted on 2026-10-16 by the
+  project owner acting in the reviewer role (accepted record
   `SCI-04-null-selected-fraction-v2-accepted`, reviewer response in
-  `inst/analysis/review/`). The release contract pins the Hoeffding
-  criterion (alpha = 0.05, U \<= 0.10, n = 150 replicates) and the
-  methodology validation now evaluates the bound per null cell instead
-  of failing closed. The remaining release blocker is the fresh
-  full-candidate run at the accepted replicate count.
+  `inst/analysis/review/`). This is a provisional owner acceptance: the
+  review packet’s itemized independent confirmation remains outstanding.
+  The release contract pins the Hoeffding criterion (alpha = 0.05, U \<=
+  0.10, n = 150 replicates) and the methodology validation now evaluates
+  the bound per null cell instead of failing closed. Remaining release
+  blockers: the fresh full-candidate run at the accepted replicate count
+  and the independent confirmation.
 - IV-benchmark CI smoke workflow (weekly schedule + manual dispatch)
   runs the interpretation/validation benchmark end-to-end at shrunken
   settings and asserts run completeness.
