@@ -33,6 +33,8 @@ requires an itemized review by a reviewer independent of the package, which
 is still outstanding (`sci04-independent-confirmation-pending` in the release
 contract). The contract pins the accepted Hoeffding criterion
 (`alpha = 0.05`, `U <= 0.10`, `n = 150`) and the gate evaluates instead of
-failing closed. Remaining release blockers: the fresh full-candidate release
-run at the accepted replicate count, the itemized independent confirmation,
-and assembly of the new Release Evidence Packet.
+failing closed. The entry point for the itemized independent confirmation is
+`inst/analysis/review/SCI-04-independent-confirmation-packet.md`. Remaining
+release blockers: the fresh full-candidate release run at the accepted
+replicate count, the itemized independent confirmation, and assembly of the
+new Release Evidence Packet.
