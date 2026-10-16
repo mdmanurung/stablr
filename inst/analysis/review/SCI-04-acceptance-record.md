@@ -16,7 +16,9 @@ Multiplicity policy confirmed or replaced (notes): per-gate policy confirmed
   (blanket acceptance)
 Reference tests approved independently of the failed run (Y/N): Y
 Accepted record id: SCI-04-null-selected-fraction-v2-accepted
-Accepted record sha256: 251eb150abef6ae3b289f2b1ace32e813f0e60a1bfe71e29ab340981136a4abb
+Accepted record sha256 (at acceptance): 251eb150abef6ae3b289f2b1ace32e813f0e60a1bfe71e29ab340981136a4abb
+Accepted record sha256 (current, after the 2026-10-16 provisional-status
+  amendment, PR #20): fd55432bdfc290e6b375ce7e88667ef48104162a6e14ce36d1ff616e77092d7e
 Decision date: 2026-10-16
 Signature / verification method: reviewer's acceptance statement recorded
   verbatim from the project owner during the working session:
