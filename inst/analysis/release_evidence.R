@@ -249,7 +249,10 @@
     candidate = c(package = "stablr", version = "0.1.1"),
     hash_algorithm = "sha256",
     promotable = FALSE,
-    blockers = "fresh-release-run-pending",
+    blockers = c(
+      "fresh-release-run-pending",
+      "sci04-independent-confirmation-pending"
+    ),
     dependency_roots = c(
       "jsonlite", "glmnet", "Matrix", "matrixStats", "RColorBrewer",
       "Rcpp", "RcppEigen", "survival", "knockoff"

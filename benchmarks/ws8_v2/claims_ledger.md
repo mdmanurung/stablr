@@ -51,10 +51,13 @@ of per-cohort Fisher-z correlations ranked by |z| magnitude; M1 = per-cohort
 | V15 | M4 is robust to the knockoff construction (equi vs mvr) | S2c full-atlas LOCO: M4mvr macro R@10 0.284 vs M4-equi 0.286 (Δ −0.002); SPAC fold identical (0.198 both) | supported | Single atlas, one alternative construction; `results/s2c_mvr/` |
 
 Governance note (2026-10-16): the SCI-04 null-selected-fraction gate was
-accepted by the external reviewer (accepted record
+accepted by the project owner acting in the reviewer role (accepted record
 `SCI-04-null-selected-fraction-v2-accepted`; reviewer response in
-`inst/analysis/review/SCI-04-acceptance-record.md`). This is package release
-governance, outside the WS-8 v2 claim set; recorded here for cross-reference.
+`inst/analysis/review/SCI-04-acceptance-record.md`). This is a provisional
+owner acceptance — the packet's itemized independent confirmation remains
+outstanding and is pinned as a release-contract blocker. This is package
+release governance, outside the WS-8 v2 claim set; recorded here for
+cross-reference.
 
 **Headline (H2): mixed/negative.** Environment-aware STABL min-aggregation improves
 held-out association replication over pooled STABL — the controlled aggregation
