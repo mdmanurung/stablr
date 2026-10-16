@@ -1140,6 +1140,16 @@ aggregation beats pooling the cohorts into one STABL fit, and beats
 lasso stability. It does not beat the simpler association-based
 selectors — the meta-analysis or the significance vote — at the same
 feature budget. No method-superiority claim is made.</p>
+<p>A post-merge re-aggregation probe (S2b, 2026-10-16) re-scores the
+persisted M4 environment selections at cohort-count quantiles instead of
+the minimum. A 25% quantile (M4q25) reaches macro <a href="mailto:R@10" class="email">R@10</a> 0.362 — above both M4 (0.287; paired difference
++0.076 [+0.025, +0.127], sign-flip p = 0.023) and M5 (0.321) — while a
+10% quantile does not (−0.006, NS). The predeclared falsification hook
+fired: strict-min aggregation is suboptimal on this atlas, not merely
+conservative. The probe re-uses the persisted M4 scores without
+refitting (the q = 0 control reproduces the committed M4 values to
+5e-16); it is exploratory and single-atlas (claims ledger V5,
+upgraded).</p>
 </div>
 <div class="section level3">
 <h3 id="result-the-selection-count-is-null-saturated">10.4 Result: the selection count is null-saturated<a class="anchor" aria-label="anchor" href="#result-the-selection-count-is-null-saturated"></a>
@@ -1156,8 +1166,14 @@ v1 knockoff diagnostics (FDP+ close to 1, Section 4.1). Every
 per-environment fit containing SPAC (n = 33 donors, fewer than the 59
 features) uses a positive-definite projection of a rank-deficient
 knockoff covariance, and min-aggregation gives that smallest cohort veto
-power; the saturation and the projection are plausibly related. The v2
-case for the panel rests on the replication and prediction
+power; the saturation and the projection were plausibly related as this
+section first went to press. A SPAC-excluded rerun of the full null
+probe (50 permutations, seven cohorts; Section 10.8) saturates
+identically — 50/50 permutations select 59/59 (Clopper–Pearson lower
+bound 0.942) against 30/59 native on the SPAC-excluded real-data fit —
+so the projection is not the mechanism, and synthetic simulations
+reproduce the saturation under every truth regime including the null.
+The v2 case for the panel rests on the replication and prediction
 <em>rankings</em> above and below — not on selection being non-null.</p>
 <div class="float">
 <img src="figures/ws8v2_null_probe.png" alt="Features selected by the M4 min-aggregation rule under 50 within-cohort age permutations (points) versus the same-design real-data fit (dashed line, 35 of 59)."><div class="figcaption">Features selected by the M4 min-aggregation rule
@@ -1206,6 +1222,42 @@ feature set. For this endpoint on this atlas, the simplest selectors
 (meta-analysis or a significance vote) replicate best; environment-aware
 STABL’s measured value is its improvement over pooled STABL, not
 superiority over simpler baselines.</p>
+</div>
+<div class="section level3">
+<h3 id="post-merge-robustness-and-calibration-follow-ups">10.8 Post-merge robustness and calibration follow-ups<a class="anchor" aria-label="anchor" href="#post-merge-robustness-and-calibration-follow-ups"></a>
+</h3>
+<p>Four predeclared follow-ups (2026-10-16) probe the v2 findings; the
+claims ledger carries the full entries (V11–V15).</p>
+<ul>
+<li>
+<strong>SPAC exclusion (S2a).</strong> Re-running the six-selector
+LOCO on the seven cohorts without SPAC preserves the ordering (M0 0.408
+&gt; M1 0.395 &gt; M5 0.344 &gt; M4 0.323 &gt; M3 0.190 &gt; M2 0.141)
+and the confirmatory M4 − M3 contrast (+0.133 [+0.069, +0.197], p =
+0.016). The headline is robust to the one cohort whose knockoff
+covariance needed projection.</li>
+<li>
+<strong>Aggregation quantile (S2b).</strong> Reported with Section
+10.3: a 25% quantile aggregation beats both min and majority; the V5
+status is upgraded from tentative to supported.</li>
+<li>
+<strong>Knockoff construction (S2c).</strong> Replacing
+<code>knockoff_equi</code> with <code>knockoff_mvr</code> moves the M4
+macro <a href="mailto:R@10" class="email">R@10</a> by −0.002 (0.284 vs
+0.286); the findings are not an artifact of the equi construction.</li>
+<li>
+<strong>Synthetic calibration (S1).</strong> A simulator anchored to
+the real per-cohort means, pooled covariance, and empirical ages runs
+four truth regimes (homogeneous, heterogeneous, null, sparse-strong)
+through the same six selectors. M4 and M5 select every native feature
+under all four — including the pure null — with empirical FDP 0.83–1.00:
+the saturation is structural, not an atlas property. Under known truth,
+per-cohort STABL voting (M1) matches the association ranking under
+homogeneity, beats it under heterogeneity, selects nothing under the
+null, and recovers exactly the sparse truth. The pilot runs 5 replicates
+per scenario of a planned 20 (inputs and seeds are committed;
+<code>benchmarks/ws8_v2/results/s1/</code>).</li>
+</ul>
 </div>
 </div>
 <div class="section level2">

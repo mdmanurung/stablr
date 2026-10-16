@@ -61,6 +61,11 @@
 <li><p>plot_stabl_path now draws the path in canonical decreasing-lambda order regardless of grid row order, aligns artificial-feature lines to the same order, and shows x-axis tick labels.</p></li>
 </ul></div>
 <div class="section level3">
+<h3 id="release-governance-0-3-0">Release governance<a class="anchor" aria-label="anchor" href="#release-governance-0-3-0"></a></h3>
+<ul><li>SCI-04 null-selected-fraction gate accepted by the external reviewer (2026-10-16; accepted record <code>SCI-04-null-selected-fraction-v2-accepted</code>, reviewer response in <code>inst/analysis/review/</code>). The release contract pins the Hoeffding criterion (alpha = 0.05, U &lt;= 0.10, n = 150 replicates) and the methodology validation now evaluates the bound per null cell instead of failing closed. The remaining release blocker is the fresh full-candidate run at the accepted replicate count.</li>
+<li>IV-benchmark CI smoke workflow (weekly schedule + manual dispatch) runs the interpretation/validation benchmark end-to-end at shrunken settings and asserts run completeness.</li>
+</ul></div>
+<div class="section level3">
 <h3 id="documentation-0-3-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-3-0"></a></h3>
 <ul><li>Documentation website restyled after the dreamlet site (Flatly theme, KaTeX math rendering, maintainer links on the authors page); the pkgdown workflow now deploys the site on every push to main.</li>
 <li>Homepage restructured to lead with resources, motivation, the analysis workflow diagram, and installation; release-governance detail moved to <code>docs/RELEASE_STATUS.md</code>.</li>

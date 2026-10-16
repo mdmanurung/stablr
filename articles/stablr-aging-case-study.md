@@ -683,6 +683,17 @@ does not beat the simpler association-based selectors — the
 meta-analysis or the significance vote — at the same feature budget. No
 method-superiority claim is made.
 
+A post-merge re-aggregation probe (S2b, 2026-10-16) re-scores the
+persisted M4 environment selections at cohort-count quantiles instead of
+the minimum. A 25% quantile (M4q25) reaches macro <R@10> 0.362 — above
+both M4 (0.287; paired difference +0.076 \[+0.025, +0.127\], sign-flip p
+= 0.023) and M5 (0.321) — while a 10% quantile does not (−0.006, NS).
+The predeclared falsification hook fired: strict-min aggregation is
+suboptimal on this atlas, not merely conservative. The probe re-uses the
+persisted M4 scores without refitting (the q = 0 control reproduces the
+committed M4 values to 5e-16); it is exploratory and single-atlas
+(claims ledger V5, upgraded).
+
 ### 10.4 Result: the selection count is null-saturated
 
 The S0 null probe permutes age within each cohort (preserving the
@@ -697,9 +708,15 @@ diagnostics (FDP+ close to 1, Section 4.1). Every per-environment fit
 containing SPAC (n = 33 donors, fewer than the 59 features) uses a
 positive-definite projection of a rank-deficient knockoff covariance,
 and min-aggregation gives that smallest cohort veto power; the
-saturation and the projection are plausibly related. The v2 case for the
-panel rests on the replication and prediction *rankings* above and below
-— not on selection being non-null.
+saturation and the projection were plausibly related as this section
+first went to press. A SPAC-excluded rerun of the full null probe (50
+permutations, seven cohorts; Section 10.8) saturates identically — 50/50
+permutations select 59/59 (Clopper–Pearson lower bound 0.942) against
+30/59 native on the SPAC-excluded real-data fit — so the projection is
+not the mechanism, and synthetic simulations reproduce the saturation
+under every truth regime including the null. The v2 case for the panel
+rests on the replication and prediction *rankings* above and below — not
+on selection being non-null.
 
 ![Features selected by the M4 min-aggregation rule under 50
 within-cohort age permutations (points) versus the same-design real-data
@@ -747,6 +764,35 @@ feature set. For this endpoint on this atlas, the simplest selectors
 (meta-analysis or a significance vote) replicate best; environment-aware
 STABL’s measured value is its improvement over pooled STABL, not
 superiority over simpler baselines.
+
+### 10.8 Post-merge robustness and calibration follow-ups
+
+Four predeclared follow-ups (2026-10-16) probe the v2 findings; the
+claims ledger carries the full entries (V11–V15).
+
+- **SPAC exclusion (S2a).** Re-running the six-selector LOCO on the
+  seven cohorts without SPAC preserves the ordering (M0 0.408 \> M1
+  0.395 \> M5 0.344 \> M4 0.323 \> M3 0.190 \> M2 0.141) and the
+  confirmatory M4 − M3 contrast (+0.133 \[+0.069, +0.197\], p = 0.016).
+  The headline is robust to the one cohort whose knockoff covariance
+  needed projection.
+- **Aggregation quantile (S2b).** Reported with Section 10.3: a 25%
+  quantile aggregation beats both min and majority; the V5 status is
+  upgraded from tentative to supported.
+- **Knockoff construction (S2c).** Replacing `knockoff_equi` with
+  `knockoff_mvr` moves the M4 macro <R@10> by −0.002 (0.284 vs 0.286);
+  the findings are not an artifact of the equi construction.
+- **Synthetic calibration (S1).** A simulator anchored to the real
+  per-cohort means, pooled covariance, and empirical ages runs four
+  truth regimes (homogeneous, heterogeneous, null, sparse-strong)
+  through the same six selectors. M4 and M5 select every native feature
+  under all four — including the pure null — with empirical FDP
+  0.83–1.00: the saturation is structural, not an atlas property. Under
+  known truth, per-cohort STABL voting (M1) matches the association
+  ranking under homogeneity, beats it under heterogeneity, selects
+  nothing under the null, and recovers exactly the sparse truth. The
+  pilot runs 5 replicates per scenario of a planned 20 (inputs and seeds
+  are committed; `benchmarks/ws8_v2/results/s1/`).
 
 ## References
 
