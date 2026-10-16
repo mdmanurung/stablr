@@ -1,0 +1,44 @@
+# IV-benchmark smoke: verifies the interpretation/validation benchmark runs
+# end-to-end and accounts for every planned run (G-IV-1) on a shrunken
+# configuration. This is a software regression check, NOT a re-run of the
+# predeclared evidence: gate values at smoke size are not comparable to the
+# committed 10-seed run in benchmarks/iv_summary.md.
+name: iv-smoke
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1"   # weekly, Mondays 06:00 UTC
+
+permissions: contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    env:
+      IV_SEEDS: "1,2"
+      IV_N_BOOT: "10"
+      IV_OUT_DIR: ${{ runner.temp }}/iv_smoke
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::pkgload
+          needs: check
+
+      - name: Run IV benchmark (smoke)
+        run: Rscript benchmarks/interpretation_validation.R
+
+      - name: Upload smoke outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: iv-smoke-outputs
+          path: ${{ runner.temp }}/iv_smoke
+          retention-days: 14

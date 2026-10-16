@@ -17,8 +17,15 @@ pkgload::load_all(".", compile = FALSE, quiet = TRUE)
 out_dir <- Sys.getenv("IV_OUT_DIR", "benchmarks")
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
-seeds <- 1:10
-n_boot <- 50L
+# Smoke mode (CI): IV_SEEDS="1,2" and IV_N_BOOT=10 shrink the run. The
+# completeness gate stays self-consistent because planned = configured.
+# Gate values at smoke size are NOT comparable to the predeclared 10-seed
+# run; smoke asserts end-to-end execution and run accounting only.
+seeds <- local({
+  s <- Sys.getenv("IV_SEEDS", "")
+  if (nzchar(s)) as.integer(strsplit(s, ",", fixed = TRUE)[[1]]) else 1:10
+})
+n_boot <- as.integer(Sys.getenv("IV_N_BOOT", "50"))
 lambda_grid <- data.frame(lambda = c(0.3, 0.2, 0.1))
 git_sha <- tryCatch(
   system("git rev-parse --short HEAD", intern = TRUE),
