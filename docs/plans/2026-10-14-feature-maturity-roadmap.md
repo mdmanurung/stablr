@@ -31,7 +31,7 @@ gate `proposed_unaccepted`.
 | 8 | Cooperative fusion (gaussian/binomial) | **Shipped; benchmarked** — WS-4a done | WS-4 (60 runs): no mode dominates; cooperative competitive (0.24–0.26 BER); late-fusion gaussian weakness documented (1.09 MSE) | Late-gaussian caveat in docs |
 | 9 | Cox cooperative fusion | **Permanently deferred** — WS-4b done | No CV-loss precedent for Cox cooperative learning; fail-closed stops at 3 layers | Cox users keep per-omic + early fusion paths |
 | 10 | Environment-stability workflow | **Promoted (scoped)** — WS-5 done | WS-5 (60 runs): min-agg FDP+ 0.08–0.14 across shift/drift designs; pooled drifts to 0.16; per-env rows anti-conservative (0.28–0.54) | Min-agg is the calibrated read; documented |
-| 11 | Ordinal regression learner (WS-9, added 2026-10-14) | **Experimental (benchmarked; bar not met)** | WS-9 (40 runs, proportional-odds ground truth): knockoff_equi mean FDP+ 0.00 (nominal 0.1) but mean TPR 0.37 on both designs — strongly conservative; predeclared graduation bar (FDP+ <= 0.15 AND TPR >= 0.8) NOT met | Stays experimental; scope documented in ?make_ordinal_adapter and inst/benchmarks/ws9_summary.md |
+| 11 | Ordinal regression learner (WS-9, added 2026-10-14) | **Experimental (benchmarked; bar not met)** | WS-9 (40 runs, proportional-odds ground truth): knockoff_equi mean FDP+ 0.00 (nominal 0.1) but mean TPR 0.37 on both designs — strongly conservative; predeclared graduation bar (FDP+ <= 0.15 AND TPR >= 0.8) NOT met | Stays experimental; scope documented in ?make_ordinal_adapter and benchmarks/ws9_summary.md |
 | 11 | Study-disjoint nested CV (B1) | **Evidence-backed** | B1: null probe gap ≈ 0 (−0.0096); prevalence-drift gap +0.0395 | Fold into WS-1 release evidence |
 | 12 | Knockoffs > 3,000 predictors | **Permanent boundary** — WS-7 done | Decision record: docs/plans/2026-10-14-ws7-knockoff-boundary-decision.md | Reopen only with new literature-backed construction |
 | 13 | SCI-04 release gate | **`proposed_unaccepted`** | Packet merged (PR #7); reference tests green | WS-0: external acceptance + n ≥ 150 run |
@@ -67,7 +67,7 @@ sessions + reruns (45–90 min each, sandbox-scale).
 
 ### WS-2 — RF adapter graduation (plan item D1)
 **OUTCOME (2026-10-14): NOT MET GLOBALLY — SCOPED PROMOTION.** 60 seed-runs,
-zero errors (inst/benchmarks/ws2_summary.md). rf + knockoff_equi meets the
+zero errors (benchmarks/ws2_summary.md). rf + knockoff_equi meets the
 predeclared criterion (mean FDP <= 0.15, TPR >= 0.8) on A_linear (0.025) and
 B_nonlinear (0.065) but fails C_highdim_nonlinear (0.44; 3/10 seeds select
 ~all features) and D_nonlinear_binomial (0.26). Disposition: promote rf with
@@ -86,7 +86,7 @@ explicit design scope in man pages and pkgdown.
 
 ### WS-3 — Oblique RF adapter: fix or fence
 **OUTCOME (2026-10-14): FENCED.** All predeclared remedies failed the
-criterion (inst/benchmarks/ws3_summary.md): baseline 0.242/0.450,
+criterion (benchmarks/ws3_summary.md): baseline 0.242/0.450,
 R1 standardize (no change), R2 boot-200 0.184/0.392, R3 both 0.184/0.392 —
 none <= 0.15 on both designs. Diagnosis: knockoff decoy selection-frequency
 noise is inflated for oblique forests (decoy mean importance 0.26 vs rf
@@ -107,7 +107,7 @@ not-recommended for the affected designs.
 
 ### WS-4 — Cooperative fusion completion
 **OUTCOME (2026-10-14): BENCHMARK DONE; COX PERMANENTLY DEFERRED.**
-(a) 60-run fusion benchmark (inst/benchmarks/ws4_summary.md): no mode
+(a) 60-run fusion benchmark (benchmarks/ws4_summary.md): no mode
 dominates. Complementary views: early 0.234 / late 0.264 / cooperative 0.243
 BER. Redundant views: cooperative best on gaussian (0.258) and competitive on
 binomial (0.309). Late-fusion gaussian is the weakness (1.09 MSE, 4x worse).
@@ -126,7 +126,7 @@ engine or record a permanent deferral decision with rationale.
 
 ### WS-5 — Environment-stability graduation
 **OUTCOME (2026-10-14): PROMOTED WITH DOCUMENTED SCOPE.** 60-run
-transportability simulation (inst/benchmarks/ws5_summary.md), corrected
+transportability simulation (benchmarks/ws5_summary.md), corrected
 selection contract (min score >= 0.5). Min-aggregation controls FDP+ across
 null-shift (0.083-0.142), signal-shift (0.075-0.163), and prevalence-drift
 (0.086-0.142) designs; pooled aggregation drifts to 0.163. Per-environment

@@ -1,0 +1,473 @@
+"method","fold","feature","score","native"
+"M4","ABF300","CT:B Activated",0.625,TRUE
+"M4","ABF300","CT:B Atypical memory",0.56,TRUE
+"M4","ABF300","CT:B CD5+ B cells",0.35,FALSE
+"M4","ABF300","CT:B IFN+ cells",0.195,FALSE
+"M4","ABF300","CT:B Naive",0.235,FALSE
+"M4","ABF300","CT:B Non-switched memory",0.25,FALSE
+"M4","ABF300","CT:B Plasma cells",0.175,FALSE
+"M4","ABF300","CT:B Switched memory",0.56,TRUE
+"M4","ABF300","CT:B Transitional",0.175,FALSE
+"M4","ABF300","CT:CD4+ Exhausted-like memory",0.4,FALSE
+"M4","ABF300","CT:CD4+ IFN+ cells",0.41,FALSE
+"M4","ABF300","CT:CD4+ Proliferative",0.275,FALSE
+"M4","ABF300","CT:CD4+ RTE",0.96,TRUE
+"M4","ABF300","CT:CD4+ T HLA-DR+ memory",0.77,TRUE
+"M4","ABF300","CT:CD4+ T Naive",0.395,FALSE
+"M4","ABF300","CT:CD4+ Temra",0.78,TRUE
+"M4","ABF300","CT:CD4+ Terminal effector",0.72,TRUE
+"M4","ABF300","CT:CD4+ Tfh",0.805,TRUE
+"M4","ABF300","CT:CD4+ Th1",0.81,TRUE
+"M4","ABF300","CT:CD4+ Th1/Th17",0.57,TRUE
+"M4","ABF300","CT:CD4+ Th17",0.83,TRUE
+"M4","ABF300","CT:CD4+ Th2",0.665,TRUE
+"M4","ABF300","CT:CD4+ Th22",0.77,TRUE
+"M4","ABF300","CT:CD4+ Treg cytotoxic",0.255,FALSE
+"M4","ABF300","CT:CD4+ Treg KLRB1+RORC+",0.62,TRUE
+"M4","ABF300","CT:CD4+ Treg memory",0.29,FALSE
+"M4","ABF300","CT:CD4+ Treg naive",0.305,FALSE
+"M4","ABF300","CT:CD8+ HLA-DR+",0.57,TRUE
+"M4","ABF300","CT:CD8+ IFN+ cells",0.78,TRUE
+"M4","ABF300","CT:CD8+ NKT-like",0.32,FALSE
+"M4","ABF300","CT:CD8+ Proliferative",0.295,FALSE
+"M4","ABF300","CT:CD8+ RTE",1,TRUE
+"M4","ABF300","CT:CD8+ T Naive",1,TRUE
+"M4","ABF300","CT:CD8+ Tcm CCR4-",0.245,FALSE
+"M4","ABF300","CT:CD8+ Tcm CCR4+",0.525,TRUE
+"M4","ABF300","CT:CD8+ Tem GZMB+",0.52,TRUE
+"M4","ABF300","CT:CD8+ Tem GZMK+",0.385,FALSE
+"M4","ABF300","CT:CD8+ Temra",0.365,FALSE
+"M4","ABF300","CT:CD8+ Tmem KLRC2+",0.485,FALSE
+"M4","ABF300","CT:CD8+ Trm",0.79,TRUE
+"M4","ABF300","CT:DN T cells",0.275,FALSE
+"M4","ABF300","CT:gd T naive",0.135,FALSE
+"M4","ABF300","CT:gd T Vd1 GZMB+",0.385,FALSE
+"M4","ABF300","CT:gd T Vd1 GZMK+",0.755,TRUE
+"M4","ABF300","CT:gd T Vd2 GZMB+",0.44,FALSE
+"M4","ABF300","CT:gd T Vd2 GZMK+",0.2,FALSE
+"M4","ABF300","CT:ILCs",0.205,FALSE
+"M4","ABF300","CT:MAIT",0.695,TRUE
+"M4","ABF300","CT:Myeloid cDCs",0.225,FALSE
+"M4","ABF300","CT:Myeloid Classical monocytes",0.29,FALSE
+"M4","ABF300","CT:Myeloid Non-classical monocytes",0.125,FALSE
+"M4","ABF300","CT:Myeloid pDCs",0.395,FALSE
+"M4","ABF300","CT:NK CD56bright",0.52,TRUE
+"M4","ABF300","CT:NK CD56dim CD57-",0.415,FALSE
+"M4","ABF300","CT:NK CD56dim CD57+",0.525,TRUE
+"M4","ABF300","CT:NK CD56dim CD57int",0.19,FALSE
+"M4","ABF300","CT:NK CD56dim CD57low",0.215,FALSE
+"M4","ABF300","CT:NK Proliferative",0.31,FALSE
+"M4","ABF300","CT:Progenitor cells",0.13,FALSE
+"M4","AIDA","CT:B Activated",0.625,TRUE
+"M4","AIDA","CT:B Atypical memory",0.56,TRUE
+"M4","AIDA","CT:B CD5+ B cells",0.35,FALSE
+"M4","AIDA","CT:B IFN+ cells",0.195,FALSE
+"M4","AIDA","CT:B Naive",0.235,FALSE
+"M4","AIDA","CT:B Non-switched memory",0.25,FALSE
+"M4","AIDA","CT:B Plasma cells",0.175,FALSE
+"M4","AIDA","CT:B Switched memory",0.56,TRUE
+"M4","AIDA","CT:B Transitional",0.175,FALSE
+"M4","AIDA","CT:CD4+ Exhausted-like memory",0.4,FALSE
+"M4","AIDA","CT:CD4+ IFN+ cells",0.41,FALSE
+"M4","AIDA","CT:CD4+ Proliferative",0.275,FALSE
+"M4","AIDA","CT:CD4+ RTE",0.96,TRUE
+"M4","AIDA","CT:CD4+ T HLA-DR+ memory",0.77,TRUE
+"M4","AIDA","CT:CD4+ T Naive",0.395,FALSE
+"M4","AIDA","CT:CD4+ Temra",0.78,TRUE
+"M4","AIDA","CT:CD4+ Terminal effector",0.72,TRUE
+"M4","AIDA","CT:CD4+ Tfh",0.805,TRUE
+"M4","AIDA","CT:CD4+ Th1",0.81,TRUE
+"M4","AIDA","CT:CD4+ Th1/Th17",0.57,TRUE
+"M4","AIDA","CT:CD4+ Th17",0.83,TRUE
+"M4","AIDA","CT:CD4+ Th2",0.665,TRUE
+"M4","AIDA","CT:CD4+ Th22",0.77,TRUE
+"M4","AIDA","CT:CD4+ Treg cytotoxic",0.255,FALSE
+"M4","AIDA","CT:CD4+ Treg KLRB1+RORC+",0.62,TRUE
+"M4","AIDA","CT:CD4+ Treg memory",0.29,FALSE
+"M4","AIDA","CT:CD4+ Treg naive",0.305,FALSE
+"M4","AIDA","CT:CD8+ HLA-DR+",0.57,TRUE
+"M4","AIDA","CT:CD8+ IFN+ cells",0.78,TRUE
+"M4","AIDA","CT:CD8+ NKT-like",0.32,FALSE
+"M4","AIDA","CT:CD8+ Proliferative",0.295,FALSE
+"M4","AIDA","CT:CD8+ RTE",1,TRUE
+"M4","AIDA","CT:CD8+ T Naive",1,TRUE
+"M4","AIDA","CT:CD8+ Tcm CCR4-",0.245,FALSE
+"M4","AIDA","CT:CD8+ Tcm CCR4+",0.525,TRUE
+"M4","AIDA","CT:CD8+ Tem GZMB+",0.52,TRUE
+"M4","AIDA","CT:CD8+ Tem GZMK+",0.385,FALSE
+"M4","AIDA","CT:CD8+ Temra",0.365,FALSE
+"M4","AIDA","CT:CD8+ Tmem KLRC2+",0.485,FALSE
+"M4","AIDA","CT:CD8+ Trm",0.79,TRUE
+"M4","AIDA","CT:DN T cells",0.275,FALSE
+"M4","AIDA","CT:gd T naive",0.135,FALSE
+"M4","AIDA","CT:gd T Vd1 GZMB+",0.385,FALSE
+"M4","AIDA","CT:gd T Vd1 GZMK+",0.755,TRUE
+"M4","AIDA","CT:gd T Vd2 GZMB+",0.44,FALSE
+"M4","AIDA","CT:gd T Vd2 GZMK+",0.2,FALSE
+"M4","AIDA","CT:ILCs",0.205,FALSE
+"M4","AIDA","CT:MAIT",0.695,TRUE
+"M4","AIDA","CT:Myeloid cDCs",0.225,FALSE
+"M4","AIDA","CT:Myeloid Classical monocytes",0.29,FALSE
+"M4","AIDA","CT:Myeloid Non-classical monocytes",0.125,FALSE
+"M4","AIDA","CT:Myeloid pDCs",0.395,FALSE
+"M4","AIDA","CT:NK CD56bright",0.52,TRUE
+"M4","AIDA","CT:NK CD56dim CD57-",0.415,FALSE
+"M4","AIDA","CT:NK CD56dim CD57+",0.525,TRUE
+"M4","AIDA","CT:NK CD56dim CD57int",0.19,FALSE
+"M4","AIDA","CT:NK CD56dim CD57low",0.215,FALSE
+"M4","AIDA","CT:NK Proliferative",0.31,FALSE
+"M4","AIDA","CT:Progenitor cells",0.13,FALSE
+"M4","CIMA","CT:B Activated",0.625,TRUE
+"M4","CIMA","CT:B Atypical memory",0.56,TRUE
+"M4","CIMA","CT:B CD5+ B cells",0.35,FALSE
+"M4","CIMA","CT:B IFN+ cells",0.195,FALSE
+"M4","CIMA","CT:B Naive",0.235,FALSE
+"M4","CIMA","CT:B Non-switched memory",0.25,FALSE
+"M4","CIMA","CT:B Plasma cells",0.175,FALSE
+"M4","CIMA","CT:B Switched memory",0.56,TRUE
+"M4","CIMA","CT:B Transitional",0.175,FALSE
+"M4","CIMA","CT:CD4+ Exhausted-like memory",0.4,FALSE
+"M4","CIMA","CT:CD4+ IFN+ cells",0.41,FALSE
+"M4","CIMA","CT:CD4+ Proliferative",0.275,FALSE
+"M4","CIMA","CT:CD4+ RTE",0.96,TRUE
+"M4","CIMA","CT:CD4+ T HLA-DR+ memory",0.77,TRUE
+"M4","CIMA","CT:CD4+ T Naive",0.395,FALSE
+"M4","CIMA","CT:CD4+ Temra",0.78,TRUE
+"M4","CIMA","CT:CD4+ Terminal effector",0.72,TRUE
+"M4","CIMA","CT:CD4+ Tfh",0.805,TRUE
+"M4","CIMA","CT:CD4+ Th1",0.81,TRUE
+"M4","CIMA","CT:CD4+ Th1/Th17",0.57,TRUE
+"M4","CIMA","CT:CD4+ Th17",0.83,TRUE
+"M4","CIMA","CT:CD4+ Th2",0.665,TRUE
+"M4","CIMA","CT:CD4+ Th22",0.77,TRUE
+"M4","CIMA","CT:CD4+ Treg cytotoxic",0.255,FALSE
+"M4","CIMA","CT:CD4+ Treg KLRB1+RORC+",0.62,TRUE
+"M4","CIMA","CT:CD4+ Treg memory",0.29,FALSE
+"M4","CIMA","CT:CD4+ Treg naive",0.305,FALSE
+"M4","CIMA","CT:CD8+ HLA-DR+",0.57,TRUE
+"M4","CIMA","CT:CD8+ IFN+ cells",0.78,TRUE
+"M4","CIMA","CT:CD8+ NKT-like",0.32,FALSE
+"M4","CIMA","CT:CD8+ Proliferative",0.295,FALSE
+"M4","CIMA","CT:CD8+ RTE",1,TRUE
+"M4","CIMA","CT:CD8+ T Naive",1,TRUE
+"M4","CIMA","CT:CD8+ Tcm CCR4-",0.245,FALSE
+"M4","CIMA","CT:CD8+ Tcm CCR4+",0.525,TRUE
+"M4","CIMA","CT:CD8+ Tem GZMB+",0.52,TRUE
+"M4","CIMA","CT:CD8+ Tem GZMK+",0.385,FALSE
+"M4","CIMA","CT:CD8+ Temra",0.365,FALSE
+"M4","CIMA","CT:CD8+ Tmem KLRC2+",0.485,FALSE
+"M4","CIMA","CT:CD8+ Trm",0.79,TRUE
+"M4","CIMA","CT:DN T cells",0.275,FALSE
+"M4","CIMA","CT:gd T naive",0.135,FALSE
+"M4","CIMA","CT:gd T Vd1 GZMB+",0.385,FALSE
+"M4","CIMA","CT:gd T Vd1 GZMK+",0.755,TRUE
+"M4","CIMA","CT:gd T Vd2 GZMB+",0.44,FALSE
+"M4","CIMA","CT:gd T Vd2 GZMK+",0.2,FALSE
+"M4","CIMA","CT:ILCs",0.205,FALSE
+"M4","CIMA","CT:MAIT",0.695,TRUE
+"M4","CIMA","CT:Myeloid cDCs",0.225,FALSE
+"M4","CIMA","CT:Myeloid Classical monocytes",0.29,FALSE
+"M4","CIMA","CT:Myeloid Non-classical monocytes",0.125,FALSE
+"M4","CIMA","CT:Myeloid pDCs",0.395,FALSE
+"M4","CIMA","CT:NK CD56bright",0.52,TRUE
+"M4","CIMA","CT:NK CD56dim CD57-",0.415,FALSE
+"M4","CIMA","CT:NK CD56dim CD57+",0.525,TRUE
+"M4","CIMA","CT:NK CD56dim CD57int",0.19,FALSE
+"M4","CIMA","CT:NK CD56dim CD57low",0.215,FALSE
+"M4","CIMA","CT:NK Proliferative",0.31,FALSE
+"M4","CIMA","CT:Progenitor cells",0.13,FALSE
+"M4","KCL","CT:B Activated",0.65,TRUE
+"M4","KCL","CT:B Atypical memory",0.56,TRUE
+"M4","KCL","CT:B CD5+ B cells",0.35,FALSE
+"M4","KCL","CT:B IFN+ cells",0.195,FALSE
+"M4","KCL","CT:B Naive",0.235,FALSE
+"M4","KCL","CT:B Non-switched memory",0.25,FALSE
+"M4","KCL","CT:B Plasma cells",0.175,FALSE
+"M4","KCL","CT:B Switched memory",0.56,TRUE
+"M4","KCL","CT:B Transitional",0.175,FALSE
+"M4","KCL","CT:CD4+ Exhausted-like memory",0.4,FALSE
+"M4","KCL","CT:CD4+ IFN+ cells",0.41,FALSE
+"M4","KCL","CT:CD4+ Proliferative",0.275,FALSE
+"M4","KCL","CT:CD4+ RTE",0.96,TRUE
+"M4","KCL","CT:CD4+ T HLA-DR+ memory",0.77,TRUE
+"M4","KCL","CT:CD4+ T Naive",0.395,FALSE
+"M4","KCL","CT:CD4+ Temra",0.78,TRUE
+"M4","KCL","CT:CD4+ Terminal effector",0.72,TRUE
+"M4","KCL","CT:CD4+ Tfh",0.805,TRUE
+"M4","KCL","CT:CD4+ Th1",0.82,TRUE
+"M4","KCL","CT:CD4+ Th1/Th17",0.57,TRUE
+"M4","KCL","CT:CD4+ Th17",0.885,TRUE
+"M4","KCL","CT:CD4+ Th2",0.665,TRUE
+"M4","KCL","CT:CD4+ Th22",0.935,TRUE
+"M4","KCL","CT:CD4+ Treg cytotoxic",0.255,FALSE
+"M4","KCL","CT:CD4+ Treg KLRB1+RORC+",0.62,TRUE
+"M4","KCL","CT:CD4+ Treg memory",0.29,FALSE
+"M4","KCL","CT:CD4+ Treg naive",0.305,FALSE
+"M4","KCL","CT:CD8+ HLA-DR+",0.57,TRUE
+"M4","KCL","CT:CD8+ IFN+ cells",0.78,TRUE
+"M4","KCL","CT:CD8+ NKT-like",0.32,FALSE
+"M4","KCL","CT:CD8+ Proliferative",0.295,FALSE
+"M4","KCL","CT:CD8+ RTE",1,TRUE
+"M4","KCL","CT:CD8+ T Naive",1,TRUE
+"M4","KCL","CT:CD8+ Tcm CCR4-",0.245,FALSE
+"M4","KCL","CT:CD8+ Tcm CCR4+",0.525,TRUE
+"M4","KCL","CT:CD8+ Tem GZMB+",0.52,TRUE
+"M4","KCL","CT:CD8+ Tem GZMK+",0.385,FALSE
+"M4","KCL","CT:CD8+ Temra",0.365,FALSE
+"M4","KCL","CT:CD8+ Tmem KLRC2+",0.485,FALSE
+"M4","KCL","CT:CD8+ Trm",0.79,TRUE
+"M4","KCL","CT:DN T cells",0.275,FALSE
+"M4","KCL","CT:gd T naive",0.135,FALSE
+"M4","KCL","CT:gd T Vd1 GZMB+",0.385,FALSE
+"M4","KCL","CT:gd T Vd1 GZMK+",0.755,TRUE
+"M4","KCL","CT:gd T Vd2 GZMB+",0.44,FALSE
+"M4","KCL","CT:gd T Vd2 GZMK+",0.2,FALSE
+"M4","KCL","CT:ILCs",0.205,FALSE
+"M4","KCL","CT:MAIT",0.695,TRUE
+"M4","KCL","CT:Myeloid cDCs",0.225,FALSE
+"M4","KCL","CT:Myeloid Classical monocytes",0.29,FALSE
+"M4","KCL","CT:Myeloid Non-classical monocytes",0.125,FALSE
+"M4","KCL","CT:Myeloid pDCs",0.395,FALSE
+"M4","KCL","CT:NK CD56bright",0.615,TRUE
+"M4","KCL","CT:NK CD56dim CD57-",0.415,FALSE
+"M4","KCL","CT:NK CD56dim CD57+",0.525,TRUE
+"M4","KCL","CT:NK CD56dim CD57int",0.19,FALSE
+"M4","KCL","CT:NK CD56dim CD57low",0.215,FALSE
+"M4","KCL","CT:NK Proliferative",0.31,FALSE
+"M4","KCL","CT:Progenitor cells",0.13,FALSE
+"M4","OneK1K","CT:B Activated",0.63,TRUE
+"M4","OneK1K","CT:B Atypical memory",0.56,TRUE
+"M4","OneK1K","CT:B CD5+ B cells",0.35,FALSE
+"M4","OneK1K","CT:B IFN+ cells",0.195,FALSE
+"M4","OneK1K","CT:B Naive",0.235,FALSE
+"M4","OneK1K","CT:B Non-switched memory",0.25,FALSE
+"M4","OneK1K","CT:B Plasma cells",0.175,FALSE
+"M4","OneK1K","CT:B Switched memory",0.56,TRUE
+"M4","OneK1K","CT:B Transitional",0.175,FALSE
+"M4","OneK1K","CT:CD4+ Exhausted-like memory",0.4,FALSE
+"M4","OneK1K","CT:CD4+ IFN+ cells",0.41,FALSE
+"M4","OneK1K","CT:CD4+ Proliferative",0.275,FALSE
+"M4","OneK1K","CT:CD4+ RTE",0.96,TRUE
+"M4","OneK1K","CT:CD4+ T HLA-DR+ memory",0.77,TRUE
+"M4","OneK1K","CT:CD4+ T Naive",0.395,FALSE
+"M4","OneK1K","CT:CD4+ Temra",0.78,TRUE
+"M4","OneK1K","CT:CD4+ Terminal effector",0.72,TRUE
+"M4","OneK1K","CT:CD4+ Tfh",0.805,TRUE
+"M4","OneK1K","CT:CD4+ Th1",0.82,TRUE
+"M4","OneK1K","CT:CD4+ Th1/Th17",0.57,TRUE
+"M4","OneK1K","CT:CD4+ Th17",0.835,TRUE
+"M4","OneK1K","CT:CD4+ Th2",0.665,TRUE
+"M4","OneK1K","CT:CD4+ Th22",0.77,TRUE
+"M4","OneK1K","CT:CD4+ Treg cytotoxic",0.255,FALSE
+"M4","OneK1K","CT:CD4+ Treg KLRB1+RORC+",0.62,TRUE
+"M4","OneK1K","CT:CD4+ Treg memory",0.29,FALSE
+"M4","OneK1K","CT:CD4+ Treg naive",0.305,FALSE
+"M4","OneK1K","CT:CD8+ HLA-DR+",0.57,TRUE
+"M4","OneK1K","CT:CD8+ IFN+ cells",0.78,TRUE
+"M4","OneK1K","CT:CD8+ NKT-like",0.32,FALSE
+"M4","OneK1K","CT:CD8+ Proliferative",0.295,FALSE
+"M4","OneK1K","CT:CD8+ RTE",1,TRUE
+"M4","OneK1K","CT:CD8+ T Naive",1,TRUE
+"M4","OneK1K","CT:CD8+ Tcm CCR4-",0.245,FALSE
+"M4","OneK1K","CT:CD8+ Tcm CCR4+",0.525,TRUE
+"M4","OneK1K","CT:CD8+ Tem GZMB+",0.52,TRUE
+"M4","OneK1K","CT:CD8+ Tem GZMK+",0.385,FALSE
+"M4","OneK1K","CT:CD8+ Temra",0.365,FALSE
+"M4","OneK1K","CT:CD8+ Tmem KLRC2+",0.485,FALSE
+"M4","OneK1K","CT:CD8+ Trm",0.79,TRUE
+"M4","OneK1K","CT:DN T cells",0.275,FALSE
+"M4","OneK1K","CT:gd T naive",0.135,FALSE
+"M4","OneK1K","CT:gd T Vd1 GZMB+",0.385,FALSE
+"M4","OneK1K","CT:gd T Vd1 GZMK+",0.755,TRUE
+"M4","OneK1K","CT:gd T Vd2 GZMB+",0.44,FALSE
+"M4","OneK1K","CT:gd T Vd2 GZMK+",0.2,FALSE
+"M4","OneK1K","CT:ILCs",0.205,FALSE
+"M4","OneK1K","CT:MAIT",0.695,TRUE
+"M4","OneK1K","CT:Myeloid cDCs",0.225,FALSE
+"M4","OneK1K","CT:Myeloid Classical monocytes",0.29,FALSE
+"M4","OneK1K","CT:Myeloid Non-classical monocytes",0.125,FALSE
+"M4","OneK1K","CT:Myeloid pDCs",0.395,FALSE
+"M4","OneK1K","CT:NK CD56bright",0.615,TRUE
+"M4","OneK1K","CT:NK CD56dim CD57-",0.415,FALSE
+"M4","OneK1K","CT:NK CD56dim CD57+",0.525,TRUE
+"M4","OneK1K","CT:NK CD56dim CD57int",0.19,FALSE
+"M4","OneK1K","CT:NK CD56dim CD57low",0.215,FALSE
+"M4","OneK1K","CT:NK Proliferative",0.31,FALSE
+"M4","OneK1K","CT:Progenitor cells",0.13,FALSE
+"M4","SoundLife","CT:B Activated",0.63,TRUE
+"M4","SoundLife","CT:B Atypical memory",0.56,TRUE
+"M4","SoundLife","CT:B CD5+ B cells",0.35,FALSE
+"M4","SoundLife","CT:B IFN+ cells",0.195,FALSE
+"M4","SoundLife","CT:B Naive",0.235,FALSE
+"M4","SoundLife","CT:B Non-switched memory",0.25,FALSE
+"M4","SoundLife","CT:B Plasma cells",0.175,FALSE
+"M4","SoundLife","CT:B Switched memory",0.56,TRUE
+"M4","SoundLife","CT:B Transitional",0.175,FALSE
+"M4","SoundLife","CT:CD4+ Exhausted-like memory",0.4,FALSE
+"M4","SoundLife","CT:CD4+ IFN+ cells",0.41,FALSE
+"M4","SoundLife","CT:CD4+ Proliferative",0.275,FALSE
+"M4","SoundLife","CT:CD4+ RTE",0.96,TRUE
+"M4","SoundLife","CT:CD4+ T HLA-DR+ memory",0.77,TRUE
+"M4","SoundLife","CT:CD4+ T Naive",0.395,FALSE
+"M4","SoundLife","CT:CD4+ Temra",0.78,TRUE
+"M4","SoundLife","CT:CD4+ Terminal effector",0.72,TRUE
+"M4","SoundLife","CT:CD4+ Tfh",0.805,TRUE
+"M4","SoundLife","CT:CD4+ Th1",0.82,TRUE
+"M4","SoundLife","CT:CD4+ Th1/Th17",0.57,TRUE
+"M4","SoundLife","CT:CD4+ Th17",0.835,TRUE
+"M4","SoundLife","CT:CD4+ Th2",0.665,TRUE
+"M4","SoundLife","CT:CD4+ Th22",0.77,TRUE
+"M4","SoundLife","CT:CD4+ Treg cytotoxic",0.255,FALSE
+"M4","SoundLife","CT:CD4+ Treg KLRB1+RORC+",0.62,TRUE
+"M4","SoundLife","CT:CD4+ Treg memory",0.29,FALSE
+"M4","SoundLife","CT:CD4+ Treg naive",0.305,FALSE
+"M4","SoundLife","CT:CD8+ HLA-DR+",0.57,TRUE
+"M4","SoundLife","CT:CD8+ IFN+ cells",0.78,TRUE
+"M4","SoundLife","CT:CD8+ NKT-like",0.32,FALSE
+"M4","SoundLife","CT:CD8+ Proliferative",0.295,FALSE
+"M4","SoundLife","CT:CD8+ RTE",1,TRUE
+"M4","SoundLife","CT:CD8+ T Naive",1,TRUE
+"M4","SoundLife","CT:CD8+ Tcm CCR4-",0.245,FALSE
+"M4","SoundLife","CT:CD8+ Tcm CCR4+",0.525,TRUE
+"M4","SoundLife","CT:CD8+ Tem GZMB+",0.52,TRUE
+"M4","SoundLife","CT:CD8+ Tem GZMK+",0.385,FALSE
+"M4","SoundLife","CT:CD8+ Temra",0.365,FALSE
+"M4","SoundLife","CT:CD8+ Tmem KLRC2+",0.485,FALSE
+"M4","SoundLife","CT:CD8+ Trm",0.79,TRUE
+"M4","SoundLife","CT:DN T cells",0.275,FALSE
+"M4","SoundLife","CT:gd T naive",0.135,FALSE
+"M4","SoundLife","CT:gd T Vd1 GZMB+",0.385,FALSE
+"M4","SoundLife","CT:gd T Vd1 GZMK+",0.755,TRUE
+"M4","SoundLife","CT:gd T Vd2 GZMB+",0.44,FALSE
+"M4","SoundLife","CT:gd T Vd2 GZMK+",0.2,FALSE
+"M4","SoundLife","CT:ILCs",0.205,FALSE
+"M4","SoundLife","CT:MAIT",0.695,TRUE
+"M4","SoundLife","CT:Myeloid cDCs",0.225,FALSE
+"M4","SoundLife","CT:Myeloid Classical monocytes",0.29,FALSE
+"M4","SoundLife","CT:Myeloid Non-classical monocytes",0.125,FALSE
+"M4","SoundLife","CT:Myeloid pDCs",0.395,FALSE
+"M4","SoundLife","CT:NK CD56bright",0.615,TRUE
+"M4","SoundLife","CT:NK CD56dim CD57-",0.415,FALSE
+"M4","SoundLife","CT:NK CD56dim CD57+",0.525,TRUE
+"M4","SoundLife","CT:NK CD56dim CD57int",0.19,FALSE
+"M4","SoundLife","CT:NK CD56dim CD57low",0.215,FALSE
+"M4","SoundLife","CT:NK Proliferative",0.31,FALSE
+"M4","SoundLife","CT:Progenitor cells",0.13,FALSE
+"M4","SPAC","CT:B Activated",0.63,TRUE
+"M4","SPAC","CT:B Atypical memory",0.57,TRUE
+"M4","SPAC","CT:B CD5+ B cells",0.35,FALSE
+"M4","SPAC","CT:B IFN+ cells",0.35,FALSE
+"M4","SPAC","CT:B Naive",0.275,FALSE
+"M4","SPAC","CT:B Non-switched memory",0.25,FALSE
+"M4","SPAC","CT:B Plasma cells",0.23,FALSE
+"M4","SPAC","CT:B Switched memory",0.66,TRUE
+"M4","SPAC","CT:B Transitional",0.345,FALSE
+"M4","SPAC","CT:CD4+ Exhausted-like memory",0.4,FALSE
+"M4","SPAC","CT:CD4+ IFN+ cells",0.41,FALSE
+"M4","SPAC","CT:CD4+ Proliferative",0.58,TRUE
+"M4","SPAC","CT:CD4+ RTE",1,TRUE
+"M4","SPAC","CT:CD4+ T HLA-DR+ memory",0.955,TRUE
+"M4","SPAC","CT:CD4+ T Naive",0.755,TRUE
+"M4","SPAC","CT:CD4+ Temra",0.78,TRUE
+"M4","SPAC","CT:CD4+ Terminal effector",0.72,TRUE
+"M4","SPAC","CT:CD4+ Tfh",0.905,TRUE
+"M4","SPAC","CT:CD4+ Th1",0.83,TRUE
+"M4","SPAC","CT:CD4+ Th1/Th17",0.89,TRUE
+"M4","SPAC","CT:CD4+ Th17",0.835,TRUE
+"M4","SPAC","CT:CD4+ Th2",0.985,TRUE
+"M4","SPAC","CT:CD4+ Th22",0.77,TRUE
+"M4","SPAC","CT:CD4+ Treg cytotoxic",0.6,TRUE
+"M4","SPAC","CT:CD4+ Treg KLRB1+RORC+",0.635,TRUE
+"M4","SPAC","CT:CD4+ Treg memory",0.995,TRUE
+"M4","SPAC","CT:CD4+ Treg naive",0.305,FALSE
+"M4","SPAC","CT:CD8+ HLA-DR+",0.72,TRUE
+"M4","SPAC","CT:CD8+ IFN+ cells",0.78,TRUE
+"M4","SPAC","CT:CD8+ NKT-like",0.395,FALSE
+"M4","SPAC","CT:CD8+ Proliferative",0.635,TRUE
+"M4","SPAC","CT:CD8+ RTE",1,TRUE
+"M4","SPAC","CT:CD8+ T Naive",1,TRUE
+"M4","SPAC","CT:CD8+ Tcm CCR4-",0.89,TRUE
+"M4","SPAC","CT:CD8+ Tcm CCR4+",0.545,TRUE
+"M4","SPAC","CT:CD8+ Tem GZMB+",0.52,TRUE
+"M4","SPAC","CT:CD8+ Tem GZMK+",0.49,FALSE
+"M4","SPAC","CT:CD8+ Temra",0.365,FALSE
+"M4","SPAC","CT:CD8+ Tmem KLRC2+",0.485,FALSE
+"M4","SPAC","CT:CD8+ Trm",0.905,TRUE
+"M4","SPAC","CT:DN T cells",0.675,TRUE
+"M4","SPAC","CT:gd T naive",0.435,FALSE
+"M4","SPAC","CT:gd T Vd1 GZMB+",0.385,FALSE
+"M4","SPAC","CT:gd T Vd1 GZMK+",0.755,TRUE
+"M4","SPAC","CT:gd T Vd2 GZMB+",0.44,FALSE
+"M4","SPAC","CT:gd T Vd2 GZMK+",0.94,TRUE
+"M4","SPAC","CT:ILCs",0.205,FALSE
+"M4","SPAC","CT:MAIT",0.695,TRUE
+"M4","SPAC","CT:Myeloid cDCs",0.54,TRUE
+"M4","SPAC","CT:Myeloid Classical monocytes",0.29,FALSE
+"M4","SPAC","CT:Myeloid Non-classical monocytes",0.43,FALSE
+"M4","SPAC","CT:Myeloid pDCs",0.62,TRUE
+"M4","SPAC","CT:NK CD56bright",0.615,TRUE
+"M4","SPAC","CT:NK CD56dim CD57-",0.415,FALSE
+"M4","SPAC","CT:NK CD56dim CD57+",0.525,TRUE
+"M4","SPAC","CT:NK CD56dim CD57int",0.33,FALSE
+"M4","SPAC","CT:NK CD56dim CD57low",0.71,TRUE
+"M4","SPAC","CT:NK Proliferative",0.31,FALSE
+"M4","SPAC","CT:Progenitor cells",0.845,TRUE
+"M4","UCSF","CT:B Activated",0.63,TRUE
+"M4","UCSF","CT:B Atypical memory",0.705,TRUE
+"M4","UCSF","CT:B CD5+ B cells",0.745,TRUE
+"M4","UCSF","CT:B IFN+ cells",0.405,FALSE
+"M4","UCSF","CT:B Naive",0.44,FALSE
+"M4","UCSF","CT:B Non-switched memory",0.7,TRUE
+"M4","UCSF","CT:B Plasma cells",0.35,FALSE
+"M4","UCSF","CT:B Switched memory",0.73,TRUE
+"M4","UCSF","CT:B Transitional",0.375,FALSE
+"M4","UCSF","CT:CD4+ Exhausted-like memory",0.595,TRUE
+"M4","UCSF","CT:CD4+ IFN+ cells",0.635,TRUE
+"M4","UCSF","CT:CD4+ Proliferative",0.51,TRUE
+"M4","UCSF","CT:CD4+ RTE",0.975,TRUE
+"M4","UCSF","CT:CD4+ T HLA-DR+ memory",0.925,TRUE
+"M4","UCSF","CT:CD4+ T Naive",0.53,TRUE
+"M4","UCSF","CT:CD4+ Temra",0.835,TRUE
+"M4","UCSF","CT:CD4+ Terminal effector",0.72,TRUE
+"M4","UCSF","CT:CD4+ Tfh",0.875,TRUE
+"M4","UCSF","CT:CD4+ Th1",0.83,TRUE
+"M4","UCSF","CT:CD4+ Th1/Th17",0.775,TRUE
+"M4","UCSF","CT:CD4+ Th17",0.835,TRUE
+"M4","UCSF","CT:CD4+ Th2",0.71,TRUE
+"M4","UCSF","CT:CD4+ Th22",0.77,TRUE
+"M4","UCSF","CT:CD4+ Treg cytotoxic",0.47,FALSE
+"M4","UCSF","CT:CD4+ Treg KLRB1+RORC+",0.845,TRUE
+"M4","UCSF","CT:CD4+ Treg memory",0.52,TRUE
+"M4","UCSF","CT:CD4+ Treg naive",0.695,TRUE
+"M4","UCSF","CT:CD8+ HLA-DR+",0.695,TRUE
+"M4","UCSF","CT:CD8+ IFN+ cells",0.925,TRUE
+"M4","UCSF","CT:CD8+ NKT-like",0.5,TRUE
+"M4","UCSF","CT:CD8+ Proliferative",0.46,FALSE
+"M4","UCSF","CT:CD8+ RTE",1,TRUE
+"M4","UCSF","CT:CD8+ T Naive",1,TRUE
+"M4","UCSF","CT:CD8+ Tcm CCR4-",0.405,FALSE
+"M4","UCSF","CT:CD8+ Tcm CCR4+",0.6,TRUE
+"M4","UCSF","CT:CD8+ Tem GZMB+",0.765,TRUE
+"M4","UCSF","CT:CD8+ Tem GZMK+",0.59,TRUE
+"M4","UCSF","CT:CD8+ Temra",0.665,TRUE
+"M4","UCSF","CT:CD8+ Tmem KLRC2+",0.905,TRUE
+"M4","UCSF","CT:CD8+ Trm",0.85,TRUE
+"M4","UCSF","CT:DN T cells",0.565,TRUE
+"M4","UCSF","CT:gd T naive",0.255,FALSE
+"M4","UCSF","CT:gd T Vd1 GZMB+",0.685,TRUE
+"M4","UCSF","CT:gd T Vd1 GZMK+",0.765,TRUE
+"M4","UCSF","CT:gd T Vd2 GZMB+",0.765,TRUE
+"M4","UCSF","CT:gd T Vd2 GZMK+",0.29,FALSE
+"M4","UCSF","CT:ILCs",0.42,FALSE
+"M4","UCSF","CT:MAIT",0.91,TRUE
+"M4","UCSF","CT:Myeloid cDCs",0.42,FALSE
+"M4","UCSF","CT:Myeloid Classical monocytes",0.495,FALSE
+"M4","UCSF","CT:Myeloid Non-classical monocytes",0.255,FALSE
+"M4","UCSF","CT:Myeloid pDCs",0.57,TRUE
+"M4","UCSF","CT:NK CD56bright",0.675,TRUE
+"M4","UCSF","CT:NK CD56dim CD57-",0.72,TRUE
+"M4","UCSF","CT:NK CD56dim CD57+",0.725,TRUE
+"M4","UCSF","CT:NK CD56dim CD57int",0.465,FALSE
+"M4","UCSF","CT:NK CD56dim CD57low",0.42,FALSE
+"M4","UCSF","CT:NK Proliferative",0.665,TRUE
+"M4","UCSF","CT:Progenitor cells",0.32,FALSE

@@ -20,7 +20,7 @@ Simulated calibration evidence (10 seeds x 2 designs, proportional-odds
 ground truth): knockoff_equi mean FDP+ was 0.00 (nominal 0.1) but mean TPR
 was only 0.37 on both designs -- the learner is strongly conservative and
 did NOT meet the predeclared graduation bar (FDP+ <= 0.15 AND TPR >= 0.8).
-It stays experimental; see inst/benchmarks/ws9_summary.md.
+It stays experimental; see benchmarks/ws9_summary.md.
 
 Returns a closure that fits ONE elastic-net cumulative-logit model
 (\code{ordinalNet}) on a single bootstrap subsample and returns a logical

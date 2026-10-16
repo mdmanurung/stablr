@@ -8,8 +8,8 @@ reported as measured, not suppressed.
 
 ## 1. IV benchmark (predeclared 2026-10-15, run after the predesign)
 
-Script: `inst/benchmarks/interpretation_validation.R`. Predesign:
-`inst/benchmarks/interpretation_validation_predesign.md` (frozen before
+Script: `benchmarks/interpretation_validation.R`. Predesign:
+`benchmarks/interpretation_validation_predesign.md` (frozen before
 any run; one dated addendum records two post-run repairs with the design
 unchanged). Outputs: `iv_results.csv` (110 runs), `iv_effects.csv` (350),
 `iv_folds.csv` (190), `iv_importance.csv` (550), `iv_failures.csv` (0),

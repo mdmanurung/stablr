@@ -1,0 +1,60 @@
+"perm","feature","min_score"
+36,"CT:B Activated",1
+36,"CT:B Atypical memory",0.945
+36,"CT:B CD5+ B cells",0.985
+36,"CT:B IFN+ cells",0.965
+36,"CT:B Naive",0.985
+36,"CT:B Non-switched memory",0.95
+36,"CT:B Plasma cells",0.995
+36,"CT:B Switched memory",0.935
+36,"CT:B Transitional",0.97
+36,"CT:CD4+ Exhausted-like memory",0.935
+36,"CT:CD4+ IFN+ cells",0.96
+36,"CT:CD4+ Proliferative",0.975
+36,"CT:CD4+ RTE",0.99
+36,"CT:CD4+ T HLA-DR+ memory",0.945
+36,"CT:CD4+ T Naive",0.975
+36,"CT:CD4+ Temra",0.975
+36,"CT:CD4+ Terminal effector",0.94
+36,"CT:CD4+ Tfh",0.935
+36,"CT:CD4+ Th1",0.94
+36,"CT:CD4+ Th1/Th17",0.94
+36,"CT:CD4+ Th17",0.935
+36,"CT:CD4+ Th2",0.945
+36,"CT:CD4+ Th22",0.985
+36,"CT:CD4+ Treg cytotoxic",0.98
+36,"CT:CD4+ Treg KLRB1+RORC+",0.975
+36,"CT:CD4+ Treg memory",0.975
+36,"CT:CD4+ Treg naive",0.96
+36,"CT:CD8+ HLA-DR+",0.98
+36,"CT:CD8+ IFN+ cells",0.96
+36,"CT:CD8+ NKT-like",0.985
+36,"CT:CD8+ Proliferative",0.975
+36,"CT:CD8+ RTE",0.975
+36,"CT:CD8+ T Naive",0.92
+36,"CT:CD8+ Tcm CCR4-",0.97
+36,"CT:CD8+ Tcm CCR4+",0.98
+36,"CT:CD8+ Tem GZMB+",0.995
+36,"CT:CD8+ Tem GZMK+",0.96
+36,"CT:CD8+ Temra",0.96
+36,"CT:CD8+ Tmem KLRC2+",0.98
+36,"CT:CD8+ Trm",0.95
+36,"CT:DN T cells",0.98
+36,"CT:gd T naive",0.98
+36,"CT:gd T Vd1 GZMB+",0.97
+36,"CT:gd T Vd1 GZMK+",0.98
+36,"CT:gd T Vd2 GZMB+",0.995
+36,"CT:gd T Vd2 GZMK+",0.995
+36,"CT:ILCs",0.905
+36,"CT:MAIT",0.99
+36,"CT:Myeloid cDCs",0.975
+36,"CT:Myeloid Classical monocytes",0.975
+36,"CT:Myeloid Non-classical monocytes",0.955
+36,"CT:Myeloid pDCs",0.965
+36,"CT:NK CD56bright",0.985
+36,"CT:NK CD56dim CD57-",0.94
+36,"CT:NK CD56dim CD57+",0.97
+36,"CT:NK CD56dim CD57int",0.94
+36,"CT:NK CD56dim CD57low",0.965
+36,"CT:NK Proliferative",0.995
+36,"CT:Progenitor cells",0.95

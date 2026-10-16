@@ -72,7 +72,7 @@
 #' (10 seeds x 2 proportional-odds designs) shows knockoff_equi mean FDP+ of
 #' 0.00 (nominal 0.1) but mean TPR of only 0.37 on both designs -- the learner
 #' is strongly conservative and did not meet the predeclared graduation bar.
-#' It stays experimental; see inst/benchmarks/ws9_summary.md.
+#' It stays experimental; see benchmarks/ws9_summary.md.
 #'
 #' @export
 make_ordinal_adapter <- function(alpha = 1) {
