@@ -90,7 +90,7 @@ and returns held-out predictions, pooled and per-repeat performance
 and held-out permutation importance labelled `cross_validated`.
 
 Evidence status (simulation-only, predeclared gates,
-`inst/benchmarks/iv_summary.md`): effect-direction recovery 1.00; null
+`benchmarks/iv_summary.md`): effect-direction recovery 1.00; null
 validated AUROC centred at chance (median 0.473); leaky full-data
 selection is directionally optimistic over nested validation (+0.015
 mean AUROC); one-feature folds produce non-degenerate probabilities. One

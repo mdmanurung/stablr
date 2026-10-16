@@ -4,7 +4,7 @@ Summarises each study's outcome composition and the location shift of
 its features relative to the pooled rest of the data. The diagnostics
 quantify how much study-level structure a sample-i.i.d. cross-validation
 scheme would leak across folds, and feed the study-disjoint benchmark
-(`inst/benchmarks/b1_study_disjoint_cv.R`).
+(`benchmarks/b1_study_disjoint_cv.R`).
 
 ## Usage
 

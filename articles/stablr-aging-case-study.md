@@ -18,6 +18,19 @@
 > is an application case study. It is not calibration evidence for the
 > method.
 
+> **Status of this vignette (2026-10-15).** This vignette is the
+> historical *exploratory* analysis (v1). A prospective revision with a
+> locked protocol, a leakage-proof engine, a six-selector matrix, and a
+> permutation null has since been completed (v2). Section 10 summarizes
+> the v2 design and findings; the v2 package lives in
+> `benchmarks/ws8_v2/`. Three v1 defects found by audit are flagged
+> where they occur: the exported `mean_score` and `selected_lasso`
+> columns are entirely missing (so the lasso sensitivity claim is not
+> verifiable from the committed table), and the script-level and
+> vignette-level MAE summaries used different estimands (micro vs
+> macro). The v1 numbers below are otherwise as committed. Where v1 and
+> v2 differ, v2 is authoritative.
+
 ## Contents
 
 - 1 Background and aims
@@ -29,6 +42,7 @@
 - 7 Discussion
 - 8 Limits
 - 9 Reproducibility
+- 10 The v2 prospective revision
 - References
 
 ## 1 Background and aims
@@ -50,11 +64,11 @@ This case study asks two questions:
     not see?
 
 The analysis ran once with a fixed seed. The analysis script is
-`inst/benchmarks/ws8_aging_showcase.R` in the package source. The
-figures and statistics tables come from `inst/benchmarks/ws8_figures.R`
-and `inst/benchmarks/ws8_recalibration.R`. The pipeline takes about 15
-minutes. The post-review follow-up analyses add about one hour, most of
-it the selection-isolated LOCO. This vignette shows the saved results.
+`benchmarks/ws8_aging_showcase.R` in the package source. The figures and
+statistics tables come from `benchmarks/ws8_figures.R` and
+`benchmarks/ws8_recalibration.R`. The pipeline takes about 15 minutes.
+The post-review follow-up analyses add about one hour, most of it the
+selection-isolated LOCO. This vignette shows the saved results.
 
 ## 2 Data
 
@@ -295,6 +309,13 @@ CD8+ T Naive is the only feature that both learners select. The
 agreement is partial. The lasso result supports the direction of the
 primary result. It does not reproduce the full 24-feature panel.
 
+*Audit note (v2): the exported `selected_lasso` column is missing for
+all 60 features in the committed results table (a name-stripping defect
+in the export). The “6 features” count above is therefore not verifiable
+from the committed artifact; treat it as a narrative claim from the run
+log. The v2 revision replaces this sensitivity with a matched-budget
+lasso stability comparator (selector M2, Section 10).*
+
 ### 4.2 Which cohort sets the bar
 
 The min-agg score is a minimum over cohorts. For all 24 selected
@@ -333,6 +354,12 @@ model predicts age with MAE between 6.7 years (SoundLife) and 15.6 years
 to 7.6 years) and UCSF (13.4 to 10.8 years). It hurts two others: OneK1K
 (15.5 to 17.7 years) and SoundLife (6.7 to 9.6 years). The overall means
 (12.1 and 11.7 years) hide this heterogeneity.
+
+*Audit note (v2): the means quoted here are macro means (unweighted over
+cohorts). The analysis script’s own pooled summary was a micro mean
+(donor-weighted, 14.0 years for the all-feature model). The two
+estimands were presented under one name in v1; v2 reports both,
+explicitly labeled (Section 10).*
 
 A paired per-donor comparison makes this precise (Table 4). For each
 donor, we take the difference of absolute errors (all-feature minus
@@ -560,12 +587,12 @@ Four limits bound the conclusions.
   `pan_atlas_healthy_aging_all_celtypes`, file
   `all_cells_metadata.csv.gz`. MD5 `50651968855bf6ca3efcdf199e2a9fd5`.
   Retrieved 2026-10-13.
-- Pipeline: `inst/benchmarks/ws8_aging_showcase.R`. The design was
-  predeclared in `inst/benchmarks/ws8_showcase_predesign.md`. Seed
+- Pipeline: `benchmarks/ws8_aging_showcase.R`. The design was
+  predeclared in `benchmarks/ws8_showcase_predesign.md`. Seed
   20261013. 
-- Figures and statistics: `inst/benchmarks/ws8_figures.R` and
-  `inst/benchmarks/ws8_recalibration.R`. Outputs:
-  `inst/benchmarks/ws8_feature_stats.csv`, `ws8_loco_mae_ci.csv`,
+- Figures and statistics: `benchmarks/ws8_figures.R` and
+  `benchmarks/ws8_recalibration.R`. Outputs:
+  `benchmarks/ws8_feature_stats.csv`, `ws8_loco_mae_ci.csv`,
   `ws8_loco_calibration.csv`, `ws8_rule_comparison.csv`,
   `ws8_recalibration.csv`, and `vignettes/figures/`.
 - Post-review follow-ups (2026-10-15): `ws8_review_fdp.R`
@@ -577,6 +604,149 @@ Four limits bound the conclusions.
   pipeline script; only the last refits.
 - Software: R 4.4.2; `stablr` 0.3.0 (this branch); `ranger`, `glmnet`,
   `knockoff`.
+- Audit note (v2): in `ws8_results.csv`, the `mean_score` and
+  `selected_lasso` columns are missing for all 60 rows (export defects).
+  All other committed v1 artifacts check out against the scripts.
+- The v2 prospective revision lives in `benchmarks/ws8_v2/` with its own
+  locked protocol, claims ledger, and run manifests (Section 10).
+
+## 10 The v2 prospective revision
+
+### 10.1 Why a revision
+
+The v1 analysis above was exploratory. A later audit found export
+defects and an estimand conflation (flagged in place above), and the
+design mixed selection and evaluation on the same cohorts. The v2
+revision rebuilds the case study as a prospective benchmark with a
+locked protocol (`benchmarks/ws8_v2/protocol.md`), a leakage-proof
+leave-one-cohort-out (LOCO) engine, six matched selectors, and a
+permutation null. Every v2 claim traces to a committed, executed
+artifact in the claims ledger (`claims_ledger.md`). An independent
+adversarial review of the v2 package was performed and all findings were
+remediated (`review_decisions.md`, Amendment 1 in
+`ws8_showcase_predesign.md`).
+
+### 10.2 Design in brief
+
+The feature universe is the 59 harmonized immune cell-type proportions
+(sex, CMV, and ancestry are not discovery features). Each of the eight
+cohorts is held out in turn. Selectors train on the remaining seven
+cohorts only: M0, a random-effects meta-analysis of per-cohort
+associations; M1, the source paper’s per-cohort adjusted significance
+vote (`feature ~ age + sex + ancestry`, BH, at least 5 of 7 cohorts);
+M2, pooled lasso stability; M3, pooled STABL; M4, environment-aware
+STABL with min-across-cohorts aggregation (the primary method); M5, the
+same with majority aggregation. The primary endpoint is the
+cohort-balanced held-out directional replication R(K): the mean, over
+the matched top-K panel (K = 10), of the training-signed held-out
+Spearman correlation with age, averaged over the eight folds. The
+confirmatory contrasts are M4 versus M0 and M4 versus M3. M3 is the
+controlled pair for M4: identical learner, knockoffs, budget, and seed;
+only the cohort aggregation differs.
+
+### 10.3 Result: held-out association replication
+
+Macro R at K = 10 across the eight held-out cohorts:
+
+| Selector               | Macro <R@10> |
+|------------------------|--------------|
+| M0 meta-analysis       | 0.395        |
+| M1 adjusted vote       | 0.386        |
+| M5 env STABL, majority | 0.321        |
+| M4 env STABL, min      | 0.286        |
+| M3 pooled STABL        | 0.142        |
+| M2 lasso stability     | 0.118        |
+
+![Per-cohort held-out signed replication at K = 10 for the six
+selectors. Diamonds are macro means.](figures/ws8v2_replication_k10.png)
+
+Per-cohort held-out signed replication at K = 10 for the six selectors.
+Diamonds are macro means.
+
+The confirmatory contrasts (paired over the eight cohorts; intervals are
+paired t intervals on 7 degrees of freedom, imprecise at n = 8; p-values
+are exact sign-flip tests):
+
+- **M4 − M3 = +0.145 \[+0.083, +0.206\], p = 0.0078.** Environment-aware
+  aggregation adds value over pooled STABL. The difference is positive
+  in all eight cohorts. This is the controlled isolation of the
+  aggregation step.
+- **M4 − M0 = −0.108 \[−0.174, −0.043\], p = 0.016.** The min-aggregated
+  STABL panel replicates *less* well than the simple random-effects
+  meta-analysis ranking.
+
+Exploratory contrasts: M4 − M1 = −0.100 (p = 0.023), M4 − M2 = +0.168 (p
+= 0.0078), M4 − M5 = −0.034 (p = 0.023). The reading is mixed and partly
+negative for the primary hypothesis. Environment-aware aggregation beats
+pooling the cohorts into one STABL fit, and beats lasso stability. It
+does not beat the simpler association-based selectors — the
+meta-analysis or the significance vote — at the same feature budget. No
+method-superiority claim is made.
+
+### 10.4 Result: the selection count is null-saturated
+
+The S0 null probe permutes age within each cohort (preserving the
+features, the cohort structure, and each cohort’s age distribution) and
+refits the full M4 selector. In 50 of 50 permutations, the
+min-aggregation rule selects **59 of 59 features** at the 0.5 bar
+(Clopper–Pearson 95% lower bound for the saturation probability: 0.929).
+The same-design real-data fit selects 35 of 59. Under the null, the
+selector selects everything; the size of the selected panel therefore
+carries no signal on this atlas. This is consistent with the v1 knockoff
+diagnostics (FDP+ close to 1, Section 4.1). Every per-environment fit
+containing SPAC (n = 33 donors, fewer than the 59 features) uses a
+positive-definite projection of a rank-deficient knockoff covariance,
+and min-aggregation gives that smallest cohort veto power; the
+saturation and the projection are plausibly related. The v2 case for the
+panel rests on the replication and prediction *rankings* above and below
+— not on selection being non-null.
+
+![Features selected by the M4 min-aggregation rule under 50
+within-cohort age permutations (points) versus the same-design real-data
+fit (dashed line, 35 of 59).](figures/ws8v2_null_probe.png)
+
+Features selected by the M4 min-aggregation rule under 50 within-cohort
+age permutations (points) versus the same-design real-data fit (dashed
+line, 35 of 59).
+
+### 10.5 Result: prediction in unseen cohorts
+
+A ridge model on the M4 top-10 panel, tuned by
+leave-one-training-cohort-out inner CV, predicts held-out cohort age
+with macro MAE 12.2 years (micro 13.6), against 12.4 (14.4) for the
+all-59 model and 20.1 (22.7) for the training-median baseline. The panel
+beats the median baseline decisively (paired per-cohort difference −7.9
+years \[−11.1, −4.7\], sign-flip p = 0.0078). It does **not** beat the
+all-59 model systematically (−0.16 years \[−2.84, +2.51\], p = 0.93);
+the macro edge rests on one cohort (CIMA), and the top-10 panel is worse
+than all-59 in five of eight cohorts. Calibration slopes remain below 1
+in every cohort (predicted-on- observed 0.32 to 0.68): predictions
+compress toward the training range, as in v1 Section 5.
+
+### 10.6 Result: biology
+
+All eight a priori reference populations keep the same direction of
+association in all eight cohorts: naive and recent-thymic-emigrant T
+cells and MAIT cells fall with age; terminally differentiated
+effector-memory compartments rise. The GZMK+/GZMB+ CD8 effector-memory
+ratio is cohort-dependent (negative in six of eight cohorts): a
+reproducible core coexists with cohort-dependent components. Per-cohort
+effect sizes and heterogeneity are in
+`benchmarks/ws8_v2/results/biology/`.
+
+### 10.7 What v2 changes
+
+The v1 headline — 24 of 60 features “track age in every cohort” —
+survives only in a weaker, audited form. The selection bar is not
+non-null on this atlas (Section 10.4), so panel membership itself is not
+evidence. What survives is the ranking: the strongest age-associated
+features replicate in held-out cohorts under every selector, the eight
+predeclared populations are directionally consistent everywhere, and a
+sparse panel predicts age in unseen cohorts about as well as the full
+feature set. For this endpoint on this atlas, the simplest selectors
+(meta-analysis or a significance vote) replicate best; environment-aware
+STABL’s measured value is its improvement over pooled STABL, not
+superiority over simpler baselines.
 
 ## References
 
