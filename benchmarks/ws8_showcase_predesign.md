@@ -293,10 +293,14 @@ V11–V15).
    saturation is structural. M1 is the calibrated selector under known
    truth (null-safe, sparse-exact, heterogeneity-robust).
 5. **SCI-04 acceptance (governance, outside the v2 claim set).** The
-   external reviewer accepted the null-selected-fraction gate on 2026-10-16
-   (accepted record `SCI-04-null-selected-fraction-v2-accepted`; reviewer
-   response in `inst/analysis/review/SCI-04-acceptance-record.md`). The
-   release contract pins the Hoeffding criterion (alpha = 0.05, U <= 0.10,
-   n = 150) and the methodology validation evaluates the bound instead of
-   failing closed. The fresh full-candidate release run at n = 150 remains
-   the open release blocker.
+   null-selected-fraction gate was accepted on 2026-10-16 by the project
+   owner acting in the reviewer role (accepted record
+   `SCI-04-null-selected-fraction-v2-accepted`; reviewer response in
+   `inst/analysis/review/SCI-04-acceptance-record.md`). This is a
+   provisional owner acceptance: the packet's itemized independent
+   confirmation remains outstanding and is pinned as a release-contract
+   blocker. The release contract pins the Hoeffding criterion (alpha 0.05,
+   U <= 0.10, n = 150) and the methodology validation evaluates the bound
+   instead of failing closed. The fresh full-candidate release run at
+   n = 150 and the independent confirmation remain the open release
+   blockers.

@@ -27,3 +27,10 @@ Scope note: the acceptance was recorded as a blanket approval of the draft
 record exactly as proposed (no amendments). The itemized confirmations above
 are covered by that blanket acceptance; no itemized review notes were
 provided by the reviewer.
+
+Independence note: the reviewer is the project owner (the package author),
+so this acceptance does not satisfy the independence requirement of the
+review packet as written. It is recorded as a provisional owner acceptance;
+an itemized confirmation by a reviewer independent of the package remains
+required before any promotable Release Evidence Packet relies on this gate
+(see the "Provisional status" section of the accepted record).

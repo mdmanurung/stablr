@@ -34,6 +34,19 @@ and fail closed. No setting was tuned against the failed locked run.
 - Reviewer response template:
   `inst/analysis/review/SCI-04-acceptance-record.md`.
 
+## Provisional status of this acceptance
+
+The acceptance boundary of the superseded draft requires an **independent**
+reviewer to item-by-item confirm the estimand, assumptions, formula,
+multiplicity policy, and reference tests. The acceptance recorded here was
+provided by the project owner — the package author — as a blanket statement,
+with no itemized review notes. It therefore does **not** satisfy the
+independence requirement of the review packet as written, and this record is
+provisional: an itemized confirmation (or replacement) by a reviewer
+independent of the package remains required before any promotable Release
+Evidence Packet relies on this gate. The release contract carries
+`sci04-independent-confirmation-pending` as a blocker until then.
+
 ## What this record authorizes
 
 1. Implementation of the Hoeffding evaluation in

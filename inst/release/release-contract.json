@@ -8,7 +8,8 @@
   "hash_algorithm": "sha256",
   "promotable": false,
   "blockers": [
-    "fresh-release-run-pending"
+    "fresh-release-run-pending",
+    "sci04-independent-confirmation-pending"
   ],
   "runtime": {
     "platform": "linux-posix",

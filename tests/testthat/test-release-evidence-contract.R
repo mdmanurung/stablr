@@ -7,7 +7,7 @@ test_that("RE-02 Release Contract is strict, versioned, and fail-closed", {
   expect_false(contract$promotable)
   expect_identical(
     unlist(contract$blockers, use.names = FALSE),
-    "fresh-release-run-pending"
+    c("fresh-release-run-pending", "sci04-independent-confirmation-pending")
   )
   expect_identical(
     vapply(

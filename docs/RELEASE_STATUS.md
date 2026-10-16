@@ -25,10 +25,14 @@ required), so the typed, recorded fallback was `random_permutation` and the
 actual-generator gate also failed. The sealed negative artifact is retained.
 
 Release status for the current candidate: the SCI-04 null-selected-fraction
-gate was accepted by the external reviewer on 2026-10-16 (accepted record
-`SCI-04-null-selected-fraction-v2-accepted`; reviewer response in
-`inst/analysis/review/SCI-04-acceptance-record.md`). The release contract now
-pins the accepted Hoeffding criterion (`alpha = 0.05`, `U <= 0.10`, `n = 150`)
-and the gate evaluates instead of failing closed. The remaining release
-blocker is the fresh full-candidate release run at the accepted replicate
-count and assembly of the new Release Evidence Packet.
+gate was accepted on 2026-10-16 by the project owner acting in the reviewer
+role (accepted record `SCI-04-null-selected-fraction-v2-accepted`; reviewer
+response in `inst/analysis/review/SCI-04-acceptance-record.md`). This is a
+**provisional owner acceptance**: the review packet's acceptance boundary
+requires an itemized review by a reviewer independent of the package, which
+is still outstanding (`sci04-independent-confirmation-pending` in the release
+contract). The contract pins the accepted Hoeffding criterion
+(`alpha = 0.05`, `U <= 0.10`, `n = 150`) and the gate evaluates instead of
+failing closed. Remaining release blockers: the fresh full-candidate release
+run at the accepted replicate count, the itemized independent confirmation,
+and assembly of the new Release Evidence Packet.
