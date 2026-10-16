@@ -10,15 +10,13 @@ on:
   schedule:
     - cron: "0 6 * * 1"   # weekly, Mondays 06:00 UTC
 
-permissions: contents: read
+permissions:
+  contents: read
 
 jobs:
   smoke:
     runs-on: ubuntu-latest
     env:
-      IV_SEEDS: "1,2"
-      IV_N_BOOT: "10"
-      IV_OUT_DIR: ${{ runner.temp }}/iv_smoke
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
@@ -33,6 +31,10 @@ jobs:
           needs: check
 
       - name: Run IV benchmark (smoke)
+        env:
+          IV_SEEDS: "1,2"
+          IV_N_BOOT: "10"
+          IV_OUT_DIR: ${{ runner.temp }}/iv_smoke
         run: Rscript benchmarks/interpretation_validation.R
 
       - name: Upload smoke outputs
