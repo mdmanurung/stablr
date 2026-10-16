@@ -7,7 +7,7 @@ test_that("RE-02 Release Contract is strict, versioned, and fail-closed", {
   expect_false(contract$promotable)
   expect_identical(
     unlist(contract$blockers, use.names = FALSE),
-    "SCI-04-null-selected-fraction-v2-pending-independent-acceptance"
+    "fresh-release-run-pending"
   )
   expect_identical(
     vapply(
@@ -25,7 +25,7 @@ test_that("RE-02 Release Contract is strict, versioned, and fail-closed", {
       "methodology-cell-completeness/v1",
       "python-metrics-parity/v1",
       "null-select-any-wilson-v1",
-      "SCI-04-null-selected-fraction-v2-draft",
+      "SCI-04-null-selected-fraction-v2-accepted",
       "null-90pct-collapse-count-v1",
       "signal-mean-fdp-t-v1",
       "signal-tpr-t-v1"
@@ -79,7 +79,7 @@ test_that("RE-02 contract mutations raise typed contract errors", {
   })
   mutate_and_expect(function(x) {
     gate <- x$required_validations[[1L]]$scientific_gates[[4L]]
-    gate$decision_status <- "accepted"
+    gate$decision_status <- "proposed_unaccepted"
     x$required_validations[[1L]]$scientific_gates[[4L]] <- gate
     x
   })

@@ -30,6 +30,9 @@ out_dir <- Sys.getenv("WS8_V2_OUT", file.path("benchmarks/ws8_v2/results/run"))
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 methods <- strsplit(Sys.getenv("WS8_METHODS", "M0,M1,M2,M3,M4,M5"), ",")[[1]]
 K_primary <- 10L; K_sens <- c(5L, 15L, 20L)
+# S1 simulations only: WS8_N_BOOT shrinks the STABL bootstrap count (default
+# 200, the locked value).  Applies only to selectors that take n_boot.
+n_boot <- as.integer(Sys.getenv("WS8_N_BOOT", "200"))
 
 # ---- Design matrix (59 cell-type logit-proportions) ---------------------------
 obj <- readRDS(file.path(in_dir, "donor_tables.rds"))
@@ -52,6 +55,11 @@ score_rows <- list(); detail_rows <- list(); fman_rows <- list()
 
 for (m in methods) {
   sel_fn <- ws8v2_selectors[[m]]
+  if (n_boot != 200L && "n_boot" %in% names(formals(sel_fn))) {
+    base_fn <- sel_fn
+    sel_fn <- function(X, y, cohort, covar = NULL)
+      base_fn(X, y, cohort, covar = covar, n_boot = n_boot)
+  }
   cat(sprintf("\n=== method %s ===\n", m))
   for (h in fold_ids) {
     t0 <- Sys.time()
@@ -113,7 +121,10 @@ for (m in methods) {
 
     # --- Secondary: ridge prediction (top-K and native) + baselines ---
     fit_pred <- function(feats) {
-      if (length(feats) == 0L) return(rep(median(fr$ytr), length(fr$yte)))
+      # < 2 features: cv.glmnet needs >= 2 columns; fall back to the
+      # training-median baseline (same rule as the empty panel, sec. 5).
+      # No committed result is affected: every real-atlas panel had >= 2.
+      if (length(feats) < 2L) return(rep(median(fr$ytr), length(fr$yte)))
       cv <- train_ridge_cohort_cv(fr$Xtr[, feats, drop = FALSE], fr$ytr,
                                   fr$cohort_tr)
       as.numeric(predict(cv, newx = fr$Xte[, feats, drop = FALSE], s = "lambda.min"))

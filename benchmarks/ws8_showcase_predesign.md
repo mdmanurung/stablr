@@ -260,3 +260,43 @@ brought into conformance with the lock and where locked gaps were closed.
    M3, M4, M5) were required to reproduce their committed per-cohort R@10
    values exactly as a seed-level reproducibility check; M0/M1 changed by
    design. Verification outcome: claims ledger V10.
+
+---
+
+# Amendment 2 (2026-10-16) — post-merge follow-ups S1/S2 and SCI-04 acceptance
+
+Filed after the follow-up round executed under the merged followup plan
+(`benchmarks/ws8_v2/followup_s1_s2.md`). The locked v2 protocol text is
+unchanged; this amendment records the predeclared follow-up outcomes and one
+governance event. Full entries live in the claims ledger (V5 upgrade,
+V11–V15).
+
+1. **S2a — SPAC exclusion.** The six-selector LOCO and the 50-permutation
+   null were re-run on the seven cohorts without SPAC. The headline ordering
+   is unchanged and the confirmatory M4 − M3 contrast holds (+0.133
+   [+0.069, +0.197], p = 0.0156). The null saturates identically (50/50 at
+   59/59, Clopper–Pearson lower bound 0.942), refuting the §10.4
+   plausibility conjecture that the SPAC positive-definite projection
+   drives saturation.
+2. **S2b — aggregation quantile (falsification hook fired).** Re-aggregating
+   the persisted M4 environment scores at a 25% quantile beats both M4(min)
+   (+0.0758 [+0.0245, +0.1272], p = 0.0234) and M5. The predeclared hook in
+   the followup plan fired: strict-min aggregation is suboptimal on this
+   atlas. Vignette §10.3 and ledger V5 are amended accordingly.
+3. **S2c — knockoff construction.** M4 with `knockoff_mvr` reproduces the
+   equi result within −0.002 macro R@10; findings are construction-robust.
+4. **S1 — synthetic calibration (pilot).** An anchored simulator (real
+   per-cohort means, pooled covariance, empirical ages/totals; committed
+   seed manifest) runs four truth regimes through the six selectors at 5
+   replicates/scenario of a planned 20. M4/M5 select all native features
+   under every regime including the null (empirical FDP 0.83–1.00):
+   saturation is structural. M1 is the calibrated selector under known
+   truth (null-safe, sparse-exact, heterogeneity-robust).
+5. **SCI-04 acceptance (governance, outside the v2 claim set).** The
+   external reviewer accepted the null-selected-fraction gate on 2026-10-16
+   (accepted record `SCI-04-null-selected-fraction-v2-accepted`; reviewer
+   response in `inst/analysis/review/SCI-04-acceptance-record.md`). The
+   release contract pins the Hoeffding criterion (alpha = 0.05, U <= 0.10,
+   n = 150) and the methodology validation evaluates the bound instead of
+   failing closed. The fresh full-candidate release run at n = 150 remains
+   the open release blocker.

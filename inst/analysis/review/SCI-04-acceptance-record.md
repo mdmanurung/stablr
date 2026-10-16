@@ -1,0 +1,29 @@
+# SCI-04 acceptance record — reviewer response
+
+Filled from the reviewer response template of
+`SCI-04-independent-review-packet.md` (Section 9). Artifact hashes were
+verified against the packet inventory (Section 7) before acceptance; all
+four matched.
+
+```
+Reviewer name / affiliation: Mikhael Dito Manurung / project owner,
+  acting as the external reviewer required by the acceptance boundary
+Decision (approve / approve-with-amendments / replace): approve
+Estimand confirmed (Y/N, notes): Y (blanket acceptance of the draft as proposed)
+Independence + boundedness assumptions confirmed (Y/N, notes): Y (blanket acceptance)
+Formula and alpha = 0.05 confirmed (Y/N, notes): Y (blanket acceptance)
+Multiplicity policy confirmed or replaced (notes): per-gate policy confirmed
+  (blanket acceptance)
+Reference tests approved independently of the failed run (Y/N): Y
+Accepted record id: SCI-04-null-selected-fraction-v2-accepted
+Accepted record sha256: 251eb150abef6ae3b289f2b1ace32e813f0e60a1bfe71e29ab340981136a4abb
+Decision date: 2026-10-16
+Signature / verification method: reviewer's acceptance statement recorded
+  verbatim from the project owner during the working session:
+  "as external reviewer i accept gate"
+```
+
+Scope note: the acceptance was recorded as a blanket approval of the draft
+record exactly as proposed (no amendments). The itemized confirmations above
+are covered by that blanket acceptance; no itemized review notes were
+provided by the reviewer.

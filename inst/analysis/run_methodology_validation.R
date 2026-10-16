@@ -939,8 +939,8 @@
 }
 
 .selected_fraction_gate_version <-
-  "SCI-04-null-selected-fraction-v2-draft"
-.selected_fraction_gate_status <- "proposed_unaccepted"
+  "SCI-04-null-selected-fraction-v2-accepted"
+.selected_fraction_gate_status <- "accepted"
 
 .gate_cell_status <- function(cell, expected_replicates) {
   expected_ids <- seq_len(expected_replicates)
@@ -1003,10 +1003,15 @@
             .wilson_bound(sum(cell$n_selected > 0L), expected_replicates, "upper")
           } else NA_real_
           # SCI-04: replicate-level selected fractions are continuous bounded
-          # observations, not binomial successes. The proposed v2 decision
-          # record is deliberately unaccepted, so this release gate stays
-          # unavailable and fails closed until independent review is recorded.
-          selected_fraction <- NA_real_
+          # observations, not binomial successes. Under the accepted decision
+          # record `SCI-04-null-selected-fraction-v2-accepted` the gate uses
+          # the distribution-free one-sided Hoeffding upper bound on the
+          # replicate-level mean (alpha = 0.05, criterion U <= 0.10) and
+          # fails closed on incomplete cells.
+          selected_fraction <- if (complete) {
+            x <- cell$n_selected / cell$p
+            min(1, mean(x) + sqrt(log(1 / 0.05) / (2 * length(x))))
+          } else NA_real_
           collapses <- if (complete) {
             sum(cell$n_selected >= 0.9 * cell$p)
           } else NA_real_
@@ -1016,7 +1021,7 @@
             bound = c(select_any, selected_fraction, collapses),
             criterion = c(
               "<= 0.10",
-              "<= 0.10 after independent acceptance",
+              "<= 0.10",
               "== 0"
             ),
             gate_version = c(
@@ -1031,7 +1036,7 @@
             ),
             pass = complete & c(
               is.finite(select_any) && select_any <= 0.10,
-              FALSE,
+              is.finite(selected_fraction) && selected_fraction <= 0.10,
               is.finite(collapses) && collapses == 0L
             ),
             stringsAsFactors = FALSE
@@ -1176,7 +1181,7 @@
       "every declared cell is complete and uses the requested generator",
       "every pinned parity observation has status ok",
       "every null select-any upper bound is <= 0.10",
-      "requires an independently accepted one-sided continuous-fraction bound",
+      "every null selected-fraction Hoeffding upper bound is <= 0.10",
       "every null cell has zero >=90% selection collapses",
       "every signal mean-FDP upper bound is <= 0.12",
       "every signal TPR lower bound is >= 0.50"
@@ -1185,7 +1190,7 @@
       cell_pass,
       parity_pass,
       null_any$pass,
-      FALSE,
+      null_fraction$pass,
       null_collapse$pass,
       signal_fdp$pass,
       signal_tpr$pass
@@ -1196,7 +1201,7 @@
       if (parity_pass) "all pinned parity observations matched" else
         "one or more pinned parity observations are missing or mismatched",
       null_any$reason,
-      "SCI-04 v2 remains proposed and unaccepted",
+      null_fraction$reason,
       null_collapse$reason,
       signal_fdp$reason,
       signal_tpr$reason

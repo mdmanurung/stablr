@@ -65,13 +65,30 @@ test_that("RE-05 common gate normalization is complete and fail-closed", {
   expect_false(invalid$gates[[2L]]$pass)
 
   methodology <- env$.release_validation_declaration(contract, "methodology")
-  proposed <- env$.release_normalize_gate_records(
+  accepted <- env$.release_normalize_gate_records(
     .release_test_gate_records(methodology), methodology
   )
   selected_fraction <- vapply(
-    proposed$gates, `[[`, character(1L), "gate_id"
+    accepted$gates, `[[`, character(1L), "gate_id"
   ) == "null_selected_fraction"
-  expect_false(proposed$gates[[which(selected_fraction)]]$pass)
+  # SCI-04 is accepted in the contract, so an adapter pass stands.
+  expect_true(accepted$gates[[which(selected_fraction)]]$pass)
+
+  # A non-accepted decision status still forces the pass off (fail-closed).
+  draft_declaration <- methodology
+  draft_declaration$scientific_gates <- lapply(
+    draft_declaration$scientific_gates,
+    function(gate) {
+      if (identical(gate$gate_id, "null_selected_fraction")) {
+        gate$decision_status <- "proposed_unaccepted"
+      }
+      gate
+    }
+  )
+  draft <- env$.release_normalize_gate_records(
+    .release_test_gate_records(draft_declaration), draft_declaration
+  )
+  expect_false(draft$gates[[which(selected_fraction)]]$pass)
 })
 
 test_that("RE-05 declared CSV artifacts are schema-bound", {
