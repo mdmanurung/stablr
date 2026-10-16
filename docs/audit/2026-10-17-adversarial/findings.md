@@ -513,3 +513,24 @@ reported min_fdr_):
 - **F-P10-2 (P3):** mixOmics/jsonlite/rlang appear in Suggests but are used
   only by `inst/analysis/release_evidence.R` and vignettes, not by R/.
   Acceptable practice; worth a comment in DESCRIPTION.
+
+### Phase 6 addendum — winner's-curse mechanism + F-001 bound check (2026-10-17)
+
+Mechanism demo (200 pure-null reps, exchangeable real/artificial scores,
+package's own formula): the per-threshold estimator is approximately unbiased
+(mean 1.022 at a fixed threshold), but the min over the 100-threshold curve
+collapses to mean 0.674 with 35 features selected — the argmin hunts the
+luckiest real-vs-artificial count crossing. The Phase 6 null anti-
+conservatism (reported 0.42-0.66, realized 0.92-0.93) is this winner's curse
+plus score-distribution effects, not a biased per-threshold estimator.
+
+F-001 bound check on the actual D2-null runs (true FDP = 1.0, 40 seed-runs):
+empirical P(FDP >= (1+Δ)·q+) = 0.60 / 0.47 / 0.17 / 0.03 at Δ = 0.5 / 1 / 2 /
+5, against bounds 0.67 / 0.50 / 0.33 / 0.17 — **within the bound at every Δ,
+and nearly tight at small Δ**. The observed anti-conservatism is therefore
+consistent with the package's theory: the F-001 guarantee is a weak
+Markov-type conditional tail bound, not a calibration statement, and it
+permits almost exactly the observed behavior. Remediation implication for
+F-P6-1: report the bound's practical meaning alongside min_fdr_ (e.g. "the
+true FDP exceeds twice this value with probability up to ~50%") rather than
+changing the threshold rule.
