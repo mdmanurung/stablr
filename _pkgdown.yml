@@ -96,7 +96,8 @@ reference:
 - title: Extended Learner Adapters
   desc: Extensions beyond the glmnet family. The random forest is calibrated
     within a measured scope (WS-2); the oblique forest is fenced (WS-3); the
-    ordinal learner is experimental (WS-9).
+    ordinal learner is experimental (WS-9); sPLS-DA is experimental and
+    binomial-only.
   contents:
   - make_ranger_adapter
   - auto_rf_threshold_grid
@@ -104,6 +105,8 @@ reference:
   - auto_oblique_threshold_grid
   - make_ordinal_adapter
   - auto_ordinal_lambda_grid
+  - make_splsda_adapter
+  - auto_splsda_keepx_grid
 
 - title: Environment Stability
   desc: ICP-inspired transportability workflow across environments (batches,
