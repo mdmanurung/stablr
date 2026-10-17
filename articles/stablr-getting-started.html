@@ -172,9 +172,9 @@ lambda grid together with the FDP+ curve used for calibration.</p>
 <tr class="odd">
 <td>Artificial features</td>
 <td>model-X knockoffs (<code>knockoff_equi</code>)</td>
-<td>the pairing validated for FDP+ calibration; the raw
-<code>random_permutation</code> default of the expert interface is
-anti-conservative for multivariate learners</td>
+<td>conservative decoys for tree learners; measured calibration is
+learner- and regime-dependent — see the pairing table in
+<code><a href="../articles/stablr-intro.html">vignette("stablr-intro")</a></code> before trusting FDP+</td>
 </tr>
 <tr class="even">
 <td>Calibration</td>

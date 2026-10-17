@@ -316,6 +316,23 @@ The `selected` column marks the winning `rho`. If the surface is flat,
 with similar `metric_value` across `rho`, the omics are not gaining much
 from cooperation and `rho = 0` is a defensible choice.
 
+The same tuning surface is easier to inspect as a plot: a flat curve
+means the choice of `rho` is not doing much work on these data.
+
+``` r
+
+ggplot2::ggplot(cf$diagnostics, ggplot2::aes(rho, metric_value)) +
+  ggplot2::geom_line() +
+  ggplot2::geom_point(ggplot2::aes(shape = selected), size = 3) +
+  ggplot2::scale_x_continuous(breaks = cf$diagnostics$rho) +
+  ggplot2::labs(title = "Cooperative tuning surface",
+                y = paste("CV", cf$type_measure), shape = "selected") +
+  ggplot2::theme_minimal()
+```
+
+![Cooperative tuning surface: CV metric versus
+rho](stablr-cooperative_files/figure-html/rho-surface-1.png)
+
 ## 7 Policy constraints
 
 Some combinations are rejected on purpose. These guards prevent analyses
@@ -521,8 +538,13 @@ integration, but it is **not** equivalent to DIABLO:
 Cooperative fusion is appropriate when **stable sparse features per
 omic** with cross-view agreement are the goal. DIABLO is appropriate
 when **joint latent factors** for classification and mixOmics
-visualisation are the goal. Head-to-head TCGA benchmarks that include
-early fusion (and future cooperative arms) are described in
+visualisation are the goal. For a like-for-like classification
+comparison, `stablr` also ships an sPLS-DA base learner
+(`base_learner = "splsda"`, backed by mixOmics; see
+[`?make_splsda_adapter`](https://mdmanurung.github.io/stablr/reference/make_splsda_adapter.md)),
+which runs the same stability-selection machinery on top of the sPLS-DA
+learner. Head-to-head TCGA benchmarks that include early fusion (and
+future cooperative arms) are described in
 `inst/analysis/BENCHMARK_PLAN.md`.
 
 ## 10 Cross-validation with cooperative fusion
@@ -597,8 +619,10 @@ The following resources extend the workflows described above.
 - See
   [`vignette("stablr-intro")`](https://mdmanurung.github.io/stablr/articles/stablr-intro.md)
   for single-omic STABL and learner options.
-- Pass `groups` to
+- Pass `groups_train` to
   [`stabl_multiomic_train_validate()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_train_validate.md)
+  (or `groups` to
+  [`stabl_multiomic_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_cv.md))
   to prevent leakage in longitudinal designs; grouped bootstrapping and
   outer-fold construction both respect this argument.
 - For binomial cooperative fusion, set `family = "binomial"` and

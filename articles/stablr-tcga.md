@@ -169,10 +169,10 @@ The selected feature names are printed for both assays.
 ``` r
 
 cat("mRNA selected feature names:\n")
-print(get_feature_names_out(fit_mrna))
+print(get_feature_names(fit_mrna))
 
 cat("\nmiRNA selected feature names:\n")
-print(get_feature_names_out(fit_mirna))
+print(get_feature_names(fit_mirna))
 ```
 
 The two lists show which features survive stability selection in each
@@ -234,13 +234,13 @@ follows.
 ``` r
 
 cat("mRNA (integrated):\n")
-print(get_feature_names_out(multi_fit$fits$mrna))
+print(get_feature_names(multi_fit$fits$mrna))
 
 cat("\nmiRNA (integrated):\n")
-print(get_feature_names_out(multi_fit$fits$mirna))
+print(get_feature_names(multi_fit$fits$mirna))
 
 cat("\nEarly fusion selected feature names:\n")
-print(get_feature_names_out(multi_fit$early_fusion$fit))
+print(get_feature_names(multi_fit$early_fusion$fit))
 
 cat("\nLate fusion omic weights:\n")
 print(multi_fit$late_fusion$weights)
@@ -305,7 +305,7 @@ class.
 
 ``` r
 
-mrna_feats <- get_feature_names_out(multi_fit$fits$mrna)
+mrna_feats <- get_feature_names(multi_fit$fits$mrna)
 if (length(mrna_feats) > 0) {
   boxplot_features(
     features = mrna_feats,
@@ -381,6 +381,9 @@ passes an FDP-aware threshold**.
   false-discovery guarantee.
 - Gaussian, binomial, multinomial, or Cox STABL are needed on the same
   API, with grouped bootstrap for repeated measures.
+- An sPLS-DA-style classification learner is wanted inside the
+  stability-selection machinery (`base_learner = "splsda"`; see
+  [`?make_splsda_adapter`](https://mdmanurung.github.io/stablr/reference/make_splsda_adapter.md)).
 - Integration strategies (per-omic, early, late, cooperative) are to be
   compared under one stability-selection framework.
 - The glmnet / resampling idiom is preferred over PLS components.

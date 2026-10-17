@@ -4,7 +4,7 @@
 
 - 1 Scope of this vignette
 - 2 Cox proportional-hazards STABL
-- 3 Multinomial STABL
+- 3 Multinomial and sPLS-DA classification
 - 4 Knockoff artificial features
 - 5 Grouped bootstrap for repeated measures
 - 6 Reproducibility across repeated fits
@@ -26,6 +26,7 @@ table below.
 |----|----|
 | Survival STABL | `stabl_fit(family = "cox")` |
 | Multinomial classification | `stabl_fit(family = "multinomial")` |
+| sPLS-DA classification | `base_learner = "splsda"`, [`make_splsda_adapter()`](https://mdmanurung.github.io/stablr/reference/make_splsda_adapter.md), [`auto_splsda_keepx_grid()`](https://mdmanurung.github.io/stablr/reference/auto_splsda_keepx_grid.md) |
 | Artificial features | `artificial_type = "random_permutation"`, `"knockoff"`, `"knockoff_equi"`, `"knockoff_mvr"`, or `NULL` |
 | Grouped bootstrap | `groups`, [`group_bootstrap_indices()`](https://mdmanurung.github.io/stablr/reference/group_bootstrap_indices.md) |
 | Reproducibility metrics | [`jaccard_similarity()`](https://mdmanurung.github.io/stablr/reference/jaccard_similarity.md), [`adjusted_similarity()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity.md) |
@@ -119,9 +120,7 @@ fit_cox <- stabl_fit(
 #> not reached after maxit=100000 iterations; solutions for larger lambdas
 #> returned
 
-get_feature_names_out(fit_cox)
-#> Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`
-#> instead.
+get_feature_names(fit_cox)
 #> character(0)
 head(sort(get_importances(fit_cox), decreasing = TRUE), 6)
 #> g1 g2 g3 g4 g5 g6 
@@ -129,10 +128,25 @@ head(sort(get_importances(fit_cox), decreasing = TRUE), 6)
 ```
 
 The output lists the selected feature names, followed by the six
-features with the largest stability importances. The planted features
-`g1` and `g2` are expected to rank at the top of the sorted importances.
+features with the largest stability importances. At this small sample
+size the FDR threshold saturates at 1, so the selection set can be
+empty; the planted features `g1` and `g2` are instead recovered in the
+sorted importances, where they are expected to rank at the top.
 
-## 3 Multinomial STABL
+The stability path makes the same comparison visible: at the sparse end
+of the lambda grid the planted features lift away from the null
+background, while at the saturated end every curve approaches the FDR
+upper bound (dashed line at 1).
+
+``` r
+
+plot_stabl_path(fit_cox, title = "Cox survival - stability path")
+```
+
+![Stability path for the Cox survival
+fit](stablr-advanced_files/figure-html/cox-path-1.png)
+
+## 3 Multinomial and sPLS-DA classification
 
 Multinomial outcomes use a named factor `y`. The stability matrix has
 one row per feature, and importances aggregate across classes.
@@ -173,15 +187,48 @@ fit_multi <- stabl_fit(
 #> Warning in lognet(x, is.sparse, y, weights, offset, alpha, nobs, nvars, : one
 #> multinomial or binomial class has fewer than 8 observations; dangerous ground
 
-get_feature_names_out(fit_multi)
-#> Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`
-#> instead.
+get_feature_names(fit_multi)
 #> [1] "m1"  "m2"  "m3"  "m5"  "m9"  "m10"
 ```
 
 The printed vector contains the features selected by the multinomial
 fit. Because the class signal is confined to feature `m1`, that feature
 is expected to appear among the selections.
+
+#### sPLS-DA classification
+
+For binary classification, an sPLS-DA base learner is also available
+(`base_learner = "splsda"`, backed by `mixOmics`). The lambda grid
+becomes a `keepX` grid:
+[`auto_splsda_keepx_grid()`](https://mdmanurung.github.io/stablr/reference/auto_splsda_keepx_grid.md)
+derives a default one, and `splsda_ncomp` sets the number of components.
+On the package’s learner benchmark this pairing is the best-calibrated
+classification option (Section 7.3 of the introduction vignette).
+
+``` r
+
+set.seed(5L)
+y_bin_splsda <- setNames(as.integer(x_multi[, "m1"] + rnorm(n, sd = 2) > 0), ids)
+
+fit_splsda <- stabl_fit(
+  x               = x_multi,
+  y               = y_bin_splsda,
+  lambda_grid     = "auto",
+  base_learner    = "splsda",
+  family          = "binomial",
+  splsda_ncomp    = 2L,
+  n_bootstraps    = 30L,
+  artificial_type = "random_permutation",
+  random_state    = 1L
+)
+
+get_feature_names(fit_splsda)
+#> [1] "m1"  "m2"  "m3"  "m4"  "m5"  "m6"  "m12"
+```
+
+The printed vector contains the features selected by the sPLS-DA fit.
+The outcome depends on feature `m1`, which is expected to rank at the
+top.
 
 ## 4 Knockoff artificial features
 
@@ -222,9 +269,7 @@ fit_ko <- stabl_fit(
   random_state    = 7L
 )
 
-get_feature_names_out(fit_ko)
-#> Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`
-#> instead.
+get_feature_names(fit_ko)
 #> [1] "k1"  "k7"  "k18"
 ```
 
@@ -264,31 +309,32 @@ lambda_grp <- auto_lambda_grid(x_grp, y_grp, family = "gaussian", n_lambda = 6)
 fit_grp <- stabl_fit(
   x               = x_grp,
   y               = y_grp,
-  groups          = groups,
+  sample_groups   = groups,
   lambda_grid     = lambda_grp,
   family          = "gaussian",
   n_bootstraps    = 25L,
   artificial_type = "random_permutation",
+  hard_threshold  = 0.5,
   random_state    = 3L
 )
-#> Warning: `groups` is deprecated; use `sample_groups` instead.
 
-length(get_feature_names_out(fit_grp))
-#> Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`
-#> instead.
+length(get_feature_names(fit_grp))
 #> [1] 10
 ```
 
 The call to `unique(groups[idx])` prints the subjects entering one
 subsample; each subject appears either with all four of its rows or not
 at all. The final line reports the number of features selected by the
-grouped Gaussian fit.
+grouped Gaussian fit. A fixed `hard_threshold = 0.5` is used so that the
+selection set is non-empty: with only ten candidates, the default
+data-driven threshold can legitimately select nothing, which would make
+the similarity comparisons in the next section vacuous.
 
-The same `groups` argument is forwarded by
+Group labels are forwarded by
 [`stabl_multiomic_train_validate()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_train_validate.md)
-and
+(argument `groups_train`) and
 [`stabl_multiomic_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_cv.md)
-for outer fold construction.
+(argument `groups`) for outer fold construction.
 
 Classification bootstraps redraw subsamples until at least two
 observations per class are present. This slightly biases the subsample
@@ -308,56 +354,35 @@ similarity matrix across four seeds is computed afterwards.
 
 run_once <- function(seed) {
   stabl_fit(
-    x = x_grp, y = y_grp, groups = groups,
+    x = x_grp, y = y_grp, sample_groups = groups,
     lambda_grid = lambda_grp,
     family = "gaussian",
     n_bootstraps = 20L,
     artificial_type = "random_permutation",
+    hard_threshold = 0.5,
     random_state = seed
   )
 }
 
 fit_a <- run_once(11L)
-#> Warning: `groups` is deprecated; use `sample_groups` instead.
 fit_b <- run_once(22L)
-#> Warning: `groups` is deprecated; use `sample_groups` instead.
-sel_a <- get_feature_names_out(fit_a)
-#> Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`
-#> instead.
-sel_b <- get_feature_names_out(fit_b)
-#> Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`
-#> instead.
+sel_a <- get_feature_names(fit_a)
+sel_b <- get_feature_names(fit_b)
 
 jaccard_similarity(sel_a, sel_b)
-#> [1] 0
-adjusted_similarity(sel_a, sel_b, nb_total_elements = ncol(x_grp))
-#> Warning: `list1`, `list2` and `nb_total_elements` are deprecated; use `set1`,
-#> `set2` and `n_universe` instead.
+#> [1] 1
+adjusted_similarity(sel_a, sel_b, n_universe = ncol(x_grp))
 #> [1] 0
 
 # Pairwise matrix across several seeds
 fits <- lapply(11:14, run_once)
-#> Warning: `groups` is deprecated; use `sample_groups` instead.
-#> Warning: `groups` is deprecated; use `sample_groups` instead.
-#> Warning: `groups` is deprecated; use `sample_groups` instead.
-#> Warning: `groups` is deprecated; use `sample_groups` instead.
-sels <- lapply(fits, get_feature_names_out)
-#> Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`
-#> instead.
-#> Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`
-#> instead.
-#> Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`
-#> instead.
-#> Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`
-#> instead.
-jaccard_matrix(sels)
-#> Warning: `jaccard_matrix()` is deprecated; use `jaccard_similarity_matrix()`
-#> instead.
+sels <- lapply(fits, get_feature_names)
+jaccard_similarity_matrix(sels)
 #>      [,1] [,2] [,3]
-#> [1,]    0    0    0
-#> [2,]    0    0    0
-#> [3,]    0    0    0
-#> [4,]    0    0    0
+#> [1,]    1    1    1
+#> [2,]    1    1    1
+#> [3,]    1    1    1
+#> [4,]    1    1    1
 ```
 
 The first two printed values are the Jaccard and the adjusted similarity
@@ -365,6 +390,27 @@ between the selections from seeds 11 and 22. The matrix at the end gives
 the pairwise Jaccard similarities for the fits with seeds 11 to 14;
 off-diagonal values close to 1 indicate selections that are robust to
 the random state.
+
+The same matrix is easier to compare as a heatmap.
+
+``` r
+
+jm <- jaccard_similarity_matrix(sels)
+jm_df <- as.data.frame(as.table(jm))
+names(jm_df) <- c("seed_a", "seed_b", "jaccard")
+ggplot2::ggplot(jm_df, ggplot2::aes(seed_a, seed_b, fill = jaccard)) +
+  ggplot2::geom_tile() +
+  ggplot2::geom_text(ggplot2::aes(
+    label = ifelse(is.na(jaccard), "", sprintf("%.2f", jaccard))
+  )) +
+  ggplot2::scale_fill_viridis_c(limits = c(0, 1), na.value = "grey90") +
+  ggplot2::labs(x = "random_state", y = "random_state",
+                title = "Selection overlap across repeated fits") +
+  ggplot2::theme_minimal()
+```
+
+![Pairwise Jaccard similarity of selections across four
+seeds](stablr-advanced_files/figure-html/jaccard-heatmap-1.png)
 
 ## 7 Exporting results to disk
 
@@ -583,6 +629,30 @@ equivalence. Third, the permutation importance is apparent: it is
 measured on the fitting data, so it is optimistic. All effects and
 importances here are post-selection and descriptive. They are not
 selection-adjusted inference.
+
+The dimensions are also easier to compare visually. The scatter below
+contrasts the stability dimension with the apparent permutation
+importance, coloured by correlation group: features sharing a group are
+correlated substitutes, and the gap between their stability and their
+apparent importance is the post-selection optimism the table above warns
+about.
+
+``` r
+
+ins_df <- summary(ins)[, c("feature", "stability", "coefficient",
+                           "correlation_group", "permutation_importance")]
+ggplot2::ggplot(ins_df,
+                ggplot2::aes(permutation_importance, stability,
+                             colour = factor(correlation_group))) +
+  ggplot2::geom_point(size = 2.5) +
+  ggplot2::labs(title = "Stability vs permutation importance",
+                x = "Permutation importance (apparent)",
+                y = "Stability score", colour = "correlation group") +
+  ggplot2::theme_minimal()
+```
+
+![Stability score versus permutation importance, coloured by correlation
+group](stablr-advanced_files/figure-html/interpret-scatter-1.png)
 
 ## 11 Related vignettes
 

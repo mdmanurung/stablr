@@ -114,6 +114,30 @@ round(res$min_scores, 2)
 #>   1   1   0   0   0   0   0   0   0   0
 ```
 
+The same evidence is easier to read as a heatmap. Features are ordered
+by their min-agg score, so the transportable features cluster at the top
+and the batch-dependent ones sink to the bottom.
+
+``` r
+
+env_long <- data.frame(
+  feature     = rep(rownames(res$env_scores), times = ncol(res$env_scores)),
+  environment = rep(colnames(res$env_scores), each = nrow(res$env_scores)),
+  score       = as.vector(res$env_scores)
+)
+env_long$feature <- factor(env_long$feature,
+                           levels = names(sort(res$min_scores)))
+ggplot2::ggplot(env_long, ggplot2::aes(environment, feature, fill = score)) +
+  ggplot2::geom_tile() +
+  ggplot2::scale_fill_viridis_c(limits = c(0, 1), name = "stability score") +
+  ggplot2::labs(x = NULL, y = NULL,
+                title = "Per-environment stability scores") +
+  ggplot2::theme_minimal()
+```
+
+![Per-environment stability scores, features ordered by min-agg
+score](stablr-environments_files/figure-html/env-heatmap-1.png)
+
 In `res$env_scores`, the transportable features `f1` and `f2` hold high
 scores in all three batches. `f3` scores highly in `batchA` only. The
 `res$min_scores` summary reduces each feature to its weakest
@@ -152,7 +176,7 @@ Two practical notes:
     environment) with this leniency in mind.
 2.  **Environment-aware resampling is complementary.** For a single
     pooled fit, you can make the bootstrap *respect* environment
-    structure. Pass the labels as `groups` to
+    structure. Pass the labels as `sample_groups` to
     [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md).
     The group bootstrap keeps whole environments intact. Alternatively,
     use `bootstrap_strata`. The workflow shown here answers a different

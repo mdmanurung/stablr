@@ -438,6 +438,18 @@ rather than treated as a black box.</p>
 If the surface is flat, with similar <code>metric_value</code> across
 <code>rho</code>, the omics are not gaining much from cooperation and
 <code>rho = 0</code> is a defensible choice.</p>
+<p>The same tuning surface is easier to inspect as a plot: a flat curve
+means the choice of <code>rho</code> is not doing much work on these
+data.</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">cf</span><span class="op">$</span><span class="va">diagnostics</span>, <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span><span class="va">rho</span>, <span class="va">metric_value</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>shape <span class="op">=</span> <span class="va">selected</span><span class="op">)</span>, size <span class="op">=</span> <span class="fl">3</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_x_continuous</a></span><span class="op">(</span>breaks <span class="op">=</span> <span class="va">cf</span><span class="op">$</span><span class="va">diagnostics</span><span class="op">$</span><span class="va">rho</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Cooperative tuning surface"</span>,</span>
+<span>                y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"CV"</span>, <span class="va">cf</span><span class="op">$</span><span class="va">type_measure</span><span class="op">)</span>, shape <span class="op">=</span> <span class="st">"selected"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p><img src="stablr-cooperative_files/figure-html/rho-surface-1.png" class="r-plt" alt="Cooperative tuning surface: CV metric versus rho" width="576"></p>
 </div>
 </div>
 <div class="section level2">
@@ -454,7 +466,7 @@ only well-defined when cross-validation is used to estimate the error
 surface. Requesting it with
 <code>cooperation_selection = "validation"</code> raises an error.</p>
 <p>The following call raises the corresponding error.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/stabl_multiomic_train_validate.html">stabl_multiomic_train_validate</a></span><span class="op">(</span></span>
 <span>  x_train_list          <span class="op">=</span> <span class="va">ool_train</span><span class="op">$</span><span class="va">x_list</span>,</span>
 <span>  y_train               <span class="op">=</span> <span class="va">ool_train</span><span class="op">$</span><span class="va">y</span>,</span>
@@ -481,7 +493,7 @@ with validation-based selection.</p>
 <strong>gaussian</strong> and <strong>binomial</strong> families only.
 Poisson and Cox cooperative paths are deferred to a future release.</p>
 <p>A Cox fit raises the corresponding error.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/therneau/survival" class="external-link">survival</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
@@ -528,7 +540,7 @@ engine.</p>
 <p>The most useful comparison is side by side. All three strategies are
 run in one call, and the selected features are then compared.</p>
 <p>The combined fit is specified as follows.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">all_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stabl_multiomic_train_validate.html">stabl_multiomic_train_validate</a></span><span class="op">(</span></span>
 <span>  x_train_list          <span class="op">=</span> <span class="va">ool_train</span><span class="op">$</span><span class="va">x_list</span>,</span>
 <span>  y_train               <span class="op">=</span> <span class="va">ool_train</span><span class="op">$</span><span class="va">y</span>,</span>
@@ -549,7 +561,7 @@ run in one call, and the selected features are then compared.</p>
 <span>  cooperation_nfolds    <span class="op">=</span> <span class="fl">3L</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>The <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> method now shows all four branches.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># print() now shows all four branches</span></span>
 <span><span class="va">all_fit</span></span>
 <span><span class="co">#&gt; &lt;stabl_multiomic_fit&gt;</span></span>
@@ -570,7 +582,7 @@ run in one call, and the selected features are then compared.</p>
 <p>The output contains the per-omic fits, the early-fusion branch, the
 late-fusion branch, and the <code>Cooperative fusion:</code> block.</p>
 <p>The feature sets of the three strategies are compared as follows.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ef_features</span>  <span class="op">&lt;-</span> <span class="va">all_fit</span><span class="op">$</span><span class="va">early_fusion</span><span class="op">$</span><span class="va">selected_features</span></span>
 <span><span class="va">cf_features</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unlist.html" class="external-link">unlist</a></span><span class="op">(</span><span class="va">all_fit</span><span class="op">$</span><span class="va">cooperative_fusion</span><span class="op">$</span><span class="va">selected_features</span>,</span>
 <span>                              use.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span>
@@ -662,9 +674,14 @@ penalty</td>
 <p>Cooperative fusion is appropriate when <strong>stable sparse features
 per omic</strong> with cross-view agreement are the goal. DIABLO is
 appropriate when <strong>joint latent factors</strong> for
-classification and mixOmics visualisation are the goal. Head-to-head
-TCGA benchmarks that include early fusion (and future cooperative arms)
-are described in <code>inst/analysis/BENCHMARK_PLAN.md</code>.</p>
+classification and mixOmics visualisation are the goal. For a
+like-for-like classification comparison, <code>stablr</code> also ships
+an sPLS-DA base learner (<code>base_learner = "splsda"</code>, backed by
+mixOmics; see <code><a href="../reference/make_splsda_adapter.html">?make_splsda_adapter</a></code>), which runs the same
+stability-selection machinery on top of the sPLS-DA learner.
+Head-to-head TCGA benchmarks that include early fusion (and future
+cooperative arms) are described in
+<code>inst/analysis/BENCHMARK_PLAN.md</code>.</p>
 </div>
 </div>
 <div class="section level2">
@@ -676,7 +693,7 @@ to every outer fold. This is a realistic analysis pattern, but it
 multiplies cost by the number of outer folds, so the code is shown but
 not evaluated during vignette builds.</p>
 <p>The outer-CV fit is specified as follows.</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Long-running vignette branch; exercised by test-multiomic-workflows.R.</span></span>
 <span><span class="va">cv_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stabl_multiomic_cv.html">stabl_multiomic_cv</a></span><span class="op">(</span></span>
 <span>  x_list                <span class="op">=</span> <span class="va">ool_train</span><span class="op">$</span><span class="va">x_list</span>,</span>
@@ -701,7 +718,7 @@ cooperative-specific columns (<code>cooperative_rho</code>,
 making it possible to inspect how <code>rho</code> was selected in each
 outer fold.</p>
 <p>The cooperative columns are printed as follows.</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Output contract exercised by test-multiomic-workflows.R.</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">cv_fit</span><span class="op">$</span><span class="va">diagnostics</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"fold"</span>, <span class="st">"omic"</span>, <span class="st">"n_selected"</span>,</span>
 <span>                              <span class="st">"cooperative_rho"</span>, <span class="st">"cooperative_score"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
@@ -779,10 +796,11 @@ useful structure.</td>
 and late fusion on the same OOL dataset.</li>
 <li>See <code><a href="../articles/stablr-intro.html">vignette("stablr-intro")</a></code> for single-omic STABL and
 learner options.</li>
-<li>Pass <code>groups</code> to
-<code><a href="../reference/stabl_multiomic_train_validate.html">stabl_multiomic_train_validate()</a></code> to prevent leakage in
-longitudinal designs; grouped bootstrapping and outer-fold construction
-both respect this argument.</li>
+<li>Pass <code>groups_train</code> to
+<code><a href="../reference/stabl_multiomic_train_validate.html">stabl_multiomic_train_validate()</a></code> (or <code>groups</code> to
+<code><a href="../reference/stabl_multiomic_cv.html">stabl_multiomic_cv()</a></code>) to prevent leakage in longitudinal
+designs; grouped bootstrapping and outer-fold construction both respect
+this argument.</li>
 <li>For binomial cooperative fusion, set
 <code>family = "binomial"</code> and consider
 <code>cooperation_type_measure = "auc"</code> or

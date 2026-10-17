@@ -86,7 +86,7 @@ single-omic case:
     [`auto_lambda_grid()`](https://mdmanurung.github.io/stablr/reference/auto_lambda_grid.md);
 3.  fitting a small binary or regression example;
 4.  extracting selected feature names
-    ([`get_feature_names_out()`](https://mdmanurung.github.io/stablr/reference/get_feature_names_out.md)),
+    ([`get_feature_names()`](https://mdmanurung.github.io/stablr/reference/get_feature_names.md)),
     logical support masks
     ([`get_support()`](https://mdmanurung.github.io/stablr/reference/get_support.md)),
     and stability scores
@@ -239,7 +239,7 @@ and unselected features. The features survive domain review.
 
 ### 5.3 Inspecting the results
 
-[`get_feature_names_out()`](https://mdmanurung.github.io/stablr/reference/get_feature_names_out.md)
+[`get_feature_names()`](https://mdmanurung.github.io/stablr/reference/get_feature_names.md)
 returns the selected biomarker names.
 [`get_support()`](https://mdmanurung.github.io/stablr/reference/get_support.md)
 returns the same decision as a named logical vector. Use it to subset
@@ -256,9 +256,7 @@ the stability-score gap.
 ``` r
 
 # Features selected at the STABL threshold
-selected_bin <- get_feature_names_out(fit_bin)
-#> Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`
-#> instead.
+selected_bin <- get_feature_names(fit_bin)
 selected_bin
 #> [1] "B1" "B2" "B3" "B4" "B5"
 
@@ -410,9 +408,7 @@ effective sparsity of each bootstrap model.
 
 ``` r
 
-selected_reg <- get_feature_names_out(fit_reg)
-#> Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`
-#> instead.
+selected_reg <- get_feature_names(fit_reg)
 selected_reg
 #> [1] "R1" "R2" "R3" "R4" "R5"
 
@@ -443,6 +439,16 @@ plot_stabl_path(fit_reg, title = "Regression - stability path")
 
 ![Stability path for
 regression](stablr-intro_files/figure-html/plot-reg-1.png)
+
+The FDP+ diagnostic completes the parallel with the binary case.
+
+``` r
+
+plot_fdr_graph(fit_reg, title = "Regression - FDR estimate")
+```
+
+![FDR estimate graph for
+regression](stablr-intro_files/figure-html/fdr-reg-1.png)
 
 ## 7 Alternative base learners
 
@@ -479,9 +485,7 @@ fit_ada <- stabl_fit(
   random_state    = 42L
 )
 
-get_feature_names_out(fit_ada)
-#> Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`
-#> instead.
+get_feature_names(fit_ada)
 #> [1] "B1"  "B2"  "B3"  "B4"  "B5"  "B6"  "B9"  "B16"
 sum(get_support(fit_ada))
 #> [1] 8
@@ -524,9 +528,7 @@ fit_en <- stabl_fit(
   random_state    = 42L
 )
 
-get_feature_names_out(fit_en)
-#> Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`
-#> instead.
+get_feature_names(fit_en)
 #> [1] "B1"  "B3"  "B4"  "B5"  "B6"  "B22"
 ```
 
@@ -534,23 +536,34 @@ The printed names are the features selected by the elastic-net fit.
 
 ### 7.3 Choosing a base learner: what the benchmarks show
 
-The bundled benchmarks measure how each learner and decoy pairing
-controls the false discovery proportion on simulated data. Three numbers
-matter when you pick a pairing. Read them as measured calibration
-evidence, not as guarantees for your dataset.
+The bundled learner benchmark (`benchmarks/learner_comparison/`)
+measures how each learner and decoy pairing controls the false discovery
+proportion on simulated binomial data (n = 240, p = 150, 10 planted
+signals, 10 seeds; 5 for the random forests). The number to read is the
+calibration ratio: realized FDP divided by the reported FDP+ estimate. A
+ratio near 1 is honest, above 1 is anti-conservative, below 1 is
+conservative. Read these as measured evidence for this design, not as
+guarantees for yours.
 
-| Base learner | Artificial features | Measured mean FDP | Guidance |
+| Base learner | Decoys | Calibration (indep. / block) | Guidance |
 |----|----|----|----|
-| `rf` | `knockoff_equi` | 0.03 (linear design), 0.07 (nonlinear, p = 10) | Recommended pairing for knockoff-based selection in this scope. Not calibrated at p = 50 with strong correlation (0.44) or for binary outcomes (0.26). |
-| `lasso` | `knockoff_equi` | 0.58 (learner-regime benchmark, p = 10) | Anti-conservative for the lasso. Treat FDP+ as a diagnostic only. |
-| `oblique_rf` | `knockoff_equi` | 0.24 (p = 10); no remedy passed | Fenced. Decoy importance is inflated; use `rf` with knockoffs instead. |
-| any | `random_permutation` | 0.32 to 0.44 | Anti-conservative by construction. Use as a guard, not as calibration. |
+| `lasso` | `random_permutation` | 1.08 / 0.92 | Calibrated fast default. |
+| `elastic_net` | `random_permutation` | 1.00 / 0.95 | Calibrated; prefer for correlated features. |
+| `adaptive_lasso` | `random_permutation` | 1.00 / 0.52 | Calibrated to conservative; tighter lists. |
+| `splsda` | `random_permutation` | 1.00 / 1.00 | Best-calibrated classification pairing (see [`?make_splsda_adapter`](https://mdmanurung.github.io/stablr/reference/make_splsda_adapter.md)). |
+| `sparse_group_lasso` | `knockoff_equi` | 1.00 / 0.97 | Calibrated with the highest power, but realized FDP 0.85-0.91: a screening pairing, not a short list. |
+| `rf` | `knockoff_equi` | 0.92 / 0.96 | Calibrated. `rf` with `random_permutation` is not (1.25 / 1.50). |
+| `lasso`, `elastic_net`, `adaptive_lasso` | `knockoff_equi` | 1.05-2.00 | Anti-conservative for the glmnet family. Treat FDP+ as a diagnostic only. |
+| `oblique_rf` | either | 0.75-1.75 | Fenced: decoy importance is inflated; use `rf` instead. |
 
-Two rules follow from the table. First, pair the random forest with
-equicorrelated knockoffs when you need calibrated selection with
-correlated features. Second, read every FDP+ estimate against the design
-of your own data. The benchmarks are simulations. No benchmark proves
-calibration on your dataset.
+Two rules follow from the table. First, for the glmnet-family learners
+and `splsda`, `random_permutation` is the calibrated pairing in this
+benchmark while `knockoff_equi` is anti-conservative; the reverse holds
+for the random forest. Second, read every FDP+ estimate against the
+design of your own data. The benchmarks are simulations. No benchmark
+proves calibration on your dataset. The gaussian-outcome extension and
+the full per-seed tables accompany the benchmark scripts
+(`lb_gauss_summary.csv`, `lb_summary.csv`).
 
 ## 8 Interpretation of the FDP+ estimate
 
@@ -579,6 +592,17 @@ extensions are available:
 
 - Use more bootstraps for final analyses, typically hundreds rather than
   the small values used here.
+- Use
+  [`vignette("stablr-getting-started")`](https://mdmanurung.github.io/stablr/articles/stablr-getting-started.md)
+  for the high-level
+  [`stabl()`](https://mdmanurung.github.io/stablr/reference/stabl.md)
+  wrapper, which fixes safe defaults for the expert arguments shown
+  here.
+- For classification with an sPLS-DA base learner, set
+  `base_learner = "splsda"` (see
+  [`?make_splsda_adapter`](https://mdmanurung.github.io/stablr/reference/make_splsda_adapter.md));
+  for random forests, see
+  [`?make_ranger_adapter`](https://mdmanurung.github.io/stablr/reference/make_ranger_adapter.md).
 - Use
   [`vignette("stablr-multiomic")`](https://mdmanurung.github.io/stablr/articles/stablr-multiomic.md)
   when the data contain multiple omic views.

@@ -264,7 +264,8 @@ Public learner factories for glmnet-family and sparse-group backends.
 
 Extensions beyond the glmnet family. The random forest is calibrated
 within a measured scope (WS-2); the oblique forest is fenced (WS-3); the
-ordinal learner is experimental (WS-9).
+ordinal learner is experimental (WS-9); sPLS-DA is experimental and
+binomial-only.
 
 - [`make_ranger_adapter()`](https://mdmanurung.github.io/stablr/reference/make_ranger_adapter.md)
   : Build a Random-Forest Learner Adapter (Calibrated, Scoped)
@@ -281,6 +282,10 @@ ordinal learner is experimental (WS-9).
 - [`auto_ordinal_lambda_grid()`](https://mdmanurung.github.io/stablr/reference/auto_ordinal_lambda_grid.md)
   : Build a Data-Driven Lambda Grid for the Ordinal Learner
   (Experimental)
+- [`make_splsda_adapter()`](https://mdmanurung.github.io/stablr/reference/make_splsda_adapter.md)
+  : Build a sPLS-DA Learner Adapter
+- [`auto_splsda_keepx_grid()`](https://mdmanurung.github.io/stablr/reference/auto_splsda_keepx_grid.md)
+  : Build an Automatic keepX Grid for the sPLS-DA Learner
 
 ## Environment Stability
 

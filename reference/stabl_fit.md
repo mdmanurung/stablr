@@ -37,7 +37,8 @@ stabl_fit(
   adaptive_epsilon = 1e-06,
   feature_groups = NULL,
   corr_group_threshold = NULL,
-  knockoff_fallback = c("stop", "allow")
+  knockoff_fallback = c("stop", "allow"),
+  splsda_ncomp = 2L
 )
 
 # S3 method for class 'stabl_fit'
@@ -86,13 +87,26 @@ print(x, ...)
   they must be paired with model-X knockoff artificial features. For
   `"oblique_rf"` the per-feature selection frequencies are noisier than
   for `"rf"` because importance is spread across the linear combinations
-  used in each split.
+  used in each split, or `"splsda"` (sparse PLS discriminant analysis
+  via `mixOmics`; classification only, requires `family = "binomial"`;
+  sweeps a per-component `keepX` grid — use
+  [`auto_splsda_keepx_grid()`](https://mdmanurung.github.io/stablr/reference/auto_splsda_keepx_grid.md)
+  or `"auto"`, and control the number of latent components with
+  `splsda_ncomp`). `"splsda"` is an experimental extension beyond Python
+  STABL whose FDP+ calibration is empirical, not guaranteed. Unlike the
+  RF learners, the random-permutation pairing is acceptable for
+  `"splsda"`: on the package's multi-cohort validation benchmark,
+  sPLS-DA + random permutation was the best-calibrated configuration
+  (empirical FDP / reported FDP+ ratio 1.01), while the `knockoff_equi`
+  pairing ran conservative there; validate knockoff pairings per dataset
+  (see the package's MINT comparison study).
 
 - family:
 
   Character; `glmnet` response family (`"gaussian"`, `"binomial"`,
   `"multinomial"`, or `"cox"`), or `"ordinal"` for
-  `base_learner = "ordinal"`. Default: `"gaussian"`.
+  `base_learner = "ordinal"`. `base_learner = "splsda"` requires
+  `"binomial"`. Default: `"gaussian"`.
 
 - n_bootstraps:
 
@@ -227,6 +241,12 @@ print(x, ...)
   changes the FDP+ calibration target; `"allow"` restores the pre-0.2.2
   warn-and-fall-back behavior (recorded in the artificial provenance's
   `fallback_history`).
+
+- splsda_ncomp:
+
+  Positive integer; number of latent components retained in every
+  [`mixOmics::splsda`](https://rdrr.io/pkg/mixOmics/man/splsda.html)
+  fit. Used only when `base_learner = "splsda"`. Default: `2L`.
 
 - ...:
 

@@ -79,7 +79,8 @@ print(x, ...)
 
   Character; `glmnet` response family (`"gaussian"`, `"binomial"`,
   `"multinomial"`, or `"cox"`), or `"ordinal"` for
-  `base_learner = "ordinal"`. Default: `"gaussian"`.
+  `base_learner = "ordinal"`. `base_learner = "splsda"` requires
+  `"binomial"`. Default: `"gaussian"`.
 
 - n_bootstraps:
 

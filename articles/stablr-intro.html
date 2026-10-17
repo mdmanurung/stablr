@@ -168,7 +168,7 @@ single-omic case:</p>
 <code><a href="../reference/auto_lambda_grid.html">auto_lambda_grid()</a></code>;</li>
 <li>fitting a small binary or regression example;</li>
 <li>extracting selected feature names
-(<code><a href="../reference/get_feature_names_out.html">get_feature_names_out()</a></code>), logical support masks
+(<code><a href="../reference/get_feature_names.html">get_feature_names()</a></code>), logical support masks
 (<code><a href="../reference/get_support.html">get_support()</a></code>), and stability scores
 (<code><a href="../reference/get_importances.html">get_importances()</a></code>);</li>
 <li>reading the stability-path and FDP diagnostic plots;</li>
@@ -393,7 +393,7 @@ and unselected features. The features survive domain review.</p>
 <div class="section level3">
 <h3 id="inspecting-the-results">5.3 Inspecting the results<a class="anchor" aria-label="anchor" href="#inspecting-the-results"></a>
 </h3>
-<p><code><a href="../reference/get_feature_names_out.html">get_feature_names_out()</a></code> returns the selected biomarker
+<p><code><a href="../reference/get_feature_names.html">get_feature_names()</a></code> returns the selected biomarker
 names. <code><a href="../reference/get_support.html">get_support()</a></code> returns the same decision as a named
 logical vector. Use it to subset the original matrix.
 <code><a href="../reference/get_importances.html">get_importances()</a></code> keeps the fuller story: a stability score
@@ -404,9 +404,7 @@ sources: independent validation, biological mechanism, and the shape of
 the stability-score gap.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Features selected at the STABL threshold</span></span>
-<span><span class="va">selected_bin</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_feature_names_out.html">get_feature_names_out</a></span><span class="op">(</span><span class="va">fit_bin</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
-<span><span class="co">#&gt; instead.</span></span>
+<span><span class="va">selected_bin</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_feature_names.html">get_feature_names</a></span><span class="op">(</span><span class="va">fit_bin</span><span class="op">)</span></span>
 <span><span class="va">selected_bin</span></span>
 <span><span class="co">#&gt; [1] "B1" "B2" "B3" "B4" "B5"</span></span>
 <span></span>
@@ -533,9 +531,7 @@ threshold, the number of selected features, and the FDP+ estimate.</p>
 The Gaussian loss changes the effective sparsity of each bootstrap
 model.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">selected_reg</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_feature_names_out.html">get_feature_names_out</a></span><span class="op">(</span><span class="va">fit_reg</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
-<span><span class="co">#&gt; instead.</span></span>
+<code class="sourceCode R"><span><span class="va">selected_reg</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_feature_names.html">get_feature_names</a></span><span class="op">(</span><span class="va">fit_reg</span><span class="op">)</span></span>
 <span><span class="va">selected_reg</span></span>
 <span><span class="co">#&gt; [1] "R1" "R2" "R3" "R4" "R5"</span></span>
 <span></span>
@@ -560,6 +556,10 @@ model family. The definition of stability does not change.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_stabl_path.html">plot_stabl_path</a></span><span class="op">(</span><span class="va">fit_reg</span>, title <span class="op">=</span> <span class="st">"Regression - stability path"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="stablr-intro_files/figure-html/plot-reg-1.png" class="r-plt" alt="Stability path for regression" width="576"></p>
+<p>The FDP+ diagnostic completes the parallel with the binary case.</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_fdr_graph.html">plot_fdr_graph</a></span><span class="op">(</span><span class="va">fit_reg</span>, title <span class="op">=</span> <span class="st">"Regression - FDR estimate"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="stablr-intro_files/figure-html/fdr-reg-1.png" class="r-plt" alt="FDR estimate graph for regression" width="576"></p>
 </div>
 </div>
 <div class="section level2">
@@ -581,7 +581,7 @@ want a tighter biomarker list with fewer borderline features. Features
 strongest-ranked. <code><a href="../reference/get_importances.html">get_importances()</a></code> typically gives higher
 scores for true features than plain lasso. Borderline noise features can
 still appear. This variant uses a broader introductory lambda grid.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lambda_ada</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/auto_lambda_grid.html">auto_lambda_grid</a></span><span class="op">(</span><span class="va">X_bin</span>, <span class="va">y_bin</span>, family <span class="op">=</span> <span class="st">"binomial"</span>, n_lambda <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">fit_ada</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stabl_fit.html">stabl_fit</a></span><span class="op">(</span></span>
@@ -595,9 +595,7 @@ still appear. This variant uses a broader introductory lambda grid.</p>
 <span>  random_state    <span class="op">=</span> <span class="fl">42L</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/get_feature_names_out.html">get_feature_names_out</a></span><span class="op">(</span><span class="va">fit_ada</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
-<span><span class="co">#&gt; instead.</span></span>
+<span><span class="fu"><a href="../reference/get_feature_names.html">get_feature_names</a></span><span class="op">(</span><span class="va">fit_ada</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "B1"  "B2"  "B3"  "B4"  "B5"  "B6"  "B9"  "B16"</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_support.html">get_support</a></span><span class="op">(</span><span class="va">fit_ada</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 8</span></span></code></pre></div>
@@ -618,7 +616,7 @@ grid jointly. Every bootstrap explores the sparsity level and the L1/L2
 mix. Prefer elastic net over plain lasso when features are highly
 correlated. It avoids choosing one arbitrary representative from a
 correlated group.</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lambda_en</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/auto_lambda_grid.html">auto_lambda_grid</a></span><span class="op">(</span></span>
 <span>  <span class="va">X_bin</span>, <span class="va">y_bin</span>,</span>
 <span>  family <span class="op">=</span> <span class="st">"binomial"</span>, n_lambda <span class="op">=</span> <span class="fl">8</span>,</span>
@@ -636,9 +634,7 @@ correlated group.</p>
 <span>  random_state    <span class="op">=</span> <span class="fl">42L</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/get_feature_names_out.html">get_feature_names_out</a></span><span class="op">(</span><span class="va">fit_en</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
-<span><span class="co">#&gt; instead.</span></span>
+<span><span class="fu"><a href="../reference/get_feature_names.html">get_feature_names</a></span><span class="op">(</span><span class="va">fit_en</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "B1"  "B3"  "B4"  "B5"  "B6"  "B22"</span></span></code></pre></div>
 <p>The printed names are the features selected by the elastic-net
 fit.</p>
@@ -646,10 +642,14 @@ fit.</p>
 <div class="section level3">
 <h3 id="choosing-a-base-learner-what-the-benchmarks-show">7.3 Choosing a base learner: what the benchmarks show<a class="anchor" aria-label="anchor" href="#choosing-a-base-learner-what-the-benchmarks-show"></a>
 </h3>
-<p>The bundled benchmarks measure how each learner and decoy pairing
-controls the false discovery proportion on simulated data. Three numbers
-matter when you pick a pairing. Read them as measured calibration
-evidence, not as guarantees for your dataset.</p>
+<p>The bundled learner benchmark
+(<code>benchmarks/learner_comparison/</code>) measures how each learner
+and decoy pairing controls the false discovery proportion on simulated
+binomial data (n = 240, p = 150, 10 planted signals, 10 seeds; 5 for the
+random forests). The number to read is the calibration ratio: realized
+FDP divided by the reported FDP+ estimate. A ratio near 1 is honest,
+above 1 is anti-conservative, below 1 is conservative. Read these as
+measured evidence for this design, not as guarantees for yours.</p>
 <table class="table">
 <colgroup>
 <col width="25%">
@@ -659,47 +659,78 @@ evidence, not as guarantees for your dataset.</p>
 </colgroup>
 <thead><tr class="header">
 <th>Base learner</th>
-<th>Artificial features</th>
-<th>Measured mean FDP</th>
+<th>Decoys</th>
+<th>Calibration (indep. / block)</th>
 <th>Guidance</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td><code>rf</code></td>
-<td><code>knockoff_equi</code></td>
-<td>0.03 (linear design), 0.07 (nonlinear, p = 10)</td>
-<td>Recommended pairing for knockoff-based selection in this scope. Not
-calibrated at p = 50 with strong correlation (0.44) or for binary
-outcomes (0.26).</td>
+<td><code>lasso</code></td>
+<td><code>random_permutation</code></td>
+<td>1.08 / 0.92</td>
+<td>Calibrated fast default.</td>
 </tr>
 <tr class="even">
-<td><code>lasso</code></td>
-<td><code>knockoff_equi</code></td>
-<td>0.58 (learner-regime benchmark, p = 10)</td>
-<td>Anti-conservative for the lasso. Treat FDP+ as a diagnostic
-only.</td>
+<td><code>elastic_net</code></td>
+<td><code>random_permutation</code></td>
+<td>1.00 / 0.95</td>
+<td>Calibrated; prefer for correlated features.</td>
 </tr>
 <tr class="odd">
-<td><code>oblique_rf</code></td>
-<td><code>knockoff_equi</code></td>
-<td>0.24 (p = 10); no remedy passed</td>
-<td>Fenced. Decoy importance is inflated; use <code>rf</code> with
-knockoffs instead.</td>
+<td><code>adaptive_lasso</code></td>
+<td><code>random_permutation</code></td>
+<td>1.00 / 0.52</td>
+<td>Calibrated to conservative; tighter lists.</td>
 </tr>
 <tr class="even">
-<td>any</td>
+<td><code>splsda</code></td>
 <td><code>random_permutation</code></td>
-<td>0.32 to 0.44</td>
-<td>Anti-conservative by construction. Use as a guard, not as
-calibration.</td>
+<td>1.00 / 1.00</td>
+<td>Best-calibrated classification pairing (see
+<code><a href="../reference/make_splsda_adapter.html">?make_splsda_adapter</a></code>).</td>
+</tr>
+<tr class="odd">
+<td><code>sparse_group_lasso</code></td>
+<td><code>knockoff_equi</code></td>
+<td>1.00 / 0.97</td>
+<td>Calibrated with the highest power, but realized FDP 0.85-0.91: a
+screening pairing, not a short list.</td>
+</tr>
+<tr class="even">
+<td><code>rf</code></td>
+<td><code>knockoff_equi</code></td>
+<td>0.92 / 0.96</td>
+<td>Calibrated. <code>rf</code> with <code>random_permutation</code> is
+not (1.25 / 1.50).</td>
+</tr>
+<tr class="odd">
+<td>
+<code>lasso</code>, <code>elastic_net</code>,
+<code>adaptive_lasso</code>
+</td>
+<td><code>knockoff_equi</code></td>
+<td>1.05-2.00</td>
+<td>Anti-conservative for the glmnet family. Treat FDP+ as a diagnostic
+only.</td>
+</tr>
+<tr class="even">
+<td><code>oblique_rf</code></td>
+<td>either</td>
+<td>0.75-1.75</td>
+<td>Fenced: decoy importance is inflated; use <code>rf</code>
+instead.</td>
 </tr>
 </tbody>
 </table>
-<p>Two rules follow from the table. First, pair the random forest with
-equicorrelated knockoffs when you need calibrated selection with
-correlated features. Second, read every FDP+ estimate against the design
-of your own data. The benchmarks are simulations. No benchmark proves
-calibration on your dataset.</p>
+<p>Two rules follow from the table. First, for the glmnet-family
+learners and <code>splsda</code>, <code>random_permutation</code> is the
+calibrated pairing in this benchmark while <code>knockoff_equi</code> is
+anti-conservative; the reverse holds for the random forest. Second, read
+every FDP+ estimate against the design of your own data. The benchmarks
+are simulations. No benchmark proves calibration on your dataset. The
+gaussian-outcome extension and the full per-seed tables accompany the
+benchmark scripts (<code>lb_gauss_summary.csv</code>,
+<code>lb_summary.csv</code>).</p>
 </div>
 </div>
 <div class="section level2">
@@ -737,6 +768,13 @@ extensions are available:</p>
 <ul>
 <li>Use more bootstraps for final analyses, typically hundreds rather
 than the small values used here.</li>
+<li>Use <code><a href="../articles/stablr-getting-started.html">vignette("stablr-getting-started")</a></code> for the
+high-level <code><a href="../reference/stabl.html">stabl()</a></code> wrapper, which fixes safe defaults for
+the expert arguments shown here.</li>
+<li>For classification with an sPLS-DA base learner, set
+<code>base_learner = "splsda"</code> (see
+<code><a href="../reference/make_splsda_adapter.html">?make_splsda_adapter</a></code>); for random forests, see
+<code><a href="../reference/make_ranger_adapter.html">?make_ranger_adapter</a></code>.</li>
 <li>Use <code><a href="../articles/stablr-multiomic.html">vignette("stablr-multiomic")</a></code> when the data contain
 multiple omic views.</li>
 <li>Use <code><a href="../reference/save_stabl_results.html">?save_stabl_results</a></code> to export scores, plots, and

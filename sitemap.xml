@@ -23,6 +23,7 @@
 <url><loc>https://mdmanurung.github.io/stablr/reference/auto_oblique_threshold_grid.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/auto_ordinal_lambda_grid.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/auto_rf_threshold_grid.html</loc></url>
+<url><loc>https://mdmanurung.github.io/stablr/reference/auto_splsda_keepx_grid.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/boxplot_features.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/classic_bootstrap_indices.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/compute_fdp_plus.html</loc></url>
@@ -56,6 +57,7 @@
 <url><loc>https://mdmanurung.github.io/stablr/reference/make_ranger_adapter.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/make_rp_features.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/make_sgl_adapter.html</loc></url>
+<url><loc>https://mdmanurung.github.io/stablr/reference/make_splsda_adapter.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/pearson_similarity.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/pearson_similarity_measure.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/pearson_similarity_pairwise.html</loc></url>

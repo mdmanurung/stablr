@@ -244,21 +244,17 @@ The next chunk prints the selected feature names of each omic.
 
 cat("CyTOF selected feature names:\n")
 #> CyTOF selected feature names:
-print(get_feature_names_out(fit_cytof))
-#> Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`
-#> instead.
+print(get_feature_names(fit_cytof))
 #> character(0)
 
 cat("\nProteomics selected feature names:\n")
 #> 
 #> Proteomics selected feature names:
-print(get_feature_names_out(fit_prot))
-#> Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`
-#> instead.
+print(get_feature_names(fit_prot))
 #> character(0)
 ```
 
-[`get_feature_names_out()`](https://mdmanurung.github.io/stablr/reference/get_feature_names_out.md)
+[`get_feature_names()`](https://mdmanurung.github.io/stablr/reference/get_feature_names.md)
 returns the feature names that passed the stability threshold in each
 omic.
 [`get_support()`](https://mdmanurung.github.io/stablr/reference/get_support.md)
@@ -406,17 +402,13 @@ pipeline.
 # Per-omic selected feature names from the joint pipeline
 cat("CyTOF (from multi-omic pipeline):\n")
 #> CyTOF (from multi-omic pipeline):
-print(get_feature_names_out(multi_fit$fits$cytof))
-#> Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`
-#> instead.
+print(get_feature_names(multi_fit$fits$cytof))
 #> character(0)
 
 cat("\nProteomics (from multi-omic pipeline):\n")
 #> 
 #> Proteomics (from multi-omic pipeline):
-print(get_feature_names_out(multi_fit$fits$proteomics))
-#> Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`
-#> instead.
+print(get_feature_names(multi_fit$fits$proteomics))
 #> character(0)
 ```
 
@@ -433,11 +425,9 @@ is active.
 # Early fusion: joint selection across all omics simultaneously
 if (!is.null(multi_fit$early_fusion)) {
   cat("Early fusion selected feature names:\n")
-  print(get_feature_names_out(multi_fit$early_fusion$fit))
+  print(get_feature_names(multi_fit$early_fusion$fit))
 }
 #> Early fusion selected feature names:
-#> Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`
-#> instead.
 #> character(0)
 ```
 
@@ -464,11 +454,36 @@ if (!is.null(multi_fit$late_fusion)) {
 
 `$valid_predictions` is a numeric vector of predicted DOS values for the
 held-out validation set, one prediction per sample. Compare these values
-with `ool_valid$y` to assess predictive performance. The `$weights`
-element records the omic weights chosen by the training-prediction
-stacking objective. A small weight means that a view received little
-weight in this fitted prediction rule. It does not mean that the assay
-is biologically uninformative.
+with `ool_valid$y` to assess predictive performance. The scatter below
+makes that comparison direct: points near the identity line indicate
+calibrated held-out predictions.
+
+``` r
+
+lf_df <- data.frame(observed  = ool_valid$y,
+                    predicted = multi_fit$late_fusion$valid_predictions)
+ggplot2::ggplot(lf_df, ggplot2::aes(observed, predicted)) +
+  ggplot2::geom_point() +
+  ggplot2::geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  ggplot2::labs(title = "Late fusion - validation predictions",
+                x = "Observed DOS (days)", y = "Predicted DOS (days)") +
+  ggplot2::theme_minimal()
+```
+
+![Late-fusion validation predictions versus observed
+DOS](stablr-multiomic_files/figure-html/late-fusion-scatter-1.png)
+
+On these compact build settings the scatter has an honest lesson: the
+blended predictor is nearly constant (the points form a horizontal line
+at the training-mean level). Ten bootstraps and six-lambda grids
+demonstrate the workflow shape, not a competitive prediction rule; run
+hundreds of bootstraps before reading predictive performance from this
+figure.
+
+The `$weights` element records the omic weights chosen by the
+training-prediction stacking objective. A small weight means that a view
+received little weight in this fitted prediction rule. It does not mean
+that the assay is biologically uninformative.
 
 ### 6.5 Stability paths
 
@@ -549,8 +564,12 @@ and the selected-feature table.
   [`stabl_multiomic_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_cv.md)
   for a fully cross-validated evaluation when no pre-defined validation
   split is available.
-- Pass `groups` to respect subject-level grouping in bootstrap
-  resampling and CV fold construction.
+- Pass `groups_train` (for
+  [`stabl_multiomic_train_validate()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_train_validate.md))
+  or `groups` (for
+  [`stabl_multiomic_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_cv.md))
+  to respect subject-level grouping in bootstrap resampling and CV fold
+  construction.
 - See
   [`vignette("stablr-intro")`](https://mdmanurung.github.io/stablr/articles/stablr-intro.md)
   for single-omic usage and alternative learners.

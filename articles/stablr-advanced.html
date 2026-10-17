@@ -82,7 +82,7 @@
 <ul>
 <li>1 Scope of this vignette</li>
 <li>2 Cox proportional-hazards STABL</li>
-<li>3 Multinomial STABL</li>
+<li>3 Multinomial and sPLS-DA classification</li>
 <li>4 Knockoff artificial features</li>
 <li>5 Grouped bootstrap for repeated measures</li>
 <li>6 Reproducibility across repeated fits</li>
@@ -120,6 +120,14 @@ listed in the table below.</p>
 <td><code>stabl_fit(family = "multinomial")</code></td>
 </tr>
 <tr class="odd">
+<td>sPLS-DA classification</td>
+<td>
+<code>base_learner = "splsda"</code>,
+<code><a href="../reference/make_splsda_adapter.html">make_splsda_adapter()</a></code>,
+<code><a href="../reference/auto_splsda_keepx_grid.html">auto_splsda_keepx_grid()</a></code>
+</td>
+</tr>
+<tr class="even">
 <td>Artificial features</td>
 <td>
 <code>artificial_type = "random_permutation"</code>,
@@ -127,37 +135,37 @@ listed in the table below.</p>
 <code>"knockoff_mvr"</code>, or <code>NULL</code>
 </td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Grouped bootstrap</td>
 <td>
 <code>groups</code>, <code><a href="../reference/group_bootstrap_indices.html">group_bootstrap_indices()</a></code>
 </td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Reproducibility metrics</td>
 <td>
 <code><a href="../reference/jaccard_similarity.html">jaccard_similarity()</a></code>,
 <code><a href="../reference/adjusted_similarity.html">adjusted_similarity()</a></code>
 </td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Disk export</td>
 <td>
 <code><a href="../reference/export_stabl_to_csv.html">export_stabl_to_csv()</a></code>,
 <code><a href="../reference/save_stabl_results.html">save_stabl_results()</a></code>
 </td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Outer multi-omic CV</td>
 <td><code><a href="../reference/stabl_multiomic_cv.html">stabl_multiomic_cv()</a></code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Cooperative diagnostics</td>
 <td>
 <code><a href="../reference/get_cooperative_features.html">get_cooperative_features()</a></code>, <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> on
 native fits</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Biomarker interpretation</td>
 <td><code><a href="../reference/stabl_interpret.html">stabl_interpret()</a></code></td>
 </tr>
@@ -238,27 +246,34 @@ random-permutation artificial features.</p>
 <span><span class="co">#&gt; not reached after maxit=100000 iterations; solutions for larger lambdas</span></span>
 <span><span class="co">#&gt; returned</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/get_feature_names_out.html">get_feature_names_out</a></span><span class="op">(</span><span class="va">fit_cox</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
-<span><span class="co">#&gt; instead.</span></span>
+<span><span class="fu"><a href="../reference/get_feature_names.html">get_feature_names</a></span><span class="op">(</span><span class="va">fit_cox</span><span class="op">)</span></span>
 <span><span class="co">#&gt; character(0)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_importances.html">get_importances</a></span><span class="op">(</span><span class="va">fit_cox</span><span class="op">)</span>, decreasing <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, <span class="fl">6</span><span class="op">)</span></span>
 <span><span class="co">#&gt; g1 g2 g3 g4 g5 g6 </span></span>
 <span><span class="co">#&gt;  1  1  1  1  1  1</span></span></code></pre></div>
 <p>The output lists the selected feature names, followed by the six
-features with the largest stability importances. The planted features
-<code>g1</code> and <code>g2</code> are expected to rank at the top of
-the sorted importances.</p>
+features with the largest stability importances. At this small sample
+size the FDR threshold saturates at 1, so the selection set can be
+empty; the planted features <code>g1</code> and <code>g2</code> are
+instead recovered in the sorted importances, where they are expected to
+rank at the top.</p>
+<p>The stability path makes the same comparison visible: at the sparse
+end of the lambda grid the planted features lift away from the null
+background, while at the saturated end every curve approaches the FDR
+upper bound (dashed line at 1).</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_stabl_path.html">plot_stabl_path</a></span><span class="op">(</span><span class="va">fit_cox</span>, title <span class="op">=</span> <span class="st">"Cox survival - stability path"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="stablr-advanced_files/figure-html/cox-path-1.png" class="r-plt" alt="Stability path for the Cox survival fit" width="672"></p>
 </div>
 <div class="section level2">
-<h2 id="multinomial-stabl">3 Multinomial STABL<a class="anchor" aria-label="anchor" href="#multinomial-stabl"></a>
+<h2 id="multinomial-and-spls-da-classification">3 Multinomial and sPLS-DA classification<a class="anchor" aria-label="anchor" href="#multinomial-and-spls-da-classification"></a>
 </h2>
 <p>Multinomial outcomes use a named factor <code>y</code>. The stability
 matrix has one row per feature, and importances aggregate across
 classes.</p>
 <p>The following commands simulate a three-class problem with weak class
 signal in the first feature and fit the multinomial model.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">90</span></span>
 <span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fl">12</span></span>
 <span><span class="va">ids</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"s"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span><span class="op">)</span></span>
@@ -290,13 +305,43 @@ signal in the first feature and fit the multinomial model.</p>
 <span><span class="co">#&gt; Warning in lognet(x, is.sparse, y, weights, offset, alpha, nobs, nvars, : one</span></span>
 <span><span class="co">#&gt; multinomial or binomial class has fewer than 8 observations; dangerous ground</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/get_feature_names_out.html">get_feature_names_out</a></span><span class="op">(</span><span class="va">fit_multi</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
-<span><span class="co">#&gt; instead.</span></span>
+<span><span class="fu"><a href="../reference/get_feature_names.html">get_feature_names</a></span><span class="op">(</span><span class="va">fit_multi</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "m1"  "m2"  "m3"  "m5"  "m9"  "m10"</span></span></code></pre></div>
 <p>The printed vector contains the features selected by the multinomial
 fit. Because the class signal is confined to feature <code>m1</code>,
 that feature is expected to appear among the selections.</p>
+<div class="section level4">
+<h4 id="spls-da-classification">sPLS-DA classification<a class="anchor" aria-label="anchor" href="#spls-da-classification"></a>
+</h4>
+<p>For binary classification, an sPLS-DA base learner is also available
+(<code>base_learner = "splsda"</code>, backed by <code>mixOmics</code>).
+The lambda grid becomes a <code>keepX</code> grid:
+<code><a href="../reference/auto_splsda_keepx_grid.html">auto_splsda_keepx_grid()</a></code> derives a default one, and
+<code>splsda_ncomp</code> sets the number of components. On the
+package’s learner benchmark this pairing is the best-calibrated
+classification option (Section 7.3 of the introduction vignette).</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">5L</span><span class="op">)</span></span>
+<span><span class="va">y_bin_splsda</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/setNames.html" class="external-link">setNames</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="va">x_multi</span><span class="op">[</span>, <span class="st">"m1"</span><span class="op">]</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span>, sd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span>, <span class="va">ids</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">fit_splsda</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stabl_fit.html">stabl_fit</a></span><span class="op">(</span></span>
+<span>  x               <span class="op">=</span> <span class="va">x_multi</span>,</span>
+<span>  y               <span class="op">=</span> <span class="va">y_bin_splsda</span>,</span>
+<span>  lambda_grid     <span class="op">=</span> <span class="st">"auto"</span>,</span>
+<span>  base_learner    <span class="op">=</span> <span class="st">"splsda"</span>,</span>
+<span>  family          <span class="op">=</span> <span class="st">"binomial"</span>,</span>
+<span>  splsda_ncomp    <span class="op">=</span> <span class="fl">2L</span>,</span>
+<span>  n_bootstraps    <span class="op">=</span> <span class="fl">30L</span>,</span>
+<span>  artificial_type <span class="op">=</span> <span class="st">"random_permutation"</span>,</span>
+<span>  random_state    <span class="op">=</span> <span class="fl">1L</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/get_feature_names.html">get_feature_names</a></span><span class="op">(</span><span class="va">fit_splsda</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "m1"  "m2"  "m3"  "m4"  "m5"  "m6"  "m12"</span></span></code></pre></div>
+<p>The printed vector contains the features selected by the sPLS-DA fit.
+The outcome depends on feature <code>m1</code>, which is expected to
+rank at the top.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="knockoff-artificial-features">4 Knockoff artificial features<a class="anchor" aria-label="anchor" href="#knockoff-artificial-features"></a>
@@ -314,7 +359,7 @@ no chunked construction is claimed to be scientifically valid.</p>
 before fitting.</p>
 <p>When the package is available, a binomial fit with equicorrelated
 Model-X knockoffs is evaluated.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">60</span></span>
 <span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fl">20</span></span>
 <span><span class="va">ids</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"s"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span><span class="op">)</span></span>
@@ -336,9 +381,7 @@ Model-X knockoffs is evaluated.</p>
 <span>  random_state    <span class="op">=</span> <span class="fl">7L</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/get_feature_names_out.html">get_feature_names_out</a></span><span class="op">(</span><span class="va">fit_ko</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
-<span><span class="co">#&gt; instead.</span></span>
+<span><span class="fu"><a href="../reference/get_feature_names.html">get_feature_names</a></span><span class="op">(</span><span class="va">fit_ko</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "k1"  "k7"  "k18"</span></span></code></pre></div>
 <p>The printed vector contains the features selected by the knockoff
 fit. Feature <code>k1</code>, on which the outcome depends, is expected
@@ -353,7 +396,7 @@ whole groups together. This prevents leakage across related samples.</p>
 <p>The following commands simulate four repeated measurements per
 subject, inspect one grouped subsample draw, and fit the grouped
 model.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">48</span></span>
 <span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fl">10</span></span>
 <span><span class="va">ids</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"s"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span><span class="op">)</span></span>
@@ -375,26 +418,29 @@ model.</p>
 <span><span class="va">fit_grp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stabl_fit.html">stabl_fit</a></span><span class="op">(</span></span>
 <span>  x               <span class="op">=</span> <span class="va">x_grp</span>,</span>
 <span>  y               <span class="op">=</span> <span class="va">y_grp</span>,</span>
-<span>  groups          <span class="op">=</span> <span class="va">groups</span>,</span>
+<span>  sample_groups   <span class="op">=</span> <span class="va">groups</span>,</span>
 <span>  lambda_grid     <span class="op">=</span> <span class="va">lambda_grp</span>,</span>
 <span>  family          <span class="op">=</span> <span class="st">"gaussian"</span>,</span>
 <span>  n_bootstraps    <span class="op">=</span> <span class="fl">25L</span>,</span>
 <span>  artificial_type <span class="op">=</span> <span class="st">"random_permutation"</span>,</span>
+<span>  hard_threshold  <span class="op">=</span> <span class="fl">0.5</span>,</span>
 <span>  random_state    <span class="op">=</span> <span class="fl">3L</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: `groups` is deprecated; use `sample_groups` instead.</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_feature_names_out.html">get_feature_names_out</a></span><span class="op">(</span><span class="va">fit_grp</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
-<span><span class="co">#&gt; instead.</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_feature_names.html">get_feature_names</a></span><span class="op">(</span><span class="va">fit_grp</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 10</span></span></code></pre></div>
 <p>The call to <code>unique(groups[idx])</code> prints the subjects
 entering one subsample; each subject appears either with all four of its
 rows or not at all. The final line reports the number of features
-selected by the grouped Gaussian fit.</p>
-<p>The same <code>groups</code> argument is forwarded by
-<code><a href="../reference/stabl_multiomic_train_validate.html">stabl_multiomic_train_validate()</a></code> and
-<code><a href="../reference/stabl_multiomic_cv.html">stabl_multiomic_cv()</a></code> for outer fold construction.</p>
+selected by the grouped Gaussian fit. A fixed
+<code>hard_threshold = 0.5</code> is used so that the selection set is
+non-empty: with only ten candidates, the default data-driven threshold
+can legitimately select nothing, which would make the similarity
+comparisons in the next section vacuous.</p>
+<p>Group labels are forwarded by
+<code><a href="../reference/stabl_multiomic_train_validate.html">stabl_multiomic_train_validate()</a></code> (argument
+<code>groups_train</code>) and <code><a href="../reference/stabl_multiomic_cv.html">stabl_multiomic_cv()</a></code>
+(argument <code>groups</code>) for outer fold construction.</p>
 <p>Classification bootstraps redraw subsamples until at least two
 observations per class are present. This slightly biases the subsample
 distribution relative to vanilla STABL; the deviation is deliberate and
@@ -408,64 +454,58 @@ runs. Jaccard similarity is the simplest overlap measure, and adjusted
 similarity corrects for chance overlap when set sizes differ.</p>
 <p>Two fits with different random states are compared first, and a
 pairwise similarity matrix across four seeds is computed afterwards.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">run_once</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">seed</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="../reference/stabl_fit.html">stabl_fit</a></span><span class="op">(</span></span>
-<span>    x <span class="op">=</span> <span class="va">x_grp</span>, y <span class="op">=</span> <span class="va">y_grp</span>, groups <span class="op">=</span> <span class="va">groups</span>,</span>
+<span>    x <span class="op">=</span> <span class="va">x_grp</span>, y <span class="op">=</span> <span class="va">y_grp</span>, sample_groups <span class="op">=</span> <span class="va">groups</span>,</span>
 <span>    lambda_grid <span class="op">=</span> <span class="va">lambda_grp</span>,</span>
 <span>    family <span class="op">=</span> <span class="st">"gaussian"</span>,</span>
 <span>    n_bootstraps <span class="op">=</span> <span class="fl">20L</span>,</span>
 <span>    artificial_type <span class="op">=</span> <span class="st">"random_permutation"</span>,</span>
+<span>    hard_threshold <span class="op">=</span> <span class="fl">0.5</span>,</span>
 <span>    random_state <span class="op">=</span> <span class="va">seed</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span></span>
 <span><span class="va">fit_a</span> <span class="op">&lt;-</span> <span class="fu">run_once</span><span class="op">(</span><span class="fl">11L</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: `groups` is deprecated; use `sample_groups` instead.</span></span>
 <span><span class="va">fit_b</span> <span class="op">&lt;-</span> <span class="fu">run_once</span><span class="op">(</span><span class="fl">22L</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: `groups` is deprecated; use `sample_groups` instead.</span></span>
-<span><span class="va">sel_a</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_feature_names_out.html">get_feature_names_out</a></span><span class="op">(</span><span class="va">fit_a</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
-<span><span class="co">#&gt; instead.</span></span>
-<span><span class="va">sel_b</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_feature_names_out.html">get_feature_names_out</a></span><span class="op">(</span><span class="va">fit_b</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
-<span><span class="co">#&gt; instead.</span></span>
+<span><span class="va">sel_a</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_feature_names.html">get_feature_names</a></span><span class="op">(</span><span class="va">fit_a</span><span class="op">)</span></span>
+<span><span class="va">sel_b</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_feature_names.html">get_feature_names</a></span><span class="op">(</span><span class="va">fit_b</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/jaccard_similarity.html">jaccard_similarity</a></span><span class="op">(</span><span class="va">sel_a</span>, <span class="va">sel_b</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0</span></span>
-<span><span class="fu"><a href="../reference/adjusted_similarity.html">adjusted_similarity</a></span><span class="op">(</span><span class="va">sel_a</span>, <span class="va">sel_b</span>, nb_total_elements <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">x_grp</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: `list1`, `list2` and `nb_total_elements` are deprecated; use `set1`,</span></span>
-<span><span class="co">#&gt; `set2` and `n_universe` instead.</span></span>
+<span><span class="co">#&gt; [1] 1</span></span>
+<span><span class="fu"><a href="../reference/adjusted_similarity.html">adjusted_similarity</a></span><span class="op">(</span><span class="va">sel_a</span>, <span class="va">sel_b</span>, n_universe <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">x_grp</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 0</span></span>
 <span></span>
 <span><span class="co"># Pairwise matrix across several seeds</span></span>
 <span><span class="va">fits</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fl">11</span><span class="op">:</span><span class="fl">14</span>, <span class="va">run_once</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: `groups` is deprecated; use `sample_groups` instead.</span></span>
-<span><span class="co">#&gt; Warning: `groups` is deprecated; use `sample_groups` instead.</span></span>
-<span><span class="co">#&gt; Warning: `groups` is deprecated; use `sample_groups` instead.</span></span>
-<span><span class="co">#&gt; Warning: `groups` is deprecated; use `sample_groups` instead.</span></span>
-<span><span class="va">sels</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">fits</span>, <span class="va">get_feature_names_out</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
-<span><span class="co">#&gt; instead.</span></span>
-<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
-<span><span class="co">#&gt; instead.</span></span>
-<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
-<span><span class="co">#&gt; instead.</span></span>
-<span><span class="co">#&gt; Warning: `get_feature_names_out()` is deprecated; use `get_feature_names()`</span></span>
-<span><span class="co">#&gt; instead.</span></span>
-<span><span class="fu"><a href="../reference/jaccard_matrix.html">jaccard_matrix</a></span><span class="op">(</span><span class="va">sels</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: `jaccard_matrix()` is deprecated; use `jaccard_similarity_matrix()`</span></span>
-<span><span class="co">#&gt; instead.</span></span>
+<span><span class="va">sels</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">fits</span>, <span class="va">get_feature_names</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/jaccard_similarity_matrix.html">jaccard_similarity_matrix</a></span><span class="op">(</span><span class="va">sels</span><span class="op">)</span></span>
 <span><span class="co">#&gt;      [,1] [,2] [,3]</span></span>
-<span><span class="co">#&gt; [1,]    0    0    0</span></span>
-<span><span class="co">#&gt; [2,]    0    0    0</span></span>
-<span><span class="co">#&gt; [3,]    0    0    0</span></span>
-<span><span class="co">#&gt; [4,]    0    0    0</span></span></code></pre></div>
+<span><span class="co">#&gt; [1,]    1    1    1</span></span>
+<span><span class="co">#&gt; [2,]    1    1    1</span></span>
+<span><span class="co">#&gt; [3,]    1    1    1</span></span>
+<span><span class="co">#&gt; [4,]    1    1    1</span></span></code></pre></div>
 <p>The first two printed values are the Jaccard and the adjusted
 similarity between the selections from seeds 11 and 22. The matrix at
 the end gives the pairwise Jaccard similarities for the fits with seeds
 11 to 14; off-diagonal values close to 1 indicate selections that are
 robust to the random state.</p>
+<p>The same matrix is easier to compare as a heatmap.</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">jm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/jaccard_similarity_matrix.html">jaccard_similarity_matrix</a></span><span class="op">(</span><span class="va">sels</span><span class="op">)</span></span>
+<span><span class="va">jm_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">as.table</a></span><span class="op">(</span><span class="va">jm</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">jm_df</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"seed_a"</span>, <span class="st">"seed_b"</span>, <span class="st">"jaccard"</span><span class="op">)</span></span>
+<span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">jm_df</span>, <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span><span class="va">seed_a</span>, <span class="va">seed_b</span>, fill <span class="op">=</span> <span class="va">jaccard</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_tile.html" class="external-link">geom_tile</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_text.html" class="external-link">geom_text</a></span><span class="op">(</span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span></span>
+<span>    label <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">jaccard</span><span class="op">)</span>, <span class="st">""</span>, <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"%.2f"</span>, <span class="va">jaccard</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_viridis.html" class="external-link">scale_fill_viridis_c</a></span><span class="op">(</span>limits <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span>, na.value <span class="op">=</span> <span class="st">"grey90"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"random_state"</span>, y <span class="op">=</span> <span class="st">"random_state"</span>,</span>
+<span>                title <span class="op">=</span> <span class="st">"Selection overlap across repeated fits"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p><img src="stablr-advanced_files/figure-html/jaccard-heatmap-1.png" class="r-plt" alt="Pairwise Jaccard similarity of selections across four seeds" width="576"></p>
 </div>
 <div class="section level2">
 <h2 id="exporting-results-to-disk">7 Exporting results to disk<a class="anchor" aria-label="anchor" href="#exporting-results-to-disk"></a>
@@ -481,7 +521,7 @@ for a full analysis folder. It writes <code>STABL scores.csv</code>,
 the relevant diagnostics and selected features are available.</p>
 <p>The following commands write the score tables and the full results
 bundle to a temporary directory.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># File-writing path; exercised by tests/testthat/test-phase7.R.</span></span>
 <span><span class="va">tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="st">"stablr_export"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">tmp</span><span class="op">)</span></span>
@@ -511,7 +551,7 @@ this function; nested CV (<code><a href="../reference/stabl_multiomic_nested_cv.
 not forward cooperative mode.</p>
 <p>A two-omic Gaussian fit with cooperative fusion and three outer folds
 is specified as follows.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">50</span></span>
 <span><span class="va">ids</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"s"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">x_a</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span> <span class="op">*</span> <span class="fl">8</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="va">n</span>, dimnames <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">ids</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"a"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">8</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
@@ -588,7 +628,7 @@ cooperative workflow, the selected fit object lives in
 <code>$cooperative_fusion$fit</code>.</p>
 <p>A cooperative fit on the OOL training data is run and plotted as
 follows.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ool</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/load_ool_data.html">load_ool_data</a></span><span class="op">(</span>split <span class="op">=</span> <span class="st">"train"</span><span class="op">)</span></span>
 <span><span class="va">lambda_ool</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  cytof <span class="op">=</span> <span class="fu"><a href="../reference/auto_lambda_grid.html">auto_lambda_grid</a></span><span class="op">(</span><span class="va">ool</span><span class="op">$</span><span class="va">x_list</span><span class="op">$</span><span class="va">cytof</span>, <span class="va">ool</span><span class="op">$</span><span class="va">y</span>, n_lambda <span class="op">=</span> <span class="fl">6</span><span class="op">)</span>,</span>
@@ -632,7 +672,7 @@ columns record four separate dimensions: the stability score, a
 conditional signed effect, a correlation group, and a permutation
 importance. These dimensions are different quantities. They are never
 merged into one score.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">11L</span><span class="op">)</span></span>
 <span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">120</span></span>
 <span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span> <span class="op">*</span> <span class="fl">8</span><span class="op">)</span>, <span class="va">n</span>, <span class="fl">8</span>,</span>
@@ -665,6 +705,24 @@ equivalence. Third, the permutation importance is apparent: it is
 measured on the fitting data, so it is optimistic. All effects and
 importances here are post-selection and descriptive. They are not
 selection-adjusted inference.</p>
+<p>The dimensions are also easier to compare visually. The scatter below
+contrasts the stability dimension with the apparent permutation
+importance, coloured by correlation group: features sharing a group are
+correlated substitutes, and the gap between their stability and their
+apparent importance is the post-selection optimism the table above warns
+about.</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">ins_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">ins</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"feature"</span>, <span class="st">"stability"</span>, <span class="st">"coefficient"</span>,</span>
+<span>                           <span class="st">"correlation_group"</span>, <span class="st">"permutation_importance"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">ins_df</span>,</span>
+<span>                <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span><span class="va">permutation_importance</span>, <span class="va">stability</span>,</span>
+<span>                             colour <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">correlation_group</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span>size <span class="op">=</span> <span class="fl">2.5</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Stability vs permutation importance"</span>,</span>
+<span>                x <span class="op">=</span> <span class="st">"Permutation importance (apparent)"</span>,</span>
+<span>                y <span class="op">=</span> <span class="st">"Stability score"</span>, colour <span class="op">=</span> <span class="st">"correlation group"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p><img src="stablr-advanced_files/figure-html/interpret-scatter-1.png" class="r-plt" alt="Stability score versus permutation importance, coloured by correlation group" width="576"></p>
 </div>
 <div class="section level2">
 <h2 id="related-vignettes">11 Related vignettes<a class="anchor" aria-label="anchor" href="#related-vignettes"></a>

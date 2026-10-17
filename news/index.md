@@ -1,5 +1,72 @@
 # Changelog
 
+## stablr 0.3.0.9000 (development)
+
+### Documentation
+
+- All nine vignettes audited against the current API and re-rendered.
+  Replaced 25 deprecated
+  [`get_feature_names_out()`](https://mdmanurung.github.io/stablr/reference/get_feature_names_out.md)
+  calls with
+  [`get_feature_names()`](https://mdmanurung.github.io/stablr/reference/get_feature_names.md),
+  [`jaccard_matrix()`](https://mdmanurung.github.io/stablr/reference/jaccard_matrix.md)
+  with
+  [`jaccard_similarity_matrix()`](https://mdmanurung.github.io/stablr/reference/jaccard_similarity_matrix.md),
+  `adjusted_similarity(nb_total_elements=)` with `n_universe=`, and
+  deprecated `groups=` arguments to
+  [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
+  with `sample_groups=` (advanced, environments). Corrected the
+  [`stabl_multiomic_train_validate()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_train_validate.md)
+  group argument to `groups_train` (multiomic, cooperative) and the
+  stale `groups` note in the environments vignette.
+- Added seven figure chunks so key conclusions are visually supported:
+  environment-wise minimum-score heatmap (environments), Cox stability
+  path, Jaccard similarity heatmap and interpretation scatter
+  (advanced), late-fusion prediction scatter (multiomic), cooperative
+  rho surface (cooperative), and FDR+ regularisation curve (intro).
+- Advanced vignette: the grouped-bootstrap and reproducibility examples
+  now pass `hard_threshold = 0.5` so the demonstration selects a
+  non-empty set at p = 10 (the default data-driven threshold
+  legitimately selects nothing there, which made the Jaccard comparison
+  vacuous); the Cox example text now states that the FDR threshold
+  saturates at 1, so the selection set is empty and the planted features
+  are recovered in the importances ranking and the sparse end of the
+  stability path.
+- Multiomic vignette: the late-fusion scatter is accompanied by an
+  honest note that the compact build settings (10 bootstraps, 6-lambda
+  grids) demonstrate workflow shape, not competitive prediction.
+- Intro vignette: section 7.3 benchmark table replaced with the current
+  learner-benchmark calibration ratios (benchmarks/learner_comparison/),
+  and next-steps pointers added to the getting-started vignette and the
+  sPLS-DA / random-forest material.
+- Getting-started vignette: corrected the `knockoff_equi` “Why” table
+  cell – decoys are conservative for tree learners, and measured
+  calibration is learner- and regime-dependent (see the pairing table in
+  [`vignette("stablr-intro")`](https://mdmanurung.github.io/stablr/articles/stablr-intro.md)).
+- sPLS-DA coverage extended: new section in the advanced vignette
+  (multinomial data via the binomial adapter), topic-table row, a bullet
+  in the TCGA learner notes, and an adapter pointer in the cooperative
+  DIABLO paragraph.
+
+### New features
+
+- New experimental base learner `base_learner = "splsda"`: sparse PLS
+  discriminant analysis via `mixOmics` for binary classification
+  (`family = "binomial"` only). The STABL lambda grid sweeps sPLS-DA’s
+  per-component `keepX`; a feature counts as selected when any retained
+  component loading exceeds `splsda_ncomp`-independent magnitude
+  `1e-10`. New exports:
+  [`make_splsda_adapter()`](https://mdmanurung.github.io/stablr/reference/make_splsda_adapter.md)
+  (standalone adapter factory, mirroring
+  [`make_glmnet_adapter()`](https://mdmanurung.github.io/stablr/reference/make_glmnet_adapter.md))
+  and
+  [`auto_splsda_keepx_grid()`](https://mdmanurung.github.io/stablr/reference/auto_splsda_keepx_grid.md)
+  (geometric keepX grid used by `lambda_grid = "auto"`), plus the
+  `stabl_fit(splsda_ncomp = 2L)` argument. Empirical calibration on a
+  multi-cohort benchmark (benchmarks/mint_comparison/): sPLS-DA + random
+  permutation was the best-calibrated configuration (FDP/FDP+ ratio
+  1.01); knockoff pairings should be validated per dataset.
+
 ## stablr 0.3.0
 
 ### Maturity benchmarks
