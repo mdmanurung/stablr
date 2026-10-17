@@ -1,3 +1,20 @@
+# stablr 0.3.0.9000 (development)
+
+## New features
+- New experimental base learner `base_learner = "splsda"`: sparse PLS
+  discriminant analysis via `mixOmics` for binary classification
+  (`family = "binomial"` only). The STABL lambda grid sweeps sPLS-DA's
+  per-component `keepX`; a feature counts as selected when any retained
+  component loading exceeds `splsda_ncomp`-independent magnitude
+  `1e-10`. New exports: `make_splsda_adapter()` (standalone adapter
+  factory, mirroring `make_glmnet_adapter()`) and
+  `auto_splsda_keepx_grid()` (geometric keepX grid used by
+  `lambda_grid = "auto"`), plus the `stabl_fit(splsda_ncomp = 2L)`
+  argument. Empirical calibration on a multi-cohort benchmark
+  (benchmarks/mint_comparison/): sPLS-DA + random permutation was the
+  best-calibrated configuration (FDP/FDP+ ratio 1.01); knockoff pairings
+  should be validated per dataset.
+
 # stablr 0.3.0
 
 ## Maturity benchmarks

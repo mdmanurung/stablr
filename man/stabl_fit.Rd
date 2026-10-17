@@ -33,7 +33,8 @@ stabl_fit(
   adaptive_epsilon = 1e-06,
   feature_groups = NULL,
   corr_group_threshold = NULL,
-  knockoff_fallback = c("stop", "allow")
+  knockoff_fallback = c("stop", "allow"),
+  splsda_ncomp = 2L
 )
 
 \method{print}{stabl_fit}(x, ...)
@@ -65,11 +66,24 @@ forests is empirical, not guaranteed, and is validated separately (see
 the package's RF validation study); they must be paired with model-X
 knockoff artificial features. For \code{"oblique_rf"} the per-feature
 selection frequencies are noisier than for \code{"rf"} because importance is
-spread across the linear combinations used in each split.}
+spread across the linear combinations used in each split, or
+\code{"splsda"} (sparse PLS discriminant analysis via \code{mixOmics};
+classification only, requires \code{family = "binomial"}; sweeps a
+per-component \code{keepX} grid — use \code{\link[=auto_splsda_keepx_grid]{auto_splsda_keepx_grid()}} or
+\code{"auto"}, and control the number of latent components with
+\code{splsda_ncomp}). \code{"splsda"} is an experimental extension beyond Python
+STABL whose FDP+ calibration is empirical, not guaranteed. Unlike the
+RF learners, the random-permutation pairing is acceptable for
+\code{"splsda"}: on the package's multi-cohort validation benchmark,
+sPLS-DA + random permutation was the best-calibrated configuration
+(empirical FDP / reported FDP+ ratio 1.01), while the
+\code{knockoff_equi} pairing ran conservative there; validate knockoff
+pairings per dataset (see the package's MINT comparison study).}
 
 \item{family}{Character; \code{glmnet} response family (\code{"gaussian"},
 \code{"binomial"}, \code{"multinomial"}, or \code{"cox"}), or \code{"ordinal"} for
-\code{base_learner = "ordinal"}. Default: \code{"gaussian"}.}
+\code{base_learner = "ordinal"}. \code{base_learner = "splsda"} requires
+\code{"binomial"}. Default: \code{"gaussian"}.}
 
 \item{n_bootstraps}{Positive integer; bootstrap iterations per lambda.
 Default: \code{1000L}.}
@@ -157,6 +171,10 @@ default) raises an error because a knockoff-to-random-permutation
 fallback silently changes the FDP+ calibration target; \code{"allow"}
 restores the pre-0.2.2 warn-and-fall-back behavior (recorded in the
 artificial provenance's \code{fallback_history}).}
+
+\item{splsda_ncomp}{Positive integer; number of latent components retained
+in every \code{mixOmics::splsda} fit.  Used only when
+\code{base_learner = "splsda"}.  Default: \code{2L}.}
 
 \item{...}{Ignored; present for S3 \code{print} method compatibility.}
 }

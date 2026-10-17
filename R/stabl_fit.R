@@ -29,10 +29,23 @@
 #'   the package's RF validation study); they must be paired with model-X
 #'   knockoff artificial features. For `"oblique_rf"` the per-feature
 #'   selection frequencies are noisier than for `"rf"` because importance is
-#'   spread across the linear combinations used in each split.
+#'   spread across the linear combinations used in each split, or
+#'   `"splsda"` (sparse PLS discriminant analysis via `mixOmics`;
+#'   classification only, requires `family = "binomial"`; sweeps a
+#'   per-component `keepX` grid — use [auto_splsda_keepx_grid()] or
+#'   `"auto"`, and control the number of latent components with
+#'   `splsda_ncomp`). `"splsda"` is an experimental extension beyond Python
+#'   STABL whose FDP+ calibration is empirical, not guaranteed. Unlike the
+#'   RF learners, the random-permutation pairing is acceptable for
+#'   `"splsda"`: on the package's multi-cohort validation benchmark,
+#'   sPLS-DA + random permutation was the best-calibrated configuration
+#'   (empirical FDP / reported FDP+ ratio 1.01), while the
+#'   `knockoff_equi` pairing ran conservative there; validate knockoff
+#'   pairings per dataset (see the package's MINT comparison study).
 #' @param family Character; `glmnet` response family (`"gaussian"`,
 #'   `"binomial"`, `"multinomial"`, or `"cox"`), or `"ordinal"` for
-#'   `base_learner = "ordinal"`. Default: `"gaussian"`.
+#'   `base_learner = "ordinal"`. `base_learner = "splsda"` requires
+#'   `"binomial"`. Default: `"gaussian"`.
 #' @param n_bootstraps Positive integer; bootstrap iterations per lambda.
 #'   Default: `1000L`.
 #' @param artificial_type Character or `NULL`; `"random_permutation"`,
@@ -97,6 +110,9 @@
 #'   fallback silently changes the FDP+ calibration target; `"allow"`
 #'   restores the pre-0.2.2 warn-and-fall-back behavior (recorded in the
 #'   artificial provenance's `fallback_history`).
+#' @param splsda_ncomp Positive integer; number of latent components retained
+#'   in every `mixOmics::splsda` fit.  Used only when
+#'   `base_learner = "splsda"`.  Default: `2L`.
 #'
 #' @return An S3 object of class `"stabl_fit"` containing:
 #'   \describe{
@@ -221,7 +237,8 @@ stabl_fit <- function(
     adaptive_epsilon      = 1e-6,
     feature_groups        = NULL,
     corr_group_threshold  = NULL,
-    knockoff_fallback     = c("stop", "allow")
+    knockoff_fallback     = c("stop", "allow"),
+    splsda_ncomp          = 2L
 ) {
   # ---- Input coercion -------------------------------------------------------
   if (is.data.frame(x)) x <- as.matrix(x)
@@ -296,6 +313,9 @@ stabl_fit <- function(
     } else if (identical(base_learner, "ordinal")) {
       # Ordinal sweeps an ordinalNet cumulative-logit lambda path (WS-9).
       auto_ordinal_lambda_grid(x, y, n_lambda = n_lambda)
+    } else if (identical(base_learner, "splsda")) {
+      # sPLS-DA sweeps a per-component keepX path, geometric in p.
+      auto_splsda_keepx_grid(x, n_lambda = n_lambda)
     } else {
       auto_lambda_grid(
         x,
@@ -395,7 +415,8 @@ stabl_fit <- function(
     family             = family,
     adaptive_gamma     = adaptive_gamma,
     adaptive_epsilon   = adaptive_epsilon,
-    sgl_feature_groups = sgl_feature_groups
+    sgl_feature_groups = sgl_feature_groups,
+    splsda_ncomp       = splsda_ncomp
   )
 
   n_total_features <- ncol(x_fit)
@@ -847,7 +868,7 @@ stabl_fit <- function(
 
 .select_batch_adapter <- function(base_learner, family,
                                   adaptive_gamma, adaptive_epsilon,
-                                  sgl_feature_groups) {
+                                  sgl_feature_groups, splsda_ncomp) {
   switch(
     base_learner,
     lasso = .make_glmnet_batch_adapter(
@@ -881,8 +902,13 @@ stabl_fit <- function(
       num_trees = 500L
     ),
     ordinal = .make_ordinal_batch_adapter(alpha = 1),
+    splsda = .make_splsda_batch_adapter(
+      family              = family,
+      ncomp               = splsda_ncomp,
+      bootstrap_threshold = .SPLSDA_LOAD_TOL
+    ),
     stop(
-      "`base_learner` must be one of: \"lasso\", \"elastic_net\", \"adaptive_lasso\", \"sparse_group_lasso\", \"rf\", \"oblique_rf\", \"ordinal\".",
+      "`base_learner` must be one of: \"lasso\", \"elastic_net\", \"adaptive_lasso\", \"sparse_group_lasso\", \"rf\", \"oblique_rf\", \"ordinal\", \"splsda\".",
       call. = FALSE
     )
   )

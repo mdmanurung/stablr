@@ -58,7 +58,8 @@ the same group are assigned to the same assessment fold.}
 
 \item{family}{Character; \code{glmnet} response family (\code{"gaussian"},
 \code{"binomial"}, \code{"multinomial"}, or \code{"cox"}), or \code{"ordinal"} for
-\code{base_learner = "ordinal"}. Default: \code{"gaussian"}.}
+\code{base_learner = "ordinal"}. \code{base_learner = "splsda"} requires
+\code{"binomial"}. Default: \code{"gaussian"}.}
 
 \item{n_bootstraps}{Passed to \code{\link[=stabl_fit]{stabl_fit()}}.}
 
