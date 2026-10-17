@@ -6,6 +6,9 @@ number below comes from this benchmark; the decision tree summarizes it.
 
 ![Decision tree](fig_decision_tree.png)
 
+The tree's inline numbers are from the binomial benchmark below; the
+Gaussian extension (bottom section) lists what changes and what transfers.
+
 ## Benchmark design
 
 - **Learners**: `lasso`, `elastic_net` (alpha 0.5), `adaptive_lasso`,
@@ -105,6 +108,71 @@ Figures: `figA_tpr_fdp.png` (TPR vs FDP per seed and mean),
    `knockoff_mvr` does not repair it — see
    `../mint_comparison/modelx_extension/`.
 
+## Gaussian-outcome extension: do the rankings transfer?
+
+Same design with a continuous outcome: `family = "gaussian"`,
+y = Xbeta + N(0, 1.2^2) (R^2 ~ 0.5), same two DGPs, same protocol
+(100 bootstraps, auto grids, RP + knockoff_equi, 10/5 seeds; 200 runs).
+`splsda` is classification-only (mixOmics sPLS-DA has no gaussian
+variant) and drops out — the closest analogue, sparse PLS regression, is
+not implemented as a stablr learner. Full table:
+`lb_gauss_summary.csv`; transfer table: `lb_transfer_verdict.csv`;
+figures `figE_calibration_transfer.png`, `figF_tpr_transfer.png`.
+
+| DGP | learner | pairing | TPR | FDP | n_sel | calib | Jaccard | s/fit |
+|-----|---------|---------|-----|-----|-------|-------|---------|-------|
+| independent | lasso | RP | 0.83 | 0.08 | 9.2 | 0.50 | 0.590 | 1.0 |
+| independent | lasso | KE | 0.79 | 0.77 | 48.5 | 5.99 | 0.208 | 2.2 |
+| independent | elastic_net | RP | 0.79 | 0.09 | 8.8 | 0.00 | 0.547 | 0.9 |
+| independent | elastic_net | KE | 0.90 | 0.81 | 65.9 | 4.55 | 0.288 | 1.5 |
+| independent | adaptive_lasso | RP | 0.77 | 0.12 | 8.9 | 1.00 | 0.496 | 2.0 |
+| independent | adaptive_lasso | KE | 0.63 | 0.18 | 18.3 | 0.17 | 0.276 | 3.1 |
+| independent | sparse_group_lasso | RP | 0.76 | 0.87 | 74.0 | 0.97 | 0.316 | 3.7 |
+| independent | sparse_group_lasso | KE | 0.99 | 0.92 | 124.1 | 1.01 | 0.704 | 4.3 |
+| independent | rf | RP | 0.56 | 0.20 | 7.4 | 2.00 | 0.248 | 9.7 |
+| independent | rf | KE | 0.86 | 0.44 | 17.6 | 0.64 | 0.306 | 13.7 |
+| independent | oblique_rf | RP | 0.64 | 0.16 | 7.8 | 2.00 | 0.367 | 35.3 |
+| independent | oblique_rf | KE | 0.86 | 0.42 | 24.8 | 0.40 | 0.256 | 34.2 |
+| block | lasso | RP | 0.58 | 0.07 | 6.2 | 0.00 | 0.369 | 1.6 |
+| block | lasso | KE | 0.66 | 0.77 | 41.3 | 5.57 | 0.150 | 3.5 |
+| block | elastic_net | RP | 0.65 | 0.11 | 7.3 | 0.75 | 0.413 | 1.2 |
+| block | elastic_net | KE | 0.75 | 0.72 | 36.9 | 4.73 | 0.172 | 2.8 |
+| block | adaptive_lasso | RP | 0.65 | 0.14 | 7.5 | 1.00 | 0.388 | 2.5 |
+| block | adaptive_lasso | KE | 0.70 | 0.29 | 19.6 | 0.50 | 0.291 | 3.9 |
+| block | sparse_group_lasso | RP | 0.37 | 0.36 | 44.6 | 0.00 | 0.111 | 3.9 |
+| block | sparse_group_lasso | KE | 0.99 | 0.92 | 129.2 | 0.95 | 0.754 | 5.3 |
+| block | rf | RP | 0.62 | 0.29 | 9.8 | 2.00 | 0.234 | 9.6 |
+| block | rf | KE | 0.52 | 0.40 | 21.2 | 0.60 | 0.090 | 12.6 |
+| block | oblique_rf | RP | 0.64 | 0.29 | 9.4 | 4.00 | 0.288 | 36.5 |
+| block | oblique_rf | KE | 0.56 | 0.32 | 19.2 | 0.43 | 0.113 | 30.9 |
+
+**Transfer verdict.**
+
+1. **Power rankings do NOT transfer** (Spearman rho = -0.18 for RP-arm
+   TPR ranks across regimes). The linear learners rise sharply — the
+   gaussian signal is exactly their setting (lasso+RP TPR 0.83 vs 0.40
+   binomial, independent DGP) — while rf's binomial advantage disappears
+   on the linear signal and SGL+RP collapses on blocks (0.71 -> 0.37: its
+   RP FDP+ curve went conservative there, reported ~ 1.0, so the argmin
+   rule landed on a sparse support). Choose the learner for the *signal
+   structure*, and re-validate when the outcome family changes.
+2. **FDP rankings DO transfer** (rho = 0.86): a learner's relative
+   honesty is a stable property across outcome families.
+3. **Calibration patterns transfer qualitatively, with one quantitative
+   escalation.** rf/oblique_rf + RP is anti-conservative in both regimes
+   and *worse* in gaussian (2.0-4.0 vs 1.25-1.75) — the leakage warning
+   strengthens; KE remains the right rf pairing (0.40-0.64). lasso and
+   elastic_net + KE are anti-conservative in both but catastrophically so
+   in gaussian (4.6-6.0 vs 1.05-2.0: reported FDP+ ~ 0.12-0.18 while
+   realized FDP ~ 0.7-0.8) — the "glmnet trio pairs with RP" rule
+   strengthens. SGL + KE stays honest in both (0.95-1.01) and is the
+   extreme power arm (TPR 0.99 at realized FDP 0.92, Jaccard 0.70-0.75).
+   One pairing flips regime: adaptive_lasso + KE went from
+   anti-conservative (1.35 binomial) to conservative (0.17-0.50
+   gaussian). RP for the glmnet trio is never anti-conservative in
+   either regime (conservative-to-calibrated) — the safe default
+   transfers.
+
 ## Caveats
 
 - rf/oblique_rf: 5 seeds (slow); all other cells 10 seeds. Differences
@@ -120,17 +188,22 @@ Figures: `figA_tpr_fdp.png` (TPR vs FDP per seed and mean),
 - `ordinal` is excluded: it targets ordered-band outcomes (different
   family), stays experimental, and its graduation bar was not met
   (`benchmarks/ws9_summary.md`).
-- All arms are classification (binomial). Gaussian/cox behavior of
-  splsda does not exist; rf/oblique_rf support them but were not
-  benchmarked here.
+- The binomial tables are classification (binomial); the Gaussian
+  extension covers the continuous-outcome regime. splsda exists only for
+  binomial; rf/oblique_rf gaussian variants were benchmarked only in the
+  extension.
 
 ## Reproducibility
 
 ```bash
-Rscript learner_benchmark.R          # full run (240 tasks, ~15 min on 8 cores)
-PILOT=1 Rscript learner_benchmark.R  # smoke test
-Rscript learner_bench_analysis.R     # figures + guide_table.csv
+Rscript learner_benchmark.R           # binomial run (240 tasks, ~15 min on 8 cores)
+Rscript learner_benchmark_gauss.R     # gaussian extension (200 tasks)
+PILOT=1 Rscript learner_benchmark.R   # smoke tests
+Rscript learner_bench_analysis.R      # binomial figures + guide_table.csv
+Rscript learner_bench_transfer.R      # regime-transfer figures + verdict table
 ```
 
 Checkpoints: one RDS per (DGP, learner, pairing, seed) in
-`/mnt/shared-workspace/shared/learner_bench/`; reruns skip completed cells.
+`/mnt/shared-workspace/shared/learner_bench/` (binomial) and
+`/mnt/shared-workspace/shared/learner_bench_gauss/` (gaussian); reruns
+skip completed cells.
