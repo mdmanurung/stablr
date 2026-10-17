@@ -33,6 +33,22 @@ constructor (`knockoff_mvr`)?
 | sPLS-DA+equi | 0.45 | 0.27       | 9.8   | 0.50          | 0.42        | 0.139   | 29.3 |
 | sPLS-DA+MVR  | 0.45 | 0.25       | 9.4   | 0.50          | 0.38        | 0.148   | 31.1 |
 
+## Reconciling with the parent benchmark's lasso+KE severity
+
+The parent MINT comparison reported lasso + knockoff_equi calibration of
+~8.0; this extension reports 1.40 for the same nominal arm. Both are
+correct within their own protocols, which differ in two ways: the parent
+swept a 20-value `auto_lambda_grid` and aggregated as
+mean(realized FDP) / mean(reported FDP+) over seeds, while this extension
+uses the default 30-value auto grid and the median of per-seed ratios.
+Coarser grids give the argmin FDP+ rule fewer exit thresholds, which
+amplifies the winner's-curse anti-conservatism (realized FDP 0.83 in the
+parent vs 0.46 here), and the ratio-of-means is dominated by seeds with
+near-zero reported FDP+. The qualitative conclusion is identical under
+both protocols — equi and MVR track each other, random permutation is
+calibrated — but cross-benchmark severity comparisons must be made within
+one protocol; all six arms in this extension share a single protocol.
+
 ## Verdict
 
 **No.** Switching the constructor from equi-correlated to model-X MVR does

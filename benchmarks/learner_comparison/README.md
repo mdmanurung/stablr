@@ -68,9 +68,10 @@ Figures: `figA_tpr_fdp.png` (TPR vs FDP per seed and mean),
 ## How to read this: five decision rules
 
 1. **Natural feature groups, or maximum power/stability wanted →
-   `sparse_group_lasso` + RP.** It dominates power (TPR 0.57-0.77) and
-   stability (Jaccard 0.38-0.42 vs 0.06-0.17 for everything else), and its
-   FDP+ estimate stays honest (0.94-1.03). But it buys power with
+   `sparse_group_lasso` + RP.** It dominates power (TPR 0.57-0.71 with RP,
+   0.73-0.77 with KE) and stability (Jaccard 0.17-0.42 vs 0.06-0.15 for
+   everything else), and its FDP+ estimate stays honest (0.94-1.03). But it
+   buys power with
    *large* supports (54-99 features) at realized FDP 0.74-0.91: the FDP+
    rule reports this honestly (reported 0.81-0.99) yet still selects,
    because the argmin rule has no "select nothing" exit. Treat SGL fits
@@ -79,7 +80,7 @@ Figures: `figA_tpr_fdp.png` (TPR vs FDP per seed and mean),
    batch-structured data → `splsda` + RP** (the new experimental learner).
    Best-calibrated pairing everywhere (1.00 here; 1.01 on the multi-cohort
    MINT benchmark, see `../mint_comparison/`). `knockoff_equi` adds power
-   (TPR +0.08-0.15) but runs conservative (0.63-0.72) — you are leaving
+   (TPR +0.11-0.15) but runs conservative (0.63-0.72) — you are leaving
    error budget unspent, which is the safe direction.
 3. **Nonlinear effects → `rf` + `knockoff_equi`.** Best rf power
    (TPR 0.62 vs 0.40 for RP, independent DGP) with honest calibration
@@ -92,10 +93,15 @@ Figures: `figA_tpr_fdp.png` (TPR vs FDP per seed and mean),
    correlated (calibrated 0.95-1.05); `adaptive_lasso` + RP when you want
    a conservative refined support (0.52-1.00 — conservative under
    correlation, honest otherwise).
-5. **Pairing rule (cross-cutting): for the glmnet family and sPLS-DA,
-   use RP, not knockoffs.** KE ran anti-conservative for every glmnet-family
-   learner (1.05-2.00) on both DGPs. Under batch heterogeneity the model-X
-   construction itself fails (single Gaussian pooled over cohorts), and
+5. **Pairing rule (cross-cutting): for `lasso`, `elastic_net`, and
+   `adaptive_lasso`, use RP, not knockoffs.** KE ran anti-conservative for
+   these three on both DGPs (1.05-2.00). Two exceptions: for
+   `sparse_group_lasso`, KE stays calibrated (0.97-1.00) and is the
+   highest-power arm in the benchmark (TPR 0.73-0.77) — the choice there is
+   a power/FDP trade-off (realized FDP 0.90-0.91), not a calibration one;
+   for `splsda`, KE runs conservative (0.63-0.72) — safe, but leaves error
+   budget unspent. Under batch heterogeneity the model-X construction
+   itself fails (single Gaussian pooled over cohorts), and
    `knockoff_mvr` does not repair it — see
    `../mint_comparison/modelx_extension/`.
 
