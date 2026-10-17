@@ -29,7 +29,8 @@
 #'     anti-conservative for multivariate learners).
 #'   \item FDP+ calibration on (no `hard_threshold`), strict knockoff
 #'     fallback (`knockoff_fallback = "stop"`).
-#'   \item Automatic lambda grid when none is supplied.
+#'   \item Automatic lambda grid (always: `stabl()` fixes `lambda_grid` to
+#'     `"auto"`; supply a manual grid via [stabl_fit()] if needed).
 #' }
 #' Everything else — other learners, bootstrap design, thresholds, groups —
 #' is one `...` away: unnamed arguments in `...` are forwarded to

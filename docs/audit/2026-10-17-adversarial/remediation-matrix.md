@@ -75,3 +75,41 @@ workarounds).
 4. P3 batch — one or two PRs.
 5. Re-ratify release contract (F-P10-1) → fresh release run → SCI-04 human
    confirmation → referee report (Phase 15) finalizes.
+
+## Final-review additions (2026-10-18 — Phase 13 inputs)
+
+From the final pre-publication per-function review (`final-review.md`);
+fixed-there items (B-01, B-02, N-02, D-1, C-3, C-5, D-3 and the doc set
+N-01, B-03, B-05, C-1, C-2, C-6, D-9, D-11) are not repeated here.
+
+| ID | Sev | Defect | Proposed fix | Est. |
+|---|---|---|---|---|
+| B-04 | P3 | ranger/aorsf factories drop `family`; 0/1-numeric y silently fits regression forest | Add `family` param to both factories; coerce y like the internal batch adapters | S |
+| C-4 | P3 | `stabl_multiomic_cv` folds never outcome-stratified; single-class guard only fires for grouped folds | Pass outcome-derived strata (or add `stratified`); extend guard to ungrouped folds | M |
+| D-2 | P3 | `save_stabl_results` default `task_type="binary"` renders degenerate boxplots for regression fits | Cross-check `task_type` vs `object$family` (warn or derive default) | S |
+| D-4 | P3 | `.pairwise_env_similarity` hard-codes diagonal 1 for a non-reflexive metric | Compute the diagonal with `adjusted_similarity(S_i, S_i, d)` or document the convention (changes outputs → needs decision) | S |
+| N-03 | P4 | Exported bootstrap samplers skip integer/weight validation | `.validate_scalar_integer_like(n_subsamples, ..., min = 1L)`; reject non-positive `class_weights` | S |
+| N-04 | P4 | 5 undocumented `stabl_fit` return fields; `stratify_bootstrap` field semantics | Document fields; consider `effective_stratification` rename | S |
+| N-05 | P4 | `auto_lambda_grid(l1_ratio = numeric(0))` silently returns NULL | Validate `length(l1_ratio) >= 1` | S |
+| N-06 | P4 | `stabl()` y-alignment doc omits unnamed-x + named-y case | One sentence in `@param y` | S |
+| B-06 | P4 | `auto_splsda_keepx_grid` p=1 emits keepX=2 > p | Cap `hi` at p; pre-validate in adapter | S |
+| B-07 | P4 | sPLS-DA batch adapter silently emits all-FALSE masks on constant columns | Document; tolerance-based constancy detection | S |
+| B-08 | P4 | Adaptive-lasso ridge init takes smallest-path lambda (≈OLS in p≫n); penalty factors vs unpenalized grid calibration | Document init choice; consider mid-path init and penalized-grid recalibration | M |
+| C-7/C-7b | P4 | `stabl_interpret` silent loss override; NA propagation into importances | Validate `loss` vs `family`; finite-value check or `na_reason` path | S |
+| C-8 | P4 | `stabl_interpret`/`stabl_analyze` importance helpers clobber global RNG | Wrap in `.with_local_seed()` | S |
+| C-9 | P4 | Defaults drift: `n_bootstraps` 1000 core vs 100 wrappers; `family`/`lambda_grid` defaults | Align or add "defaults differ" notes to wrapper Rds | S |
+| C-10..C-14 | P4 | Multiomic doc gaps + silent degenerate outputs (cooperative diagnostic cols, single-study diagnostics, `-Inf` stacked score, numeric-y coercion, block pooling) | Batch doc + guard fixes | M |
+| D-5 | P4 | `jaccard_similarity_matrix(list())` obscure error; n=1 + remove_diag → 1×0 | Early returns / informative error | S |
+| D-6 | P4 | `plot_fdr_graph` unbounded `fdr_target` rescales axis | `max = 1` in validator | S |
+| D-7 | P4 | `fscore_similarity` unvalidated `beta` | Positive-scalar check | S |
+| D-8 | P4 | NA/duplicate tokens in similarity metrics | Validate or document set semantics | S |
+| D-10 | P4 | Lexicographic level ordering; factor silently coerced to codes in scatterplot | Numeric-aware sort; reject factors with pointer | S |
+| D-12 | P4 | Internal `rowMaxs` shadows dead `importFrom(matrixStats, rowMaxs)` | Rename to `.row_maxs` or drop the import | S |
+| D-13 | P4 | Late `figure_fmt` validation leaves partial export dirs | Validate up front | S |
+| FR-hygiene | P4 | `vignettes/figure/` committed knitr leftovers trigger an R CMD check NOTE | Verify nothing references them, then remove from the repo | S |
+
+Ensemble-coherence decisions also owed to Phase 13 (see
+`final-review.md` §Ensemble-coherence notes): threshold-semantics split
+(strict `>` vs `>=`), three-way grid-convention divergence, factory
+signature inconsistency, `n_bootstraps` 1000-vs-100 alignment, grouping
+argument naming, empty-set and diagonal convention documentation.

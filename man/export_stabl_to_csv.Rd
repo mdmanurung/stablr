@@ -28,7 +28,8 @@ Files written:
 \item \verb{Max STABL scores.csv} — per-feature maximum stability score, sorted
 descending.
 \item \verb{STABL artificial scores.csv} — artificial feature scores (only when
-\code{object$artificial_type} is not \code{NULL}).
+artificial-feature scores are present, i.e. \code{object$stabl_scores_artificial_}
+is not \code{NULL}).
 \item \verb{Max STABL artificial scores.csv} — artificial max scores, sorted
 descending (only when artificial features were used).
 }

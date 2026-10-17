@@ -20,7 +20,7 @@ must cover exactly the sample IDs. Required.}
 (\code{candidates}, \code{lambda_grid}, \code{metric}, \code{family}, \code{n_bootstraps},
 \code{artificial_type}, \code{hard_threshold}, \code{stratified}, \code{random_state},
 \code{n_lambda}, \code{l1_ratio}, \code{outer_v}, \code{inner_v}, \code{cv_workers},
-\code{stabl_workers}).}
+\code{workers}).}
 }
 \value{
 A list with \code{sample_iid} and \code{study_disjoint} (the two

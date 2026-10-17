@@ -53,6 +53,12 @@ get_support <- function(object, new_hard_threshold = NULL) {
 #' @export
 get_support.stabl_fit <- function(object, new_hard_threshold = NULL) {
   .check_fitted_stabl(object)
+  if (!is.null(new_hard_threshold)) {
+    # Same (0, 1] contract as stabl_fit()'s `hard_threshold`; without this
+    # check an out-of-range value silently selects nothing (> 1) or
+    # everything (< 0).
+    .validate_proportion(new_hard_threshold, "new_hard_threshold")
+  }
 
   threshold  <- .resolve_stabl_threshold(object, new_hard_threshold)
   max_scores <- get_importances(object)

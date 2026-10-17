@@ -151,6 +151,15 @@ auto_rf_threshold_grid <- function(x, y, n_grid = 30L, num_trees = 500L,
   seed      <- .validate_scalar_integer_like(seed, "seed", allow_null = TRUE)
 
   importance <- .rf_fit_permutation_importance(x, y, num_trees, seed)
+  if (is.null(importance)) {
+    stop(
+      "Permutation importance could not be computed: ranger returned ",
+      "degenerate (NaN) importance on every retry attempt, so the ",
+      "importance-threshold grid cannot be built. Try increasing ",
+      "`num_trees` or supplying a `seed`.",
+      call. = FALSE
+    )
+  }
   .rf_threshold_grid_from_importance(importance, n_grid)
 }
 
@@ -160,6 +169,14 @@ auto_rf_threshold_grid <- function(x, y, n_grid = 30L, num_trees = 500L,
 # numeric vector of length ncol(x).  ranger requires column names on `x`
 # ("No covariates found" otherwise), so unnamed matrices are named here.
 .rf_fit_permutation_importance <- function(x, y, num_trees, seed) {
+  # A NULL seed (the default in auto_rf_threshold_grid() and in
+  # stabl_fit()'s auto-grid path) previously reached ranger as
+  # `seed + offset` = numeric(0) and always errored ("Expecting a single
+  # value: [extent=0]").  Draw one seed from the caller's RNG stream
+  # instead, honouring the documented seeding contract; results remain
+  # reproducible when the caller has seeded the stream (e.g. via
+  # stabl_fit(random_state = ...)).
+  seed <- seed %||% sample.int(.Machine$integer.max, 1L)
   x <- as.matrix(x)
   if (is.null(colnames(x))) {
     colnames(x) <- paste0("x", seq_len(ncol(x)))

@@ -657,3 +657,20 @@ Remediation: one clarifying sentence in §3.1 (Phase 12 batch).
   rebuild regenerates features from the raw file with a committed script.
 - The AI audit does not satisfy SCI-04; the independent human confirmation
   remains outstanding.
+
+## Final pre-publication per-function review (2026-10-18)
+
+All 74 exported functions audited (four delegated slices + two inline);
+verdict rollup, the 42 new findings (N-01..N-06, B-01..B-08, C-1..C-14,
+D-1..D-13), ensemble-coherence notes, defaults-calibration verdict, and
+dispositions are recorded in `final-review.md` (not duplicated here).
+Headline: one P1 found and fixed in the same commit (B-01 —
+`auto_rf_threshold_grid` default `seed=NULL` always failed, propagating to
+`stabl_fit(base_learner = "rf", lambda_grid = "auto")` without
+`random_state`); five fail-closed robustness fixes with regression tests
+(B-02, N-02, D-1, C-3, C-5); the advanced-vignette Jaccard-heatmap axis
+defect fixed (D-3); nine documentation corrections; 27 findings deferred
+to Phase 13 with rationale (remediation-matrix.md). The pre-existing
+`test-public-interface-audit` failure (hard-coded 72-export list vs the
+74 exports introduced by the sPLS-DA commit a5d1470) was also corrected
+here. SCI-04 human confirmation remains outstanding.

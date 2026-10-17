@@ -283,7 +283,8 @@ adjusted_similarity_summary <- function(list_of_lists, nb_total_elements,
 #'   the latter is `NULL`.  It will be removed in a future release.
 #'
 #' @return Numeric scalar.  Positive values indicate more overlap than chance;
-#'   the maximum is typically close to 1 for perfectly matching sets.
+#'   the maximum is exactly 1 for identical non-degenerate sets (the
+#'   statistic is the phi coefficient).
 #'
 #' @seealso [pearson_similarity_pairwise()] for computing all pairwise values at
 #'   once, [pearson_similarity_summary()] for a summary statistic,
@@ -291,7 +292,7 @@ adjusted_similarity_summary <- function(list_of_lists, nb_total_elements,
 #'
 #' @examples
 #' pearson_similarity(c("f1","f2","f3"), c("f2","f3","f4"), n_universe = 10L)
-#' pearson_similarity(c("f1","f2"),      c("f1","f2"),      n_universe = 10L) # near 1
+#' pearson_similarity(c("f1","f2"),      c("f1","f2"),      n_universe = 10L) # exactly 1
 #' pearson_similarity(character(0),      c("f1","f2"),      n_universe = 10L) # 0
 #' @export
 pearson_similarity <- function(set1 = NULL, set2 = NULL, n_universe = NULL,

@@ -77,6 +77,8 @@ make_aorsf_adapter,export,,,selection,R/learner_oblique_rf.R,man/make_aorsf_adap
 auto_oblique_threshold_grid,export,,,selection,R/learner_oblique_rf.R,man/auto_oblique_threshold_grid.Rd,runnable_donttest,test-oblique-rf-adapter.R,test-oblique-rf-adapter.R,core_contract
 make_ordinal_adapter,export,,,selection,R/learner_ordinal.R,man/make_ordinal_adapter.Rd,runnable_donttest,test-learner-ordinal.R,test-learner-ordinal.R,core_contract
 auto_ordinal_lambda_grid,export,,,selection,R/learner_ordinal.R,man/auto_ordinal_lambda_grid.Rd,runnable_donttest,test-learner-ordinal.R,test-learner-ordinal.R,core_contract
+make_splsda_adapter,export,,,selection,R/learner_splsda.R,man/make_splsda_adapter.Rd,runnable_donttest,test-learner-splsda.R,test-learner-splsda.R,core_contract
+auto_splsda_keepx_grid,export,,,selection,R/learner_splsda.R,man/auto_splsda_keepx_grid.Rd,runnable_donttest,test-learner-splsda.R,test-learner-splsda.R,core_contract
 stabl,export,,,selection,R/stabl.R,man/stabl.Rd,running,test-stabl-wrapper.R,test-stabl-wrapper.R,core_contract
 support,export,,,selection,R/stabl.R,man/support.Rd,running,test-stabl-wrapper.R,not_applicable-generic-delegates,accessor_contract
 feature_names,export,,,selection,R/stabl.R,man/support.Rd,running,test-stabl-wrapper.R,not_applicable-generic-delegates,accessor_contract

@@ -153,6 +153,12 @@ list with \code{fit}, \code{selected_features}, \code{selected_train}, and
 list with \code{weights}, \code{valid_predictions}, and mode-specific training
 results. OOF mode provides \code{oof_predictions} and \code{oof_score}; legacy
 mode provides \code{in_sample_predictions} and \code{in_sample_score}.
+\code{oof_predictions} is a \emph{base-model} out-of-fold matrix; the stacked
+\code{oof_score} is computed with stacking weights tuned on that same
+OOF matrix (maximum over \code{n_iter_lf} random weight draws), so it is
+an optimistic, in-sample-for-the-weight-step statistic and NOT a
+full-stack OOF prediction. Use outer cross-validation
+(\code{\link[=stabl_multiomic_nested_cv]{stabl_multiomic_nested_cv()}}) for an honest performance estimate.
 \code{train_predictions} and \code{score} remain exact 0.1.x compatibility
 aliases for the active mode-specific fields. Multinomial tasks also
 include \code{levels}, \code{log_loss}, and classification metrics.}

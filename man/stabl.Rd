@@ -65,7 +65,8 @@ expert interface for Python-parity workflows but is
 anti-conservative for multivariate learners).
 \item FDP+ calibration on (no \code{hard_threshold}), strict knockoff
 fallback (\code{knockoff_fallback = "stop"}).
-\item Automatic lambda grid when none is supplied.
+\item Automatic lambda grid (always: \code{stabl()} fixes \code{lambda_grid} to
+\code{"auto"}; supply a manual grid via \code{\link[=stabl_fit]{stabl_fit()}} if needed).
 }
 Everything else — other learners, bootstrap design, thresholds, groups —
 is one \code{...} away: unnamed arguments in \code{...} are forwarded to

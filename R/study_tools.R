@@ -365,7 +365,7 @@ stabl_multiomic_study_split <- function(x_list, y, study_labels,
 #'   (`candidates`, `lambda_grid`, `metric`, `family`, `n_bootstraps`,
 #'   `artificial_type`, `hard_threshold`, `stratified`, `random_state`,
 #'   `n_lambda`, `l1_ratio`, `outer_v`, `inner_v`, `cv_workers`,
-#'   `stabl_workers`).
+#'   `workers`).
 #'
 #' @return A list with `sample_iid` and `study_disjoint` (the two
 #'   `stabl_multiomic_nested_cv` objects), `comparison` (one row per scheme

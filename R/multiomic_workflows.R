@@ -87,6 +87,12 @@
 #'       list with `weights`, `valid_predictions`, and mode-specific training
 #'       results. OOF mode provides `oof_predictions` and `oof_score`; legacy
 #'       mode provides `in_sample_predictions` and `in_sample_score`.
+#'       `oof_predictions` is a *base-model* out-of-fold matrix; the stacked
+#'       `oof_score` is computed with stacking weights tuned on that same
+#'       OOF matrix (maximum over `n_iter_lf` random weight draws), so it is
+#'       an optimistic, in-sample-for-the-weight-step statistic and NOT a
+#'       full-stack OOF prediction. Use outer cross-validation
+#'       ([stabl_multiomic_nested_cv()]) for an honest performance estimate.
 #'       `train_predictions` and `score` remain exact 0.1.x compatibility
 #'       aliases for the active mode-specific fields. Multinomial tasks also
 #'       include `levels`, `log_loss`, and classification metrics.}
@@ -152,6 +158,16 @@ stabl_multiomic_train_validate <- function(
   n_iter_lf <- .validate_scalar_integer_like(n_iter_lf, "n_iter_lf", min = 1L)
   validate_multiomic_inputs(x_list = x_train_list, y = y_train,
                             groups = groups_train)
+  if (!is.null(y_valid) && is.null(x_valid_list)) {
+    # Fail closed: `y_valid` is only consumed inside the x_valid_list branch,
+    # so a lone `y_valid` used to be accepted and silently ignored.
+    stop(
+      "`y_valid` was supplied without `x_valid_list`: validation-set ",
+      "evaluation requires the validation feature matrices. Supply both ",
+      "or neither.",
+      call. = FALSE
+    )
+  }
 
   train_ids <- rownames(x_train_list[[1L]])
   y_train <- .subset_outcome_by_ids(y_train, train_ids)
@@ -1227,7 +1243,12 @@ stabl_multiomic_cv <- function(
 
   out <- as.matrix(pred)
   if (nrow(out) != n_rows) {
-    out <- matrix(out, nrow = n_rows)
+    # Fail closed: recycling/truncating here would silently misalign
+    # predictions feeding the cooperative tuning metrics.
+    stop(sprintf(
+      "Cooperative-fusion predictions have %d rows; expected %d.",
+      nrow(out), n_rows
+    ), call. = FALSE)
   }
   out
 }

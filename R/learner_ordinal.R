@@ -104,7 +104,7 @@ make_ordinal_adapter <- function(alpha = 1) {
 #'   factor is recommended.
 #' @param n_lambda Positive integer; number of lambda values.  Default `30L`
 #'   (matches [auto_lambda_grid()]'s default).
-#' @param alpha Numeric in `[0, 1]`; the elastic-net mixing weight.  Default
+#' @param alpha Numeric in `(0, 1]`; the elastic-net mixing weight.  Default
 #'   `1` (pure lasso).
 #'
 #' @return A `data.frame` with a single `lambda` column, sorted in decreasing

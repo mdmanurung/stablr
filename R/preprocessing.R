@@ -22,10 +22,12 @@
 #'
 #' @param x_train Numeric training matrix (samples × features) with column
 #'   names.
-#' @param transforms Character vector naming the transforms to fit, in order.
+#' @param transforms Character vector naming the transforms to fit.
 #'   Supported: `"zv"` (zero-variance filter), `"impute_median"` (median
-#'   imputation), `"center"`, `"scale"`.  `NULL` or `character(0)` fits an
-#'   identity transform that leaves input unchanged.
+#'   imputation), `"center"`, `"scale"`.  Transforms are always applied in
+#'   the fixed order `"zv"` -> `"impute_median"` -> `"center"` -> `"scale"`,
+#'   regardless of the order in `transforms`.  `NULL` or `character(0)` fits
+#'   an identity transform that leaves input unchanged.
 #' @param zv_tol Non-negative numeric; a feature whose training variance is
 #'   `<= zv_tol` is removed by `"zv"`.
 #' @param ... Reserved for future use.

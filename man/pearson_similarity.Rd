@@ -34,7 +34,8 @@ the latter is \code{NULL}.  It will be removed in a future release.}
 }
 \value{
 Numeric scalar.  Positive values indicate more overlap than chance;
-the maximum is typically close to 1 for perfectly matching sets.
+the maximum is exactly 1 for identical non-degenerate sets (the
+statistic is the phi coefficient).
 }
 \description{
 Computes a Pearson-correlation-inspired similarity that corrects for
@@ -55,7 +56,7 @@ returns 0 when one set is empty or equals the universe.
 }
 \examples{
 pearson_similarity(c("f1","f2","f3"), c("f2","f3","f4"), n_universe = 10L)
-pearson_similarity(c("f1","f2"),      c("f1","f2"),      n_universe = 10L) # near 1
+pearson_similarity(c("f1","f2"),      c("f1","f2"),      n_universe = 10L) # exactly 1
 pearson_similarity(character(0),      c("f1","f2"),      n_universe = 10L) # 0
 }
 \seealso{

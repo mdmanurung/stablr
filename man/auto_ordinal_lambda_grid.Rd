@@ -9,7 +9,7 @@ auto_ordinal_lambda_grid(x, y, n_lambda = 30L, alpha = 1)
 \item{y}{Factor outcome; the level order is the band order.  An ordered
 factor is recommended.}
 \item{n_lambda}{Positive integer; number of lambda values.  Default \code{30L}.}
-\item{alpha}{Numeric in \code{[0, 1]}; the elastic-net mixing weight.
+\item{alpha}{Numeric in \code{(0, 1]}; the elastic-net mixing weight.
 Default \code{1} (pure lasso).}
 }
 \value{

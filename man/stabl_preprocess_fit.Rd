@@ -15,10 +15,12 @@ stabl_preprocess_fit(
 \item{x_train}{Numeric training matrix (samples × features) with column
 names.}
 
-\item{transforms}{Character vector naming the transforms to fit, in order.
+\item{transforms}{Character vector naming the transforms to fit.
 Supported: \code{"zv"} (zero-variance filter), \code{"impute_median"} (median
-imputation), \code{"center"}, \code{"scale"}.  \code{NULL} or \code{character(0)} fits an
-identity transform that leaves input unchanged.}
+imputation), \code{"center"}, \code{"scale"}.  Transforms are always applied in
+the fixed order \code{"zv"} -> \code{"impute_median"} -> \code{"center"} -> \code{"scale"},
+regardless of the order in \code{transforms}.  \code{NULL} or \code{character(0)} fits
+an identity transform that leaves input unchanged.}
 
 \item{zv_tol}{Non-negative numeric; a feature whose training variance is
 \verb{<= zv_tol} is removed by \code{"zv"}.}

@@ -520,6 +520,12 @@ boxplot_features <- function(features, x, y, title = "Selected Features", ncol =
   .require_ggplot2()
   title <- .validate_nonempty_scalar_character(title, "title")
   ncol <- .validate_scalar_integer_like(ncol, "ncol", min = 1L)
+  if (length(y) != nrow(x)) {
+    stop(sprintf(
+      "`y` must have the same number of elements as `nrow(x)` (%d); got %d.",
+      nrow(x), length(y)
+    ), call. = FALSE)
+  }
   features <- .filter_features(features, x)
 
   df <- .features_long(features, x, y)
@@ -576,6 +582,12 @@ scatterplot_features <- function(features, x, y, title = "Selected Features", nc
   .require_ggplot2()
   title <- .validate_nonempty_scalar_character(title, "title")
   ncol <- .validate_scalar_integer_like(ncol, "ncol", min = 1L)
+  if (length(y) != nrow(x)) {
+    stop(sprintf(
+      "`y` must have the same number of elements as `nrow(x)` (%d); got %d.",
+      nrow(x), length(y)
+    ), call. = FALSE)
+  }
   features <- .filter_features(features, x)
 
   y_num <- as.numeric(y)

@@ -26,13 +26,18 @@ coverage ledger, findings, specification matrix, and validation log.
 | 7 | Aging case-study adversarial audit | **complete** (V8/V12/V13 + vignette §4/§10.3/§10.5 re-derived exactly from committed artifacts; saturation mechanism attributed: rf threshold-path median floor + max-over-lambda scoring + fixed 0.5 bar decoupled from FDP+ — F-P7-1; CP convention inconsistency F-P7-2; WS-5 calibration-scope gap F-P7-3; evidence in phase7_validation/) |
 | 8-9 | Software, compiled code, test-suite audit | compiled-code pass **complete** (F-011..F-018; F-016 corrected to P3 fragility after runtime probe); test-suite audit **complete** (all ledger gaps refuted as false leads) |
 | 10-11 | Documentation + distribution standards | **complete** (F-P10-1 release-contract skew carried) |
-| 12-15 | Publication readiness, remediation, referee report | pending |
+| FR | Final pre-publication per-function review (all 74 exports) | **complete** (2026-10-18: 28 OK / 34 OK-with-notes / 12 issue; 1 P1 fixed — rf auto-grid NULL-seed failure B-01; 5 fail-closed robustness fixes + regression tests; 9 doc corrections; advanced-vignette Jaccard-heatmap axis fix; 27 findings deferred to Phase 13 with rationale — see `final-review.md`) |
+| 12-15 | Publication readiness, remediation, referee report | pending (Phase 13 inputs extended by the FR deferred list) |
 
 ## Files
 
 - `coverage-ledger.csv` — 49 R files, 72 exported functions, test mapping,
   per-file audit disposition (updated as the audit proceeds)
 - `findings.md` — living findings report (P0-P3, evidence-linked)
+- `final-review.md` — final pre-publication per-function review (2026-10-18):
+  verdict rollup for all 74 exports, new findings N-01..N-06, B-01..B-08,
+  C-1..C-14, D-1..D-13 with dispositions, ensemble-coherence notes,
+  defaults-calibration verdict, publication-readiness verdict
 - `specification-matrix.md` — Phase 1 output (from the independent pass,
   integrated and verified by the lead auditor)
 - `baseline-2026-10-17.md` — fresh baseline evidence
