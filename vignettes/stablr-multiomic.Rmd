@@ -214,13 +214,13 @@ The next chunk prints the selected feature names of each omic.
 
 ```{r per-omic-support}
 cat("CyTOF selected feature names:\n")
-print(get_feature_names_out(fit_cytof))
+print(get_feature_names(fit_cytof))
 
 cat("\nProteomics selected feature names:\n")
-print(get_feature_names_out(fit_prot))
+print(get_feature_names(fit_prot))
 ```
 
-`get_feature_names_out()` returns the feature names that passed the
+`get_feature_names()` returns the feature names that passed the
 stability threshold in each omic. `get_support()` returns the named logical
 mask for subsetting. Non-overlapping lists suggest view-specific
 information. Overlap is stronger evidence when the same molecule is present
@@ -340,10 +340,10 @@ pipeline.
 ```{r per-omic-results}
 # Per-omic selected feature names from the joint pipeline
 cat("CyTOF (from multi-omic pipeline):\n")
-print(get_feature_names_out(multi_fit$fits$cytof))
+print(get_feature_names(multi_fit$fits$cytof))
 
 cat("\nProteomics (from multi-omic pipeline):\n")
-print(get_feature_names_out(multi_fit$fits$proteomics))
+print(get_feature_names(multi_fit$fits$proteomics))
 ```
 
 These lists come from the fits within the joint pipeline. Compare them with
@@ -358,7 +358,7 @@ active.
 # Early fusion: joint selection across all omics simultaneously
 if (!is.null(multi_fit$early_fusion)) {
   cat("Early fusion selected feature names:\n")
-  print(get_feature_names_out(multi_fit$early_fusion$fit))
+  print(get_feature_names(multi_fit$early_fusion$fit))
 }
 ```
 
@@ -381,7 +381,28 @@ if (!is.null(multi_fit$late_fusion)) {
 
 `$valid_predictions` is a numeric vector of predicted DOS values for the
 held-out validation set, one prediction per sample. Compare these values
-with `ool_valid$y` to assess predictive performance. The `$weights`
+with `ool_valid$y` to assess predictive performance. The scatter below makes
+that comparison direct: points near the identity line indicate calibrated
+held-out predictions.
+
+```{r late-fusion-scatter, fig.width = 5, fig.height = 5, fig.alt = "Late-fusion validation predictions versus observed DOS"}
+lf_df <- data.frame(observed  = ool_valid$y,
+                    predicted = multi_fit$late_fusion$valid_predictions)
+ggplot2::ggplot(lf_df, ggplot2::aes(observed, predicted)) +
+  ggplot2::geom_point() +
+  ggplot2::geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  ggplot2::labs(title = "Late fusion - validation predictions",
+                x = "Observed DOS (days)", y = "Predicted DOS (days)") +
+  ggplot2::theme_minimal()
+```
+
+On these compact build settings the scatter has an honest lesson: the
+blended predictor is nearly constant (the points form a horizontal line at
+the training-mean level). Ten bootstraps and six-lambda grids demonstrate
+the workflow shape, not a competitive prediction rule; run hundreds of
+bootstraps before reading predictive performance from this figure.
+
+The `$weights`
 element records the omic weights chosen by the training-prediction stacking
 objective. A small weight means that a view received little weight in this
 fitted prediction rule. It does not mean that the assay is biologically
@@ -444,8 +465,9 @@ selected-feature table.
 
 - Use `stabl_multiomic_cv()` for a fully cross-validated evaluation when no
   pre-defined validation split is available.
-- Pass `groups` to respect subject-level grouping in bootstrap resampling and
-  CV fold construction.
+- Pass `groups_train` (for `stabl_multiomic_train_validate()`) or `groups`
+  (for `stabl_multiomic_cv()`) to respect subject-level grouping in
+  bootstrap resampling and CV fold construction.
 - See `vignette("stablr-intro")` for single-omic usage and alternative
   learners.
 - See `vignette("stablr-cooperative")` for cross-view cooperative fusion

@@ -2,6 +2,7 @@
 /Meta/
 /vignettes/*.html
 /vignettes/*-cache/
+/vignettes/figure/
 /vignettes/tcga_results/
 # testthat edition-3 failure-debug snapshots (transient, regenerated on failures)
 /tests/testthat/_problems/

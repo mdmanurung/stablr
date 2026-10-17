@@ -98,7 +98,7 @@ together with the FDP+ curve used for calibration.
 
 | Decision | Default chosen | Why |
 |---|---|---|
-| Artificial features | model-X knockoffs (`knockoff_equi`) | the pairing validated for FDP+ calibration; the raw `random_permutation` default of the expert interface is anti-conservative for multivariate learners |
+| Artificial features | model-X knockoffs (`knockoff_equi`) | conservative decoys for tree learners; measured calibration is learner- and regime-dependent — see the pairing table in `vignette("stablr-intro")` before trusting FDP+ |
 | Calibration | FDP+ on (no fixed `hard_threshold`) | the threshold is chosen to control the estimated false discovery proportion rather than fixed by hand |
 | Knockoff failure | `knockoff_fallback = "stop"` | a silent fallback would silently change what the FDP+ estimates mean |
 | Lambda grid | automatic | a sensible grid is derived from the data |
