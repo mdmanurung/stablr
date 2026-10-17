@@ -1,0 +1,5 @@
+"method","ber_mean"
+"stablr lasso+RP",0.414528221528383
+"sPLS-DA stabl+RP",0.416864506625325
+"mint.splsda (tuned)",0.393148785548507
+"sPLS-DA pooled (tuned)",0.388113396312092
