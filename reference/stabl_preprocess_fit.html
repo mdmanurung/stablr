@@ -77,10 +77,12 @@ names.</p></dd>
 
 
 <dt id="arg-transforms">transforms<a class="anchor" aria-label="anchor" href="#arg-transforms"></a></dt>
-<dd><p>Character vector naming the transforms to fit, in order.
+<dd><p>Character vector naming the transforms to fit.
 Supported: <code>"zv"</code> (zero-variance filter), <code>"impute_median"</code> (median
-imputation), <code>"center"</code>, <code>"scale"</code>.  <code>NULL</code> or <code>character(0)</code> fits an
-identity transform that leaves input unchanged.</p></dd>
+imputation), <code>"center"</code>, <code>"scale"</code>.  Transforms are always applied in
+the fixed order <code>"zv"</code> -&gt; <code>"impute_median"</code> -&gt; <code>"center"</code> -&gt; <code>"scale"</code>,
+regardless of the order in <code>transforms</code>.  <code>NULL</code> or <code>character(0)</code> fits
+an identity transform that leaves input unchanged.</p></dd>
 
 
 <dt id="arg-zv-tol">zv_tol<a class="anchor" aria-label="anchor" href="#arg-zv-tol"></a></dt>

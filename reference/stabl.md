@@ -90,7 +90,10 @@ with opinionated defaults:
 - FDP+ calibration on (no `hard_threshold`), strict knockoff fallback
   (`knockoff_fallback = "stop"`).
 
-- Automatic lambda grid when none is supplied.
+- Automatic lambda grid (always: `stabl()` fixes `lambda_grid` to
+  `"auto"`; supply a manual grid via
+  [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
+  if needed).
 
 Everything else — other learners, bootstrap design, thresholds, groups —
 is one `...` away: unnamed arguments in `...` are forwarded to

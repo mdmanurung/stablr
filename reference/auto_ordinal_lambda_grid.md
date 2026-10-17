@@ -30,7 +30,7 @@ auto_ordinal_lambda_grid(x, y, n_lambda = 30L, alpha = 1)
 
 - alpha:
 
-  Numeric in `[0, 1]`; the elastic-net mixing weight. Default `1` (pure
+  Numeric in `(0, 1]`; the elastic-net mixing weight. Default `1` (pure
   lasso).
 
 ## Value

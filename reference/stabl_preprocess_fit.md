@@ -24,10 +24,12 @@ stabl_preprocess_fit(
 
 - transforms:
 
-  Character vector naming the transforms to fit, in order. Supported:
-  `"zv"` (zero-variance filter), `"impute_median"` (median imputation),
-  `"center"`, `"scale"`. `NULL` or `character(0)` fits an identity
-  transform that leaves input unchanged.
+  Character vector naming the transforms to fit. Supported: `"zv"`
+  (zero-variance filter), `"impute_median"` (median imputation),
+  `"center"`, `"scale"`. Transforms are always applied in the fixed
+  order `"zv"` -\> `"impute_median"` -\> `"center"` -\> `"scale"`,
+  regardless of the order in `transforms`. `NULL` or `character(0)` fits
+  an identity transform that leaves input unchanged.
 
 - zv_tol:
 

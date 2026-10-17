@@ -395,13 +395,17 @@ The same matrix is easier to compare as a heatmap.
 
 ``` r
 
-jm <- jaccard_similarity_matrix(sels)
+# Keep the full square matrix (remove_diag = FALSE) so both axes carry the
+# seed labels; as.table() on the diagonal-removed matrix would mislabel the
+# second axis with row indices instead of seed ids.
+jm <- jaccard_similarity_matrix(sels, remove_diag = FALSE)
+dimnames(jm) <- list(seed_a = as.character(11:14), seed_b = as.character(11:14))
 jm_df <- as.data.frame(as.table(jm))
 names(jm_df) <- c("seed_a", "seed_b", "jaccard")
 ggplot2::ggplot(jm_df, ggplot2::aes(seed_a, seed_b, fill = jaccard)) +
   ggplot2::geom_tile() +
   ggplot2::geom_text(ggplot2::aes(
-    label = ifelse(is.na(jaccard), "", sprintf("%.2f", jaccard))
+    label = sprintf("%.2f", jaccard)
   )) +
   ggplot2::scale_fill_viridis_c(limits = c(0, 1), na.value = "grey90") +
   ggplot2::labs(x = "random_state", y = "random_state",

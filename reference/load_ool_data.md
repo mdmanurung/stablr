@@ -2,10 +2,10 @@
 
 Reads the subsetted Onset of Labor (OOL) cytokine and proteomics data
 that is bundled with the stablr package. The files contain 150 training
-samples and up to 27 validation samples, with the first 100 feature
-columns retained from each omic layer. Sample IDs are intersected across
-all three sources (CyTOF, Proteomics, outcome) so the returned matrices
-and vectors are fully aligned with no missing values.
+samples and 21 validation samples (after ID intersection), with the
+first 100 feature columns retained from each omic layer. Sample IDs are
+intersected across all three sources (CyTOF, Proteomics, outcome) so the
+returned matrices and vectors are fully aligned with no missing values.
 
 ## Usage
 

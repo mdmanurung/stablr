@@ -39,7 +39,7 @@ stabl_multiomic_scheme_comparison(x_list, y, study_labels, ...)
   (`candidates`, `lambda_grid`, `metric`, `family`, `n_bootstraps`,
   `artificial_type`, `hard_threshold`, `stratified`, `random_state`,
   `n_lambda`, `l1_ratio`, `outer_v`, `inner_v`, `cv_workers`,
-  `stabl_workers`).
+  `workers`).
 
 ## Value
 

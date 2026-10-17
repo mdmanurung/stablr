@@ -55,7 +55,8 @@ pearson_similarity(
 ## Value
 
 Numeric scalar. Positive values indicate more overlap than chance; the
-maximum is typically close to 1 for perfectly matching sets.
+maximum is exactly 1 for identical non-degenerate sets (the statistic is
+the phi coefficient).
 
 ## Details
 
@@ -81,7 +82,7 @@ for an alternative chance-correction.
 ``` r
 pearson_similarity(c("f1","f2","f3"), c("f2","f3","f4"), n_universe = 10L)
 #> [1] 0.5238095
-pearson_similarity(c("f1","f2"),      c("f1","f2"),      n_universe = 10L) # near 1
+pearson_similarity(c("f1","f2"),      c("f1","f2"),      n_universe = 10L) # exactly 1
 #> [1] 1
 pearson_similarity(character(0),      c("f1","f2"),      n_universe = 10L) # 0
 #> [1] 0

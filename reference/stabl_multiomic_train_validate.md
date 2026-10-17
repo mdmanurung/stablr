@@ -243,10 +243,17 @@ A named list with class `"stabl_multiomic_fit"` containing:
   `NULL` when `late_fusion = FALSE`. Otherwise a list with `weights`,
   `valid_predictions`, and mode-specific training results. OOF mode
   provides `oof_predictions` and `oof_score`; legacy mode provides
-  `in_sample_predictions` and `in_sample_score`. `train_predictions` and
-  `score` remain exact 0.1.x compatibility aliases for the active
-  mode-specific fields. Multinomial tasks also include `levels`,
-  `log_loss`, and classification metrics.
+  `in_sample_predictions` and `in_sample_score`. `oof_predictions` is a
+  *base-model* out-of-fold matrix; the stacked `oof_score` is computed
+  with stacking weights tuned on that same OOF matrix (maximum over
+  `n_iter_lf` random weight draws), so it is an optimistic,
+  in-sample-for-the-weight-step statistic and NOT a full-stack OOF
+  prediction. Use outer cross-validation
+  ([`stabl_multiomic_nested_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_nested_cv.md))
+  for an honest performance estimate. `train_predictions` and `score`
+  remain exact 0.1.x compatibility aliases for the active mode-specific
+  fields. Multinomial tasks also include `levels`, `log_loss`, and
+  classification metrics.
 
 - `cooperative_fusion`:
 

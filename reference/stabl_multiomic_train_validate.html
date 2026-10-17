@@ -281,6 +281,12 @@ list with <code>fit</code>, <code>selected_features</code>, <code>selected_train
 list with <code>weights</code>, <code>valid_predictions</code>, and mode-specific training
 results. OOF mode provides <code>oof_predictions</code> and <code>oof_score</code>; legacy
 mode provides <code>in_sample_predictions</code> and <code>in_sample_score</code>.
+<code>oof_predictions</code> is a <em>base-model</em> out-of-fold matrix; the stacked
+<code>oof_score</code> is computed with stacking weights tuned on that same
+OOF matrix (maximum over <code>n_iter_lf</code> random weight draws), so it is
+an optimistic, in-sample-for-the-weight-step statistic and NOT a
+full-stack OOF prediction. Use outer cross-validation
+(<code><a href="stabl_multiomic_nested_cv.html">stabl_multiomic_nested_cv()</a></code>) for an honest performance estimate.
 <code>train_predictions</code> and <code>score</code> remain exact 0.1.x compatibility
 aliases for the active mode-specific fields. Multinomial tasks also
 include <code>levels</code>, <code>log_loss</code>, and classification metrics.</p></dd>

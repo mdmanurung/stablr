@@ -36,7 +36,8 @@ Files written:
   descending.
 
 - `STABL artificial scores.csv` — artificial feature scores (only when
-  `object$artificial_type` is not `NULL`).
+  artificial-feature scores are present, i.e.
+  `object$stabl_scores_artificial_` is not `NULL`).
 
 - `Max STABL artificial scores.csv` — artificial max scores, sorted
   descending (only when artificial features were used).
