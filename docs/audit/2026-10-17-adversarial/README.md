@@ -23,7 +23,7 @@ coverage ledger, findings, specification matrix, and validation log.
 | 2 | Core algorithm audit (bootstrap, learners, knockoffs, FDP+) | in progress (fdp_control.R, artificial_features.R, knockoff_mvr.R clean; MVR solver numerically verified) |
 | 3-5 | Leakage, multi-omic, outcome-family audits | **complete** (Phases 3+4 delegated independent passes + Phase 5 lead; no P0/P1; F-CV-01..08, P4-F24..F29, F-024..F-026) |
 | 6 | Independent validation program (synthetic DGPs) | **complete** (F-P6-1 headline: min_fdr_ anti-conservative 1.5-2.2× on pure nulls; regime-dependent calibration; env-permutation null clean) |
-| 7 | Aging case-study adversarial audit | pending (v2 bit-for-bit run in flight as input) |
+| 7 | Aging case-study adversarial audit | **complete** (V8/V12/V13 + vignette §4/§10.3/§10.5 re-derived exactly from committed artifacts; saturation mechanism attributed: rf threshold-path median floor + max-over-lambda scoring + fixed 0.5 bar decoupled from FDP+ — F-P7-1; CP convention inconsistency F-P7-2; WS-5 calibration-scope gap F-P7-3; evidence in phase7_validation/) |
 | 8-9 | Software, compiled code, test-suite audit | compiled-code pass **complete** (F-011..F-018; F-016 corrected to P3 fragility after runtime probe); test-suite audit **complete** (all ledger gaps refuted as false leads) |
 | 10-11 | Documentation + distribution standards | **complete** (F-P10-1 release-contract skew carried) |
 | 12-15 | Publication readiness, remediation, referee report | pending |

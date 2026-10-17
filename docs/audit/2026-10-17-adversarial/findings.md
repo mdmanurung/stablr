@@ -534,3 +534,126 @@ permits almost exactly the observed behavior. Remediation implication for
 F-P6-1: report the bound's practical meaning alongside min_fdr_ (e.g. "the
 true FDP exceeds twice this value with probability up to ~50%") rather than
 changing the threshold rule.
+
+## Phase 7 — aging case-study adversarial audit (lead auditor, 2026-10-17)
+
+Scope: `vignettes/stablr-aging-case-study.Rmd` (v1 historical case study +
+v2 summary section) and the ws8_v2 saturation chain (claims-ledger V8, V12,
+V13). Mandate from the leads table: re-derive the S0 null saturation from
+committed artifacts and attribute the algorithmic cause. Evidence:
+`phase7_validation/` (rederive.R + log; mechanism probe + log).
+
+### Re-derivation — every checked number reproduces exactly
+
+All values recomputed from the committed CSVs in the compendium
+(`results/ws8_v2/`), not copied from the ledger:
+
+- **V8 (S0 null, 8 cohorts):** 50/50 permutations select 59/59; max
+  min-score median 1.000, range [0.980, 1.000]; same-design real-data
+  reference 35/59 native. Matches the ledger and vignette §10.4 exactly.
+- **V12 (S2a SPAC-excluded null):** 50/50 select 59/59; median 1.000,
+  range [0.995, 1.000]; real reference 30/59. Matches.
+- **V13 (S1 synthetic):** M4/M5 select 59/59 native features under all four
+  truth regimes (homogeneous, heterogeneous, null, sparse-strong); empirical
+  FDP of native panels 0.83–1.00; M1 selects 0 features under the null.
+  Matches.
+- **Vignette §10.3:** macro R@10 per selector (0.395/0.386/0.321/0.286/
+  0.142/0.118) and all five M4 contrasts with CIs and sign-flip p-values
+  reproduce exactly from `run/heldout_replication.csv` and
+  `run/method_comparisons.csv`.
+- **Vignette §10.5:** top-10 panel macro/micro MAE 12.19/13.56 vs all-59
+  12.35/14.35 vs median baseline 20.11/22.74; predicted-on-observed slopes
+  0.317–0.675 ("0.32 to 0.68"). Matches.
+- **Vignette §4 (v1):** 24/60 selected; the eight predeclared min-agg
+  scores (1.000, 1.000, 0.995, 0.755, 0.740, 0.535, 0.505, 0.445); 7/8
+  predeclared selected; all eight sign-consistent 8/8; 11/24 consistent
+  features significant. All reproduce from `benchmarks/ws8_feature_stats.csv`.
+
+The v1 defects (A1–A4) remain flagged in place in the vignette; no
+unflagged v1 claim was found to contradict the committed artifacts.
+
+### F-P7-1 (P2, mechanism CONFIRMED by probe): the null saturation is caused by the rf threshold-path floor + max-over-lambda scoring + a decision rule that never consults FDP+
+
+Algorithmic cause chain, verified in code and by a controlled probe
+(`phase7_validation/phase7_mechanism_probe.R`):
+
+1. **Grid floor at the median.** `stabl_fit(lambda_grid = "auto",
+   base_learner = "rf")` resolves to `auto_rf_threshold_grid()`, whose path
+   is `probs = seq(0.5, 0.999, length.out = n_grid)` — quantiles of the
+   full-data permutation-importance distribution of the real features. The
+   densest path point is therefore the **median** importance. Under a pure
+   null this bar is numerically zero (probe: median importance −0.0003,
+   max 0.036).
+2. **Max-over-lambda scoring.** The per-cohort stability score is the
+   max-over-thresholds of per-bootstrap selection frequencies
+   (`environment_stability.R` aggregates max-over-lambda scores; the min
+   across cohorts inherits them). At the densest thresholds the probe's
+   mean selection frequency is 0.94–1.00 for reals AND decoys, so
+   max-over-lambda scores are ≈ 1 for everything: reals median 1.000
+   (min 0.980), decoys median 1.000. The probe reproduces the committed
+   null signature exactly (min 0.980 = the committed range floor).
+3. **The native panel rule ignores the decoy contrast.** The panel rule is
+   a fixed bar, `min_score >= 0.5` — the FDP+ machinery is computed but
+   never consulted. The decoy exchangeability itself is intact: per-lambda
+   real/decoy mean frequencies agree within 0.02 at every threshold, which
+   is why per-cohort FDP+ ≈ 1 (vignette Table 1: decoys ≥ 0.5 in every
+   cohort). An FDP+-gated rule would select ~nothing under the null —
+   exactly what M1 (per-cohort voting) does in S1 (0 features under s1c).
+4. **Deeper layer — fixed thresholds do not calibrate refit noise.** A
+   sparse-only path (quantiles 0.9–0.999) still yields max-over-lambda
+   ≈ 0.76 under the null: a fixed threshold set at the full-data 90th
+   percentile is exceeded in ~74% of bootstrap refits. Fixed full-data
+   importance quantiles are not calibrated for bootstrap-refit importance
+   scale. The min-across-cohorts aggregation is innocent (min of ≈1 is ≈1);
+   the leniency is created per cohort.
+
+Ruled out as mechanisms: SPAC's PD-projected knockoff covariance (V12:
+saturation without SPAC) and the equicorrelated knockoff construction
+(V15/S2c for R@10). The vignette's §10.4 statement that "the projection is
+not the mechanism" is confirmed; the actual mechanism (items 1–3) was
+previously unstated anywhere in the repo.
+
+Remediation implications (for Phase 12, not silent fixes): (a) the
+env-stability native-panel rule should either gate on the per-cohort FDP+
+thresholds or document that it is a descriptive filter (the vignette now
+says this, but the CODE presents `min_score >= 0.5` as a selection rule);
+(b) `auto_rf_threshold_grid`'s median floor plus max-over-lambda scoring
+should carry an explicit leniency warning analogous to the existing
+random-permutation warning; (c) any future rf-based env-stability
+calibration study must use FDP+-gated selection, not the fixed 0.5 bar.
+
+### F-P7-2 (P3, CONFIRMED): inconsistent Clopper–Pearson conventions between V8 and V12
+
+The ledger and vignette §10.4 quote two "Clopper–Pearson 95% lower bounds"
+for the same 50/50 saturation statistic with different values: V8 → 0.929,
+V12 → 0.942. The difference is purely conventional: 0.929 = 0.025^(1/50)
+(two-sided convention, lower tail α/2) and 0.942 = 0.05^(1/50) (one-sided,
+`binom.test(alternative = "greater")`, `s2a_null_merge.R:43`). V8's bound
+is not computed in `null_probe.R` at all (provenance outside the committed
+scripts). Neither the ledger nor the vignette states the convention.
+Remediation: state the convention (or unify on one) in both places; the
+saturation conclusion is unaffected (both bounds ≥ 0.92).
+
+### F-P7-3 (P3, CONFIRMED): the WS-5 min-agg calibration does not cover the rf pairing used by the case study
+
+Vignette §3.1 invokes WS-5's FDP+ 0.083–0.142 as the source of the min-agg
+rule. WS-5 (`ws5_transportability.R`) measured that calibration with the
+**lasso** learner, **random_permutation** artificials, binomial family,
+p = 30, E = 3, 100 bootstraps. The case study applies the same aggregation
+with **rf + knockoff_equi**, gaussian, p = 60, E = 8 (200 bootstraps) — a
+learner/artificial-type/family/shape combination for which no min-agg
+calibration existed before WS-8 v2's own S1 (which found saturation). The
+vignette honestly reports non-transfer (§4.1, §8 limit 1) but does not note
+that the cited calibration was measured on a different configuration.
+Remediation: one clarifying sentence in §3.1 (Phase 12 batch).
+
+### Scope boundaries
+
+- S1 rests on the 5-replicate pilot of a planned 20 (flagged in the ledger
+  and §10.8); extending to 20 reps is the already-designed weak-signal/
+  p≫n sweep, deliberately not run inside Phase 7.
+- The v1 pipeline's donor-level derivation script was never archived
+  (vignette §2.3 discloses this); Phase 7 cannot audit that step. The v2
+  rebuild regenerates features from the raw file with a committed script.
+- The AI audit does not satisfy SCI-04; the independent human confirmation
+  remains outstanding.

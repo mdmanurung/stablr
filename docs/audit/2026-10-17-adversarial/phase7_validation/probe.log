@@ -1,0 +1,19 @@
+== grids ==
+[1]  0.0358  0.0177  0.0102  0.0082  0.0015 -0.0003
+auto grid: thresholds are quantiles 0.5, 0.6, 0.7, 0.799, 0.899, 0.999 of full-data importance
+median importance (densest auto bar): -3e-04  max importance: 0.036 
+[1] 0.0358 0.0310 0.0263 0.0225 0.0202 0.0178
+
+== AUTO grid (median floor, probs 0.5-0.999) under null ==
+per-lambda mean selection frequency (reals):  0.32 0.75 0.94 0.97 1 1 
+per-lambda mean selection frequency (decoys):  0.33 0.77 0.95 0.98 1 1 
+max-over-lambda score, reals:  median 1.000  q1 1.000  min 0.980  n>=0.5: 20/20
+max-over-lambda score, decoys: median 1.000  q1 1.000  min 1.000  n>=0.5: 20/20
+
+== SPARSE-only grid (probs 0.9-0.999) under null ==
+per-lambda mean selection frequency (reals):  0.32 0.4 0.52 0.61 0.67 0.74 
+per-lambda mean selection frequency (decoys):  0.33 0.42 0.52 0.63 0.7 0.77 
+max-over-lambda score, reals:  median 0.760  q1 0.620  min 0.540  n>=0.5: 20/20
+max-over-lambda score, decoys: median 0.760  q1 0.695  min 0.420  n>=0.5: 19/20
+
+DONE

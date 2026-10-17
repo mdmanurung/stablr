@@ -25,7 +25,7 @@ cooperative-predict.cv.multiview.R,,0,test-cooperative-weighted.R; test-multivie
 cooperative-predict.multiview.R,,0,test-cooperative-weighted.R; test-multiview-parity.R,core,pending
 cooperative-utils.R,,0,test-cooperative-weighted.R,core,pending
 data_helpers.R,load_ool_data,1,test-bootstrap-helpers.R,support,pending
-environment_stability.R,stabl_environment_stability; get_min_scores,2,test-environment-stability.R,core,pending
+environment_stability.R,stabl_environment_stability; get_min_scores,2,test-environment-stability.R,core,"audited-P7: aggregation semantics verified (max-over-lambda per env, min across envs, fixed 0.5 native bar decoupled from FDP+); saturation mechanism F-P7-1"
 exports.R,export_stabl_to_csv; save_stabl_results,2,,support,"tested (false lead): export paths in test-phase7.R, test-public-interface-audit.R"
 fdp_control.R,compute_fdp_plus,1,,core,"in-progress: tests verified (test-fdp-plus-invariants.R, test-python-parity-fixtures.R, test-stabl-fit.R); first-pass clean, leads L1/L4"
 input_validation.R,validate_sample_alignment; validate_multiomic_inputs,2,test-input-validation.R; test-interpretation-validation.R; test-methodology-validation-runner.R; test-validation-edges.R,support,pending
@@ -35,7 +35,7 @@ late_fusion.R,,0,test-late-fusion-oof.R,support,pending
 learner_adapters.R,make_glmnet_adapter; make_adaptive_lasso_adapter; make_sgl_adapter; auto_lambda_grid,4,test-learner-adapters.R; test-learner-ordinal.R,support,pending
 learner_oblique_rf.R,make_aorsf_adapter; auto_oblique_threshold_grid,2,test-learner-adapters.R; test-learner-ordinal.R; test-oblique-rf-adapter.R,support,pending
 learner_ordinal.R,make_ordinal_adapter; auto_ordinal_lambda_grid,2,test-learner-adapters.R; test-learner-ordinal.R,support,pending
-learner_rf.R,make_ranger_adapter; auto_rf_threshold_grid,2,test-learner-adapters.R; test-learner-ordinal.R,support,pending
+learner_rf.R,make_ranger_adapter; auto_rf_threshold_grid,2,test-learner-adapters.R; test-learner-ordinal.R,support,"audited-P7: threshold grid floors at median importance (probs 0.5-0.999); null leniency confirmed by probe (F-P7-1); fixed thresholds do not calibrate refit noise"
 metrics.R,jaccard_similarity; jaccard_similarity_matrix; adjusted_similarity; adjusted_similarity_pairwise; adjusted_similarity_summary; pearson_similarity; pearson_similarity_pairwise; pearson_similarity_summary; fdr_similarity; tpr_similarity; fscore_similarity; jaccard_matrix; adjusted_similarity_values; adjusted_similarity_measure; pearson_similarity_values; pearson_similarity_measure,16,,support,"tested (false lead): jaccard/adjusted_similarity in test-environment-stability.R, test-stabl-wrapper.R, test-phase7.R"
 multiomic_workflows.R,stabl_multiomic_train_validate; stabl_multiomic_cv; stabl_multiomic_stacked; stacked_multi_omic,4,test-multiomic-guards.R; test-multiomic-workflows.R,support,pending
 nested_cv.R,stabl_multiomic_nested_cv,1,test-nested-cv-study-disjoint.R; test-nested-cv.R,support,pending

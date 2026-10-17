@@ -1,0 +1,67 @@
+==================================================================
+1. V8 — S0 within-cohort age-permutation null (8 cohorts)
+==================================================================
+permutations committed: 50 
+perms selecting 59/59 : 50 
+max_min_score: median 1  range [ 0.98 , 1 ]
+CP lower bound, two-sided 0.025^(1/50): 0.9289  (ledger V8 quotes 0.929)
+CP lower bound, one-sided  0.05^(1/50): 0.9418  (ledger V12 quotes 0.942)
+same-design real-data reference:  35 / 59 native  (ledger V8: 35/59)
+perm001 per-feature min_score: median 0.995  min 0.98 
+
+==================================================================
+2. V12 — S2a SPAC-excluded null (7 cohorts)
+==================================================================
+permutation files: 50 
+perms selecting 59/59 : 50 
+max min-score: median 1  range [ 0.995 , 1 ]
+real reference (no SPAC): 30 / 59 native  (ledger V12: 30/59)
+
+==================================================================
+3. V13 — S1 synthetic saturation (4 truth regimes x 5 replicates)
+==================================================================
+M4/M5 n_native by scenario (must be 59 everywhere):
+   s1a_hom    s1b_het   s1c_null s1d_sparse 
+        59         59         59         59 
+emp_fdp_native range: 0.83 - 1  (ledger V13: 0.83-1.00)
+M1 n_native by scenario (calibration contrast):
+     scenario n_native emp_fdp_native
+2     s1a_hom     3.65              0
+7     s1b_het     2.50              0
+16   s1c_null     0.00             NA
+20 s1d_sparse     3.00              0
+
+==================================================================
+4. Vignette section 10.3 — macro R@10 and confirmatory contrasts
+==================================================================
+macro R@10 (vignette table: M0 0.395, M1 0.386, M5 0.321, M4 0.286, M3 0.142, M2 0.118):
+   M0    M1    M5    M4    M3    M2 
+0.395 0.386 0.321 0.286 0.142 0.118 
+M4 contrasts (vignette: M4-M3 +0.145 [+0.083,+0.206] p .0078; M4-M0 -0.108 [-0.174,-0.043] p .016):
+  contrast macro_diff  ci_low ci_high sign_flip_p confirmatory
+1  M4 - M0    -0.1084 -0.1738 -0.0431      0.0156         TRUE
+2  M4 - M1    -0.0996 -0.1633 -0.0360      0.0234        FALSE
+3  M4 - M2     0.1682  0.0671  0.2693      0.0078        FALSE
+4  M4 - M3     0.1445  0.0833  0.2057      0.0078         TRUE
+5  M4 - M5    -0.0343 -0.0683 -0.0003      0.0234        FALSE
+
+==================================================================
+5. Vignette section 10.5 — prediction panel summary
+==================================================================
+(vignette: topk 12.19/13.56, all59 12.35/14.35, median 20.11/22.74; slopes_po 0.32-0.68)
+   panel macro_mae micro_mae slope_po_min slope_po_max
+1   topk    12.189    13.562        0.317        0.675
+2 native    12.657    14.655        0.285        0.751
+3  all59    12.354    14.351        0.278        0.883
+4 median    20.105    22.740        0.000        0.000
+
+==================================================================
+6. Vignette section 4 — v1 feature claims (ws8_feature_stats.csv)
+==================================================================
+selected: 24 of 60 (vignette: 24 of 60)
+predeclared min_scores: 1, 1, 0.995, 0.755, 0.74, 0.535, 0.505, 0.445 
+(vignette Table 2: 1.000, 1.000, 0.995, 0.755, 0.740, 0.535, 0.505, 0.445)
+predeclared selected: 7 of 8 (vignette: 7 of 8); sign_k values: 8 (vignette: all 8/8)
+consistent features with sign_p < 0.05: 11 (vignette: 11 of 24)
+
+ALL RE-DERIVATIONS COMPLETE
