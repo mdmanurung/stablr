@@ -393,7 +393,7 @@ fit_reg
 #>   Features in:      24 
 #>   Features selected: 5 
 #>   Min FDP+:         0.2 
-#>   FDP+ threshold:   0.08 
+#>   FDP+ threshold:   0 
 #>   Artificial:       random_permutation
 ```
 

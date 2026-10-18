@@ -318,11 +318,11 @@ appears at the bottom.</p>
 <span><span class="co">#&gt;   Late fusion:      no </span></span>
 <span><span class="co">#&gt;   Cooperative fusion:</span></span>
 <span><span class="co">#&gt;     selection:     cv</span></span>
-<span><span class="co">#&gt;     rho (chosen):  0</span></span>
+<span><span class="co">#&gt;     rho (chosen):  0.5</span></span>
 <span><span class="co">#&gt;     selector:      lambda.min</span></span>
 <span><span class="co">#&gt;     type.measure:  mse</span></span>
-<span><span class="co">#&gt;     score:         812.1337</span></span>
-<span><span class="co">#&gt;     selected feats: 26 (across views)</span></span></code></pre></div>
+<span><span class="co">#&gt;     score:         669.5853</span></span>
+<span><span class="co">#&gt;     selected feats: 90 (across views)</span></span></code></pre></div>
 <p>The block reports the following fields.</p>
 <ul>
 <li>
@@ -360,13 +360,13 @@ model and the tuning surface that led to it.</p>
 <span></span>
 <span><span class="co"># Chosen hyperparameters</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Chosen rho:     "</span>, <span class="va">cf</span><span class="op">$</span><span class="va">rho</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Chosen rho:      0</span></span>
+<span><span class="co">#&gt; Chosen rho:      0.5</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Chosen lambda:  "</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">cf</span><span class="op">$</span><span class="va">selected_lambda</span>, <span class="fl">4</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Chosen lambda:   2.4293</span></span>
+<span><span class="co">#&gt; Chosen lambda:   0.1795</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Selector:       "</span>, <span class="va">cf</span><span class="op">$</span><span class="va">selector</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Selector:        lambda.min</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"CV score (MSE): "</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">cf</span><span class="op">$</span><span class="va">score</span>, <span class="fl">4</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; CV score (MSE):  812.1337</span></span></code></pre></div>
+<span><span class="co">#&gt; CV score (MSE):  669.5853</span></span></code></pre></div>
 <p>The output reports the chosen <code>rho</code>, the chosen lambda,
 the selector rule, and the CV score (MSE) of the selected model.</p>
 <div class="section level3">
@@ -379,21 +379,57 @@ vector per omic.</p>
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"CyTOF features selected by cooperative fusion:\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; CyTOF features selected by cooperative fusion:</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">cf</span><span class="op">$</span><span class="va">selected_features</span><span class="op">$</span><span class="va">cytof</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "Granulocytes_S6_unstim" "Bcells_S6_unstim"       "MDSCs_CREB_unstim"     </span></span>
-<span><span class="co">#&gt; [4] "DCs_CREB_unstim"        "pDCs_STAT3_unstim"      "pDCs_ERK_unstim"       </span></span>
-<span><span class="co">#&gt; [7] "intMCs_CREB_unstim"</span></span>
+<span><span class="co">#&gt;  [1] "Granulocytes_CREB_unstim"     "Granulocytes_STAT5_unstim"   </span></span>
+<span><span class="co">#&gt;  [3] "Granulocytes_p38_unstim"      "Granulocytes_STAT3_unstim"   </span></span>
+<span><span class="co">#&gt;  [5] "Granulocytes_S6_unstim"       "Granulocytes_MAPKAPK2_unstim"</span></span>
+<span><span class="co">#&gt;  [7] "Bcells_S6_unstim"             "Bcells_IkB_unstim"           </span></span>
+<span><span class="co">#&gt;  [9] "Bcells_MAPKAPK2_unstim"       "Bcells_NFkB_unstim"          </span></span>
+<span><span class="co">#&gt; [11] "cMCs_MAPKAPK2_unstim"         "CCR2poscMCs_IkB_unstim"      </span></span>
+<span><span class="co">#&gt; [13] "MDSCs_CREB_unstim"            "MDSCs_p38_unstim"            </span></span>
+<span><span class="co">#&gt; [15] "MDSCs_S6_unstim"              "DCs_STAT5_unstim"            </span></span>
+<span><span class="co">#&gt; [17] "DCs_IkB_unstim"               "DCs_MAPKAPK2_unstim"         </span></span>
+<span><span class="co">#&gt; [19] "mDCs_STAT3_unstim"            "mDCs_NFkB_unstim"            </span></span>
+<span><span class="co">#&gt; [21] "pDCs_STAT5_unstim"            "pDCs_STAT3_unstim"           </span></span>
+<span><span class="co">#&gt; [23] "pDCs_NFkB_unstim"             "pDCs_ERK_unstim"             </span></span>
+<span><span class="co">#&gt; [25] "intMCs_CREB_unstim"           "intMCs_S6_unstim"            </span></span>
+<span><span class="co">#&gt; [27] "intMCs_IkB_unstim"            "intMCs_MAPKAPK2_unstim"      </span></span>
+<span><span class="co">#&gt; [29] "intMCs_NFkB_unstim"           "intMCs_ERK_unstim"           </span></span>
+<span><span class="co">#&gt; [31] "CCR2posintMCs_CREB_unstim"</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\nProteomics features selected by cooperative fusion:\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Proteomics features selected by cooperative fusion:</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">cf</span><span class="op">$</span><span class="va">selected_features</span><span class="op">$</span><span class="va">proteomics</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  [1] "Mcl.1"               "HEMK2"               "CD59"               </span></span>
-<span><span class="co">#&gt;  [4] "S100A6"              "SECTM1"              "CSH"                </span></span>
-<span><span class="co">#&gt;  [7] "NEGR1"               "FSTL1"               "Osteopontin"        </span></span>
-<span><span class="co">#&gt; [10] "SMOC1"               "protein.Z.inhibitor" "ISLR2"              </span></span>
-<span><span class="co">#&gt; [13] "HXK2"                "SEM5A"               "ApoM"               </span></span>
-<span><span class="co">#&gt; [16] "AMGO2"               "C1QR1"               "H2B2E"              </span></span>
-<span><span class="co">#&gt; [19] "Myostatin"</span></span></code></pre></div>
+<span><span class="co">#&gt;  [1] "NSE"                        "PIAS4"                     </span></span>
+<span><span class="co">#&gt;  [3] "IRF1"                       "c.Jun"                     </span></span>
+<span><span class="co">#&gt;  [5] "Mcl.1"                      "c.Myc"                     </span></span>
+<span><span class="co">#&gt;  [7] "SMAD3"                      "PDGFRA"                    </span></span>
+<span><span class="co">#&gt;  [9] "IL.12"                      "STAT1"                     </span></span>
+<span><span class="co">#&gt; [11] "Osteocalcin"                "IL.5"                      </span></span>
+<span><span class="co">#&gt; [13] "GPDA"                       "HEMK2"                     </span></span>
+<span><span class="co">#&gt; [15] "YKL.40"                     "Apo.L1"                    </span></span>
+<span><span class="co">#&gt; [17] "CD59"                       "FABPL"                     </span></span>
+<span><span class="co">#&gt; [19] "GDF.11"                     "BTC"                       </span></span>
+<span><span class="co">#&gt; [21] "HIF.1a"                     "S100A6"                    </span></span>
+<span><span class="co">#&gt; [23] "RSPO3"                      "PSP"                       </span></span>
+<span><span class="co">#&gt; [25] "VEGF.D"                     "CSH"                       </span></span>
+<span><span class="co">#&gt; [27] "EFNB1"                      "SNP25"                     </span></span>
+<span><span class="co">#&gt; [29] "NEGR1"                      "BCL6"                      </span></span>
+<span><span class="co">#&gt; [31] "FSTL1"                      "Osteopontin"               </span></span>
+<span><span class="co">#&gt; [33] "CD177"                      "CHKB"                      </span></span>
+<span><span class="co">#&gt; [35] "SMOC1"                      "protein.Z.inhibitor"       </span></span>
+<span><span class="co">#&gt; [37] "FLRT2"                      "ISLR2"                     </span></span>
+<span><span class="co">#&gt; [39] "DSC2"                       "LDLR"                      </span></span>
+<span><span class="co">#&gt; [41] "HXK2"                       "HXK1"                      </span></span>
+<span><span class="co">#&gt; [43] "SEM5A"                      "PIANP"                     </span></span>
+<span><span class="co">#&gt; [45] "S100A4"                     "RNF43"                     </span></span>
+<span><span class="co">#&gt; [47] "ZNRF3"                      "ApoM"                      </span></span>
+<span><span class="co">#&gt; [49] "IFNA7"                      "AMGO2"                     </span></span>
+<span><span class="co">#&gt; [51] "C1QR1"                      "H2B2E"                     </span></span>
+<span><span class="co">#&gt; [53] "H2A3"                       "H31"                       </span></span>
+<span><span class="co">#&gt; [55] "IL.1F8"                     "IL.1F6"                    </span></span>
+<span><span class="co">#&gt; [57] "Ephrin.A3"                  "X14.3.3.protein.beta.alpha"</span></span>
+<span><span class="co">#&gt; [59] "Myostatin"</span></span></code></pre></div>
 <p>The two lists give the CyTOF and proteomics features selected by the
 cooperative model. Features that appear in both lists carry cross-view
 support.</p>
@@ -409,14 +445,14 @@ hold the multiview predictions from the chosen model.</p>
 <span><span class="co">#&gt; First 6 training predictions:</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">cf</span><span class="op">$</span><span class="va">train_predictions</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;  001_26_A  001_33_B  001_35_C  003_25_A  003_30_B  003_32_C </span></span>
-<span><span class="co">#&gt; -70.90491 -11.58418 -10.49450 -52.14157 -27.99975 -23.70652</span></span>
+<span><span class="co">#&gt; -87.57170 -36.82602 -30.89577 -53.20318 -29.72827 -27.61738</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\nFirst 6 validation predictions:\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; First 6 validation predictions:</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">cf</span><span class="op">$</span><span class="va">valid_predictions</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  004_31_A  004_34_B  015_30_A  015_34_B  015_36_C  047_26_A </span></span>
-<span><span class="co">#&gt; -56.56061 -46.02405 -44.23919 -11.32462 -33.57264 -48.94823</span></span></code></pre></div>
+<span><span class="co">#&gt;   004_31_A   004_34_B   015_30_A   015_34_B   015_36_C   047_26_A </span></span>
+<span><span class="co">#&gt;  30.525422  32.567613 -23.970698 658.466946  -3.683433  -5.073059</span></span></code></pre></div>
 <p>The two vectors hold the predicted DOS values for the training
 samples and for the held-out validation samples.</p>
 </div>
@@ -430,10 +466,10 @@ rather than treated as a black box.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># One row per rho value</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">cf</span><span class="op">$</span><span class="va">diagnostics</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"rho"</span>, <span class="st">"lambda"</span>, <span class="st">"metric_value"</span>, <span class="st">"selected"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="co">#&gt;    rho   lambda metric_value selected</span></span>
-<span><span class="co">#&gt; 1 0.00 2.429267     812.1337     TRUE</span></span>
-<span><span class="co">#&gt; 2 0.25 1.754128     816.5125    FALSE</span></span>
-<span><span class="co">#&gt; 3 0.50 2.016820     842.6442    FALSE</span></span></code></pre></div>
+<span><span class="co">#&gt;    rho    lambda metric_value selected</span></span>
+<span><span class="co">#&gt; 1 0.00 3.8680805     784.1156    FALSE</span></span>
+<span><span class="co">#&gt; 2 0.25 0.1713800     700.7326    FALSE</span></span>
+<span><span class="co">#&gt; 3 0.50 0.1795404     669.5853     TRUE</span></span></code></pre></div>
 <p>The <code>selected</code> column marks the winning <code>rho</code>.
 If the surface is flat, with similar <code>metric_value</code> across
 <code>rho</code>, the omics are not gaining much from cooperation and
@@ -570,15 +606,15 @@ run in one call, and the selected features are then compared.</p>
 <span><span class="co">#&gt;     cytof: 0</span></span>
 <span><span class="co">#&gt;     proteomics: 2</span></span>
 <span><span class="co">#&gt;   Validation data:  yes </span></span>
-<span><span class="co">#&gt;   Early fusion:     yes (2 features selected) </span></span>
-<span><span class="co">#&gt;   Late fusion:      yes (score = 0.1867) </span></span>
+<span><span class="co">#&gt;   Early fusion:     yes (7 features selected) </span></span>
+<span><span class="co">#&gt;   Late fusion:      yes (score = 0.2565) </span></span>
 <span><span class="co">#&gt;   Cooperative fusion:</span></span>
 <span><span class="co">#&gt;     selection:     cv</span></span>
-<span><span class="co">#&gt;     rho (chosen):  0</span></span>
+<span><span class="co">#&gt;     rho (chosen):  0.5</span></span>
 <span><span class="co">#&gt;     selector:      lambda.min</span></span>
 <span><span class="co">#&gt;     type.measure:  mse</span></span>
-<span><span class="co">#&gt;     score:         812.1337</span></span>
-<span><span class="co">#&gt;     selected feats: 26 (across views)</span></span></code></pre></div>
+<span><span class="co">#&gt;     score:         669.5853</span></span>
+<span><span class="co">#&gt;     selected feats: 90 (across views)</span></span></code></pre></div>
 <p>The output contains the per-omic fits, the early-fusion branch, the
 late-fusion branch, and the <code>Cooperative fusion:</code> block.</p>
 <p>The feature sets of the three strategies are compared as follows.</p>
@@ -590,9 +626,9 @@ late-fusion branch, and the <code>Cooperative fusion:</code> block.</p>
 <span>                                   use.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Early fusion selected:      "</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">ef_features</span><span class="op">)</span>, <span class="st">"features\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Early fusion selected:       2 features</span></span>
+<span><span class="co">#&gt; Early fusion selected:       7 features</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Cooperative fusion selected:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">cf_features</span><span class="op">)</span>, <span class="st">"features\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Cooperative fusion selected: 26 features</span></span>
+<span><span class="co">#&gt; Cooperative fusion selected: 90 features</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Per-omic union selected:    "</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">per_omic_features</span><span class="op">)</span>, <span class="st">"features\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Per-omic union selected:     2 features</span></span>
 <span></span>
@@ -600,20 +636,54 @@ late-fusion branch, and the <code>Cooperative fusion:</code> block.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; In cooperative but not early fusion:</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sets.html" class="external-link">setdiff</a></span><span class="op">(</span><span class="va">cf_features</span>, <span class="va">ef_features</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  [1] "Granulocytes_S6_unstim" "Bcells_S6_unstim"       "MDSCs_CREB_unstim"     </span></span>
-<span><span class="co">#&gt;  [4] "DCs_CREB_unstim"        "pDCs_STAT3_unstim"      "pDCs_ERK_unstim"       </span></span>
-<span><span class="co">#&gt;  [7] "intMCs_CREB_unstim"     "Mcl.1"                  "CD59"                  </span></span>
-<span><span class="co">#&gt; [10] "S100A6"                 "SECTM1"                 "CSH"                   </span></span>
-<span><span class="co">#&gt; [13] "NEGR1"                  "FSTL1"                  "Osteopontin"           </span></span>
-<span><span class="co">#&gt; [16] "SMOC1"                  "protein.Z.inhibitor"    "ISLR2"                 </span></span>
-<span><span class="co">#&gt; [19] "HXK2"                   "SEM5A"                  "ApoM"                  </span></span>
-<span><span class="co">#&gt; [22] "AMGO2"                  "C1QR1"                  "Myostatin"</span></span>
+<span><span class="co">#&gt;  [1] "Granulocytes_CREB_unstim"     "Granulocytes_STAT5_unstim"   </span></span>
+<span><span class="co">#&gt;  [3] "Granulocytes_p38_unstim"      "Granulocytes_STAT3_unstim"   </span></span>
+<span><span class="co">#&gt;  [5] "Granulocytes_MAPKAPK2_unstim" "Bcells_S6_unstim"            </span></span>
+<span><span class="co">#&gt;  [7] "Bcells_IkB_unstim"            "Bcells_MAPKAPK2_unstim"      </span></span>
+<span><span class="co">#&gt;  [9] "Bcells_NFkB_unstim"           "cMCs_MAPKAPK2_unstim"        </span></span>
+<span><span class="co">#&gt; [11] "CCR2poscMCs_IkB_unstim"       "MDSCs_CREB_unstim"           </span></span>
+<span><span class="co">#&gt; [13] "MDSCs_p38_unstim"             "MDSCs_S6_unstim"             </span></span>
+<span><span class="co">#&gt; [15] "DCs_STAT5_unstim"             "DCs_IkB_unstim"              </span></span>
+<span><span class="co">#&gt; [17] "DCs_MAPKAPK2_unstim"          "mDCs_STAT3_unstim"           </span></span>
+<span><span class="co">#&gt; [19] "mDCs_NFkB_unstim"             "pDCs_STAT5_unstim"           </span></span>
+<span><span class="co">#&gt; [21] "pDCs_STAT3_unstim"            "pDCs_NFkB_unstim"            </span></span>
+<span><span class="co">#&gt; [23] "pDCs_ERK_unstim"              "intMCs_CREB_unstim"          </span></span>
+<span><span class="co">#&gt; [25] "intMCs_S6_unstim"             "intMCs_IkB_unstim"           </span></span>
+<span><span class="co">#&gt; [27] "intMCs_MAPKAPK2_unstim"       "intMCs_NFkB_unstim"          </span></span>
+<span><span class="co">#&gt; [29] "intMCs_ERK_unstim"            "CCR2posintMCs_CREB_unstim"   </span></span>
+<span><span class="co">#&gt; [31] "NSE"                          "PIAS4"                       </span></span>
+<span><span class="co">#&gt; [33] "IRF1"                         "c.Jun"                       </span></span>
+<span><span class="co">#&gt; [35] "Mcl.1"                        "c.Myc"                       </span></span>
+<span><span class="co">#&gt; [37] "SMAD3"                        "PDGFRA"                      </span></span>
+<span><span class="co">#&gt; [39] "IL.12"                        "STAT1"                       </span></span>
+<span><span class="co">#&gt; [41] "Osteocalcin"                  "IL.5"                        </span></span>
+<span><span class="co">#&gt; [43] "GPDA"                         "YKL.40"                      </span></span>
+<span><span class="co">#&gt; [45] "Apo.L1"                       "FABPL"                       </span></span>
+<span><span class="co">#&gt; [47] "GDF.11"                       "BTC"                         </span></span>
+<span><span class="co">#&gt; [49] "HIF.1a"                       "S100A6"                      </span></span>
+<span><span class="co">#&gt; [51] "RSPO3"                        "PSP"                         </span></span>
+<span><span class="co">#&gt; [53] "VEGF.D"                       "CSH"                         </span></span>
+<span><span class="co">#&gt; [55] "EFNB1"                        "SNP25"                       </span></span>
+<span><span class="co">#&gt; [57] "BCL6"                         "FSTL1"                       </span></span>
+<span><span class="co">#&gt; [59] "Osteopontin"                  "CD177"                       </span></span>
+<span><span class="co">#&gt; [61] "CHKB"                         "SMOC1"                       </span></span>
+<span><span class="co">#&gt; [63] "protein.Z.inhibitor"          "FLRT2"                       </span></span>
+<span><span class="co">#&gt; [65] "ISLR2"                        "DSC2"                        </span></span>
+<span><span class="co">#&gt; [67] "LDLR"                         "HXK2"                        </span></span>
+<span><span class="co">#&gt; [69] "HXK1"                         "SEM5A"                       </span></span>
+<span><span class="co">#&gt; [71] "PIANP"                        "S100A4"                      </span></span>
+<span><span class="co">#&gt; [73] "RNF43"                        "ZNRF3"                       </span></span>
+<span><span class="co">#&gt; [75] "IFNA7"                        "AMGO2"                       </span></span>
+<span><span class="co">#&gt; [77] "C1QR1"                        "H2A3"                        </span></span>
+<span><span class="co">#&gt; [79] "H31"                          "IL.1F8"                      </span></span>
+<span><span class="co">#&gt; [81] "IL.1F6"                       "Ephrin.A3"                   </span></span>
+<span><span class="co">#&gt; [83] "X14.3.3.protein.beta.alpha"   "Myostatin"</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\nIn early fusion but not cooperative:\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; In early fusion but not cooperative:</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sets.html" class="external-link">setdiff</a></span><span class="op">(</span><span class="va">ef_features</span>, <span class="va">cf_features</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; character(0)</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "Granulocytes_IkB_unstim"</span></span></code></pre></div>
 <p>The output reports the number of features selected by each strategy,
 followed by the features unique to cooperative fusion and the features
 unique to early fusion. Early fusion sees all features simultaneously in

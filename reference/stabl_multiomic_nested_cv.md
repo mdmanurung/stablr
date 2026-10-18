@@ -268,7 +268,7 @@ nested <- suppressWarnings(stabl_multiomic_nested_cv(
   sample_fraction = 1, random_state = 3L
 ))
 nested$performance$balanced_error_rate
-#> [1] 0
+#> [1] 0.2222222
 
 # Study-disjoint folds: each block of four samples is treated as one
 # study; outer CV is leave-one-study-out.

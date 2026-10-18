@@ -369,8 +369,8 @@ multi_fit
 #>     cytof: 0
 #>     proteomics: 0
 #>   Validation data:  yes 
-#>   Early fusion:     yes (0 features selected) 
-#>   Late fusion:      yes (score = 0.1901)
+#>   Early fusion:     yes (12 features selected) 
+#>   Late fusion:      yes (score = 0.0974)
 ```
 
 The printed summary lists the active branches of the workflow together
@@ -428,7 +428,12 @@ if (!is.null(multi_fit$early_fusion)) {
   print(get_feature_names(multi_fit$early_fusion$fit))
 }
 #> Early fusion selected feature names:
-#> character(0)
+#>  [1] "Granulocytes_CREB_unstim" "Granulocytes_IkB_unstim" 
+#>  [3] "Bcells_CREB_unstim"       "Bcells_MAPKAPK2_unstim"  
+#>  [5] "pDCs_IkB_unstim"          "IL.5"                    
+#>  [7] "LPPL"                     "HEMK2"                   
+#>  [9] "NEGR1"                    "ApoM"                    
+#> [11] "H2B2E"                    "IL.1F6"
 ```
 
 Early fusion can disagree with the per-omic lists because the joint

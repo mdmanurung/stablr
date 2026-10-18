@@ -298,15 +298,9 @@ signal in the first feature and fit the multinomial model.</p>
 <span>  artificial_type <span class="op">=</span> <span class="st">"random_permutation"</span>,</span>
 <span>  random_state    <span class="op">=</span> <span class="fl">1L</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning in lognet(x, is.sparse, y, weights, offset, alpha, nobs, nvars, : one</span></span>
-<span><span class="co">#&gt; multinomial or binomial class has fewer than 8 observations; dangerous ground</span></span>
-<span><span class="co">#&gt; Warning in lognet(x, is.sparse, y, weights, offset, alpha, nobs, nvars, : one</span></span>
-<span><span class="co">#&gt; multinomial or binomial class has fewer than 8 observations; dangerous ground</span></span>
-<span><span class="co">#&gt; Warning in lognet(x, is.sparse, y, weights, offset, alpha, nobs, nvars, : one</span></span>
-<span><span class="co">#&gt; multinomial or binomial class has fewer than 8 observations; dangerous ground</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/get_feature_names.html">get_feature_names</a></span><span class="op">(</span><span class="va">fit_multi</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "m1"  "m2"  "m3"  "m5"  "m9"  "m10"</span></span></code></pre></div>
+<span><span class="co">#&gt; character(0)</span></span></code></pre></div>
 <p>The printed vector contains the features selected by the multinomial
 fit. Because the class signal is confined to feature <code>m1</code>,
 that feature is expected to appear among the selections.</p>
@@ -337,7 +331,7 @@ classification option (Section 7.3 of the introduction vignette).</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/get_feature_names.html">get_feature_names</a></span><span class="op">(</span><span class="va">fit_splsda</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "m1"  "m2"  "m3"  "m4"  "m5"  "m6"  "m12"</span></span></code></pre></div>
+<span><span class="co">#&gt;  [1] "m1"  "m2"  "m3"  "m5"  "m6"  "m7"  "m8"  "m9"  "m10" "m12"</span></span></code></pre></div>
 <p>The printed vector contains the features selected by the sPLS-DA fit.
 The outcome depends on feature <code>m1</code>, which is expected to
 rank at the top.</p>
@@ -382,7 +376,7 @@ Model-X knockoffs is evaluated.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/get_feature_names.html">get_feature_names</a></span><span class="op">(</span><span class="va">fit_ko</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "k1"  "k7"  "k18"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "k1"  "k17" "k19"</span></span></code></pre></div>
 <p>The printed vector contains the features selected by the knockoff
 fit. Feature <code>k1</code>, on which the outcome depends, is expected
 to appear among the selections.</p>
@@ -583,41 +577,41 @@ is specified as follows.</p>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">cv_fit</span><span class="op">$</span><span class="va">diagnostics</span><span class="op">)</span></span>
 <span><span class="co">#&gt;          fold   omic n_selected threshold max_score cooperative_rho</span></span>
-<span><span class="co">#&gt; Fold1.1 Fold1 omic_a          0         1         1               0</span></span>
-<span><span class="co">#&gt; Fold1.2 Fold1 omic_b          0         1         1               0</span></span>
-<span><span class="co">#&gt; Fold2.1 Fold2 omic_a          0         1         1               0</span></span>
-<span><span class="co">#&gt; Fold2.2 Fold2 omic_b          0         1         1               0</span></span>
-<span><span class="co">#&gt; Fold3.1 Fold3 omic_a          0         1         1               0</span></span>
-<span><span class="co">#&gt; Fold3.2 Fold3 omic_b          0         1         1               0</span></span>
+<span><span class="co">#&gt; Fold1.1 Fold1 omic_a          0      1.00         1               0</span></span>
+<span><span class="co">#&gt; Fold1.2 Fold1 omic_b          8      0.94         1               0</span></span>
+<span><span class="co">#&gt; Fold2.1 Fold2 omic_a          0      1.00         1               0</span></span>
+<span><span class="co">#&gt; Fold2.2 Fold2 omic_b          0      1.00         1               0</span></span>
+<span><span class="co">#&gt; Fold3.1 Fold3 omic_a          0      1.00         1               0</span></span>
+<span><span class="co">#&gt; Fold3.2 Fold3 omic_b          0      1.00         1               0</span></span>
 <span><span class="co">#&gt;         cooperative_lambda cooperative_selection cooperative_selector</span></span>
-<span><span class="co">#&gt; Fold1.1         0.05605113                    cv           lambda.min</span></span>
-<span><span class="co">#&gt; Fold1.2         0.05605113                    cv           lambda.min</span></span>
-<span><span class="co">#&gt; Fold2.1         0.06561409                    cv           lambda.min</span></span>
-<span><span class="co">#&gt; Fold2.2         0.06561409                    cv           lambda.min</span></span>
-<span><span class="co">#&gt; Fold3.1         0.04899060                    cv           lambda.min</span></span>
-<span><span class="co">#&gt; Fold3.2         0.04899060                    cv           lambda.min</span></span>
+<span><span class="co">#&gt; Fold1.1         0.09022668                    cv           lambda.min</span></span>
+<span><span class="co">#&gt; Fold1.2         0.09022668                    cv           lambda.min</span></span>
+<span><span class="co">#&gt; Fold2.1         0.07014816                    cv           lambda.min</span></span>
+<span><span class="co">#&gt; Fold2.2         0.07014816                    cv           lambda.min</span></span>
+<span><span class="co">#&gt; Fold3.1         0.03556890                    cv           lambda.min</span></span>
+<span><span class="co">#&gt; Fold3.2         0.03556890                    cv           lambda.min</span></span>
 <span><span class="co">#&gt;         cooperative_type_measure cooperative_score cooperative_prediction_type</span></span>
-<span><span class="co">#&gt; Fold1.1                      mse        0.11181096                        link</span></span>
-<span><span class="co">#&gt; Fold1.2                      mse        0.11181096                        link</span></span>
-<span><span class="co">#&gt; Fold2.1                      mse        0.09418983                        link</span></span>
-<span><span class="co">#&gt; Fold2.2                      mse        0.09418983                        link</span></span>
-<span><span class="co">#&gt; Fold3.1                      mse        0.09615360                        link</span></span>
-<span><span class="co">#&gt; Fold3.2                      mse        0.09615360                        link</span></span>
+<span><span class="co">#&gt; Fold1.1                      mse         0.1544728                        link</span></span>
+<span><span class="co">#&gt; Fold1.2                      mse         0.1544728                        link</span></span>
+<span><span class="co">#&gt; Fold2.1                      mse         0.1550795                        link</span></span>
+<span><span class="co">#&gt; Fold2.2                      mse         0.1550795                        link</span></span>
+<span><span class="co">#&gt; Fold3.1                      mse         0.1116380                        link</span></span>
+<span><span class="co">#&gt; Fold3.2                      mse         0.1116380                        link</span></span>
 <span><span class="co">#&gt;         cooperative_n_selected</span></span>
-<span><span class="co">#&gt; Fold1.1                      4</span></span>
-<span><span class="co">#&gt; Fold1.2                      4</span></span>
-<span><span class="co">#&gt; Fold2.1                      2</span></span>
-<span><span class="co">#&gt; Fold2.2                      2</span></span>
-<span><span class="co">#&gt; Fold3.1                      2</span></span>
+<span><span class="co">#&gt; Fold1.1                      1</span></span>
+<span><span class="co">#&gt; Fold1.2                      1</span></span>
+<span><span class="co">#&gt; Fold2.1                      3</span></span>
+<span><span class="co">#&gt; Fold2.2                      3</span></span>
+<span><span class="co">#&gt; Fold3.1                      5</span></span>
 <span><span class="co">#&gt; Fold3.2                      5</span></span>
 <span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NULL.html" class="external-link">is.null</a></span><span class="op">(</span><span class="va">cv_fit</span><span class="op">$</span><span class="va">fold_results</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="va">cooperative_fusion</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="../reference/get_cooperative_features.html">get_cooperative_features</a></span><span class="op">(</span><span class="va">cv_fit</span><span class="op">$</span><span class="va">fold_results</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span><span class="co">#&gt; $omic_a</span></span>
-<span><span class="co">#&gt; [1] "a1" "a4" "a7" "a8"</span></span>
+<span><span class="co">#&gt; [1] "a1"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $omic_b</span></span>
-<span><span class="co">#&gt; [1] "b1" "b2" "b7" "b8"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "b2"</span></span></code></pre></div>
 <p>The head of the diagnostics data frame summarises each omic and fold.
 When the first fold contains a cooperative branch,
 <code><a href="../reference/get_cooperative_features.html">get_cooperative_features()</a></code> prints the features selected by
@@ -654,8 +648,8 @@ follows.</p>
 <span></span>
 <span><span class="va">cf</span> <span class="op">&lt;-</span> <span class="va">coop_fit</span><span class="op">$</span><span class="va">cooperative_fusion</span></span>
 <span><span class="fu"><a href="../reference/get_cooperative_diagnostics.html">get_cooperative_diagnostics</a></span><span class="op">(</span><span class="va">coop_fit</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   rho   lambda metric_value selected</span></span>
-<span><span class="co">#&gt; 1 0.3 1.837652     822.1126     TRUE</span></span>
+<span><span class="co">#&gt;   rho  lambda metric_value selected</span></span>
+<span><span class="co">#&gt; 1 0.3 0.17138      692.286     TRUE</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">cf</span><span class="op">$</span><span class="va">fit</span><span class="op">)</span></span></code></pre></div>
 <p><img src="stablr-advanced_files/figure-html/cooperative-plot-1.png" class="r-plt" alt="Cooperative coefficient paths by view" width="576"></p>
 <p>The printed diagnostics summarise the cooperative fit, and the plot

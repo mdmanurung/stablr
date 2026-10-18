@@ -483,8 +483,8 @@ enabled.</p>
 <span><span class="co">#&gt;     cytof: 0</span></span>
 <span><span class="co">#&gt;     proteomics: 0</span></span>
 <span><span class="co">#&gt;   Validation data:  yes </span></span>
-<span><span class="co">#&gt;   Early fusion:     yes (0 features selected) </span></span>
-<span><span class="co">#&gt;   Late fusion:      yes (score = 0.1901)</span></span></code></pre></div>
+<span><span class="co">#&gt;   Early fusion:     yes (12 features selected) </span></span>
+<span><span class="co">#&gt;   Late fusion:      yes (score = 0.0974)</span></span></code></pre></div>
 <p>The printed summary lists the active branches of the workflow
 together with their selected-feature counts and the late-fusion
 score.</p>
@@ -547,7 +547,12 @@ branch is active.</p>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_feature_names.html">get_feature_names</a></span><span class="op">(</span><span class="va">multi_fit</span><span class="op">$</span><span class="va">early_fusion</span><span class="op">$</span><span class="va">fit</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span><span class="co">#&gt; Early fusion selected feature names:</span></span>
-<span><span class="co">#&gt; character(0)</span></span></code></pre></div>
+<span><span class="co">#&gt;  [1] "Granulocytes_CREB_unstim" "Granulocytes_IkB_unstim" </span></span>
+<span><span class="co">#&gt;  [3] "Bcells_CREB_unstim"       "Bcells_MAPKAPK2_unstim"  </span></span>
+<span><span class="co">#&gt;  [5] "pDCs_IkB_unstim"          "IL.5"                    </span></span>
+<span><span class="co">#&gt;  [7] "LPPL"                     "HEMK2"                   </span></span>
+<span><span class="co">#&gt;  [9] "NEGR1"                    "ApoM"                    </span></span>
+<span><span class="co">#&gt; [11] "H2B2E"                    "IL.1F6"</span></span></code></pre></div>
 <p>Early fusion can disagree with the per-omic lists because the joint
 model sees all features at once. A feature that is useful alone may
 become redundant when another omic carries the same information. This is

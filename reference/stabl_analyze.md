@@ -206,8 +206,8 @@ validated <- suppressWarnings(stabl_analyze(
   random_state = 2L, n_repeats = 3L
 ))
 validated$performance$pooled
-#>    n n_events accuracy balanced_error_rate  macro_f1       mcc     brier
-#> 1 80       40      0.7                 0.3 0.6992481 0.4020151 0.1853578
-#>   log_loss    auroc
-#> 1 0.549004 0.811875
+#>    n n_events accuracy balanced_error_rate macro_f1 mcc     brier  log_loss
+#> 1 80       40      0.7                 0.3      0.7 0.4 0.1854775 0.5462153
+#>     auroc
+#> 1 0.81375
 ```

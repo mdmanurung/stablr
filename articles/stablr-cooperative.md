@@ -191,11 +191,11 @@ cf_fit
 #>   Late fusion:      no 
 #>   Cooperative fusion:
 #>     selection:     cv
-#>     rho (chosen):  0
+#>     rho (chosen):  0.5
 #>     selector:      lambda.min
 #>     type.measure:  mse
-#>     score:         812.1337
-#>     selected feats: 26 (across views)
+#>     score:         669.5853
+#>     selected feats: 90 (across views)
 ```
 
 The block reports the following fields.
@@ -225,13 +225,13 @@ cf <- cf_fit$cooperative_fusion
 
 # Chosen hyperparameters
 cat("Chosen rho:     ", cf$rho, "\n")
-#> Chosen rho:      0
+#> Chosen rho:      0.5
 cat("Chosen lambda:  ", round(cf$selected_lambda, 4), "\n")
-#> Chosen lambda:   2.4293
+#> Chosen lambda:   0.1795
 cat("Selector:       ", cf$selector, "\n")
 #> Selector:        lambda.min
 cat("CV score (MSE): ", round(cf$score, 4), "\n")
-#> CV score (MSE):  812.1337
+#> CV score (MSE):  669.5853
 ```
 
 The output reports the chosen `rho`, the chosen lambda, the selector
@@ -248,21 +248,57 @@ The selected features are printed for both views.
 cat("CyTOF features selected by cooperative fusion:\n")
 #> CyTOF features selected by cooperative fusion:
 print(cf$selected_features$cytof)
-#> [1] "Granulocytes_S6_unstim" "Bcells_S6_unstim"       "MDSCs_CREB_unstim"     
-#> [4] "DCs_CREB_unstim"        "pDCs_STAT3_unstim"      "pDCs_ERK_unstim"       
-#> [7] "intMCs_CREB_unstim"
+#>  [1] "Granulocytes_CREB_unstim"     "Granulocytes_STAT5_unstim"   
+#>  [3] "Granulocytes_p38_unstim"      "Granulocytes_STAT3_unstim"   
+#>  [5] "Granulocytes_S6_unstim"       "Granulocytes_MAPKAPK2_unstim"
+#>  [7] "Bcells_S6_unstim"             "Bcells_IkB_unstim"           
+#>  [9] "Bcells_MAPKAPK2_unstim"       "Bcells_NFkB_unstim"          
+#> [11] "cMCs_MAPKAPK2_unstim"         "CCR2poscMCs_IkB_unstim"      
+#> [13] "MDSCs_CREB_unstim"            "MDSCs_p38_unstim"            
+#> [15] "MDSCs_S6_unstim"              "DCs_STAT5_unstim"            
+#> [17] "DCs_IkB_unstim"               "DCs_MAPKAPK2_unstim"         
+#> [19] "mDCs_STAT3_unstim"            "mDCs_NFkB_unstim"            
+#> [21] "pDCs_STAT5_unstim"            "pDCs_STAT3_unstim"           
+#> [23] "pDCs_NFkB_unstim"             "pDCs_ERK_unstim"             
+#> [25] "intMCs_CREB_unstim"           "intMCs_S6_unstim"            
+#> [27] "intMCs_IkB_unstim"            "intMCs_MAPKAPK2_unstim"      
+#> [29] "intMCs_NFkB_unstim"           "intMCs_ERK_unstim"           
+#> [31] "CCR2posintMCs_CREB_unstim"
 
 cat("\nProteomics features selected by cooperative fusion:\n")
 #> 
 #> Proteomics features selected by cooperative fusion:
 print(cf$selected_features$proteomics)
-#>  [1] "Mcl.1"               "HEMK2"               "CD59"               
-#>  [4] "S100A6"              "SECTM1"              "CSH"                
-#>  [7] "NEGR1"               "FSTL1"               "Osteopontin"        
-#> [10] "SMOC1"               "protein.Z.inhibitor" "ISLR2"              
-#> [13] "HXK2"                "SEM5A"               "ApoM"               
-#> [16] "AMGO2"               "C1QR1"               "H2B2E"              
-#> [19] "Myostatin"
+#>  [1] "NSE"                        "PIAS4"                     
+#>  [3] "IRF1"                       "c.Jun"                     
+#>  [5] "Mcl.1"                      "c.Myc"                     
+#>  [7] "SMAD3"                      "PDGFRA"                    
+#>  [9] "IL.12"                      "STAT1"                     
+#> [11] "Osteocalcin"                "IL.5"                      
+#> [13] "GPDA"                       "HEMK2"                     
+#> [15] "YKL.40"                     "Apo.L1"                    
+#> [17] "CD59"                       "FABPL"                     
+#> [19] "GDF.11"                     "BTC"                       
+#> [21] "HIF.1a"                     "S100A6"                    
+#> [23] "RSPO3"                      "PSP"                       
+#> [25] "VEGF.D"                     "CSH"                       
+#> [27] "EFNB1"                      "SNP25"                     
+#> [29] "NEGR1"                      "BCL6"                      
+#> [31] "FSTL1"                      "Osteopontin"               
+#> [33] "CD177"                      "CHKB"                      
+#> [35] "SMOC1"                      "protein.Z.inhibitor"       
+#> [37] "FLRT2"                      "ISLR2"                     
+#> [39] "DSC2"                       "LDLR"                      
+#> [41] "HXK2"                       "HXK1"                      
+#> [43] "SEM5A"                      "PIANP"                     
+#> [45] "S100A4"                     "RNF43"                     
+#> [47] "ZNRF3"                      "ApoM"                      
+#> [49] "IFNA7"                      "AMGO2"                     
+#> [51] "C1QR1"                      "H2B2E"                     
+#> [53] "H2A3"                       "H31"                       
+#> [55] "IL.1F8"                     "IL.1F6"                    
+#> [57] "Ephrin.A3"                  "X14.3.3.protein.beta.alpha"
+#> [59] "Myostatin"
 ```
 
 The two lists give the CyTOF and proteomics features selected by the
@@ -282,14 +318,14 @@ cat("First 6 training predictions:\n")
 #> First 6 training predictions:
 print(head(cf$train_predictions))
 #>  001_26_A  001_33_B  001_35_C  003_25_A  003_30_B  003_32_C 
-#> -70.90491 -11.58418 -10.49450 -52.14157 -27.99975 -23.70652
+#> -87.57170 -36.82602 -30.89577 -53.20318 -29.72827 -27.61738
 
 cat("\nFirst 6 validation predictions:\n")
 #> 
 #> First 6 validation predictions:
 print(head(cf$valid_predictions))
-#>  004_31_A  004_34_B  015_30_A  015_34_B  015_36_C  047_26_A 
-#> -56.56061 -46.02405 -44.23919 -11.32462 -33.57264 -48.94823
+#>   004_31_A   004_34_B   015_30_A   015_34_B   015_36_C   047_26_A 
+#>  30.525422  32.567613 -23.970698 658.466946  -3.683433  -5.073059
 ```
 
 The two vectors hold the predicted DOS values for the training samples
@@ -306,10 +342,10 @@ One row per `rho` value is printed.
 
 # One row per rho value
 print(cf$diagnostics[, c("rho", "lambda", "metric_value", "selected")])
-#>    rho   lambda metric_value selected
-#> 1 0.00 2.429267     812.1337     TRUE
-#> 2 0.25 1.754128     816.5125    FALSE
-#> 3 0.50 2.016820     842.6442    FALSE
+#>    rho    lambda metric_value selected
+#> 1 0.00 3.8680805     784.1156    FALSE
+#> 2 0.25 0.1713800     700.7326    FALSE
+#> 3 0.50 0.1795404     669.5853     TRUE
 ```
 
 The `selected` column marks the winning `rho`. If the surface is flat,
@@ -463,15 +499,15 @@ all_fit
 #>     cytof: 0
 #>     proteomics: 2
 #>   Validation data:  yes 
-#>   Early fusion:     yes (2 features selected) 
-#>   Late fusion:      yes (score = 0.1867) 
+#>   Early fusion:     yes (7 features selected) 
+#>   Late fusion:      yes (score = 0.2565) 
 #>   Cooperative fusion:
 #>     selection:     cv
-#>     rho (chosen):  0
+#>     rho (chosen):  0.5
 #>     selector:      lambda.min
 #>     type.measure:  mse
-#>     score:         812.1337
-#>     selected feats: 26 (across views)
+#>     score:         669.5853
+#>     selected feats: 90 (across views)
 ```
 
 The output contains the per-omic fits, the early-fusion branch, the
@@ -488,9 +524,9 @@ per_omic_features <- unique(unlist(all_fit$selected_features,
                                    use.names = FALSE))
 
 cat("Early fusion selected:      ", length(ef_features), "features\n")
-#> Early fusion selected:       2 features
+#> Early fusion selected:       7 features
 cat("Cooperative fusion selected:", length(cf_features), "features\n")
-#> Cooperative fusion selected: 26 features
+#> Cooperative fusion selected: 90 features
 cat("Per-omic union selected:    ", length(per_omic_features), "features\n")
 #> Per-omic union selected:     2 features
 
@@ -498,20 +534,54 @@ cat("\nIn cooperative but not early fusion:\n")
 #> 
 #> In cooperative but not early fusion:
 print(setdiff(cf_features, ef_features))
-#>  [1] "Granulocytes_S6_unstim" "Bcells_S6_unstim"       "MDSCs_CREB_unstim"     
-#>  [4] "DCs_CREB_unstim"        "pDCs_STAT3_unstim"      "pDCs_ERK_unstim"       
-#>  [7] "intMCs_CREB_unstim"     "Mcl.1"                  "CD59"                  
-#> [10] "S100A6"                 "SECTM1"                 "CSH"                   
-#> [13] "NEGR1"                  "FSTL1"                  "Osteopontin"           
-#> [16] "SMOC1"                  "protein.Z.inhibitor"    "ISLR2"                 
-#> [19] "HXK2"                   "SEM5A"                  "ApoM"                  
-#> [22] "AMGO2"                  "C1QR1"                  "Myostatin"
+#>  [1] "Granulocytes_CREB_unstim"     "Granulocytes_STAT5_unstim"   
+#>  [3] "Granulocytes_p38_unstim"      "Granulocytes_STAT3_unstim"   
+#>  [5] "Granulocytes_MAPKAPK2_unstim" "Bcells_S6_unstim"            
+#>  [7] "Bcells_IkB_unstim"            "Bcells_MAPKAPK2_unstim"      
+#>  [9] "Bcells_NFkB_unstim"           "cMCs_MAPKAPK2_unstim"        
+#> [11] "CCR2poscMCs_IkB_unstim"       "MDSCs_CREB_unstim"           
+#> [13] "MDSCs_p38_unstim"             "MDSCs_S6_unstim"             
+#> [15] "DCs_STAT5_unstim"             "DCs_IkB_unstim"              
+#> [17] "DCs_MAPKAPK2_unstim"          "mDCs_STAT3_unstim"           
+#> [19] "mDCs_NFkB_unstim"             "pDCs_STAT5_unstim"           
+#> [21] "pDCs_STAT3_unstim"            "pDCs_NFkB_unstim"            
+#> [23] "pDCs_ERK_unstim"              "intMCs_CREB_unstim"          
+#> [25] "intMCs_S6_unstim"             "intMCs_IkB_unstim"           
+#> [27] "intMCs_MAPKAPK2_unstim"       "intMCs_NFkB_unstim"          
+#> [29] "intMCs_ERK_unstim"            "CCR2posintMCs_CREB_unstim"   
+#> [31] "NSE"                          "PIAS4"                       
+#> [33] "IRF1"                         "c.Jun"                       
+#> [35] "Mcl.1"                        "c.Myc"                       
+#> [37] "SMAD3"                        "PDGFRA"                      
+#> [39] "IL.12"                        "STAT1"                       
+#> [41] "Osteocalcin"                  "IL.5"                        
+#> [43] "GPDA"                         "YKL.40"                      
+#> [45] "Apo.L1"                       "FABPL"                       
+#> [47] "GDF.11"                       "BTC"                         
+#> [49] "HIF.1a"                       "S100A6"                      
+#> [51] "RSPO3"                        "PSP"                         
+#> [53] "VEGF.D"                       "CSH"                         
+#> [55] "EFNB1"                        "SNP25"                       
+#> [57] "BCL6"                         "FSTL1"                       
+#> [59] "Osteopontin"                  "CD177"                       
+#> [61] "CHKB"                         "SMOC1"                       
+#> [63] "protein.Z.inhibitor"          "FLRT2"                       
+#> [65] "ISLR2"                        "DSC2"                        
+#> [67] "LDLR"                         "HXK2"                        
+#> [69] "HXK1"                         "SEM5A"                       
+#> [71] "PIANP"                        "S100A4"                      
+#> [73] "RNF43"                        "ZNRF3"                       
+#> [75] "IFNA7"                        "AMGO2"                       
+#> [77] "C1QR1"                        "H2A3"                        
+#> [79] "H31"                          "IL.1F8"                      
+#> [81] "IL.1F6"                       "Ephrin.A3"                   
+#> [83] "X14.3.3.protein.beta.alpha"   "Myostatin"
 
 cat("\nIn early fusion but not cooperative:\n")
 #> 
 #> In early fusion but not cooperative:
 print(setdiff(ef_features, cf_features))
-#> character(0)
+#> [1] "Granulocytes_IkB_unstim"
 ```
 
 The output reports the number of features selected by each strategy,

@@ -133,7 +133,6 @@ cmp <- stabl_multiomic_scheme_comparison(
 #> Warning: one multinomial or binomial class has fewer than 8  observations; dangerous ground
 #> Warning: one multinomial or binomial class has fewer than 8  observations; dangerous ground
 #> Warning: one multinomial or binomial class has fewer than 8  observations; dangerous ground
-#> Warning: one multinomial or binomial class has fewer than 8  observations; dangerous ground
 #> Warning: Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
 #> Warning: one multinomial or binomial class has fewer than 8  observations; dangerous ground
 #> Warning: one multinomial or binomial class has fewer than 8  observations; dangerous ground
@@ -189,7 +188,6 @@ cmp <- stabl_multiomic_scheme_comparison(
 #> Warning: one multinomial or binomial class has fewer than 8  observations; dangerous ground
 #> Warning: one multinomial or binomial class has fewer than 8  observations; dangerous ground
 #> Warning: Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
-#> Warning: one multinomial or binomial class has fewer than 8  observations; dangerous ground
 #> Warning: one multinomial or binomial class has fewer than 8  observations; dangerous ground
 #> Warning: one multinomial or binomial class has fewer than 8  observations; dangerous ground
 #> Warning: one multinomial or binomial class has fewer than 8  observations; dangerous ground
@@ -204,7 +202,7 @@ cmp <- stabl_multiomic_scheme_comparison(
 cmp$comparison
 #>           scheme balanced_error_rate  accuracy  macro_f1
 #> 1     sample_iid           0.1486014 0.8541667 0.8525669
-#> 2 study_disjoint           0.2360140 0.7708333 0.7658537
+#> 2 study_disjoint           0.2167832 0.7916667 0.7857143
 cmp$ber_gap
-#> [1] 0.08741259
+#> [1] 0.06818182
 ```

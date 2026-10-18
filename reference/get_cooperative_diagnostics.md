@@ -56,6 +56,6 @@ fit <- stabl_multiomic_train_validate(
 )
 get_cooperative_diagnostics(fit)   # data.frame of tuning results
 #>   rho    lambda metric_value selected
-#> 1   0 0.3397982     1.092782     TRUE
+#> 1   0 0.3397982     1.094124     TRUE
 # }
 ```

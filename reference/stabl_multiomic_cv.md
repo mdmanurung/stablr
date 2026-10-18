@@ -251,7 +251,7 @@ cv <- stabl_multiomic_cv(
 cv$diagnostics
 #>          fold    omic n_selected threshold max_score
 #> Fold1.1 Fold1     rna          1       0.5         1
-#> Fold1.2 Fold1 protein          1       0.5         1
+#> Fold1.2 Fold1 protein          2       0.5         1
 #> Fold2.1 Fold2     rna          1       0.5         1
 #> Fold2.2 Fold2 protein          1       0.5         1
 ```

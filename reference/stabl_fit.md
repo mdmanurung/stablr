@@ -404,5 +404,5 @@ fit_multi <- suppressWarnings(stabl_fit(
   random_state = 4L
 ))
 get_feature_names(fit_multi)
-#>  [1] "f1"  "f2"  "f3"  "f4"  "f5"  "f6"  "f7"  "f8"  "f9"  "f10"
+#> [1] "f1" "f2" "f3" "f4" "f5" "f6" "f8" "f9"
 ```

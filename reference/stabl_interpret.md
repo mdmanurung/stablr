@@ -135,9 +135,9 @@ summary(insight)
 #> 2          -0.2587687         negative mean_difference                 2
 #> 3           0.1986708         positive mean_difference                 3
 #>   permutation_importance importance_sd importance_n_repeats
-#> 1              0.6607421    0.21953776                    3
-#> 2              0.1551685    0.10762615                    3
-#> 3              0.1204917    0.03422392                    3
+#> 1             0.64144613    0.09960395                    3
+#> 2             0.09023568    0.02097216                    3
+#> 3             0.03652539    0.04748862                    3
 #>                evidence_type evaluation_scope n_observations         model_id
 #> 1 post_selection_descriptive     fitting_data             60 downstream_refit
 #> 2 post_selection_descriptive     fitting_data             60 downstream_refit

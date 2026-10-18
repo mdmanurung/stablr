@@ -180,15 +180,9 @@ fit_multi <- stabl_fit(
   artificial_type = "random_permutation",
   random_state    = 1L
 )
-#> Warning in lognet(x, is.sparse, y, weights, offset, alpha, nobs, nvars, : one
-#> multinomial or binomial class has fewer than 8 observations; dangerous ground
-#> Warning in lognet(x, is.sparse, y, weights, offset, alpha, nobs, nvars, : one
-#> multinomial or binomial class has fewer than 8 observations; dangerous ground
-#> Warning in lognet(x, is.sparse, y, weights, offset, alpha, nobs, nvars, : one
-#> multinomial or binomial class has fewer than 8 observations; dangerous ground
 
 get_feature_names(fit_multi)
-#> [1] "m1"  "m2"  "m3"  "m5"  "m9"  "m10"
+#> character(0)
 ```
 
 The printed vector contains the features selected by the multinomial
@@ -223,7 +217,7 @@ fit_splsda <- stabl_fit(
 )
 
 get_feature_names(fit_splsda)
-#> [1] "m1"  "m2"  "m3"  "m4"  "m5"  "m6"  "m12"
+#>  [1] "m1"  "m2"  "m3"  "m5"  "m6"  "m7"  "m8"  "m9"  "m10" "m12"
 ```
 
 The printed vector contains the features selected by the sPLS-DA fit.
@@ -270,7 +264,7 @@ fit_ko <- stabl_fit(
 )
 
 get_feature_names(fit_ko)
-#> [1] "k1"  "k7"  "k18"
+#> [1] "k1"  "k17" "k19"
 ```
 
 The printed vector contains the features selected by the knockoff fit.
@@ -495,41 +489,41 @@ cv_fit <- stabl_multiomic_cv(
 
 head(cv_fit$diagnostics)
 #>          fold   omic n_selected threshold max_score cooperative_rho
-#> Fold1.1 Fold1 omic_a          0         1         1               0
-#> Fold1.2 Fold1 omic_b          0         1         1               0
-#> Fold2.1 Fold2 omic_a          0         1         1               0
-#> Fold2.2 Fold2 omic_b          0         1         1               0
-#> Fold3.1 Fold3 omic_a          0         1         1               0
-#> Fold3.2 Fold3 omic_b          0         1         1               0
+#> Fold1.1 Fold1 omic_a          0      1.00         1               0
+#> Fold1.2 Fold1 omic_b          8      0.94         1               0
+#> Fold2.1 Fold2 omic_a          0      1.00         1               0
+#> Fold2.2 Fold2 omic_b          0      1.00         1               0
+#> Fold3.1 Fold3 omic_a          0      1.00         1               0
+#> Fold3.2 Fold3 omic_b          0      1.00         1               0
 #>         cooperative_lambda cooperative_selection cooperative_selector
-#> Fold1.1         0.05605113                    cv           lambda.min
-#> Fold1.2         0.05605113                    cv           lambda.min
-#> Fold2.1         0.06561409                    cv           lambda.min
-#> Fold2.2         0.06561409                    cv           lambda.min
-#> Fold3.1         0.04899060                    cv           lambda.min
-#> Fold3.2         0.04899060                    cv           lambda.min
+#> Fold1.1         0.09022668                    cv           lambda.min
+#> Fold1.2         0.09022668                    cv           lambda.min
+#> Fold2.1         0.07014816                    cv           lambda.min
+#> Fold2.2         0.07014816                    cv           lambda.min
+#> Fold3.1         0.03556890                    cv           lambda.min
+#> Fold3.2         0.03556890                    cv           lambda.min
 #>         cooperative_type_measure cooperative_score cooperative_prediction_type
-#> Fold1.1                      mse        0.11181096                        link
-#> Fold1.2                      mse        0.11181096                        link
-#> Fold2.1                      mse        0.09418983                        link
-#> Fold2.2                      mse        0.09418983                        link
-#> Fold3.1                      mse        0.09615360                        link
-#> Fold3.2                      mse        0.09615360                        link
+#> Fold1.1                      mse         0.1544728                        link
+#> Fold1.2                      mse         0.1544728                        link
+#> Fold2.1                      mse         0.1550795                        link
+#> Fold2.2                      mse         0.1550795                        link
+#> Fold3.1                      mse         0.1116380                        link
+#> Fold3.2                      mse         0.1116380                        link
 #>         cooperative_n_selected
-#> Fold1.1                      4
-#> Fold1.2                      4
-#> Fold2.1                      2
-#> Fold2.2                      2
-#> Fold3.1                      2
+#> Fold1.1                      1
+#> Fold1.2                      1
+#> Fold2.1                      3
+#> Fold2.2                      3
+#> Fold3.1                      5
 #> Fold3.2                      5
 if (!is.null(cv_fit$fold_results[[1]]$cooperative_fusion)) {
   get_cooperative_features(cv_fit$fold_results[[1]])
 }
 #> $omic_a
-#> [1] "a1" "a4" "a7" "a8"
+#> [1] "a1"
 #> 
 #> $omic_b
-#> [1] "b1" "b2" "b7" "b8"
+#> [1] "b2"
 ```
 
 The head of the diagnostics data frame summarises each omic and fold.
@@ -569,8 +563,8 @@ coop_fit <- stabl_multiomic_train_validate(
 
 cf <- coop_fit$cooperative_fusion
 get_cooperative_diagnostics(coop_fit)
-#>   rho   lambda metric_value selected
-#> 1 0.3 1.837652     822.1126     TRUE
+#>   rho  lambda metric_value selected
+#> 1 0.3 0.17138      692.286     TRUE
 plot(cf$fit)
 ```
 
