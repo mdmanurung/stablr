@@ -1455,6 +1455,15 @@ test_that("C1: cooperative CV diagnostics have no NA metric_value (lambda match 
 # Characterization tests for Finding 1 (Phase G): per-omic + early + late
 # fusion block extractions.  Pin numeric outputs at tolerance = 1e-13 so that any
 # structural refactoring can be verified to be bit-identical.
+#
+# Golden values updated (2026-10-18, Phase 13 PR-2): F-CV-03/P4-F28 remediation
+# replaced the single reused `random_state` with one derived stream per
+# consumer (per-omic fits, early/late fusion, cooperative foldid, downstream
+# cv.glmnet predictors).  The pre-PR-2 values pinned the seed-reuse behavior
+# the audit flagged; per-omic selections are unchanged, early-fusion and
+# late-fusion outputs shifted accordingly.  Python-parity fixtures (core
+# stabl selection, FDP, stacking-given-weights, metrics) are unaffected and
+# still pass byte-identically.
 # ---------------------------------------------------------------------------
 
 test_that("[char-F1] per-omic / early-fusion / late-fusion blocks produce bit-identical output", {
@@ -1500,36 +1509,36 @@ test_that("[char-F1] per-omic / early-fusion / late-fusion blocks produce bit-id
   # ---- early-fusion block ----
   ef <- fit$early_fusion
   expect_identical(ef$selected_features,
-                   c("a1", "a3", "a4", "a5", "a7", "a8",
-                     "b1", "b2", "b3", "b4", "b5", "b6"))
+                   c("a1", "a2", "a4", "a5", "a7", "a8",
+                     "b2", "b3", "b4", "b5", "b6"))
   expect_equal(unname(ef$selected_train[1L, ]),
-               c(-0.326036490515386, 1.1531581669848, -0.466631586162683,
+               c(-0.326036490515386, 0.167983772348879, -0.466631586162683,
                   0.670126170494308, 0.345545075357528, 0.819599207165928,
-                 -1.28591371800217, -1.0088281735442, -0.43242997230287,
-                 -0.673666787834073, 0.360227511693603, -2.02747974676345),
+                 -1.0088281735442, -0.43242997230287, -0.673666787834073,
+                 0.360227511693603, -2.02747974676345),
                tolerance = 1e-13)
   expect_equal(unname(ef$selected_valid[1L, ]),
-               c( 0.744435822875318, -0.444904550728676, -0.143887168528834,
+               c( 0.744435822875318, -0.259802107839475, -0.143887168528834,
                  -0.00142812822527075, 0.60701223616656, 0.217290096347952,
-                 -1.70387658397506, -0.500043688364124, 2.58674304062644,
-                 -0.950902079388975, 0.325928044349314, -0.996201639682667),
+                 -0.500043688364124, 2.58674304062644, -0.950902079388975,
+                 0.325928044349314, -0.996201639682667),
                tolerance = 1e-13)
 
   # ---- late-fusion block ----
   lf <- fit$late_fusion
   expect_identical(lf$in_sample_predictions, lf$train_predictions)
   expect_identical(lf$in_sample_score, lf$score)
-  expect_equal(lf$score, 0.642593372115547, tolerance = 1e-13)
+  expect_equal(lf$score, 0.642593194419847, tolerance = 1e-13)
   expect_equal(lf$weights$Associated_weight,
-               c(4.18270750204101, 2.38248517736793), tolerance = 1e-13)
+               c(7.38914105808362, 4.19617501320317), tolerance = 1e-13)
   expect_equal(
     unname(lf$train_predictions[1:3, "Stacked Gen. Predictions"]),
-    c(0.0666673507804652, 0.690096500554767, -0.232613888263408),
+    c(0.0663985649099832, 0.690244526724752, -0.232741720987099),
     tolerance = 1e-13
   )
   expect_equal(
     unname(lf$valid_predictions[1:3]),
-    c(0.339788042331311, -0.824449233941029, -0.149303145569765),
+    c(0.340086228064973, -0.824605692333607, -0.149566805553516),
     tolerance = 1e-13
   )
 })
@@ -1571,20 +1580,20 @@ test_that("[char-F2-cv] cooperative CV selection branch produces bit-identical o
   cf <- fit$cooperative_fusion
   # rho / lambda / score
   expect_equal(cf$rho,             0,                   tolerance = 1e-13)
-  expect_equal(cf$selected_lambda, 0.0343666218065991,  tolerance = 1e-13)
-  expect_equal(cf$score,           0.151842321504698,   tolerance = 1e-13)
+  expect_equal(cf$selected_lambda, 0.00851287463124359, tolerance = 1e-13)
+  expect_equal(cf$score,           0.159026540755362,   tolerance = 1e-13)
   # feature selection
-  expect_identical(cf$selected_features$omic_a, c("a1", "a2", "a3", "a5"))
-  expect_identical(cf$selected_features$omic_b, c("b1", "b2", "b3", "b4"))
+  expect_identical(cf$selected_features$omic_a, c("a1", "a2", "a3", "a4", "a5"))
+  expect_identical(cf$selected_features$omic_b, c("b1", "b2", "b3", "b4", "b5"))
   # predictions
   expect_equal(unname(cf$train_predictions[1:3]),
-               c(-0.24440757143934, -1.30677612322089, 0.456243189909488),
+               c(-0.236083992348118, -1.46537219041994, 0.378141329592335),
                tolerance = 1e-13)
   expect_equal(unname(cf$valid_predictions[1:3]),
-               c(0.945801326908522, -0.255985008309559, -0.349926940243906),
+               c(0.891553164343323, -0.315034658192163, -0.264477950858849),
                tolerance = 1e-13)
   # CV-path specifics: foldid and diagnostics
-  expect_equal(cf$foldid[1:6], c(1L, 2L, 2L, 1L, 2L, 3L))
+  expect_equal(cf$foldid[1:6], c(1L, 3L, 2L, 1L, 3L, 1L))
   expect_identical(cf$diagnostics$selected, c(TRUE, FALSE))
 })
 

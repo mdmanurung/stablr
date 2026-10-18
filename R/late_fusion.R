@@ -126,7 +126,10 @@
         x_valid_sel = captured$selected_valid[[omic]],
         task_type = task_type,
         levels = if (identical(task_type, "multiclass")) classes else NULL,
-        selection_condition = captured$selection_conditions[[omic]]
+        selection_condition = captured$selection_conditions[[omic]],
+        # F-CV-03/P4-F28: dedicated downstream-predictor stream per OOF fold
+        # (offset 41000L, distinct from the fold's own 31001L selection seed).
+        random_state = .derive_nested_seed(fold_seed, 1L, 41000L)
       )
       warnings_seen <- unique(c(warnings_seen, pred$warnings))
       fallback[[omic]] <- pred$fallback_reason %||% NA_character_
@@ -176,7 +179,10 @@
     x_valid_list = x_valid_list, task_type = task_type,
     omic_names = omic_names,
     levels = if (identical(task_type, "multiclass")) levels(factor(y_train)) else NULL,
-    weights = stacked$weights$Associated_weight
+    weights = stacked$weights$Associated_weight,
+    # F-CV-03/P4-F28: dedicated stream for the full-refit downstream
+    # predictors (offset 42000L, distinct from the OOF-fold 41000L streams).
+    random_state = .derive_nested_seed(random_state, 1L, 42000L)
   )
   result <- list(
     weights = stacked$weights,
@@ -214,7 +220,8 @@
 
 .late_fusion_fit_omic_safe <- function(x_train_sel, y_train, x_valid_sel,
                                        task_type, levels = NULL,
-                                       selection_condition = NULL) {
+                                       selection_condition = NULL,
+                                       random_state = NULL) {
   if (!is.null(selection_condition) &&
       !inherits(selection_condition, "stablr_numerical_infeasibility")) {
     stop(
@@ -238,7 +245,8 @@
       withCallingHandlers(
         {
           fitted <- .late_fusion_fit_omic(
-            x_train_sel, y_train, x_valid_sel, y_mean, task_type, levels
+            x_train_sel, y_train, x_valid_sel, y_mean, task_type, levels,
+            random_state
           )
           fitted_values <- c(
             unlist(fitted$train_preds, use.names = FALSE),
@@ -272,7 +280,7 @@
     empty_valid <- if (is.null(x_valid_sel)) NULL else
       x_valid_sel[, integer(), drop = FALSE]
     out <- .late_fusion_fit_omic(
-      empty, y_train, empty_valid, y_mean, task_type, levels
+      empty, y_train, empty_valid, y_mean, task_type, levels, random_state
     )
   }
   # Binary fallback alignment: the prevalence override applies exactly once.
@@ -382,7 +390,8 @@
 
 .late_fusion_full_refit_predictions <- function(full_per_omic, y_train,
                                                 x_valid_list, task_type,
-                                                omic_names, levels, weights) {
+                                                omic_names, levels, weights,
+                                                random_state = NULL) {
   fallbacks <- setNames(character(length(omic_names)), omic_names)
   fallback_conditions <- setNames(
     vector("list", length(omic_names)), omic_names
@@ -401,7 +410,11 @@
       full_per_omic$selected_train[[omic]], y_train,
       if (is.null(x_valid_list)) NULL else full_per_omic$selected_valid[[omic]],
       task_type, levels,
-      selection_condition = full_per_omic$selection_conditions[[omic]]
+      selection_condition = full_per_omic$selection_conditions[[omic]],
+      # F-CV-03/P4-F28: one downstream stream per omic (offset 41000L).
+      random_state = .derive_nested_seed(
+        random_state, match(omic, omic_names), 41000L
+      )
     )
     fallbacks[[omic]] <- pred$fallback_reason %||% NA_character_
     fallback_conditions[omic] <- list(pred$fallback_condition)

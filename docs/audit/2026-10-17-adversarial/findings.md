@@ -437,12 +437,60 @@ threshold (degenerate FDP+ caps at 1.0 — empty selection, conservative).
   results depend on `cv_workers` (1 vs 2 give different predictions); under
   `mclapply` every forked worker inherits the identical `.Random.seed`, so
   outer folds share correlated RNG streams.
+  **Update (2026-10-18, Phase 13 PR-2 — FIXED):** outer-fold seeds are now
+  drawn from the ambient stream *before* any worker forks
+  (`fold_seeds <- .derive_stream_seeds(random_state, length(outer_folds))`
+  in `R/nested_cv.R`), so forked workers receive distinct pre-drawn seeds
+  instead of a shared `.Random.seed`. Regression:
+  `tests/testthat/test-rng-hygiene.R` block "F-CV-01" asserts NULL-seed
+  nested-CV predictions are identical under `cv_workers = 1` vs `2`
+  (`skip_on_cran()`; spawns parallel workers). Root cause of the observed
+  worker-count dependence was twofold: shared fork seeds AND an unseeded
+  `cv.glmnet` foldid inside `.fit_selected_predictor` (see F-CV-07
+  correction below); both are fixed.
 - **F-CV-02 (P2, CONFIRMED runtime):** `stabl_fit` permanently clobbers the
   global RNG (bare `set.seed()` calls, never restored) — later unseeded
   randomness becomes a deterministic function of the last `random_state`.
+  **Update (2026-10-18, Phase 13 PR-2 — FIXED):** `stabl_fit` now saves
+  `.Random.seed` on entry and restores it on exit via `on.exit()` (both
+  branches: existing seed restored; absent seed removed), making the
+  function hermetic. Regression: `test-rng-hygiene.R` blocks 1–3 (seed
+  restored bit-identically; absent-seed state stays absent; consecutive
+  NULL-seed calls now draw *independent* streams rather than replaying the
+  same state). Note the deliberate interaction: hermeticity means fan-out
+  loops can no longer rely on stream advancement through `stabl_fit`, so
+  every multi-consumer call site derives explicit per-consumer seeds
+  (F-CV-03/P4-F28 fix).
 - **F-CV-03 (P2, CONFIRMED static):** `stabl_multiomic_cv` reuses one
   `random_state` for fold construction, every fold's `stabl_fit`, and the
   cooperative internal foldid — correlated fold noise (not held-out leakage).
+  **Update (2026-10-18, Phase 13 PR-2 — FIXED):** all multiomic fan-out
+  sites now derive independent per-consumer streams via the new
+  `.derive_stream_seeds(base_seed, n)` helper (NULL base → distinct
+  `sample.int(.Machine$integer.max)` draws from the ambient stream;
+  non-NULL → `.with_local_seed(base, ...)` derivation, ambient untouched):
+  per-outer-fold seeds in `stabl_multiomic_nested_cv`; per-fold seeds in
+  `stabl_multiomic_cv`; per-omic + early-fusion + late-fusion + cooperative
+  seeds in `stabl_multiomic_train_validate` (n_rng_consumers =
+  length(omics) + 3); per-omic seeds in the late-fusion full refit and OOF
+  paths; per-omic `cv.glmnet` foldid streams in the multiclass late-fusion
+  branch. Offset registry (no collisions with existing 10/1000/2000/3000/
+  29001/31001/47001): 4000 (nested downstream predictor), 41000
+  (late-fusion downstream per-omic + OOF), 42000 (full-refit downstream).
+  Regression: `test-rng-hygiene.R` blocks 4–9 (derivation determinism/
+  distinctness/ambient-untouched; per-omic streams differ for identical
+  omics; explicit `fit_params$random_state` override wins over derived
+  stream; train_validate hermetic under fixed `random_state`; multiclass
+  late-fusion hermetic under both OOF and python_legacy backends).
+  **Deliberate numerical divergence:** R-internal multiomic characterization
+  golden values in `test-multiomic-workflows.R` (char-F1, char-F2-cv) were
+  updated with dated rationale — the old values pinned the seed-reuse
+  behavior this finding flags. Per-omic selections are unchanged;
+  early/late-fusion and cooperative-CV outputs shifted. The Python-parity
+  contract is unaffected (core stabl selection/FDP/stacking-given-weights/
+  metrics fixtures pass byte-identically; the parity generator does not
+  freeze the R multiomic seed-derivation chain). char-F2-val (cooperative
+  validation branch) is unchanged — that branch consumes no RNG.
 - **F-CV-04 (P2, CONFIRMED static):** `cooperation_selection = "validation"`
   inside `stabl_multiomic_cv` tunes rho/lambda on the outer assessment fold
   and reports the tuned predictions as held-out — optimistic metrics, no
@@ -452,6 +500,18 @@ threshold (degenerate FDP+ caps at 1.0 — empty selection, conservative).
   inherited); latent unseeded internal foldid (unreachable in-package);
   no repeated-measures fold unit in nested CV except `study_labels`
   (documented footgun, no warning).
+  **Correction (2026-10-18, Phase 13 PR-2):** the F-CV-07 judgment
+  ("latent unseeded internal foldid — unreachable in-package") was too
+  narrow. Two reachable sites existed and are fixed in PR-2:
+  `.fit_selected_predictor` (`R/nested_cv.R`) — its `cv.glmnet` call
+  supplies no `foldid`, so fold assignment drew from the ambient stream;
+  empirically this caused the F-CV-01 worker-count dependence (fits
+  identical except `predicted`/`probability`, 1–2 of 40 rows differed
+  between worker counts) — now wrapped in `.with_local_seed()` with a
+  derived seed (offset 4000). And `.late_fusion_fit_omic`'s multiclass
+  branch (`R/multiomic_workflows.R`) — same pattern, now seeded (offset
+  41000). F-CV-07 remains open only in its residual scope (any further
+  latent sites; none found in the PR-2 RNG-graph sweep).
 
 ### Phase 4 — multi-omic audit (delegated independent pass; report: audit_multiomic.md)
 
@@ -473,6 +533,10 @@ binomial rho>0 paths).
   thresholds.
 - **P4-F28 (P3, CONFIRMED):** seed reuse across folds/omics/cooperative
   foldid (hygiene; = F-CV-03).
+  **Update (2026-10-18, Phase 13 PR-2 — FIXED):** fixed together with
+  F-CV-03 (same remediation; see the F-CV-03 update for the full site
+  list, offset registry, and the deliberate R-internal multiomic golden
+  value divergence with parity-contract status).
 
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 

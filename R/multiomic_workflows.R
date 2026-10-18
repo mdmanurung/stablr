@@ -220,6 +220,22 @@ stabl_multiomic_train_validate <- function(
     .validate_late_fusion_outcomes(y_train, y_valid, family)
   }
 
+  # ---- F-CV-03/P4-F28: independent RNG streams per consumer -----------------
+  # One `random_state` previously seeded every omic's stabl_fit, the early-
+  # and late-fusion fits, and the cooperative internal foldid, correlating
+  # their bootstrap/fold noise.  Derive one seed per consumer (stabl_fit's
+  # own 3-seed pattern).  With `random_state = NULL` the seeds are drawn
+  # once from the ambient stream here, which keeps consumers decorrelated
+  # even though stabl_fit no longer advances the global stream (F-CV-02).
+  n_rng_consumers <- length(omic_names) + 3L
+  stream_seeds    <- .derive_stream_seeds(random_state, n_rng_consumers)
+  omic_seeds      <- setNames(
+    as.integer(stream_seeds[seq_along(omic_names)]), omic_names
+  )
+  ef_seed   <- stream_seeds[[length(omic_names) + 1L]]
+  lf_seed   <- stream_seeds[[length(omic_names) + 2L]]
+  coop_seed <- stream_seeds[[length(omic_names) + 3L]]
+
   fit_params <- list(
     base_learner       = base_learner,
     family             = family,
@@ -238,7 +254,8 @@ stabl_multiomic_train_validate <- function(
   per_omic <- if (defer_full_refit) NULL else .fit_multiomic_per_omic(
       x_train_list = x_train_list, y_train = y_train,
       lambda_by_omic = lambda_by_omic, x_valid_list = x_valid_list,
-      omic_names = omic_names, fit_params = fit_params, ...
+      omic_names = omic_names, fit_params = fit_params,
+      omic_seeds = omic_seeds, ...
     )
 
   ef_result <- if (isTRUE(early_fusion)) {
@@ -249,6 +266,7 @@ stabl_multiomic_train_validate <- function(
       omic_names     = omic_names,
       lambda_by_omic = lambda_by_omic,
       fit_params     = fit_params,
+      ef_seed        = ef_seed,
       ...
     )
   } else {
@@ -261,7 +279,7 @@ stabl_multiomic_train_validate <- function(
         selected_train = per_omic$selected_train,
         selected_valid = per_omic$selected_valid,
         y_train = y_train, y_valid = y_valid, omic_names = omic_names,
-        family = family, n_iter_lf = n_iter_lf, random_state = random_state
+        family = family, n_iter_lf = n_iter_lf, random_state = lf_seed
       )
     } else {
       .late_fusion_oof_fit(
@@ -272,7 +290,7 @@ stabl_multiomic_train_validate <- function(
         .lf_lambda_by_omic = lambda_by_omic, .lf_fit_params = fit_params,
         .lf_omic_names = omic_names,
         .lf_family = family, .lf_n_iter = n_iter_lf,
-        .lf_nfolds = late_fusion_nfolds, .lf_random_state = random_state, ...
+        .lf_nfolds = late_fusion_nfolds, .lf_random_state = lf_seed, ...
       )
     }
   } else {
@@ -296,7 +314,7 @@ stabl_multiomic_train_validate <- function(
       y_valid = y_valid,
       groups_train = groups_train,
       family = family,
-      random_state = random_state,
+      random_state = coop_seed,
       cooperative_args = cooperative_args
     )
   }
@@ -465,6 +483,14 @@ stabl_multiomic_cv <- function(
     family = family
   )
 
+  # ---- F-CV-03/P4-F28: one RNG stream per CV fold ---------------------------
+  # Previously every fold's stabl_multiomic_train_validate received the
+  # identical `random_state`, correlating fold noise with the fold
+  # construction stream.  Derive one independent seed per fold; with
+  # `random_state = NULL` the seeds are drawn once here so folds stay
+  # decorrelated now that stabl_fit restores the global RNG (F-CV-02).
+  fold_seeds <- .derive_stream_seeds(random_state, length(folds))
+
   fold_results <- vector("list", length(folds))
   names(fold_results) <- vapply(folds, function(fold) fold$fold, character(1L))
 
@@ -495,7 +521,7 @@ stabl_multiomic_cv <- function(
         arg = "bootstrap_strata"
       ),
       l1_ratio        = l1_ratio,
-      random_state    = random_state,
+      random_state    = fold_seeds[[fold_index]],
       early_fusion    = early_fusion,
       late_fusion     = late_fusion,
       late_fusion_training = late_fusion_training,
@@ -565,7 +591,8 @@ stabl_multiomic_cv <- function(
 # selected_valid.  fit_params bundles the stabl_fit passthrough args; ...
 # is forwarded to stabl_fit as-is.
 .fit_multiomic_per_omic <- function(x_train_list, y_train, lambda_by_omic,
-                                     x_valid_list, omic_names, fit_params, ...) {
+                                     x_valid_list, omic_names, fit_params,
+                                     omic_seeds = NULL, ...) {
   fits              <- .named_omic_list(omic_names)
   selected_features <- .named_omic_list(omic_names)
   selected_train    <- .named_omic_list(omic_names)
@@ -574,6 +601,13 @@ stabl_multiomic_cv <- function(
   for (omic in omic_names) {
     x_train <- x_train_list[[omic]]
     if (is.data.frame(x_train)) x_train <- as.matrix(x_train)
+
+    # F-CV-03/P4-F28: one independent RNG stream per omic.  Callers that
+    # pre-derive per-omic seeds (stabl_multiomic_train_validate) pass
+    # `omic_seeds`; other callers fall back to `fit_params$random_state`.
+    if (!is.null(omic_seeds)) {
+      fit_params$random_state <- omic_seeds[[omic]]
+    }
 
     fit <- do.call(stabl_fit, c(
       list(x = x_train, y = y_train, lambda_grid = lambda_by_omic[[omic]]),
@@ -604,7 +638,13 @@ stabl_multiomic_cv <- function(
 # Uses the first omic's lambda grid for the concatenated model.
 .early_fusion_multiomic_fit <- function(x_train_list, x_valid_list, y_train,
                                          omic_names, lambda_by_omic,
-                                         fit_params, ...) {
+                                         fit_params, ef_seed = NULL, ...) {
+  # F-CV-03/P4-F28: dedicated stream for the fused model, independent of the
+  # per-omic streams.  Callers without a derived seed keep the passed seed.
+  if (!is.null(ef_seed)) {
+    fit_params$random_state <- ef_seed
+  }
+
   x_all_train <- .concat_omic_matrices(x_train_list, omic_names)
 
   # Use the shared/first lambda grid for the concatenated model.
@@ -680,7 +720,11 @@ stabl_multiomic_cv <- function(
       y_train      = y_train,
       x_valid_sel  = if (!is.null(selected_valid)) selected_valid[[omic]] else NULL,
       task_type    = "multiclass",
-      levels       = y_levels
+      levels       = y_levels,
+      # F-CV-03/P4-F28: one downstream stream per omic (offset 41000L).
+      random_state = .derive_nested_seed(
+        random_state, match(omic, omic_names), 41000L
+      )
     )
     train_preds[[omic]] <- omic_result$train_preds
     if (!is.null(valid_preds)) valid_preds[[omic]] <- omic_result$valid_preds
@@ -745,7 +789,11 @@ stabl_multiomic_cv <- function(
       y_train      = y_train,
       x_valid_sel  = if (!is.null(selected_valid)) selected_valid[[omic]] else NULL,
       task_type    = task_type,
-      levels       = NULL
+      levels       = NULL,
+      # F-CV-03/P4-F28: one downstream stream per omic (offset 41000L).
+      random_state = .derive_nested_seed(
+        random_state, match(omic, omic_names), 41000L
+      )
     )
     train_preds[, omic] <- omic_result$train_preds
     if (!is.null(valid_preds)) valid_preds[, omic] <- omic_result$valid_preds
@@ -2037,7 +2085,8 @@ stabl_multiomic_stacked <- function(
 .late_fusion_fit_omic <- function(x_train_sel, y_train,
                                   x_valid_sel = NULL, y_train_mean,
                                   task_type,
-                                  levels = NULL) {
+                                  levels = NULL,
+                                  random_state = NULL) {
   n_sel <- ncol(x_train_sel)
 
   if (identical(task_type, "multiclass")) {
@@ -2074,12 +2123,18 @@ stabl_multiomic_stacked <- function(
       )
     }
     model_fit <- .with_glmnet_numerical_infeasibility(
-      glmnet::cv.glmnet(
-        x = as.matrix(x_train_sel),
-        y = y_train,
-        family = "multinomial",
-        type.measure = "class",
-        nfolds = downstream_folds
+      # F-CV-03/P4-F28: cv.glmnet draws its internal foldid from the ambient
+      # RNG when `foldid` is not supplied.  Seed it from the late-fusion
+      # stream so the downstream predictor is a pure function of the seed.
+      .with_local_seed(
+        random_state,
+        glmnet::cv.glmnet(
+          x = as.matrix(x_train_sel),
+          y = y_train,
+          family = "multinomial",
+          type.measure = "class",
+          nfolds = downstream_folds
+        )
       ),
       source = "glmnet multiclass downstream fit"
     )

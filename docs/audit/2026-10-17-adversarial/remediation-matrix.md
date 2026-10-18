@@ -18,6 +18,25 @@ workarounds).
   inputs is unchanged (validation and warnings only — parity contract
   intact). Next: PR-2 (RNG-hygiene cluster).
 
+- **PR-2 (2026-10-18) — DONE, RNG-hygiene cluster cleared:** F-CV-01,
+  F-CV-02, F-CV-03, P4-F28 fixed across `R/stabl_fit.R` (hermetic
+  `.Random.seed` save/restore), `R/nested_cv.R` (pre-fork per-fold seeds;
+  seeded downstream `cv.glmnet` foldid), `R/multiomic_workflows.R` +
+  `R/late_fusion.R` (per-consumer stream derivation via new
+  `.derive_stream_seeds`; offsets 4000/41000/42000). Two additional
+  reachable unseeded `cv.glmnet` foldid sites found and fixed during
+  implementation (corrects F-CV-07's "unreachable" judgment — see
+  findings.md). New regression file `tests/testthat/test-rng-hygiene.R`
+  (9 blocks). Full suite after the fix: 57 files, 602 tests, 0 failed,
+  0 errors, 1 pre-existing skip, 52 warnings (identical to pre-PR-2).
+  R-internal multiomic characterization golden values (char-F1, char-F2-cv)
+  deliberately updated with dated rationale — old values pinned the
+  seed-reuse behavior the audit flagged; per-omic selections unchanged;
+  Python-parity fixtures (68 checks) and multiview-parity (63) pass clean,
+  so the parity contract is intact. CRAN-comments draft updated for the
+  new `skip_on_cran()` guard (4 files). Next: PR-3 (documentation/fence
+  cluster).
+
 ## P0 — blocks any release
 
 | ID | Defect | Fix | Est. |
@@ -38,9 +57,9 @@ workarounds).
 |---|---|---|---|
 | F-005/L1 | RP-under-dependence warning fires only for rf/oblique_rf; default lasso+RP path un-warned | Extend warning to all learners (or document in `artificial_type` help); keep RF-specific wording | S |
 | F-002 | Environment-aware min/mean aggregation is a novel unvalidated extension | Either a validation study (like WS-2/WS-5) or explicit "experimental, unvalidated" labeling in help + pkgdown | M |
-| F-CV-01 | `random_state=NULL` + `cv_workers>1`: forked workers share `.Random.seed` → correlated folds, worker-count-dependent results | Derive per-worker seeds even when NULL (or warn loudly) | S |
-| F-CV-02 | `stabl_fit` permanently clobbers global RNG | Save/restore `.Random.seed` on exit (pattern already exists in `.with_local_seed`) | S |
-| F-CV-03 / P4-F28 | One `random_state` reused across folds/omics/cooperative foldid | Derive independent streams per use (stabl_fit's own 3-seed pattern) | S |
+| F-CV-01 | `random_state=NULL` + `cv_workers>1`: forked workers share `.Random.seed` → correlated folds, worker-count-dependent results | Derive per-worker seeds even when NULL (or warn loudly) | **FIXED (PR-2, 2026-10-18)** — per-fold seeds drawn pre-fork via `.derive_stream_seeds`; regression test asserts worker-count independence |
+| F-CV-02 | `stabl_fit` permanently clobbers global RNG | Save/restore `.Random.seed` on exit (pattern already exists in `.with_local_seed`) | **FIXED (PR-2, 2026-10-18)** — `on.exit()` save/restore both branches; hermeticity regression tests |
+| F-CV-03 / P4-F28 | One `random_state` reused across folds/omics/cooperative foldid | Derive independent streams per use (stabl_fit's own 3-seed pattern) | **FIXED (PR-2, 2026-10-18)** — `.derive_stream_seeds` per-consumer streams at all fan-out sites (offsets 4000/41000/42000); R-internal multiomic golden values deliberately updated with dated rationale; Python-parity contract intact |
 | F-CV-04 / P4-F24 | `cooperation_selection="validation"` tunes on the assessment fold; optimistic metrics, no guard | Default-safe already; add explicit warning + rename option to make bias legible | S |
 | F-P6-2 | Calibration regime-dependent in both directions (anti-conservative independent-null; conservative correlated) | Document regime dependence; consider a regime diagnostic (e.g. reported selection-rate ratio real:artificial) | M |
 | F-P10-1 | Locked release contract is 0.1.1-era vs DESCRIPTION 0.3.0 | Re-ratify contract at 0.3.0 (owner action) or amend contract version | M |

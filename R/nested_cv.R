@@ -286,6 +286,14 @@ stabl_multiomic_nested_cv <- function(
     )
   }
 
+  # ---- F-CV-01/F-CV-03: one RNG stream per outer fold -----------------------
+  # Previously every outer fold received the identical `random_state`, and
+  # with `random_state = NULL` under `mclapply` every forked worker inherited
+  # the same `.Random.seed` (correlated folds, worker-count-dependent
+  # results).  Derive one independent seed per fold instead; the NULL case
+  # draws in the parent before any forking.
+  fold_seeds <- .derive_stream_seeds(random_state, length(outer_folds))
+
   fold_runner <- function(outer_i) {
     .run_nested_cv_fold(
       outer_i         = outer_i,
@@ -302,7 +310,7 @@ stabl_multiomic_nested_cv <- function(
       n_bootstraps    = n_bootstraps,
       artificial_type = artificial_type,
       hard_threshold  = hard_threshold,
-      random_state    = random_state,
+      random_state    = fold_seeds[[outer_i]],
       n_lambda        = n_lambda,
       l1_ratio        = l1_ratio,
       workers         = workers,
@@ -882,12 +890,15 @@ stabl_multiomic_nested_cv <- function(
   support <- get_support(fit)
   selected <- names(support)[support]
   importances <- get_importances(fit)
+  # F-CV-01: dedicated stream for the downstream predictor (offset 4000L,
+  # distinct from the 1000L/2000L/3000L fold-internal offsets).
   predictor <- .fit_selected_predictor(
     x_train = x_train[, selected, drop = FALSE],
     y_train = y_train,
     x_valid = x_valid[, selected, drop = FALSE],
     levels = levels(y),
-    event_class = event_class
+    event_class = event_class,
+    random_state = .derive_nested_seed(random_state, 1L, 4000L)
   )
 
   list(
@@ -993,7 +1004,7 @@ stabl_multiomic_nested_cv <- function(
 # fold-trained predictor.  `.predict_selected_multinomial()` remains the
 # legacy hard-class wrapper with unchanged behaviour.
 .fit_selected_predictor <- function(x_train, y_train, x_valid, levels,
-                                    event_class = NULL) {
+                                    event_class = NULL, random_state = NULL) {
   y_train <- factor(y_train, levels = levels)
   n_sel <- ncol(x_train)
   binary <- length(levels) == 2L
@@ -1124,12 +1135,19 @@ stabl_multiomic_nested_cv <- function(
         )
       }
       fit <- .with_glmnet_numerical_infeasibility(
-        glmnet::cv.glmnet(
-          x = x_train,
-          y = y_train,
-          family = if (binary) "binomial" else "multinomial",
-          type.measure = "class",
-          nfolds = min(5L, min(class_counts))
+        # F-CV-01: cv.glmnet draws its internal foldid from the ambient RNG
+        # when `foldid` is not supplied.  Seed it from the fold's stream so
+        # the downstream predictor is a pure function of `random_state`
+        # (previously: worker-count-dependent predictions under mclapply).
+        .with_local_seed(
+          random_state,
+          glmnet::cv.glmnet(
+            x = x_train,
+            y = y_train,
+            family = if (binary) "binomial" else "multinomial",
+            type.measure = "class",
+            nfolds = min(5L, min(class_counts))
+          )
         ),
         source = "glmnet selected-feature classification fit"
       )

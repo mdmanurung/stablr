@@ -436,9 +436,12 @@ test_that("OOF downstream numerical infeasibility uses a typed fallback", {
   y <- setNames(rnorm(12), ids)
   original_fit <- stablr:::.late_fusion_fit_omic
   testthat::local_mocked_bindings(
+    # PR-2 (F-CV-03/P4-F28): the safe wrapper now forwards a trailing
+    # `random_state`; accept and pass it through to the original.
     .late_fusion_fit_omic = function(x_train_sel, y_train,
                                      x_valid_sel = NULL, y_train_mean,
-                                     task_type, levels = NULL) {
+                                     task_type, levels = NULL,
+                                     random_state = NULL) {
       if (ncol(x_train_sel) > 0L) {
         stablr:::.abort_numerical_infeasibility(
           "stablr_downstream_numerical_infeasibility",
@@ -446,7 +449,8 @@ test_that("OOF downstream numerical infeasibility uses a typed fallback", {
         )
       }
       original_fit(
-        x_train_sel, y_train, x_valid_sel, y_train_mean, task_type, levels
+        x_train_sel, y_train, x_valid_sel, y_train_mean, task_type, levels,
+        random_state
       )
     },
     .package = "stablr"

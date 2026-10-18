@@ -301,6 +301,27 @@ stabl_fit <- function(
   feat_names  <- colnames(x)
   if (is.null(feat_names)) feat_names <- paste0("x.", seq_len(n_features))
 
+  # ---- F-CV-02: leave the caller's global RNG state untouched ---------------
+  # stabl_fit seeds the global RNG (random_state, boot_seed, iter_seed_base)
+  # and consumes ambient randomness when random_state = NULL.  Save and
+  # restore `.Random.seed` on exit so that later unseeded randomness in the
+  # caller's session is no longer a deterministic function of the last
+  # `random_state` passed here.  In-package fan-out loops that call
+  # stabl_fit repeatedly derive one explicit seed per consumer (see
+  # `.derive_stream_seeds`), so they stay decorrelated despite the restore.
+  has_old_seed <- exists(".Random.seed", envir = globalenv(), inherits = FALSE)
+  if (has_old_seed) {
+    old_seed <- get(".Random.seed", envir = globalenv(), inherits = FALSE)
+    on.exit(assign(".Random.seed", old_seed, envir = globalenv()), add = TRUE)
+  } else {
+    on.exit(
+      if (exists(".Random.seed", envir = globalenv(), inherits = FALSE)) {
+        rm(list = ".Random.seed", envir = globalenv())
+      },
+      add = TRUE
+    )
+  }
+
   # ---- Lambda grid ----------------------------------------------------------
   if (identical(lambda_grid, "auto")) {
     if (verbose) message("Computing auto lambda grid...")
@@ -992,4 +1013,23 @@ stabl_fit <- function(
     set.seed(seed)
   }
   expr
+}
+
+# Internal: derive `n` independent integer seeds for RNG fan-out points
+# (F-CV-01/F-CV-03/P4-F28).  With a base seed the derivation is deterministic
+# and leaves the caller's RNG untouched (stabl_fit's own 3-seed pattern).
+# With NULL the seeds are drawn once from the ambient stream, so callers must
+# invoke this BEFORE forking workers or before any RNG-restoring sub-call.
+# Fan-out loops pass one seed per consumer so that forked workers never share
+# `.Random.seed` and sibling fits (folds, omics, fusion paths) never reuse a
+# single stream.
+.derive_stream_seeds <- function(base_seed, n) {
+  if (is.null(base_seed)) {
+    sample.int(.Machine$integer.max, size = n)
+  } else {
+    .with_local_seed(
+      as.integer(base_seed),
+      sample.int(.Machine$integer.max, size = n)
+    )
+  }
 }

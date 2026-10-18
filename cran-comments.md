@@ -32,15 +32,17 @@ because the vendored source files (`R/cooperative-*.R`) cannot carry roxygen
 `coef.cv.multiview`, `family.multiview`, `family.cv.multiview`,
 `plot.multiview`, `predict.multiview`, and `predict.cv.multiview`.
 
-## Tests skipped on CRAN (3)
+## Tests skipped on CRAN (4)
 
 `tests/testthat/test-fdp-calibration.R`,
-`tests/testthat/test-methodology-validation-runner.R`, and
-`tests/testthat/test-signal-recovery.R` carry `skip_on_cran()` guards. The
+`tests/testthat/test-methodology-validation-runner.R`,
+`tests/testthat/test-signal-recovery.R`, and
+`tests/testthat/test-rng-hygiene.R` carry `skip_on_cran()` guards. The
 long-form calibration, methodology-validation, and signal-recovery sweeps run
 in CI (GitHub Actions R-CMD-check on Windows, macOS, and Ubuntu
 release/devel/oldrel) and are skipped on CRAN to keep check time within
-policy limits.
+policy limits. The RNG-hygiene worker-count test spawns parallel
+`mclapply` workers and is skipped on CRAN for the same reason.
 
 ## Compiled code
 
