@@ -715,6 +715,60 @@ Spec §8 MUST: integrated the delivered documentation bundle
   full-OOL release parity as passing — the fixture replay is
   documentation, not new evidence.
 
+### Phase 13 PR-C — selection reliability diagnostics (2026-10-18)
+
+Spec A1 MUST: new `stabl_diagnose()` subsystem (new `R/diagnostics.R`,
+exported; `print`/`plot` S3 methods).
+
+- Reports, for any `stabl_fit()`/`stabl()` result: real/artificial score
+  distributions; decoy-generator provenance (requested/actual/fallback
+  from `artificial_provenance`); real/decoy selection counts along the
+  full threshold path and per lambda; the selection rule in effect (user
+  `hard_threshold` vs minimized-FDP+) with the strict-`>` comparator and
+  FDP+ denominator convention disclosed; FDP+ curve features (all
+  minimizing thresholds, ties, flat minima, boundary solutions,
+  low-decoy-count instability); a null-saturation probe; a
+  score-dependence assumption probe (explicitly NOT an exchangeability or
+  knockoff-validity test); and a learner × decoy × outcome ×
+  dimensionality evidence profile with benchmark provenance
+  (`validated_in_stablr` / `empirically_concerning` / `not_evaluated` /
+  `unsupported` — deliberately no binary safe/unsafe score, per spec).
+  Machine-readable `warning_codes`, `assumption_notes`,
+  `calibration_scope`. Read-only: the fit is never modified (pinned by a
+  byte-identity test).
+- Design note recorded during testing: at FULL score saturation FDP+ is
+  mathematically always (R+1)/R > 1, so the existing cap-at-1 rule
+  already refuses selection (empty support) — the dangerous case is
+  PARTIAL saturation with FDP+ < 1. The saturation detector is therefore
+  two-tier: `near_zero_region` (data only; dense lasso paths
+  legitimately saturate at t = 0, so it never warns alone) and
+  `detected` (warns only when the SELECTED threshold admits ≥
+  `saturation_proportion` of both reals and decoys). The at-selected
+  proportions are computed directly at `selected_threshold` via the
+  strict-`>` count, so off-grid user `hard_threshold` values are probed
+  too (the FDP+ grid alone cannot).
+- `stabl_fit()` objects gain `base_learner` and `family` fields
+  (additive; also fixes a latent `print.stabl()` fallback that displayed
+  "gaussian"/"lasso" for non-default fits). DESCRIPTION `Collate` gains
+  `diagnostics.R` (the field is hand-maintained; its absence fails
+  `R CMD build` while `pkgload::load_all()` tolerates it — caught at the
+  gate). Public-interface audit registry gains the three new interfaces;
+  pinned NAMESPACE counts move 74 → 75 exports, 40 → 42 S3 methods.
+- Tests: `tests/testthat/test-diagnostics.R` (22 blocks, 144
+  expectations): hand-worked exact-value fixtures (FDP+ path, ties,
+  flat/boundary minima, empty support, at-grid and off-grid saturation,
+  low decoy counts), Python-parity fixture replay through the
+  diagnostic, evidence-profile matching/warning rules, integration fits
+  across all five families, input validation, read-only contract.
+- Gates: full suite 59 files / 0 failed / 0 errors / 1 skip /
+  52 warnings (exact parity with the PR-B baseline; 3,768 expectation
+  results vs 3,622 — +144 diagnostics, +2 interface-audit; the two
+  zero-variance `cor` warnings the diagnostic legitimately encounters on
+  constant score profiles are muffled at source with the NA pairs
+  filtered explicitly); R CMD check 0E/0W/1N (pre-existing
+  installed-size NOTE); check-context tests [ FAIL 0 | WARN 19 |
+  SKIP 22 | PASS 3307 ].
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3

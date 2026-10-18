@@ -131,6 +131,7 @@ Collate:
     's3_methods.R'
     'environment_stability.R'
     'visualization.R'
+    'diagnostics.R'
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.1.1

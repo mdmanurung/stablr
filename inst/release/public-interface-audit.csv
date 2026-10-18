@@ -113,3 +113,6 @@ stabl_preprocess_apply.stabl_preprocessing_recipes,s3,stabl_preprocess_apply,sta
 stabl_analyze,export,,,workflow,R/analysis_workflow.R,man/stabl_analyze.Rd,running,test-analysis-workflow.R,test-analysis-workflow.R,core_contract
 print.stabl_analysis,s3,print,stabl_analysis,workflow,R/analysis_workflow.R,man/stabl_analyze.Rd,running,test-analysis-workflow.R,not_applicable-method,accessor_contract
 summary.stabl_analysis,s3,summary,stabl_analysis,workflow,R/analysis_workflow.R,man/stabl_analyze.Rd,running,test-analysis-workflow.R,not_applicable-method,accessor_contract
+stabl_diagnose,export,,,selection,R/diagnostics.R,man/stabl_diagnose.Rd,running,test-diagnostics.R,test-diagnostics.R,core_contract
+print.stabl_diagnostics,s3,print,stabl_diagnostics,selection,R/diagnostics.R,man/print.stabl_diagnostics.Rd,running,test-diagnostics.R,not_applicable-print-method,accessor_contract
+plot.stabl_diagnostics,s3,plot,stabl_diagnostics,visualization,R/diagnostics.R,man/plot.stabl_diagnostics.Rd,running,test-diagnostics.R,not_applicable-method,accessor_contract

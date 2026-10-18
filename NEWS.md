@@ -113,6 +113,27 @@
   DIABLO paragraph.
 
 ## New features
+- `stabl_diagnose()` (Phase 13 PR-C, 1.0.0 spec A1): selection-reliability
+  diagnostics for any `stabl_fit()`/`stabl()` result. Reports real and
+  artificial score distributions, decoy-generator provenance
+  (requested/actual/fallback), real/decoy selection counts along the full
+  threshold path and per lambda, the selection rule in effect (user
+  `hard_threshold` vs minimized-FDP+), the strict `>` comparator and the
+  FDP+ denominator convention, FDP+ curve features (all minimizing
+  thresholds, ties, flat minima, boundary solutions, low-decoy-count
+  instability), a null-saturation probe (the RF/oblique-RF
+  importance-leakage signature, evaluated at the selected threshold —
+  including off-grid user thresholds), a score-dependence assumption
+  probe (explicitly not an exchangeability or knockoff-validity test),
+  and a learner × decoy × outcome × dimensionality evidence profile with
+  benchmark provenance (`validated_in_stablr` / `empirically_concerning`
+  / `not_evaluated` / `unsupported`; deliberately no binary safe/unsafe
+  score). Returns machine-readable `warning_codes`, `assumption_notes`,
+  and `calibration_scope`; `print()` and `plot()` S3 methods included.
+  The diagnostic is read-only: it never changes the fit or its support.
+  `stabl_fit()` objects gain `base_learner` and `family` fields to
+  support the evidence profile (additive; also fixes a latent
+  `print.stabl()` fallback that always displayed "gaussian"/"lasso").
 - New experimental base learner `base_learner = "splsda"`: sparse PLS
   discriminant analysis via `mixOmics` for binary classification
   (`family = "binomial"` only). The STABL lambda grid sweeps sPLS-DA's

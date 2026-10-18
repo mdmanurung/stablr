@@ -552,7 +552,9 @@ stabl_fit <- function(
       } else NULL,
       feature_names         = feat_names,
       n_features_in_        = n_features,
-      n_bootstraps          = as.integer(n_bootstraps)
+      n_bootstraps          = as.integer(n_bootstraps),
+      base_learner          = base_learner,
+      family                = family
     ),
     class = "stabl_fit"
   )
