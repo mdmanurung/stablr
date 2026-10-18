@@ -2,6 +2,33 @@
 
 ## stablr 0.3.0.9000 (development)
 
+### Fixes
+
+- Compiled-boundary fail-closed validation (Phase 13 PR-1). `elnet.fit`
+  now length-validates the sparse standardization attributes and rejects
+  non-finite `xs` before `.Call` (previously a missing/short attribute
+  reached the compiled engine and read out of bounds), rejects `NA` in
+  `x` (dense and stored sparse entries), `y`, and weights with an
+  informative error (previously affected columns were dropped silently),
+  and warns at the boundary with code-specific messages before returning
+  `list(jerr=...)` on non-fatal codes. Behavior on well-formed inputs is
+  unchanged.
+- RNG hygiene (Phase 13 PR-2).
+  [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
+  no longer permanently clobbers the global RNG: `.Random.seed` is saved
+  on entry and restored on exit, so later unseeded randomness in the
+  caller’s session is no longer a deterministic function of the last
+  `random_state`. Nested CV results no longer depend on `cv_workers`
+  (per-fold seeds are drawn before workers fork), and all multi-omic
+  fan-out sites (per-fold, per-omic, early/late/cooperative fusion,
+  downstream predictors) derive independent RNG streams instead of
+  reusing one `random_state`. Two downstream `cv.glmnet` fits that drew
+  their internal fold assignment from the ambient stream are now seeded.
+  Multi-omic numerical outputs under explicit seeds change accordingly
+  (per-omic feature selections are unchanged); the Python-parity
+  contract for the core STABL algorithm is unaffected and its fixtures
+  pass byte-identically.
+
 ### Documentation
 
 - All nine vignettes audited against the current API and re-rendered.
