@@ -37,6 +37,17 @@ workarounds).
   new `skip_on_cran()` guard (4 files). Next: PR-3 (documentation/fence
   cluster).
 
+- **RNG sweep (2026-10-18, PR-2 follow-up):** repo-wide enumeration of all
+  RNG primitives + implicit consumers across R/ and src/, classified
+  against the PR-2 graph, with empirical probes (6/6 as expected). Core
+  fit/CV paths confirmed complete. Three NEW P3 findings outside the core
+  paths — F-CV-09 (`make_artificial_features`), F-CV-10 (`stabl_interpret`
+  permutation importance), F-CV-11 (`stabl_analyze` permutation
+  importance) — all bare-`set.seed` clobber sites, all empirically
+  confirmed; queued for the PR-4 P3 batch. One vendored residual
+  documented (cv.multiview internal foldid, unreachable in-package,
+  parity-locked).
+
 ## P0 — blocks any release
 
 | ID | Defect | Fix | Est. |
@@ -60,6 +71,9 @@ workarounds).
 | F-CV-01 | `random_state=NULL` + `cv_workers>1`: forked workers share `.Random.seed` → correlated folds, worker-count-dependent results | Derive per-worker seeds even when NULL (or warn loudly) | **FIXED (PR-2, 2026-10-18)** — per-fold seeds drawn pre-fork via `.derive_stream_seeds`; regression test asserts worker-count independence |
 | F-CV-02 | `stabl_fit` permanently clobbers global RNG | Save/restore `.Random.seed` on exit (pattern already exists in `.with_local_seed`) | **FIXED (PR-2, 2026-10-18)** — `on.exit()` save/restore both branches; hermeticity regression tests |
 | F-CV-03 / P4-F28 | One `random_state` reused across folds/omics/cooperative foldid | Derive independent streams per use (stabl_fit's own 3-seed pattern) | **FIXED (PR-2, 2026-10-18)** — `.derive_stream_seeds` per-consumer streams at all fan-out sites (offsets 4000/41000/42000); R-internal multiomic golden values deliberately updated with dated rationale; Python-parity contract intact |
+| F-CV-09 | `make_artificial_features()` (exported): bare `set.seed(random_state)`, never restored — clobbers global RNG (F-CV-02 class) | Same `on.exit()` save/restore as PR-2 | OPEN (P3; found in 2026-10-18 repo-wide RNG sweep; empirically confirmed) |
+| F-CV-10 | `stabl_interpret()` → `.interpret_permutation_importance()`: bare `set.seed`, never restored | Same `on.exit()` save/restore as PR-2 | OPEN (P3; found in 2026-10-18 repo-wide RNG sweep; empirically confirmed) |
+| F-CV-11 | `stabl_analyze()` → `.permutation_importance_sets()`: bare `set.seed`, never restored | Same `on.exit()` save/restore as PR-2 | OPEN (P3; found in 2026-10-18 repo-wide RNG sweep; empirically confirmed) |
 | F-CV-04 / P4-F24 | `cooperation_selection="validation"` tunes on the assessment fold; optimistic metrics, no guard | Default-safe already; add explicit warning + rename option to make bias legible | S |
 | F-P6-2 | Calibration regime-dependent in both directions (anti-conservative independent-null; conservative correlated) | Document regime dependence; consider a regime diagnostic (e.g. reported selection-rate ratio real:artificial) | M |
 | F-P10-1 | Locked release contract is 0.1.1-era vs DESCRIPTION 0.3.0 | Re-ratify contract at 0.3.0 (owner action) or amend contract version | M |

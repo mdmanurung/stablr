@@ -538,6 +538,56 @@ binomial rho>0 paths).
   list, offset registry, and the deliberate R-internal multiomic golden
   value divergence with parity-contract status).
 
+### Repo-wide ambient-RNG sweep (2026-10-18, Phase 13 PR-2 follow-up)
+
+Full static enumeration of every RNG primitive (`set.seed`, `.Random.seed`,
+`sample*`, `r*` draws, `RNGkind`) plus implicit consumers (`cv.glmnet`
+without `foldid`, `ranger`, `kmeans`/`irlba`-class random-start routines,
+compiled `src/` RNG) across all 50 files in `R/`, classified against the
+PR-2 mapped graph, with empirical probes (`/workspace/sweep_rng_probe.R`;
+6/6 as expected). Result: the PR-2 graph is complete for the core fit/CV
+paths; three additional F-CV-02-class clobber sites exist OUTSIDE the core
+paths, all in analysis-side permutation-importance and artificial-feature
+entry points.
+
+- **F-CV-09 (P3, CONFIRMED runtime):** `make_artificial_features()`
+  (exported, `R/artificial_features.R:827`) seeds the global RNG with a
+  bare `set.seed(random_state)` and never restores — same class as
+  F-CV-02. Empirically confirmed: `.Random.seed` differs after a seeded
+  call. Internal consumers (`make_rp_features`, knockoff constructors,
+  the `knockoff_mvr` solver's per-sweep `sample.int(p)`) are safe inside
+  `stabl_fit`'s hermetic region but inherit the clobber when the exported
+  entry is used standalone. Remediation: same `on.exit()` save/restore
+  pattern as PR-2 (candidate for the PR-4 P3 batch).
+- **F-CV-10 (P3, CONFIRMED runtime):** `stabl_interpret()` →
+  `.interpret_permutation_importance()` (`R/interpretation.R:356`) — bare
+  `set.seed(random_state)`, never restored; empirically confirmed.
+  Remediation as F-CV-09.
+- **F-CV-11 (P3, CONFIRMED runtime):** `stabl_analyze()` →
+  `.analyze_validated()` → `.analyze_fold_importance()` →
+  `.permutation_importance_sets()` (`R/analysis_workflow.R:671`) — bare
+  `set.seed(random_state)`, never restored; empirically confirmed.
+  Remediation as F-CV-09.
+
+**Clean sites (verified, no action):** nested-CV fold construction shuffles
+(`.with_local_seed`-wrapped); `.permute_for_cv` and both stacked
+weight-search `runif` blocks (wrapped); study-tools shuffle (wrapped);
+`sample_bootstrap_indices()`/`group_bootstrap_indices()` (`withr::local_seed`,
+restores); `stabl_environment_stability()` (per-env derived seeds; probe
+confirms hermetic); `stabl_fit()` (PR-2 hermetic; furrr path guarded by
+`furrr_options(seed = TRUE)` + pre-derived per-iteration seeds); all
+in-package `cv.glmnet` sites (seeded in PR-2); `ranger` (explicit seed,
+own C++ RNG); `auto_lambda_grid`/`auto_ordinal_lambda_grid`/
+`auto_splsda_keepx_grid` (RNG-free); compiled `src/` (no RNG primitives);
+`auto_rf_threshold_grid`/`auto_oblique_threshold_grid`/adapter factories
+(NULL-seed ambient draw is the documented caller-seeds contract).
+**Vendored residual (parity-locked, unreachable in-package):**
+`cv.multiview`'s internal `foldid <- sample(...)` (`R/cooperative-cv.multiview.R:207`)
+— every in-package caller passes an explicit foldid (`.cooperative_select_cv`
+→ `.make_multiomic_foldid`); reachable only by external users calling the
+vendored S3 methods directly without `foldid`. Documented, no fix (would
+break vendored parity).
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3
