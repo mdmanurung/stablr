@@ -332,10 +332,26 @@ test_that("evidence profile statuses follow the benchmark-backed table", {
   d_ob <- diagnose_fixture(real, art, 1/3, thrs, learner = "oblique_rf")
   expect_true("STABL_DIAG_EVIDENCE_CONCERNING" %in% d_ob$warning_codes)
 
+  # splsda + binomial has MINT-benchmark calibration evidence (validated)
+  d_sp <- diagnose_fixture(real, art, 1/3, thrs,
+                           learner = "splsda", family = "binomial",
+                           decoy = "random_permutation")
+  expect_true(all(d_sp$evidence_profile$status == "validated_in_stablr"))
+  expect_false("STABL_DIAG_EVIDENCE_NOT_EVALUATED" %in% d_sp$warning_codes)
+
+  # splsda outside the evaluated family still surfaces absence of evidence
   d_ne <- diagnose_fixture(real, art, 1/3, thrs,
-                           learner = "splsda", family = "binomial")
+                           learner = "splsda", family = "gaussian")
   expect_true(all(d_ne$evidence_profile$status == "not_evaluated"))
   expect_true("STABL_DIAG_EVIDENCE_NOT_EVALUATED" %in% d_ne$warning_codes)
+
+  # lasso + knockoff_equi + binomial matches only the MINT high-dimensional
+  # multi-cohort row: concerning, and it is the sole matching row
+  d_mint <- diagnose_fixture(real, art, 1/3, thrs,
+                             learner = "lasso", family = "binomial",
+                             decoy = "knockoff_equi")
+  expect_identical(d_mint$evidence_profile$status, "empirically_concerning")
+  expect_true("STABL_DIAG_EVIDENCE_CONCERNING" %in% d_mint$warning_codes)
 
   d_none <- diagnose_fixture(real, art, 1/3, thrs,
                              learner = "nonexistent_learner")

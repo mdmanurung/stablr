@@ -20,6 +20,19 @@
   controlled false-discovery rate.
 
 ## Fixes
+- Evidence-profile provenance corrections in `stabl_diagnose()` (Phase 13
+  PR-C follow-up, post-merge provenance review): the adaptive_lasso row no
+  longer cites Python-parity coverage that does not exist (the pinned
+  solver cases cover lasso and elastic_net only); the sPLS-DA rows now
+  reflect the MINT benchmark's FDP+ calibration results (random
+  permutation arm calibrated, ratio 1.01; knockoff arms conservative),
+  replacing the incorrect "no calibration artifact" status; the lasso
+  block-correlated row's regime is narrowed to the evaluated Phase 6 D3
+  conditions with the cross-benchmark tension noted; a new row surfaces
+  the MINT parent benchmark's severely anti-conservative lasso +
+  knockoff_equi result under cohort heterogeneity (calibration 8.0); and
+  the stale "68 byte-pinned" fixture count is replaced by the durable
+  SHA-256-manifest reference.
 - RNG hygiene residuals (Phase 13 PR-A; F-CV-09/10/11). The three
   remaining bare-`set.seed` sites outside the core fit paths —
   `make_artificial_features()`, the permutation-importance engine in

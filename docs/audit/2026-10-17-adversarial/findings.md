@@ -769,6 +769,29 @@ exported; `print`/`plot` S3 methods).
   installed-size NOTE); check-context tests [ FAIL 0 | WARN 19 |
   SKIP 22 | PASS 3307 ].
 
+**PR-C follow-up (2026-10-18, post-merge provenance review):** the
+evidence-profile table's benchmark provenance was re-audited row-by-row
+against the artifacts before PR-D built on it. Four corrections: (1) the
+adaptive_lasso row no longer cites Python-parity coverage — the pinned
+solver cases cover lasso (3 families) and elastic_net (gaussian) only;
+(2) the sPLS-DA rows now reflect the MINT benchmark's FDP+ calibration
+results (`benchmarks/mint_comparison/partA_summary.csv`: RP arm
+calibration 1.01; KE arm 0.49 conservative; `modelx_extension`: MVR
+0.38 conservative), replacing the incorrect "no calibration artifact"
+`not_evaluated` status — the table had contradicted both the artifacts
+and the package's own NEWS entry; (3) the lasso block-correlated row's
+regime is narrowed to the evaluated Phase 6 D3 conditions (weak signal,
+n=100, AR(0.6)) with the cross-benchmark tension noted
+(`learner_comparison` block-DGP lasso+KE calibration 2.0, binomial);
+(4) the stale "68 byte-pinned" fixture count replaced by the durable
+SHA-256-manifest reference. One coverage gap closed: new row for
+lasso + knockoff_equi + binomial in the high-dimensional multi-cohort
+regime (MINT parent: realized FDP 0.83 vs reported 0.10, calibration
+8.0) — previously binomial lasso users matched zero rows. Table is now
+17 rows; tests updated (splsda evidence assertions, MINT gap-row
+assertion; 148 expectations). Gates: suite 59 files / 0 failed /
+0 errors / 1 skip / 52 warnings (exact parity); R CMD check 0E/0W/1N.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3
