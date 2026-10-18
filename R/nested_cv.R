@@ -804,6 +804,12 @@ stabl_multiomic_nested_cv <- function(
         n_bootstraps = n_bootstraps,
         artificial_type = artificial_type,
         hard_threshold = hard_threshold,
+        # F-CV-05: the dynamic k*100 offset family is safe here ONLY because
+        # `random_state` is always a pre-derived per-fold base (offset 2000
+        # branch), never a base shared with constant-offset streams; under
+        # that base every candidate value exceeds the in-fold constant
+        # streams (<= 4000) by construction.  Do not call this family with a
+        # shared base.  Invariant pinned in test-rng-hygiene.R.
         random_state = .derive_nested_seed(random_state, fold_i, k * 100L),
         n_lambda = n_lambda,
         l1_ratio = l1_ratio,

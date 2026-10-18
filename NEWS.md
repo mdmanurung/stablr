@@ -1,6 +1,40 @@
 # stablr 0.3.0.9000 (development)
 
+## Breaking changes (1.0.0 contract, Phase 13 PR-A)
+- `stabl_fit()` loses the `explore`/`n_explore` arguments and
+  `get_support()` loses its top-N fallback: an empty selection now stays
+  empty instead of being silently relabelled as an "explore" set (spec
+  §5.4). Feature ranking remains available via `get_importances()`.
+- `late_fusion_training = "python_legacy"` is removed from the public
+  multi-omic workflows; only the leakage-safe `"oof"` stacking remains.
+  The historical in-sample algorithm survives unexported
+  (`.late_fusion_multiomic_fit()`) for parity characterization tests.
+- `cooperation_selection = "validation"` is removed from
+  `stabl_multiomic_train_validate()` and `stabl_multiomic_cv()`: tuning
+  on the assessment/validation set biased performance estimates
+  (F-CV-04/P4-F24). Only `"cv"` (shared inner folds) is supported.
+- `plot_fdr_graph()` argument `fdr_target` is renamed to
+  `reference_fdp_plus` (a purely visual reference line), and the plot's
+  default title/axis now say "FDP+ diagnostic" instead of "FDR Estimate":
+  the FDP+ curve is a decoy-based stochastic-bound diagnostic, not a
+  controlled false-discovery rate.
+
 ## Fixes
+- RNG hygiene residuals (Phase 13 PR-A; F-CV-09/10/11). The three
+  remaining bare-`set.seed` sites outside the core fit paths —
+  `make_artificial_features()`, the permutation-importance engine in
+  `stabl_interpret()`, and the one in `stabl_analyze()` — now wrap their
+  seeded regions in `.with_local_seed()`, leaving the caller's global RNG
+  untouched. Outputs are identical to before.
+- `stabl_environment_stability()` derives per-environment seeds via the
+  package's hashed multi-stream derivation instead of consecutive
+  `random_state + i` integers (F-019); results under a given
+  `random_state` change accordingly.
+- Nested-CV seed-offset audit (F-CV-05): the offset-collision risk is
+  verified unreachable under the production seed-derivation structure
+  (proof in `docs/audit/2026-10-17-adversarial/findings.md`); the
+  invariant is pinned by a regression test and a call-site comment. No
+  numerical change.
 - Compiled-boundary fail-closed validation (Phase 13 PR-1). `elnet.fit`
   now length-validates the sparse standardization attributes and rejects
   non-finite `xs` before `.Call` (previously a missing/short attribute
@@ -25,6 +59,12 @@
   algorithm is unaffected and its fixtures pass byte-identically.
 
 ## Documentation
+- `?stabl_fit` documents `min_fdr_` as a minimum-FDP+ diagnostic with the
+  stochastic-bound caveat; `?compute_fdp_plus` gains a contract section
+  pinning the strict `>` exceedance comparator and first-index tie policy
+  (Python `argmin` parity). The intro, multi-omic, and cooperative
+  vignettes and `docs/API_REFERENCE.md` are updated for the 1.0.0
+  contract changes above.
 - All nine vignettes audited against the current API and re-rendered.
   Replaced 25 deprecated `get_feature_names_out()` calls with
   `get_feature_names()`, `jaccard_matrix()` with

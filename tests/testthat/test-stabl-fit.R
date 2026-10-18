@@ -88,10 +88,12 @@ test_that("get_support returns logical vector of correct length", {
   expect_type(mask, "logical")
 })
 
-test_that("explore fallback selects exactly n_explore features even when all scores are tied", {
-  # When hard_threshold = 0.99, nothing passes.  With explore = TRUE and
-  # n_explore = 3, exactly 3 features should be returned regardless of score
-  # ties (e.g. all scores identical / all zero).
+test_that("empty support stays empty when no score passes the threshold", {
+  # 1.0.0 contract (spec 5.4): the pre-1.0 `explore` fallback relabelled a
+  # null selection as a top-N discovery and was removed.  When
+  # hard_threshold = 0.99 nothing passes, get_support() must return an
+  # all-FALSE mask; the ranked descriptive view remains available via
+  # get_importances().
   set.seed(42)
   n <- 30L; p <- 10L
   x <- matrix(rnorm(n * p), n, p,
@@ -108,22 +110,19 @@ test_that("explore fallback selects exactly n_explore features even when all sco
     family         = "gaussian",
     n_bootstraps   = 20L,
     artificial_type = NULL,
-    hard_threshold = 0.99,   # nothing will pass
-    explore        = TRUE,
-    n_explore      = 3L
+    hard_threshold = 0.99    # nothing will pass
   )
 
   mask <- get_support(fit)
 
-  # Exactly n_explore features selected, not all p
-  expect_equal(sum(mask), 3L)
+  expect_equal(sum(mask), 0L)
   expect_length(mask, p)
   expect_type(mask, "logical")
 
-  # The selected features must be the top-3 by importance score
+  # Ranking is still available as a separately labelled descriptive view
   importances <- get_importances(fit)
-  top3_names  <- names(sort(importances, decreasing = TRUE))[seq_len(3L)]
-  expect_setequal(names(mask)[mask], top3_names)
+  expect_length(importances, p)
+  expect_true(all(names(importances) == colnames(x)))
 })
 
 test_that("hard_threshold bypasses FDP+ path", {
@@ -190,32 +189,43 @@ test_that("group bootstrap path runs without error", {
   expect_s3_class(fit, "stabl_fit")
 })
 
-test_that("explore clamps to p when n_explore > n_features", {
-  # Verifies min(n_explore, p) clamping: n_explore=100 with p=6 should select
-  # all 6 features, not error.
+test_that("removed explore/n_explore arguments are rejected", {
+  # 1.0.0 contract (spec 5.4): the fallback arguments were removed from the
+  # public selector; passing them must fail loudly, not be silently ignored.
   set.seed(7L)
   n <- 20L; p <- 6L
   x <- matrix(rnorm(n * p), n, p,
                dimnames = list(paste0("s", seq_len(n)),
                                paste0("f", seq_len(p))))
   y <- setNames(rnorm(n), rownames(x))
-  lam_grid <- data.frame(lambda = c(10, 20))  # huge lambda → all scores ~0
+  lam_grid <- data.frame(lambda = c(10, 20))
 
-  fit <- stabl_fit(
-    x               = x,
-    y               = y,
-    lambda_grid     = lam_grid,
-    family          = "gaussian",
-    n_bootstraps    = 10L,
-    artificial_type = NULL,
-    hard_threshold  = 0.99,
-    explore         = TRUE,
-    n_explore       = 100L       # far exceeds p
+  expect_error(
+    stabl_fit(
+      x               = x,
+      y               = y,
+      lambda_grid     = lam_grid,
+      family          = "gaussian",
+      n_bootstraps    = 10L,
+      artificial_type = NULL,
+      hard_threshold  = 0.99,
+      explore         = TRUE
+    ),
+    "unused argument"
   )
-
-  mask <- get_support(fit)
-  expect_equal(sum(mask), p)    # clamped to p, not 100
-  expect_length(mask, p)
+  expect_error(
+    stabl_fit(
+      x               = x,
+      y               = y,
+      lambda_grid     = lam_grid,
+      family          = "gaussian",
+      n_bootstraps    = 10L,
+      artificial_type = NULL,
+      hard_threshold  = 0.99,
+      n_explore       = 3L
+    ),
+    "unused argument"
+  )
 })
 
 test_that("get_support errors with informative message when no threshold is resolvable", {

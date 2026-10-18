@@ -69,30 +69,47 @@ test_that("OOF late fusion covers samples once and separates groups", {
   }
 })
 
-test_that("legacy late fusion remains explicitly available", {
+test_that("legacy late fusion survives only via the internal parity path (1.0.0 fence)", {
   ids <- paste0("s", 1:12)
   x <- matrix(seq_len(36), 12, 3,
               dimnames = list(ids, paste0("f", 1:3)))
   y <- setNames(seq_len(12), ids)
-  fit <- stabl_multiomic_train_validate(
-    list(a = x), y, data.frame(lambda = 0.1),
-    artificial_type = NULL, hard_threshold = 1,
-    n_bootstraps = 2L, sample_fraction = 1,
-    late_fusion = TRUE, late_fusion_training = "python_legacy",
-    n_iter_lf = 10L, random_state = 79L
+
+  # Public API rejects the removed option.
+  expect_error(
+    stabl_multiomic_train_validate(
+      list(a = x), y, data.frame(lambda = 0.1),
+      artificial_type = NULL, hard_threshold = 1,
+      n_bootstraps = 2L, sample_fraction = 1,
+      late_fusion = TRUE, late_fusion_training = "python_legacy",
+      n_iter_lf = 10L, random_state = 79L
+    ),
+    "removed from the public API"
   )
-  expect_identical(fit$late_fusion$provenance$training_mode, "python_legacy")
+
+  # The historical algorithm itself is retained unexported for the
+  # Python-parity characterization tests and keeps its result contract.
+  lf <- .late_fusion_multiomic_fit(
+    selected_train = list(a = x),
+    selected_valid = NULL,
+    y_train = y, y_valid = NULL,
+    omic_names = "a",
+    family = "gaussian",
+    n_iter_lf = 10L,
+    random_state = 79L
+  )
+  expect_identical(lf$provenance$training_mode, "python_legacy")
   expect_identical(
-    fit$late_fusion$in_sample_predictions,
-    fit$late_fusion$train_predictions
+    lf$in_sample_predictions,
+    lf$train_predictions
   )
   expect_identical(
-    fit$late_fusion$in_sample_score,
-    fit$late_fusion$score
+    lf$in_sample_score,
+    lf$score
   )
-  expect_false("oof_predictions" %in% names(fit$late_fusion))
+  expect_false("oof_predictions" %in% names(lf))
   expect_identical(
-    fit$late_fusion$provenance$result_semantics$compatibility_aliases,
+    lf$provenance$result_semantics$compatibility_aliases,
     c(
       train_predictions = "in_sample_predictions",
       score = "in_sample_score"

@@ -534,11 +534,11 @@ test_that("plot_fdr_graph errors when no FDRs_ present", {
   expect_error(plot_fdr_graph(fit), "artificial_type")
 })
 
-test_that("plot_fdr_graph validates fdr_target", {
+test_that("plot_fdr_graph validates reference_fdp_plus", {
   skip_if_not_installed("ggplot2")
   fit <- .make_fit()
-  expect_error(plot_fdr_graph(fit, fdr_target = -0.1), "fdr_target")
-  expect_s3_class(plot_fdr_graph(fit, fdr_target = NULL), "ggplot")
+  expect_error(plot_fdr_graph(fit, reference_fdp_plus = -0.1), "reference_fdp_plus")
+  expect_s3_class(plot_fdr_graph(fit, reference_fdp_plus = NULL), "ggplot")
 })
 
 test_that("plot_roc returns a ggplot object", {
@@ -723,10 +723,10 @@ test_that("plotting and export helpers reject invalid scalar arguments", {
   y_bin <- factor(rep(c("A", "B"), length.out = 10))
   y_num <- rnorm(10)
 
-  expect_error(plot_fdr_graph(fit, fdr_target = NA_real_), "fdr_target")
-  expect_error(plot_fdr_graph(fit, fdr_target = Inf), "fdr_target")
-  expect_error(plot_fdr_graph(fit, fdr_target = c(0.05, 0.1)), "fdr_target")
-  expect_error(plot_fdr_graph(fit, fdr_target = "0.05"), "fdr_target")
+  expect_error(plot_fdr_graph(fit, reference_fdp_plus = NA_real_), "reference_fdp_plus")
+  expect_error(plot_fdr_graph(fit, reference_fdp_plus = Inf), "reference_fdp_plus")
+  expect_error(plot_fdr_graph(fit, reference_fdp_plus = c(0.05, 0.1)), "reference_fdp_plus")
+  expect_error(plot_fdr_graph(fit, reference_fdp_plus = "0.05"), "reference_fdp_plus")
   expect_error(plot_fdr_graph(fit, title = ""), "title")
 
   expect_error(plot_prc(c(0, 1), c(0.1, 0.9), show_iso = NA), "show_iso")

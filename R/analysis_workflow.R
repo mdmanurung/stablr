@@ -668,18 +668,25 @@ stabl_analyze <- function(x,
   if (length(sets) == 0L || nrow(x_eval) < 2L) return(out)
 
   base_loss <- loss_fun(y_vec, predict_fn(x_eval))
-  if (!is.null(random_state)) set.seed(random_state)
-  rep_mat <- matrix(NA_real_, nrow = n_repeats, ncol = length(sets),
-                    dimnames = list(NULL, names(sets)))
-  for (r in seq_len(n_repeats)) {
-    for (s in names(sets)) {
-      cols <- sets[[s]]
-      xp <- x_eval
-      idx <- sample(nrow(xp))
-      xp[, cols] <- xp[idx, cols, drop = FALSE]
-      rep_mat[r, s] <- loss_fun(y_vec, predict_fn(xp)) - base_loss
+  # F-CV-11: seed locally and restore the caller's RNG state on exit; a bare
+  # set.seed() here permanently clobbered the global stream (F-CV-02 class).
+  rep_mat <- .with_local_seed(
+    if (!is.null(random_state)) as.integer(random_state),
+    {
+      rep_mat <- matrix(NA_real_, nrow = n_repeats, ncol = length(sets),
+                        dimnames = list(NULL, names(sets)))
+      for (r in seq_len(n_repeats)) {
+        for (s in names(sets)) {
+          cols <- sets[[s]]
+          xp <- x_eval
+          idx <- sample(nrow(xp))
+          xp[, cols] <- xp[idx, cols, drop = FALSE]
+          rep_mat[r, s] <- loss_fun(y_vec, predict_fn(xp)) - base_loss
+        }
+      }
+      rep_mat
     }
-  }
+  )
   out$mean <- colMeans(rep_mat)
   out$sd <- apply(rep_mat, 2L, stats::sd)
   out$repeats <- rep_mat

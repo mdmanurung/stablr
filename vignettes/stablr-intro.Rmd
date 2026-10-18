@@ -291,15 +291,15 @@ threshold. The horizontal line is a visual target only. In this five-signal
 simulation, the FDP+ lower bound is `1 / 5 = 0.2`. The graph is a
 calibration diagnostic, not a universal false-discovery guarantee.
 
-```{r fdr-binary, fig.alt = "FDR estimate graph for binary classification"}
-plot_fdr_graph(fit_bin, title = "Binary classification - FDR estimate")
+```{r fdr-binary, fig.alt = "FDP+ diagnostic graph for binary classification"}
+plot_fdr_graph(fit_bin, title = "Binary classification - FDP+ diagnostic")
 ```
 
 You can also write the diagnostic to file.
 
 ```{r save-fdr-plot, eval = FALSE}
 # Optional file writing; plot contract exercised by test-phase7.R.
-fdr_plot <- plot_fdr_graph(fit_bin, title = "Binary classification - FDR estimate")
+fdr_plot <- plot_fdr_graph(fit_bin, title = "Binary classification - FDP+ diagnostic")
 ggplot2::ggsave("fdr-graph.png", fdr_plot, width = 7, height = 5)
 ```
 
@@ -389,8 +389,8 @@ plot_stabl_path(fit_reg, title = "Regression - stability path")
 
 The FDP+ diagnostic completes the parallel with the binary case.
 
-```{r fdr-reg, fig.alt = "FDR estimate graph for regression"}
-plot_fdr_graph(fit_reg, title = "Regression - FDR estimate")
+```{r fdr-reg, fig.alt = "FDP+ diagnostic graph for regression"}
+plot_fdr_graph(fit_reg, title = "Regression - FDP+ diagnostic")
 ```
 
 # 7 Alternative base learners

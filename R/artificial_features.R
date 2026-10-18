@@ -824,18 +824,24 @@ make_artificial_features <- function(x, n_injected, type, random_state = NULL,
     .assert_supported_knockoff_dimension(x, type)
   }
   knockoff_fallback <- match.arg(knockoff_fallback)
-  if (!is.null(random_state)) set.seed(random_state)
-  switch(
-    type,
-    random_permutation = make_rp_features(x, n_injected),
-    knockoff           = make_knockoff_features(x, n_injected,
-                                                random_state = random_state,
-                                                knockoff_fallback),
-    knockoff_equi      = make_knockoff_equi_features(x, n_injected,
-                                                     random_state = random_state,
-                                                     knockoff_fallback),
-    knockoff_mvr       = make_knockoff_mvr_features(x, n_injected,
-                                                    random_state = random_state,
-                                                    knockoff_fallback)
+  # F-CV-09: seed locally and restore the caller's RNG state on exit; a bare
+  # set.seed() here permanently clobbered the global stream (F-CV-02 class).
+  # With random_state = NULL the generators draw from the ambient stream as
+  # before (.with_local_seed passes NULL through without seeding).
+  .with_local_seed(
+    if (!is.null(random_state)) as.integer(random_state),
+    switch(
+      type,
+      random_permutation = make_rp_features(x, n_injected),
+      knockoff           = make_knockoff_features(x, n_injected,
+                                                  random_state = random_state,
+                                                  knockoff_fallback),
+      knockoff_equi      = make_knockoff_equi_features(x, n_injected,
+                                                       random_state = random_state,
+                                                       knockoff_fallback),
+      knockoff_mvr       = make_knockoff_mvr_features(x, n_injected,
+                                                      random_state = random_state,
+                                                      knockoff_fallback)
+    )
   )
 }

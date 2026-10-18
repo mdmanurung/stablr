@@ -322,6 +322,12 @@ warning to all learners (or document the limitation in `stabl_fit()`'s
   hashed multi-stream derivation. Practically safe under R's MT seed
   scrambler but internally inconsistent and weaker than the package's own
   best practice.
+  **Update (2026-10-18, Phase 13 PR-A — FIXED):** per-environment seeds now
+  come from `.derive_stream_seeds(random_state, n_envs)` (the PR-2 hashed
+  multi-stream pattern); `random_state = NULL` behavior unchanged (unseeded
+  fits). Regression test asserts the per-environment fits equal fits
+  explicitly seeded with each derived stream seed. No golden values were
+  pinned on the old derivation, so no re-pinning was required.
 - **F-020 (P3):** `.is_glmnet_numerical_error()` /
   `.is_linear_algebra_numerical_error()` classify by English message regex —
   brittle across glmnet/linalg version changes. Failure direction is safe
@@ -495,11 +501,38 @@ threshold (degenerate FDP+ caps at 1.0 — empty selection, conservative).
   inside `stabl_multiomic_cv` tunes rho/lambda on the outer assessment fold
   and reports the tuned predictions as held-out — optimistic metrics, no
   guard (default `"cv"` is safe). Same defect as P4-F24.
+  **Update (2026-10-18, Phase 13 PR-A — FIXED by removal):** the 1.0.0 spec
+  (§5) removes the option entirely rather than warning: both public
+  workflows (`stabl_multiomic_train_validate`, `stabl_multiomic_cv`) now
+  reject `cooperation_selection = "validation"` with an explicit error.
+  The validation branch survives only in unexported form
+  (`.cooperative_select_validation`, reached via
+  `.normalize_cooperative_multiomic_args` + `.cooperative_multiomic_fit`)
+  for the characterization tests; char-F2-val golden values are unchanged
+  (the branch consumes no RNG). Also fixes P4-F24.
 - **F-CV-05..08 (P3):** nested-seed offset collisions; vendored `cvstats`
   discards per-fold `nlams` (slightly wrong cvsd at path end, upstream-
   inherited); latent unseeded internal foldid (unreachable in-package);
   no repeated-measures fold unit in nested CV except `study_labels`
   (documented footgun, no warning).
+  **Update (2026-10-18, Phase 13 PR-A — F-CV-05 VERIFIED UNREACHABLE, guard
+  pinned):** full enumeration of `.derive_nested_seed(base, i, off) =
+  (base + off + i*7919) mod INT_MAX` call sites. Two streams sharing a base
+  collide iff `(off1 - off2)` is a multiple of 7919. (i) All twelve
+  registered constant offsets (10/1000/2000/3000/4000/7000/29001/31001/
+  39001/41000/42000/47001) are pairwise collision-free for all indices.
+  (ii) The only dynamic offset family (`k*100` in
+  `.evaluate_stabl_candidates_inner`) is reachable solely under a base
+  pre-derived with offset 2000, where every candidate-stream value exceeds
+  every in-fold constant stream (offsets <= 4000) by construction
+  (2000 + 100 + 7919 > 4000); within-family collisions need >= 7919
+  candidates (gcd(100, 7919) = 1). A naive same-base reading does collide
+  (k=10 vs offset 1000) — caught by the first version of the regression
+  test — but that configuration never occurs in production. Resolution:
+  no numeric change; the invariant is pinned by a regression test
+  (`test-rng-hygiene.R`) and a call-site comment forbidding shared-base
+  use of the dynamic family. F-CV-06/F-CV-08 remain open as recorded;
+  F-CV-07 residual scope unchanged.
   **Correction (2026-10-18, Phase 13 PR-2):** the F-CV-07 judgment
   ("latent unseeded internal foldid — unreachable in-package") was too
   narrow. Two reachable sites existed and are fixed in PR-2:
@@ -559,15 +592,22 @@ entry points.
   `stabl_fit`'s hermetic region but inherit the clobber when the exported
   entry is used standalone. Remediation: same `on.exit()` save/restore
   pattern as PR-2 (candidate for the PR-4 P3 batch).
+  **Update (2026-10-18, Phase 13 PR-A — FIXED):** the seeded branch is
+  wrapped in `.with_local_seed()` (NULL passes through unseeded, preserving
+  the ambient-draw contract); outputs identical, side effect removed.
 - **F-CV-10 (P3, CONFIRMED runtime):** `stabl_interpret()` →
   `.interpret_permutation_importance()` (`R/interpretation.R:356`) — bare
   `set.seed(random_state)`, never restored; empirically confirmed.
   Remediation as F-CV-09.
+  **Update (2026-10-18, Phase 13 PR-A — FIXED):** the rep_mat loop is
+  wrapped in `.with_local_seed()`; outputs identical, side effect removed.
 - **F-CV-11 (P3, CONFIRMED runtime):** `stabl_analyze()` →
   `.analyze_validated()` → `.analyze_fold_importance()` →
   `.permutation_importance_sets()` (`R/analysis_workflow.R:671`) — bare
   `set.seed(random_state)`, never restored; empirically confirmed.
   Remediation as F-CV-09.
+  **Update (2026-10-18, Phase 13 PR-A — FIXED):** the rep_mat loop is
+  wrapped in `.with_local_seed()`; outputs identical, side effect removed.
 
 **Clean sites (verified, no action):** nested-CV fold construction shuffles
 (`.with_local_seed`-wrapped); `.permute_for_cv` and both stacked
@@ -587,6 +627,53 @@ own C++ RNG); `auto_lambda_grid`/`auto_ordinal_lambda_grid`/
 → `.make_multiomic_foldid`); reachable only by external users calling the
 vendored S3 methods directly without `foldid`. Documented, no fix (would
 break vendored parity).
+
+### Phase 13 PR-A — 1.0.0-spec contract closure (2026-10-18)
+
+Driven by the uploaded `stablr_1.0.0` revised adversarial spec
+(`stablr_1.0.0_implementation_roadmap.md`); these are contract changes
+mandated by the spec, recorded here for audit continuity (spec §9.2 PR
+record: scope / behavior proof / contract / tests / parity / migration).
+
+- **explore/n_explore removed (spec §5.4 MUST).** The pre-1.0
+  `get_support()` fallback relabelled a null (empty) selection as a top-N
+  "explore" set — a silent scientific mislabel. Removed: the fallback
+  block in `get_support()`, the `explore`/`n_explore` formals and object
+  fields in `stabl_fit()`, and the validator entry. Empty support now
+  stays empty; ranking remains available via `get_importances()`.
+  Regression tests: empty-support-stays-empty block rewritten to assert
+  `sum(mask) == 0` with importances intact; both removed formals now raise
+  "unused argument" errors. Object-schema migration note recorded for the
+  1.0.0 migration guide (PR-G).
+- **`python_legacy` fenced from production (spec §5).** The historical
+  in-sample late-fusion stacking algorithm trains stacking weights on the
+  same data used to fit the base models (optimistic). Both public
+  workflows now reject `late_fusion_training = "python_legacy"` with an
+  explicit removal error; only leakage-safe `"oof"` remains. The algorithm
+  survives unexported (`.late_fusion_multiomic_fit()`) for the
+  Python-parity characterization tests, which now call it directly;
+  char-F1 golden values preserved by replicating the public path's
+  derived lf_seed (stream slot n_omics + 2). `benchmark_late_fusion.R`'s
+  legacy arm migrated to the same internal path. No Python-parity fixture
+  is affected (the parity generator never froze the R multiomic chain).
+- **FDP+ presentation relabelled (spec: FDP+ must never be presented as a
+  controlled FDR).** `plot_fdr_graph()` default title/y-axis are now
+  "FDP+ diagnostic"; the visual reference-line argument is renamed
+  `fdr_target` → `reference_fdp_plus` (purely visual, documented);
+  optimum/no-optimum annotations now say "Selected threshold (first FDP+
+  minimum)" / "No threshold selected (minimum FDP+ > 1)". `min_fdr_` is
+  documented in `?stabl_fit` as a decoy-based stochastic-bound diagnostic
+  (not a controlled FDR), and `?compute_fdp_plus` carries a contract
+  section pinning the strict `>` exceedance comparator and first-index
+  tie policy (Python `argmin` parity) — documented, not changed.
+- **`knockoff_fallback`:** already fail-closed (`"stop"` default) with the
+  calibration-target rationale in `?stabl_fit`; documentation-only item,
+  no code change.
+- **Suite parity:** 57 files / 605 tests / 0 failed / 0 errors / 1 skip /
+  52 warnings (pre-PR-A baseline: 602 tests, 52 warnings — +3 net from the
+  new fence and F-CV-05/F-019 regression blocks; warning count at exact
+  parity). Python-parity (68 checks) and multiview-parity (63 checks)
+  byte-identical.
 
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 

@@ -17,11 +17,12 @@
 #' if `stabl_fit()` was called with both `artificial_type = NULL` and no
 #' `hard_threshold`.
 #'
-#' **Explore fallback:** When `explore = TRUE` was set during fitting and no
-#' feature's score exceeds the threshold, the function returns the top
-#' `n_explore` features instead of an all-`FALSE` vector.  This is useful in
-#' exploratory analyses where you want at least some candidates even when the
-#' signal is weak.
+#' An empty support is a valid result: when no feature's score exceeds the
+#' threshold, an all-`FALSE` vector is returned.  Use [get_importances()] for
+#' a ranked descriptive view; a top-ranked list is never silently substituted
+#' for threshold-selected support (1.0.0 contract; the pre-1.0 `explore`
+#' fallback was removed because it relabelled a null selection as a
+#' discovery).
 #'
 #' @param object A fitted `"stabl_fit"` object returned by [stabl_fit()].
 #' @param new_hard_threshold Numeric in `(0, 1]` or `NULL`.  When supplied,
@@ -63,16 +64,6 @@ get_support.stabl_fit <- function(object, new_hard_threshold = NULL) {
   threshold  <- .resolve_stabl_threshold(object, new_hard_threshold)
   max_scores <- get_importances(object)
   mask       <- max_scores > threshold
-
-  # explore fallback: top n_explore features if nothing passes threshold.
-  # Use direct index selection to avoid over-selecting on tied scores
-  # (the old `sort()[n_exp] - 0.01` approach selected ALL features tied at
-  # the n_exp-th score, e.g. all-zero scores produced mask = all TRUE).
-  if (!any(mask) && isTRUE(object$explore)) {
-    n_exp       <- min(object$n_explore, length(max_scores))
-    top_idx     <- order(max_scores, decreasing = TRUE)[seq_len(n_exp)]
-    mask[top_idx] <- TRUE
-  }
 
   mask
 }
@@ -136,8 +127,7 @@ get_stabl_scores.stabl_fit <- function(object) {
 #'   order.
 #'
 #' @return Character vector of selected feature names.  An empty character
-#'   vector is returned when no feature passes the threshold (and
-#'   `explore = FALSE` was used during fitting).
+#'   vector is returned when no feature passes the threshold.
 #'
 #' @seealso [get_support()] for the binary mask, [get_importances()] for
 #'   ranked scores.

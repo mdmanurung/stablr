@@ -353,16 +353,23 @@ stabl_interpret <- function(object, x, y, family = c("gaussian", "binomial"),
   base_pred <- pred_fun(xs)
   base_loss <- loss_fun(y_vec, base_pred)
 
-  if (!is.null(random_state)) set.seed(random_state)
-  rep_mat <- matrix(NA_real_, nrow = n_repeats, ncol = length(selected),
-                    dimnames = list(NULL, selected))
-  for (r in seq_len(n_repeats)) {
-    for (j in selected) {
-      xp <- xs
-      xp[, j] <- sample(xp[, j])  # one shared permutation per column
-      rep_mat[r, j] <- loss_fun(y_vec, pred_fun(xp)) - base_loss
+  # F-CV-10: seed locally and restore the caller's RNG state on exit; a bare
+  # set.seed() here permanently clobbered the global stream (F-CV-02 class).
+  rep_mat <- .with_local_seed(
+    if (!is.null(random_state)) as.integer(random_state),
+    {
+      rep_mat <- matrix(NA_real_, nrow = n_repeats, ncol = length(selected),
+                        dimnames = list(NULL, selected))
+      for (r in seq_len(n_repeats)) {
+        for (j in selected) {
+          xp <- xs
+          xp[, j] <- sample(xp[, j])  # one shared permutation per column
+          rep_mat[r, j] <- loss_fun(y_vec, pred_fun(xp)) - base_loss
+        }
+      }
+      rep_mat
     }
-  }
+  )
   out$mean[selected] <- colMeans(rep_mat)
   out$sd[selected] <- apply(rep_mat, 2L, stats::sd)
   out$repeats <- rep_mat

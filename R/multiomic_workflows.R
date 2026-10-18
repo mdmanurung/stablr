@@ -48,10 +48,13 @@
 #'   so that the `...` channel (forwarded to [stabl_fit()]) stays free of
 #'   name collisions.  `n_iter` itself is not a [stabl_fit()] argument and is
 #'   therefore rejected if passed through `...`.
-#' @param late_fusion_training How stacking weights are trained. `"oof"`
-#'   (default) refits STABL selection and the downstream model inside every
-#'   stacking fold. `"python_legacy"` preserves the historical in-sample
-#'   Python-compatible algorithm.
+#' @param late_fusion_training How stacking weights are trained. Only `"oof"`
+#'   (the default) is supported: STABL selection and the downstream model are
+#'   refit inside every stacking fold.  The historical in-sample
+#'   `"python_legacy"` algorithm was removed from the public API in 1.0.0
+#'   because it trains the stacking weights on the same data used to fit the
+#'   base models (optimistic); it survives only as the unexported
+#'   `.late_fusion_multiomic_fit()` for Python-parity characterization tests.
 #' @param late_fusion_nfolds Number of stacking folds used in OOF mode.
 #' @param cooperative_fusion Logical. When `TRUE`, fit a built-in cooperative
 #'   learning branch (vendored multiview engine) in addition to the existing
@@ -59,13 +62,16 @@
 #'   `"binomial"` only.
 #' @param rho Numeric scalar or vector of non-negative cooperation strengths.
 #'   When `NULL`, defaults to `0`.
-#' @param cooperation_selection Character scalar. Either `"cv"` or
-#'   `"validation"`. `"cv"` tunes over `rho` with shared inner fold
-#'   assignments. `"validation"` tunes over `rho` and `lambda` on the
-#'   supplied validation set.
+#' @param cooperation_selection Character scalar. Only `"cv"` is supported:
+#'   tuning over `rho` uses shared inner fold assignments.  The
+#'   `"validation"` option (tuning `rho` and `lambda` on the supplied
+#'   validation set) was removed from the public API in 1.0.0 because it
+#'   tunes on the assessment data and biases the performance estimate
+#'   (F-CV-04); the branch survives only in unexported form for
+#'   characterization tests.
 #' @param cooperation_selector Character scalar. Selection rule for the
-#'   cooperative `lambda`. `"lambda.1se"` is only available when
-#'   `cooperation_selection = "cv"`.
+#'   cooperative `lambda`. Both `"lambda.min"` and `"lambda.1se"` are
+#'   available with `cooperation_selection = "cv"`.
 #' @param cooperation_type_measure Character scalar controlling the cooperative
 #'   tuning metric. Supported values follow the active `family` and the
 #'   multiview CV API.
@@ -84,9 +90,10 @@
 #'       list with `fit`, `selected_features`, `selected_train`, and
 #'       `selected_valid` for the concatenated single-STABL run.}
 #'     \item{`late_fusion`}{`NULL` when `late_fusion = FALSE`.  Otherwise a
-#'       list with `weights`, `valid_predictions`, and mode-specific training
-#'       results. OOF mode provides `oof_predictions` and `oof_score`; legacy
-#'       mode provides `in_sample_predictions` and `in_sample_score`.
+#'       list with `weights`, `valid_predictions`, and OOF training results
+#'       (`oof_predictions`, `oof_score`).  (The removed `"python_legacy"`
+#'       mode additionally provided `in_sample_predictions` and
+#'       `in_sample_score`.)
 #'       `oof_predictions` is a *base-model* out-of-fold matrix; the stacked
 #'       `oof_score` is computed with stacking weights tuned on that same
 #'       OOF matrix (maximum over `n_iter_lf` random weight draws), so it is
@@ -137,18 +144,35 @@ stabl_multiomic_train_validate <- function(
     random_state    = NULL,
     early_fusion    = FALSE,
     late_fusion     = FALSE,
-    late_fusion_training = c("oof", "python_legacy"),
+    late_fusion_training = "oof",
     late_fusion_nfolds = 5L,
     n_iter_lf       = 10000L,
     cooperative_fusion = FALSE,
     rho             = NULL,
-    cooperation_selection = c("cv", "validation"),
+    cooperation_selection = "cv",
     cooperation_selector = c("lambda.min", "lambda.1se"),
     cooperation_type_measure = "default",
     cooperation_nfolds = 5L,
     ...
 ) {
-  late_fusion_training <- match.arg(late_fusion_training)
+  if (!identical(late_fusion_training, "oof")) {
+    stop(
+      "`late_fusion_training = \"python_legacy\"` was removed from the public ",
+      "API in 1.0.0: the historical in-sample stacking algorithm trains the ",
+      "stacking weights on the same data used to fit the base models, which ",
+      "is optimistic. Only `\"oof\"` (out-of-fold stacking) is supported.",
+      call. = FALSE
+    )
+  }
+  if (!identical(cooperation_selection, "cv")) {
+    stop(
+      "`cooperation_selection = \"validation\"` was removed from the public ",
+      "API in 1.0.0: tuning rho/lambda on the assessment or validation set ",
+      "biases the performance estimate (F-CV-04). Only `\"cv\"` (shared ",
+      "inner folds) is supported.",
+      call. = FALSE
+    )
+  }
   late_fusion_nfolds <- .validate_scalar_integer_like(
     late_fusion_nfolds, "late_fusion_nfolds", min = 2L
   )
@@ -249,8 +273,8 @@ stabl_multiomic_train_validate <- function(
     random_state       = random_state
   )
 
-  defer_full_refit <- isTRUE(late_fusion) &&
-    identical(late_fusion_training, "oof")
+  # After the fence above, late_fusion_training can only be "oof".
+  defer_full_refit <- isTRUE(late_fusion)
   per_omic <- if (defer_full_refit) NULL else .fit_multiomic_per_omic(
       x_train_list = x_train_list, y_train = y_train,
       lambda_by_omic = lambda_by_omic, x_valid_list = x_valid_list,
@@ -273,26 +297,21 @@ stabl_multiomic_train_validate <- function(
     NULL
   }
 
+  # Only OOF stacking is reachable here (see the fence above); the historical
+  # in-sample algorithm survives solely as the internal, unexported
+  # `.late_fusion_multiomic_fit()` for the Python-parity characterization
+  # tests, which call it directly.
   lf_result <- if (isTRUE(late_fusion)) {
-    if (identical(late_fusion_training, "python_legacy")) {
-      .late_fusion_multiomic_fit(
-        selected_train = per_omic$selected_train,
-        selected_valid = per_omic$selected_valid,
-        y_train = y_train, y_valid = y_valid, omic_names = omic_names,
-        family = family, n_iter_lf = n_iter_lf, random_state = lf_seed
-      )
-    } else {
-      .late_fusion_oof_fit(
-        .lf_x_train_list = x_train_list, .lf_y_train = y_train,
-        .lf_x_valid_list = x_valid_list, .lf_y_valid = y_valid,
-        .lf_groups_train = groups_train,
-        .lf_bootstrap_strata_train = bootstrap_strata_train,
-        .lf_lambda_by_omic = lambda_by_omic, .lf_fit_params = fit_params,
-        .lf_omic_names = omic_names,
-        .lf_family = family, .lf_n_iter = n_iter_lf,
-        .lf_nfolds = late_fusion_nfolds, .lf_random_state = lf_seed, ...
-      )
-    }
+    .late_fusion_oof_fit(
+      .lf_x_train_list = x_train_list, .lf_y_train = y_train,
+      .lf_x_valid_list = x_valid_list, .lf_y_valid = y_valid,
+      .lf_groups_train = groups_train,
+      .lf_bootstrap_strata_train = bootstrap_strata_train,
+      .lf_lambda_by_omic = lambda_by_omic, .lf_fit_params = fit_params,
+      .lf_omic_names = omic_names,
+      .lf_family = family, .lf_n_iter = n_iter_lf,
+      .lf_nfolds = late_fusion_nfolds, .lf_random_state = lf_seed, ...
+    )
   } else {
     NULL
   }
@@ -446,18 +465,35 @@ stabl_multiomic_cv <- function(
   random_state    = NULL,
   early_fusion    = FALSE,
   late_fusion     = FALSE,
-  late_fusion_training = c("oof", "python_legacy"),
+  late_fusion_training = "oof",
   late_fusion_nfolds = 5L,
   n_iter_lf       = 10000L,
   cooperative_fusion = FALSE,
   rho               = NULL,
-  cooperation_selection = c("cv", "validation"),
+  cooperation_selection = "cv",
   cooperation_selector = c("lambda.min", "lambda.1se"),
   cooperation_type_measure = "default",
   cooperation_nfolds = 5L,
   ...
 ) {
-  late_fusion_training <- match.arg(late_fusion_training)
+  if (!identical(late_fusion_training, "oof")) {
+    stop(
+      "`late_fusion_training = \"python_legacy\"` was removed from the public ",
+      "API in 1.0.0: the historical in-sample stacking algorithm trains the ",
+      "stacking weights on the same data used to fit the base models, which ",
+      "is optimistic. Only `\"oof\"` (out-of-fold stacking) is supported.",
+      call. = FALSE
+    )
+  }
+  if (!identical(cooperation_selection, "cv")) {
+    stop(
+      "`cooperation_selection = \"validation\"` was removed from the public ",
+      "API in 1.0.0: tuning rho/lambda on the assessment or validation set ",
+      "biases the performance estimate (F-CV-04). Only `\"cv\"` (shared ",
+      "inner folds) is supported.",
+      call. = FALSE
+    )
+  }
   late_fusion_nfolds <- .validate_scalar_integer_like(
     late_fusion_nfolds, "late_fusion_nfolds", min = 2L
   )

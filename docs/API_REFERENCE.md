@@ -121,9 +121,10 @@ Important arguments:
   supported.
 - `early_fusion`: concatenate omics and fit a joint STABL model.
 - `late_fusion`: learn a weighted stack over per-omic downstream predictions.
-- `late_fusion_training`: `"oof"` (default) reruns selection and downstream
-  fitting inside each stacking fold; `"python_legacy"` preserves historical
-  in-sample weight training.
+- `late_fusion_training`: only `"oof"` (default) is supported; it reruns
+  selection and downstream fitting inside each stacking fold. The historical
+  in-sample `"python_legacy"` mode was removed from the public API in 1.0.0
+  (retained unexported for parity tests).
 - `late_fusion_nfolds`: number of leakage-safe stacking folds (default 5).
 - `n_iter_lf`: finite integer-like scalar number of late-fusion weight draws.
 - `cooperative_fusion`: run the native cooperative multiview branch.
@@ -179,9 +180,9 @@ Cooperative fusion is available through `stabl_multiomic_train_validate()` and
 Key arguments:
 
 - `rho`: numeric scalar or vector of non-negative cooperation strengths.
-- `cooperation_selection`: `"cv"` or `"validation"`.
-- `cooperation_selector`: `"lambda.min"` or `"lambda.1se"`; `lambda.1se`
-  requires CV selection.
+- `cooperation_selection`: only `"cv"` since 1.0.0; the `"validation"` mode
+  tuned on the assessment set and was removed from the public API (F-CV-04).
+- `cooperation_selector`: `"lambda.min"` or `"lambda.1se"`.
 - `cooperation_type_measure`: tuning metric; defaults depend on `family`.
 - `cooperation_nfolds`: finite integer-like scalar, at least 3.
 
@@ -192,8 +193,9 @@ Cox and Poisson cooperative fusion are intentionally rejected.
 
 - `plot_stabl_path(object, title = "STABL Stability Path")` plots stability
   scores over the lambda path.
-- `plot_fdr_graph(object, title = "FDR Estimate", fdr_target = 0.05)` plots
-  FDP+ over candidate thresholds.
+- `plot_fdr_graph(object, title = "FDP+ diagnostic", reference_fdp_plus = 0.05)`
+  plots the FDP+ diagnostic over candidate thresholds; `reference_fdp_plus`
+  draws a purely visual reference line (renamed from `fdr_target` in 1.0.0).
 - `plot_roc(y_true, y_preds, title = "ROC Curve")` plots ROC curves for
   downstream binary predictors.
 - `plot_prc(y_true, y_preds, show_iso = TRUE, title = "Precision-Recall Curve")`

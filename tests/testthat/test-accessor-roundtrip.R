@@ -88,8 +88,6 @@ test_that("transform_stabl subsets matrix input in fitted feature order and pres
                              dimnames = list(c("b", "a", "c"), NULL)),
       hard_threshold = 0.5,
       fdr_min_threshold_ = NULL,
-      explore = FALSE,
-      n_explore = 1L,
       feature_names = c("b", "a", "c"),
       n_features_in_ = 3L
     ),
@@ -116,8 +114,6 @@ test_that("transform_stabl handles data.frame input, zero selections, and thresh
                              dimnames = list(c("a", "b"), NULL)),
       hard_threshold = 0.9,
       fdr_min_threshold_ = NULL,
-      explore = FALSE,
-      n_explore = 1L,
       feature_names = c("a", "b"),
       n_features_in_ = 2L
     ),
@@ -142,8 +138,6 @@ test_that("transform_stabl rejects missing or duplicate input feature names", {
                              dimnames = list(c("a", "b"), NULL)),
       hard_threshold = 0.5,
       fdr_min_threshold_ = NULL,
-      explore = FALSE,
-      n_explore = 1L,
       feature_names = c("a", "b"),
       n_features_in_ = 2L
     ),

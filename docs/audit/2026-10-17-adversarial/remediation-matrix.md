@@ -71,10 +71,10 @@ workarounds).
 | F-CV-01 | `random_state=NULL` + `cv_workers>1`: forked workers share `.Random.seed` → correlated folds, worker-count-dependent results | Derive per-worker seeds even when NULL (or warn loudly) | **FIXED (PR-2, 2026-10-18)** — per-fold seeds drawn pre-fork via `.derive_stream_seeds`; regression test asserts worker-count independence |
 | F-CV-02 | `stabl_fit` permanently clobbers global RNG | Save/restore `.Random.seed` on exit (pattern already exists in `.with_local_seed`) | **FIXED (PR-2, 2026-10-18)** — `on.exit()` save/restore both branches; hermeticity regression tests |
 | F-CV-03 / P4-F28 | One `random_state` reused across folds/omics/cooperative foldid | Derive independent streams per use (stabl_fit's own 3-seed pattern) | **FIXED (PR-2, 2026-10-18)** — `.derive_stream_seeds` per-consumer streams at all fan-out sites (offsets 4000/41000/42000); R-internal multiomic golden values deliberately updated with dated rationale; Python-parity contract intact |
-| F-CV-09 | `make_artificial_features()` (exported): bare `set.seed(random_state)`, never restored — clobbers global RNG (F-CV-02 class) | Same `on.exit()` save/restore as PR-2 | OPEN (P3; found in 2026-10-18 repo-wide RNG sweep; empirically confirmed) |
-| F-CV-10 | `stabl_interpret()` → `.interpret_permutation_importance()`: bare `set.seed`, never restored | Same `on.exit()` save/restore as PR-2 | OPEN (P3; found in 2026-10-18 repo-wide RNG sweep; empirically confirmed) |
-| F-CV-11 | `stabl_analyze()` → `.permutation_importance_sets()`: bare `set.seed`, never restored | Same `on.exit()` save/restore as PR-2 | OPEN (P3; found in 2026-10-18 repo-wide RNG sweep; empirically confirmed) |
-| F-CV-04 / P4-F24 | `cooperation_selection="validation"` tunes on the assessment fold; optimistic metrics, no guard | Default-safe already; add explicit warning + rename option to make bias legible | S |
+| F-CV-09 | `make_artificial_features()` (exported): bare `set.seed(random_state)`, never restored — clobbers global RNG (F-CV-02 class) | Same `on.exit()` save/restore as PR-2 | **FIXED (PR-A, 2026-10-18)** — `.with_local_seed()` wrapper; NULL passes through; outputs identical |
+| F-CV-10 | `stabl_interpret()` → `.interpret_permutation_importance()`: bare `set.seed`, never restored | Same `on.exit()` save/restore as PR-2 | **FIXED (PR-A, 2026-10-18)** — `.with_local_seed()` wrapper; outputs identical |
+| F-CV-11 | `stabl_analyze()` → `.permutation_importance_sets()`: bare `set.seed`, never restored | Same `on.exit()` save/restore as PR-2 | **FIXED (PR-A, 2026-10-18)** — `.with_local_seed()` wrapper; outputs identical |
+| F-CV-04 / P4-F24 | `cooperation_selection="validation"` tunes on the assessment fold; optimistic metrics, no guard | Default-safe already; add explicit warning + rename option to make bias legible | **FIXED (PR-A, 2026-10-18)** — stronger than the matrix remedy: the 1.0.0 spec removes the option from both public workflows (explicit error); branch retained unexported for characterization tests only |
 | F-P6-2 | Calibration regime-dependent in both directions (anti-conservative independent-null; conservative correlated) | Document regime dependence; consider a regime diagnostic (e.g. reported selection-rate ratio real:artificial) | M |
 | F-P10-1 | Locked release contract is 0.1.1-era vs DESCRIPTION 0.3.0 | Re-ratify contract at 0.3.0 (owner action) or amend contract version | M |
 
@@ -85,7 +85,7 @@ workarounds).
 - F-016 (corrected): `fit$warm$a` → `fit$warm_fit$a` (works today only via `$` partial matching; one added `warm*` element from breakage).
 - F-017: zero-guard `xs_(k)` in `spwls_exp` + constant-column detection.
 - F-018: drop dangling `-Iglmnetpp/src`; pin vendored glmnetpp version/commit; name coxdev in COPYING.cooperative; prune ~90 dead vendored files; keep exception `what()` in jerr=10001 message.
-- F-019: derive per-environment seeds via hashed streams, not `random_state + i`.
+- F-019: derive per-environment seeds via hashed streams, not `random_state + i`. **FIXED (PR-A, 2026-10-18)** — `.derive_stream_seeds()` derivation + regression test.
 - F-020: replace message-regex error classification with condition classes where possible; keep regex as fallback.
 - F-021: message when `workers > 1` silently degrades to sequential.
 - F-022: document group-sampler undershoot possibility (all groups exhausted).
@@ -93,7 +93,7 @@ workarounds).
 - F-024: tolerance-guard the ordinal path-trim fallback (reuse `.near_lambda_match`).
 - F-025: validate ordinal outcome once per `stabl_fit`, not per bootstrap.
 - F-026: validate declared family vs `y` type for RF/oblique (factor y + gaussian → error or warn).
-- F-CV-05: fix nested-seed offset collisions.
+- F-CV-05: fix nested-seed offset collisions. **RESOLVED (PR-A, 2026-10-18)** — verified unreachable in production (proof in findings.md); invariant pinned by regression test + call-site comment; no numeric change.
 - F-CV-06: upstream cvstats `nlams` discard (cvsd at path end) — note, vendor-tracked.
 - F-CV-07: seed the latent internal foldid in `.mv_cv_multiview` (unreachable today).
 - F-CV-08: warn when nested CV lacks a repeated-measures fold unit.

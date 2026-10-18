@@ -46,10 +46,11 @@
 #' an explicit, top-heavy `lambda_grid` (or a per-environment `"auto"` grid
 #' interpreted with this leniency in mind).
 #'
-#' **Reproducibility.** When `random_state` is supplied, the fit for the
-#' i-th environment level (in the order of `levels(environments)`; sorted
-#' order for character input) receives the deterministically derived seed
-#' `random_state + i` (i = 1, 2, ...). With `random_state = NULL` the
+#' **Reproducibility.** When `random_state` is supplied, the per-environment
+#' fits receive deterministically derived, mutually decorrelated seeds from
+#' the package's hashed multi-stream derivation (the same
+#' `.derive_stream_seeds()` pattern used by [stabl_fit()] and the multiomic
+#' workflows; F-019).  With `random_state = NULL` the
 #' per-environment fits are unseeded, matching [stabl_fit()] behavior.
 #'
 #' **Consistent feature handling.** All environments are fit on the same
@@ -70,8 +71,9 @@
 #' @param lambda_grid Passed to [stabl_fit()]. Defaults to `"auto"`, which
 #'   derives a data-driven grid *separately within each environment* (see
 #'   [auto_lambda_grid()]); supply an explicit grid for full control.
-#' @param random_state Integer or `NULL`. Top-level seed; the i-th environment
-#'   is fit with the derived seed `random_state + i` (see Details).
+#' @param random_state Integer or `NULL`. Top-level seed; per-environment
+#'   seeds are derived from it via the package's hashed multi-stream
+#'   derivation (see Details).
 #' @param ... Additional arguments forwarded to [stabl_fit()] (for example
 #'   `n_bootstraps`, `base_learner`, `family`, `artificial_type`,
 #'   `hard_threshold`, `groups`, `bootstrap_strata`). Sample-keyed arguments
@@ -143,16 +145,19 @@ stabl_environment_stability <- function(x,
   env_factor <- .validate_environment_labels(environments, n_samples)
   env_levels <- levels(env_factor)
 
-  # ---- Derived per-environment seeds (documented: random_state + level i) ---
+  # ---- Derived per-environment seeds (F-019: hashed streams, not +i) ------
   if (!is.null(random_state)) {
     random_state <- .validate_scalar_integer_like(
       random_state,
       "random_state",
-      max = .Machine$integer.max - length(env_levels)
+      max = .Machine$integer.max
     )
   }
   env_seeds <- if (!is.null(random_state)) {
-    random_state + seq_along(env_levels)
+    # F-019: consecutive `random_state + i` seeds correlated the per-
+    # environment bootstrap streams; use the same hashed multi-stream
+    # derivation as stabl_fit()/the multiomic workflows instead.
+    .derive_stream_seeds(random_state, length(env_levels))
   } else {
     NULL
   }

@@ -36,11 +36,12 @@ An error is raised when none of these is available — which can only happen
 if \code{stabl_fit()} was called with both \code{artificial_type = NULL} and no
 \code{hard_threshold}.
 
-\strong{Explore fallback:} When \code{explore = TRUE} was set during fitting and no
-feature's score exceeds the threshold, the function returns the top
-\code{n_explore} features instead of an all-\code{FALSE} vector.  This is useful in
-exploratory analyses where you want at least some candidates even when the
-signal is weak.
+An empty support is a valid result: when no feature's score exceeds the
+threshold, an all-\code{FALSE} vector is returned.  Use \code{\link[=get_importances]{get_importances()}} for
+a ranked descriptive view; a top-ranked list is never silently substituted
+for threshold-selected support (1.0.0 contract; the pre-1.0 \code{explore}
+fallback was removed because it relabelled a null selection as a
+discovery).
 }
 \examples{
 set.seed(1L)

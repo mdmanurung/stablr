@@ -257,7 +257,7 @@ ways to let the views interact:
 | `x_train_list` / `x_valid_list` | Named lists of feature matrices; names must match between train and valid. |
 | `lambda_grid` | Named list of lambda grids, one per omic (names must match `x_train_list`). |
 | `early_fusion` / `late_fusion` | Toggle each strategy on or off independently. |
-| `late_fusion_training` | Use leakage-safe `"oof"` (default), or explicit `"python_legacy"` compatibility mode. |
+| `late_fusion_training` | Only leakage-safe `"oof"` (the default). The in-sample `"python_legacy"` compatibility mode was removed from the public API in 1.0.0. |
 | `late_fusion_nfolds` | Number of stacking folds; five folds plus the full refit cost roughly six complete fits. |
 | `n_iter_lf` | Number of optimisation iterations for the late-fusion weight search. |
 
@@ -265,8 +265,8 @@ The printed `multi_fit` object summarises every active branch. You see
 per-omic selected-feature counts, validation-data presence, early-fusion
 branch presence, and the late-fusion score. In OOF mode, assessment samples
 and their groups never enter selector or downstream-model fitting. Use
-`$oof_predictions` and `$oof_score`. Explicit `"python_legacy"` mode instead
-exposes `$in_sample_predictions` and `$in_sample_score`. The older
+`$oof_predictions` and `$oof_score`. (The removed `"python_legacy"` mode
+instead exposed `$in_sample_predictions` and `$in_sample_score`.) The older
 `$train_predictions` and `$score` fields are exact 0.1.x compatibility aliases
 for the active mode. Binary and regression late fusion use parity-preserving
 batched stacking. Multiclass stacking remains scalar by design. This

@@ -63,9 +63,6 @@
 #' @param fdr_threshold_range Numeric vector swept when computing FDP+.
 #'   Default: `seq(0, 0.99, by = 0.01)`, matching Python STABL's
 #'   `np.arange(0., 1., .01)`.
-#' @param explore Logical; if `TRUE` and no features pass the threshold, fall
-#'   back to the top `n_explore` features.  Default: `FALSE`.
-#' @param n_explore Positive integer; fallback feature count.  Default: `5L`.
 #' @param sample_groups Named vector of group IDs (same names as
 #'   `rownames(x)`) or `NULL`.  When supplied, [group_bootstrap_indices()]
 #'   is used instead of [sample_bootstrap_indices()] -- use this when
@@ -124,7 +121,15 @@
 #'       actually used.}
 #'     \item{`fdr_min_threshold_`}{FDP+-optimal stability threshold, or `NULL`.}
 #'     \item{`FDRs_`}{Numeric vector of FDP+ estimates per threshold, or `NULL`.}
-#'     \item{`min_fdr_`}{Minimum FDP+ achieved, or `NULL`.}
+#'     \item{`min_fdr_`}{Minimum FDP+ achieved across the threshold grid, or
+#'       `NULL`.  This is a decoy-based \emph{diagnostic} of the best
+#'       attainable FDP+ on this fit, not a controlled false-discovery rate:
+#'       the FDP+ formula is a stochastic upper bound whose validity depends
+#'       on the exchangeability of the artificial features with the real
+#'       noise features, on the number of bootstraps, and on the decoy
+#'       count.  A value above 1 means no threshold on the grid achieved an
+#'       FDP+ of at most 1, in which case no threshold is selected and the
+#'       support is empty.}
 #'     \item{`fdrs_table_`}{Per-lambda FDP+ matrix, or `NULL`.}
 #'     \item{`hard_threshold`}{As supplied.}
 #'     \item{`artificial_type`}{As supplied.}
@@ -134,8 +139,6 @@
 #'       the scientific source of truth for the generator used; or `NULL` when
 #'       `artificial_type = NULL`.}
 #'     \item{`artificial_proportion`}{As supplied.}
-#'     \item{`explore`}{As supplied.}
-#'     \item{`n_explore`}{As supplied.}
 #'     \item{`feature_names`}{Character vector of original feature names.}
 #'     \item{`n_features_in_`}{Integer number of original features.}
 #'   }
@@ -222,8 +225,6 @@ stabl_fit <- function(
     replace               = FALSE,
     hard_threshold        = NULL,
     fdr_threshold_range   = seq(0, 0.99, by = 0.01),
-    explore               = FALSE,
-    n_explore             = 5L,
     sample_groups         = NULL,
     groups                = NULL,
     stratify_bootstrap    = FALSE,
@@ -280,7 +281,7 @@ stabl_fit <- function(
   .validate_stabl_params(n_bootstraps, sample_fraction, replace,
                          hard_threshold, artificial_type,
                          artificial_proportion, stratify_bootstrap,
-                         n_explore, n_lambda, workers, random_state)
+                         n_lambda, workers, random_state)
   n_bootstraps <- .validate_scalar_integer_like(n_bootstraps, "n_bootstraps", min = 1L)
   sample_fraction <- .validate_scalar_numeric(sample_fraction, "sample_fraction", min = 0, min_open = TRUE)
   if (!is.null(hard_threshold)) {
@@ -289,7 +290,6 @@ stabl_fit <- function(
   if (!is.null(artificial_type)) {
     artificial_proportion <- .validate_proportion(artificial_proportion, "artificial_proportion")
   }
-  n_explore <- .validate_scalar_integer_like(n_explore, "n_explore", min = 1L)
   n_lambda <- .validate_scalar_integer_like(n_lambda, "n_lambda", min = 1L)
   workers <- .validate_scalar_integer_like(workers, "workers", min = 1L)
   if (!is.null(random_state)) {
@@ -550,8 +550,6 @@ stabl_fit <- function(
       bootstrap_strata_levels = if (!is.null(bootstrap_strata_ids)) {
         sort(unique(as.character(bootstrap_strata_ids)))
       } else NULL,
-      explore               = explore,
-      n_explore             = as.integer(n_explore),
       feature_names         = feat_names,
       n_features_in_        = n_features,
       n_bootstraps          = as.integer(n_bootstraps)
@@ -732,11 +730,10 @@ stabl_fit <- function(
                                    hard_threshold, artificial_type,
                                    artificial_proportion,
                                    stratify_bootstrap,
-                                   n_explore, n_lambda, workers,
+                                   n_lambda, workers,
                                    random_state) {
   .validate_scalar_integer_like(n_bootstraps, "n_bootstraps", min = 1L)
   .validate_scalar_numeric(sample_fraction, "sample_fraction", min = 0, min_open = TRUE)
-  .validate_scalar_integer_like(n_explore, "n_explore", min = 1L)
   .validate_scalar_integer_like(n_lambda, "n_lambda", min = 1L)
   .validate_scalar_integer_like(workers, "workers", min = 1L)
   if (!is.null(random_state)) {

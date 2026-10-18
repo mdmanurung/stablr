@@ -899,7 +899,7 @@ test_that("cooperative_fusion with cv selection returns a multiview-backed branc
   expect_equal(length(cf$train_predictions), n)
 })
 
-test_that("cooperative_fusion supports validation-based gaussian tuning", {
+test_that("internal validation-based gaussian tuning branch still works (1.0.0: internal-only)", {
   set.seed(38)
   n_tr <- 18L
   n_va <- 10L
@@ -918,30 +918,76 @@ test_that("cooperative_fusion supports validation-based gaussian tuning", {
   y_va <- setNames(0.7 * x_a_va[, 1L] - 0.5 * x_b_va[, 2L] + rnorm(n_va, sd = 0.4),
                    rownames(x_a_va))
 
-  fit <- stabl_multiomic_train_validate(
-    x_train_list = list(omic_a = x_a_tr, omic_b = x_b_tr),
-    y_train = y_tr,
-    lambda_grid = data.frame(lambda = c(0.2, 0.1)),
-    x_valid_list = list(omic_a = x_a_va, omic_b = x_b_va),
-    y_valid = y_va,
-    artificial_type = NULL,
-    hard_threshold = 0.3,
-    n_bootstraps = 3L,
-    family = "gaussian",
-    random_state = 16L,
-    cooperative_fusion = TRUE,
-    rho = c(0, 0.2),
-    cooperation_selection = "validation",
-    cooperation_selector = "lambda.min"
+  # 1.0.0 fencing: the validation branch is reachable only through the
+  # unexported path (F-CV-04); the public workflow rejects it (see the
+  # dedicated rejection test).
+  x_tr <- list(omic_a = x_a_tr, omic_b = x_b_tr)
+  x_va <- list(omic_a = x_a_va, omic_b = x_b_va)
+  cooperative_args <- .normalize_cooperative_multiomic_args(
+    x_list                 = x_tr,
+    family                 = "gaussian",
+    rho                    = c(0, 0.2),
+    cooperative_selection  = "validation",
+    cooperation_selector   = "lambda.min",
+    cooperation_type_measure = "default",
+    cooperation_nfolds     = 5L,
+    x_valid_list           = x_va,
+    y_valid                = y_va
+  )
+  cf <- .cooperative_multiomic_fit(
+    x_train_list     = x_tr,
+    y_train          = y_tr,
+    x_valid_list     = x_va,
+    y_valid          = y_va,
+    groups_train     = NULL,
+    family           = "gaussian",
+    random_state     = 16L,
+    cooperative_args = cooperative_args
   )
 
-  cf <- fit$cooperative_fusion
   expect_s3_class(cf$fit, "multiview")
   expect_equal(cf$selection, "validation")
   expect_equal(cf$selector, "lambda.min")
   expect_equal(length(cf$valid_predictions), n_va)
   expect_equal(sum(cf$diagnostics$selected), 1L)
   expect_true(nrow(cf$diagnostics) >= length(cf$rho_grid))
+})
+
+test_that("public workflows reject cooperation_selection = 'validation' (1.0.0 fence, F-CV-04)", {
+  set.seed(38)
+  n <- 14L
+  x <- matrix(rnorm(n * 3L), nrow = n,
+              dimnames = list(paste0("s", seq_len(n)), paste0("f", seq_len(3L))))
+  y <- setNames(rnorm(n), rownames(x))
+  expect_error(
+    stabl_multiomic_train_validate(
+      x_train_list = list(omic_a = x, omic_b = x),
+      y_train = y,
+      lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+      x_valid_list = list(omic_a = x, omic_b = x),
+      y_valid = y,
+      artificial_type = NULL,
+      n_bootstraps = 2L,
+      cooperative_fusion = TRUE,
+      rho = c(0, 0.2),
+      cooperation_selection = "validation"
+    ),
+    "removed from the public API"
+  )
+  expect_error(
+    stabl_multiomic_cv(
+      x_list = list(omic_a = x, omic_b = x),
+      y = y,
+      lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+      artificial_type = NULL,
+      n_bootstraps = 2L,
+      v = 2L,
+      cooperative_fusion = TRUE,
+      rho = c(0, 0.2),
+      cooperation_selection = "validation"
+    ),
+    "removed from the public API"
+  )
 })
 
 test_that("cooperative_fusion supports binomial family", {
@@ -1037,20 +1083,18 @@ test_that("cooperative_fusion rejects unsupported selection combinations", {
     "at least two omic views"
   )
 
+  # 1.0.0 fencing: the lambda.1se + validation combination check now lives
+  # in the unexported normalizer (the public workflow rejects "validation"
+  # outright; see the dedicated fence test).
   expect_error(
-    stabl_multiomic_train_validate(
-      x_train_list = list(omic_a = x, omic_b = x),
-      y_train = y,
-      lambda_grid = data.frame(lambda = c(0.2, 0.1)),
-      x_valid_list = list(omic_a = x, omic_b = x),
-      y_valid = y,
-      artificial_type = NULL,
-      hard_threshold = 0.3,
-      n_bootstraps = 2L,
-      cooperative_fusion = TRUE,
-      rho = c(0, 0.2),
-      cooperation_selection = "validation",
-      cooperation_selector = "lambda.1se"
+    .normalize_cooperative_multiomic_args(
+      x_list                 = list(omic_a = x, omic_b = x),
+      family                 = "gaussian",
+      rho                    = c(0, 0.2),
+      cooperative_selection  = "validation",
+      cooperation_selector   = "lambda.1se",
+      x_valid_list           = list(omic_a = x, omic_b = x),
+      y_valid                = y
     ),
     "lambda.1se"
   )
@@ -1232,7 +1276,7 @@ test_that("cooperative_fusion rejects cox family in native v1", {
       random_state = 114L,
       cooperative_fusion = TRUE,
       rho = c(0, 0.2),
-      cooperation_selection = "validation",
+      cooperation_selection = "cv",
       cooperation_selector = "lambda.min"
     ),
     regexp = "gaussian.*binomial|binomial.*gaussian"
@@ -1483,6 +1527,13 @@ test_that("[char-F1] per-omic / early-fusion / late-fusion blocks produce bit-id
 
   tr <- seq_len(24L); vl <- seq(25L, 36L)
 
+  # 1.0.0 fencing: `late_fusion_training = "python_legacy"` is no longer
+  # accepted by the public workflow, so the per-omic / early-fusion blocks
+  # are characterized with `late_fusion = FALSE` (identical results: each
+  # consumer draws its own derived stream seed, F-CV-03) and the legacy
+  # late-fusion block below calls the retained internal
+  # `.late_fusion_multiomic_fit()` directly with the same inputs and the
+  # same derived lf_seed the public workflow used (stream slot 4 of 5).
   fit <- stabl_multiomic_train_validate(
     x_train_list    = list(omic_a = x_a[tr, ], omic_b = x_b[tr, ]),
     y_train         = y_all[tr],
@@ -1490,9 +1541,7 @@ test_that("[char-F1] per-omic / early-fusion / late-fusion blocks produce bit-id
     x_valid_list    = list(omic_a = x_a[vl, ], omic_b = x_b[vl, ]),
     y_valid         = y_all[vl],
     early_fusion    = TRUE,
-    late_fusion     = TRUE,
-    late_fusion_training = "python_legacy",
-    n_iter_lf       = 200L,
+    late_fusion     = FALSE,
     artificial_type = NULL,
     hard_threshold  = 0.3,
     n_bootstraps    = 8L,
@@ -1524,8 +1573,17 @@ test_that("[char-F1] per-omic / early-fusion / late-fusion blocks produce bit-id
                  0.325928044349314, -0.996201639682667),
                tolerance = 1e-13)
 
-  # ---- late-fusion block ----
-  lf <- fit$late_fusion
+  # ---- late-fusion block (internal legacy path; see note above) ----
+  lf <- .late_fusion_multiomic_fit(
+    selected_train = fit$selected_train,
+    selected_valid = fit$selected_valid,
+    y_train        = y_all[tr],
+    y_valid        = y_all[vl],
+    omic_names     = c("omic_a", "omic_b"),
+    family         = "gaussian",
+    n_iter_lf      = 200L,
+    random_state   = .derive_stream_seeds(17L, 5L)[[4L]]
+  )
   expect_identical(lf$in_sample_predictions, lf$train_predictions)
   expect_identical(lf$in_sample_score, lf$score)
   expect_equal(lf$score, 0.642593194419847, tolerance = 1e-13)
@@ -1609,23 +1667,34 @@ test_that("[char-F2-val] cooperative validation selection branch produces bit-id
 
   tr2 <- seq_len(30L); vl2 <- seq(31L, 40L)
 
-  fit <- stabl_multiomic_train_validate(
-    x_train_list       = list(omic_a = x2_a[tr2, ], omic_b = x2_b[tr2, ]),
-    y_train            = y2[tr2],
-    lambda_grid        = data.frame(lambda = c(0.1, 0.05)),
-    x_valid_list       = list(omic_a = x2_a[vl2, ], omic_b = x2_b[vl2, ]),
-    y_valid            = y2[vl2],
-    cooperative_fusion    = TRUE,
-    rho                   = c(0, 0.3),
-    cooperation_selection = "validation",
-    artificial_type    = NULL,
-    hard_threshold     = 0.5,
-    n_bootstraps       = 4L,
-    family             = "gaussian",
-    random_state       = 21L
+  # 1.0.0 fencing: `cooperation_selection = "validation"` is no longer
+  # accepted by the public workflow (F-CV-04), so this characterization test
+  # exercises the retained internal branch directly.  The validation branch
+  # is deterministic given the data (no RNG), so the golden values below are
+  # unchanged from the pre-fencing public-path characterization.
+  x2_tr <- list(omic_a = x2_a[tr2, ], omic_b = x2_b[tr2, ])
+  x2_vl <- list(omic_a = x2_a[vl2, ], omic_b = x2_b[vl2, ])
+  cooperative_args <- .normalize_cooperative_multiomic_args(
+    x_list                 = x2_tr,
+    family                 = "gaussian",
+    rho                    = c(0, 0.3),
+    cooperative_selection  = "validation",
+    cooperation_selector   = "lambda.min",
+    cooperation_type_measure = "default",
+    cooperation_nfolds     = 5L,
+    x_valid_list           = x2_vl,
+    y_valid                = y2[vl2]
   )
-
-  cfv <- fit$cooperative_fusion
+  cfv <- .cooperative_multiomic_fit(
+    x_train_list     = x2_tr,
+    y_train          = y2[tr2],
+    x_valid_list     = x2_vl,
+    y_valid          = y2[vl2],
+    groups_train     = NULL,
+    family           = "gaussian",
+    random_state     = .derive_stream_seeds(21L, 5L)[[5L]],
+    cooperative_args = cooperative_args
+  )
   # rho / lambda / score
   expect_equal(cfv$rho,             0,                   tolerance = 1e-13)
   expect_equal(cfv$selected_lambda, 0.0135549037971991,  tolerance = 1e-13)

@@ -133,7 +133,6 @@ test_that("stabl_fit scalar validators reject non-finite, fractional, vector, an
   expect_error(base_call(hard_threshold = c(0.2, 0.3)), "hard_threshold")
   expect_error(base_call(hard_threshold = "0.3"), "hard_threshold")
 
-  expect_error(base_call(n_explore = 1.5, explore = TRUE), "n_explore")
   expect_error(base_call(lambda_grid = "auto", n_lambda = "3"), "n_lambda")
   expect_error(base_call(workers = 0L), "workers")
   expect_error(base_call(random_state = 1.5), "random_state")

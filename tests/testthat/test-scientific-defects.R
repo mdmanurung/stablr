@@ -359,32 +359,28 @@ test_that("SCI-10 legacy validation shape comes only from predictors", {
     dimnames = list(valid_ids, colnames(x_train))
   )
   y_train <- stats::setNames(rnorm(12L), train_ids)
+  # 1.0.0 fencing: the legacy algorithm is internal-only; call it directly.
   args <- list(
-    x_train_list = list(omic = x_train),
+    selected_train = list(omic = x_train),
+    selected_valid = list(omic = x_valid),
     y_train = y_train,
-    lambda_grid = data.frame(lambda = 0.1),
-    x_valid_list = list(omic = x_valid),
-    artificial_type = NULL,
-    hard_threshold = 1,
-    n_bootstraps = 2L,
-    sample_fraction = 1,
-    late_fusion = TRUE,
-    late_fusion_training = "python_legacy",
+    omic_names = "omic",
+    family = "gaussian",
     n_iter_lf = 2L,
     random_state = 808L
   )
 
-  without_labels <- do.call(stabl_multiomic_train_validate, args)
+  without_labels <- do.call(.late_fusion_multiomic_fit, c(args, list(y_valid = NULL)))
   with_labels <- do.call(
-    stabl_multiomic_train_validate,
+    .late_fusion_multiomic_fit,
     c(args, list(y_valid = stats::setNames(rnorm(5L), valid_ids)))
   )
 
-  expect_type(without_labels$late_fusion$valid_predictions, "double")
-  expect_length(without_labels$late_fusion$valid_predictions, nrow(x_valid))
-  expect_true(all(is.finite(without_labels$late_fusion$valid_predictions)))
+  expect_type(without_labels$valid_predictions, "double")
+  expect_length(without_labels$valid_predictions, nrow(x_valid))
+  expect_true(all(is.finite(without_labels$valid_predictions)))
   expect_identical(
-    without_labels$late_fusion$valid_predictions,
-    with_labels$late_fusion$valid_predictions
+    without_labels$valid_predictions,
+    with_labels$valid_predictions
   )
 })

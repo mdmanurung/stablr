@@ -37,10 +37,37 @@ run_one <- function(mode, profile = FALSE) {
     on.exit(Rprofmem(NULL), add = TRUE)
   }
   invisible(gc(reset = TRUE))
-  elapsed <- system.time(do.call(
-    stabl_multiomic_train_validate,
-    c(common, list(late_fusion_training = mode))
-  ))[["elapsed"]]
+  elapsed <- if (identical(mode, "python_legacy")) {
+    # 1.0.0 fencing: "python_legacy" was removed from the public API.  The
+    # historical workload (per-omic STABL fits + in-sample stacking) is
+    # replicated via the retained unexported `.late_fusion_multiomic_fit()`,
+    # with the same derived late-fusion stream seed the public workflow used
+    # (slot n_omics + 2 of the F-CV-03 stream-seed pattern).
+    system.time({
+      fit <- do.call(
+        stabl_multiomic_train_validate,
+        c(common, list(late_fusion = FALSE))
+      )
+      n_omics <- length(common$x_train_list)
+      lf_seed <- .derive_stream_seeds(
+        common$random_state, n_omics + 3L
+      )[[n_omics + 2L]]
+      invisible(.late_fusion_multiomic_fit(
+        selected_train = fit$selected_train,
+        selected_valid = fit$selected_valid,
+        y_train = common$y_train, y_valid = NULL,
+        omic_names = names(common$x_train_list),
+        family = "gaussian",
+        n_iter_lf = common$n_iter_lf,
+        random_state = lf_seed
+      ))
+    })[["elapsed"]]
+  } else {
+    system.time(do.call(
+      stabl_multiomic_train_validate,
+      c(common, list(late_fusion_training = mode))
+    ))[["elapsed"]]
+  }
   memory <- gc()
   max_bytes <- memory["Ncells", "max used"] * 56 +
     memory["Vcells", "max used"] * 8

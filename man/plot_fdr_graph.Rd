@@ -2,36 +2,40 @@
 % Please edit documentation in R/visualization.R
 \name{plot_fdr_graph}
 \alias{plot_fdr_graph}
-\title{Plot the FDP+ FDR Estimate Curve}
+\title{Plot the FDP+ Diagnostic Curve}
 \usage{
-plot_fdr_graph(object, title = "FDR Estimate", fdr_target = 0.05)
+plot_fdr_graph(object, title = "FDP+ diagnostic", reference_fdp_plus = 0.05)
 }
 \arguments{
 \item{object}{A fitted \code{"stabl_fit"} object returned by \code{\link[=stabl_fit]{stabl_fit()}}.}
 
-\item{title}{Character scalar; plot title.  Default \code{"FDR Estimate"}.}
+\item{title}{Character scalar; plot title.  Default \code{"FDP+ diagnostic"}.}
 
-\item{fdr_target}{Numeric scalar or \code{NULL}; a visual horizontal reference
-line only. It is not used for fitting or threshold selection. Use \code{NULL}
-to omit the line. Default \code{0.05}.}
+\item{reference_fdp_plus}{Numeric scalar or \code{NULL}; a purely visual
+horizontal reference line only. It is not used for fitting or threshold
+selection and marks no control guarantee. Use \code{NULL} to omit the line.
+Default \code{0.05}.  (Renamed from \code{fdr_target} in 1.0.0: the line is a
+visual reference, not an FDR-control target.)}
 }
 \value{
-A \code{ggplot} object.  The curve shows the FDP+ estimate at each
-candidate threshold; a vertical dashed line marks the optimal threshold
+A \code{ggplot} object.  The curve shows the FDP+ diagnostic at each
+candidate threshold; a vertical dashed line marks the selected threshold
 stored in \code{object$fdr_min_threshold_}; a horizontal dashed line marks
-\code{fdr_target} when supplied.
+\code{reference_fdp_plus} when supplied.
 }
 \description{
-Displays how the estimated False Discovery Proportion (FDP+) changes across
-the full range of candidate stability thresholds, and marks the threshold
-that achieves the minimum FDR estimate.
+Displays how the FDP+ diagnostic (a decoy-based estimate of the false
+discovery proportion under the STABL procedure) changes across the full
+range of candidate stability thresholds, and marks the threshold selected
+by the first-minimum rule.
 }
 \details{
 This diagnostic shows why a particular stability threshold was chosen during
 fitting: the current rule selects the first minimum of the displayed FDP+
 curve. Curve shape is descriptive and does not by itself establish FDP
-control, calibration, or signal/noise separation. Interpretation depends on
-the artificial-feature assumptions and the fitted data.
+control, calibration, or signal/noise separation; the minimized value is a
+data-dependent diagnostic, not a controlled or nominal FDR. Interpretation
+depends on the artificial-feature assumptions and the fitted data.
 
 Requires that \code{object} was fitted with \code{artificial_type} set (not \code{NULL}).
 }

@@ -18,7 +18,10 @@ and no \code{NA}.}
 max-over-lambda scores lenient; explicit top-heavy grids discriminate
 better.}
 \item{random_state}{Optional integer seed; per-environment seeds are
-derived deterministically as \code{random_state + level_index}.}
+derived deterministically from it via the package's hashed multi-stream
+derivation (the same pattern as \code{\link[=stabl_fit]{stabl_fit()}} and
+the multiomic workflows; changed from the pre-1.0 consecutive
+\code{random_state + i} derivation, F-019).}
 \item{...}{Additional arguments forwarded to \code{\link[=stabl_fit]{stabl_fit()}}
 in every environment.}
 }

@@ -23,12 +23,12 @@ stabl_multiomic_train_validate(
   random_state = NULL,
   early_fusion = FALSE,
   late_fusion = FALSE,
-  late_fusion_training = c("oof", "python_legacy"),
+  late_fusion_training = "oof",
   late_fusion_nfolds = 5L,
   n_iter_lf = 10000L,
   cooperative_fusion = FALSE,
   rho = NULL,
-  cooperation_selection = c("cv", "validation"),
+  cooperation_selection = "cv",
   cooperation_selector = c("lambda.min", "lambda.1se"),
   cooperation_type_measure = "default",
   cooperation_nfolds = 5L,
@@ -93,10 +93,13 @@ mean for other tasks. The \code{task_type} (binary, regression, or multiclass)
 is inferred from \code{family}.  Results are returned in the \code{late_fusion}
 field.}
 
-\item{late_fusion_training}{How stacking weights are trained. \code{"oof"}
-(default) refits STABL selection and the downstream model inside every
-stacking fold. \code{"python_legacy"} preserves the historical in-sample
-Python-compatible algorithm.}
+\item{late_fusion_training}{How stacking weights are trained. Only \code{"oof"}
+(the default) is supported: STABL selection and the downstream model are
+refit inside every stacking fold.  The historical in-sample
+\code{"python_legacy"} algorithm was removed from the public API in 1.0.0
+because it trains the stacking weights on the same data used to fit the
+base models (optimistic); it survives only as the unexported
+\code{.late_fusion_multiomic_fit()} for Python-parity characterization tests.}
 
 \item{late_fusion_nfolds}{Number of stacking folds used in OOF mode.}
 
@@ -116,14 +119,17 @@ per-omic STABL fits. Native v1 supports \code{family = "gaussian"} and
 \item{rho}{Numeric scalar or vector of non-negative cooperation strengths.
 When \code{NULL}, defaults to \code{0}.}
 
-\item{cooperation_selection}{Character scalar. Either \code{"cv"} or
-\code{"validation"}. \code{"cv"} tunes over \code{rho} with shared inner fold
-assignments. \code{"validation"} tunes over \code{rho} and \code{lambda} on the
-supplied validation set.}
+\item{cooperation_selection}{Character scalar. Only \code{"cv"} is supported:
+tuning over \code{rho} uses shared inner fold assignments.  The
+\code{"validation"} option (tuning \code{rho} and \code{lambda} on the supplied
+validation set) was removed from the public API in 1.0.0 because it
+tunes on the assessment data and biases the performance estimate
+(F-CV-04); the branch survives only in unexported form for
+characterization tests.}
 
 \item{cooperation_selector}{Character scalar. Selection rule for the
-cooperative \code{lambda}. \code{"lambda.1se"} is only available when
-\code{cooperation_selection = "cv"}.}
+cooperative \code{lambda}. Both \code{"lambda.min"} and \code{"lambda.1se"} are
+available with \code{cooperation_selection = "cv"}.}
 
 \item{cooperation_type_measure}{Character scalar controlling the cooperative
 tuning metric. Supported values follow the active \code{family} and the
@@ -150,9 +156,10 @@ selected features, or \code{NULL} when no validation input is provided.}
 list with \code{fit}, \code{selected_features}, \code{selected_train}, and
 \code{selected_valid} for the concatenated single-STABL run.}
 \item{\code{late_fusion}}{\code{NULL} when \code{late_fusion = FALSE}.  Otherwise a
-list with \code{weights}, \code{valid_predictions}, and mode-specific training
-results. OOF mode provides \code{oof_predictions} and \code{oof_score}; legacy
-mode provides \code{in_sample_predictions} and \code{in_sample_score}.
+list with \code{weights}, \code{valid_predictions}, and OOF training results
+(\code{oof_predictions}, \code{oof_score}).  (The removed \code{"python_legacy"}
+mode additionally provided \code{in_sample_predictions} and
+\code{in_sample_score}.)
 \code{oof_predictions} is a \emph{base-model} out-of-fold matrix; the stacked
 \code{oof_score} is computed with stacking weights tuned on that same
 OOF matrix (maximum over \code{n_iter_lf} random weight draws), so it is

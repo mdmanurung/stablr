@@ -15,8 +15,7 @@ order.}
 }
 \value{
 Character vector of selected feature names.  An empty character
-vector is returned when no feature passes the threshold (and
-\code{explore = FALSE} was used during fitting).
+vector is returned when no feature passes the threshold.
 }
 \description{
 Convenience wrapper around \code{\link[=get_support]{get_support()}} that returns only the names of

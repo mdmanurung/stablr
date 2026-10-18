@@ -218,21 +218,21 @@ test_that("plot_fdr_graph plots the FDP+ curve stored in the fit", {
   expect_equal(vline$xintercept,
                fit$fdr_threshold_range[which.min(fit$FDRs_)])
 
-  # Horizontal dashed reference line at the default fdr_target.
+  # Horizontal dashed reference line at the default reference_fdp_plus.
   hline <- .built_layer_with(p, "yintercept")
   expect_equal(hline$yintercept, 0.05)
 
   # Axis labels and title.
-  expect_equal(p$labels$title, "FDR Estimate")
+  expect_equal(p$labels$title, "FDP+ diagnostic")
   expect_equal(p$labels$x, "Stability threshold")
-  expect_equal(p$labels$y, "FDR estimate")
+  expect_equal(p$labels$y, "FDP+ diagnostic")
 })
 
-test_that("plot_fdr_graph omits the target line when fdr_target = NULL", {
+test_that("plot_fdr_graph omits the reference line when reference_fdp_plus = NULL", {
   skip_if_not_installed("ggplot2")
   fit <- .make_golden_fit(seed = 13L, artificial_type = "random_permutation",
                           hard_threshold = NULL)
-  p   <- plot_fdr_graph(fit, fdr_target = NULL)
+  p   <- plot_fdr_graph(fit, reference_fdp_plus = NULL)
   expect_s3_class(p, "ggplot")
   n_hline <- sum(vapply(p$layers, function(l) inherits(l$geom, "GeomHline"),
                         TRUE))

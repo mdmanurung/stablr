@@ -18,8 +18,6 @@ stabl_fit(
   replace = FALSE,
   hard_threshold = NULL,
   fdr_threshold_range = seq(0, 0.99, by = 0.01),
-  explore = FALSE,
-  n_explore = 5L,
   sample_groups = NULL,
   groups = NULL,
   stratify_bootstrap = FALSE,
@@ -109,11 +107,6 @@ Default: \code{NULL}.}
 Default: \code{seq(0, 0.99, by = 0.01)}, matching Python STABL's
 \code{np.arange(0., 1., .01)}.}
 
-\item{explore}{Logical; if \code{TRUE} and no features pass the threshold, fall
-back to the top \code{n_explore} features.  Default: \code{FALSE}.}
-
-\item{n_explore}{Positive integer; fallback feature count.  Default: \code{5L}.}
-
 \item{sample_groups}{Named vector of group IDs (same names as
 \code{rownames(x)}) or \code{NULL}.  When supplied, \code{\link[=group_bootstrap_indices]{group_bootstrap_indices()}}
 is used instead of \code{\link[=sample_bootstrap_indices]{sample_bootstrap_indices()}} -- use this when
@@ -189,7 +182,15 @@ features, or \code{NULL} when \code{artificial_type = NULL}.}
 actually used.}
 \item{\code{fdr_min_threshold_}}{FDP+-optimal stability threshold, or \code{NULL}.}
 \item{\code{FDRs_}}{Numeric vector of FDP+ estimates per threshold, or \code{NULL}.}
-\item{\code{min_fdr_}}{Minimum FDP+ achieved, or \code{NULL}.}
+\item{\code{min_fdr_}}{Minimum FDP+ achieved across the threshold grid, or
+\code{NULL}.  This is a decoy-based \emph{diagnostic} of the best
+attainable FDP+ on this fit, not a controlled false-discovery rate:
+the FDP+ formula is a stochastic upper bound whose validity depends
+on the exchangeability of the artificial features with the real
+noise features, on the number of bootstraps, and on the decoy
+count.  A value above 1 means no threshold on the grid achieved an
+FDP+ of at most 1, in which case no threshold is selected and the
+support is empty.}
 \item{\code{fdrs_table_}}{Per-lambda FDP+ matrix, or \code{NULL}.}
 \item{\code{hard_threshold}}{As supplied.}
 \item{\code{artificial_type}}{As supplied.}
@@ -199,8 +200,6 @@ generator modes, and the complete ordered fallback history. This is
 the scientific source of truth for the generator used; or \code{NULL} when
 \code{artificial_type = NULL}.}
 \item{\code{artificial_proportion}}{As supplied.}
-\item{\code{explore}}{As supplied.}
-\item{\code{n_explore}}{As supplied.}
 \item{\code{feature_names}}{Character vector of original feature names.}
 \item{\code{n_features_in_}}{Integer number of original features.}
 }

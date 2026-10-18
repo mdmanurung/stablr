@@ -12,6 +12,18 @@
 #' maximum-over-lambda stability scores for real feature \eqn{j}, and
 #' \eqn{\hat{q}_j^{\text{art}}} are the scores for artificial feature \eqn{j}.
 #'
+#' @section Comparator and tie policy (contract):
+#' Exceedance counts use a \strong{strict} `>` comparator: a feature whose
+#' score equals the threshold exactly is \emph{not} counted.  This matches
+#' the Python STABL reference implementation and is part of the parity
+#' contract; do not "fix" it to `>=`.  When several thresholds tie for the
+#' minimum FDP+, the \strong{first} (lowest) threshold on the grid wins,
+#' matching Python's `argmin` first-index semantics.  `min_fdr` is a
+#' decoy-based diagnostic (a stochastic upper bound under exchangeability of
+#' the artificial features), not a controlled FDR guarantee; when it exceeds
+#' 1, `fdr_min_threshold` is capped at 1 and downstream selection yields an
+#' empty support.
+#'
 #' @param stabl_scores Numeric matrix (features \eqn{\times} lambdas) of
 #'   stability scores for the real features.
 #' @param stabl_scores_artificial Numeric matrix (artificial features

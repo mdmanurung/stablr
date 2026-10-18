@@ -115,8 +115,8 @@ The key arguments are listed in the table below.
 | Argument | Default | Purpose |
 |---|---|---|
 | `rho` | `0` | Scalar or vector of cooperation strengths to try. |
-| `cooperation_selection` | `"cv"` | `"cv"` (inner CV) or `"validation"` (held-out set). |
-| `cooperation_selector` | `"lambda.min"` | Which lambda to pick: `"lambda.min"` or `"lambda.1se"` (CV only). |
+| `cooperation_selection` | `"cv"` | Only `"cv"` (shared inner CV folds). The `"validation"` option was removed in 1.0.0 because tuning on the held-out set biases the performance estimate. |
+| `cooperation_selector` | `"lambda.min"` | Which lambda to pick: `"lambda.min"` or `"lambda.1se"`. |
 | `cooperation_type_measure` | `"default"` | Tuning metric; defaults to `"mse"` for Gaussian. |
 | `cooperation_nfolds` | `5L` | Number of inner CV folds when `cooperation_selection = "cv"`. |
 
@@ -242,15 +242,17 @@ ggplot2::ggplot(cf$diagnostics, ggplot2::aes(rho, metric_value)) +
 
 Some combinations are rejected on purpose. These guards prevent analyses that look reasonable in code but do not have a valid tuning interpretation.
 
-## 7.1 `lambda.1se` requires CV mode
+## 7.1 Validation-based tuning was removed in 1.0.0
 
-`lambda.1se` applies the "one-standard-error" rule and is only well-defined
-when cross-validation is used to estimate the error surface.  Requesting it
-with `cooperation_selection = "validation"` raises an error.
+Before 1.0.0, `cooperation_selection = "validation"` tuned `rho` and `lambda`
+directly on the supplied validation set.  That design tunes on the assessment
+data: any performance estimate computed on the same set is optimistic, and the
+selected configuration is not comparable to the CV-tuned one.  The option was
+removed from the public API (finding F-CV-04); only `"cv"` remains.
 
 The following call raises the corresponding error.
 
-```{r guard-lambda1se, error = TRUE}
+```{r guard-validation-removed, error = TRUE}
 stabl_multiomic_train_validate(
   x_train_list          = ool_train$x_list,
   y_train               = ool_train$y,
@@ -267,7 +269,10 @@ stabl_multiomic_train_validate(
 )
 ```
 
-The error confirms that `lambda.1se` cannot be combined with validation-based selection.
+The error confirms that validation-based selection is no longer reachable from
+the public workflow.  (`lambda.1se` remains available with the default
+`cooperation_selection = "cv"`, where the one-standard-error rule is
+well-defined.)
 
 ## 7.2 Cox and Poisson families are not supported in native v1
 
@@ -436,7 +441,7 @@ The useful `rho` grid is usually modest. The grid should be treated as a scienti
 | **Grid upper bound** | Values > 0.5 can over-penalise disagreement between views; rarely beneficial unless views are near-identical. |
 | **`lambda.min` vs `lambda.1se`** | `lambda.1se` gives a sparser model at the cost of a higher CV error; prefer `lambda.min` when prediction is the goal. |
 | **`cooperation_nfolds`** | 5 (default) is suitable for n >= 50.  Use 3 for smaller datasets.  Must be >= 3. |
-| **`cooperation_selection = "validation"`** | Use when a true held-out set is available and `rho` and `lambda` are to be tuned together on it. |
+| **`cooperation_selection`** | Only `"cv"` is supported since 1.0.0; the removed `"validation"` mode tuned on the assessment set and biased performance estimates. |
 | **Native v1 families** | Cooperative fusion supports `family = "gaussian"` and `"binomial"` only. |
 | **Binomial tuning metrics** | Try `cooperation_type_measure = "auc"` or `"class"` when the outcome is binary. |
 | **rho = 0 wins** | If the chosen `rho` is always 0, the chosen metric prefers independent fits under this grid and fold design.  Treat that as a prompt for sensitivity analysis, not proof that the omics share no useful structure. |

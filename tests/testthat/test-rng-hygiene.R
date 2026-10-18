@@ -210,12 +210,104 @@ test_that("F-CV-03/P4-F28: multiclass late fusion is hermetic given random_state
     lf2$late_fusion$train_predictions
   )
 
+  # 1.0.0 fencing: the legacy algorithm is internal-only; hermeticity is
+  # still characterized by calling the retained unexported path directly.
+  run_legacy <- function() {
+    .late_fusion_multiomic_fit(
+      selected_train = xl,
+      selected_valid = NULL,
+      y_train = y_mc, y_valid = NULL,
+      omic_names = names(xl),
+      family = "multinomial",
+      n_iter_lf = 50L, random_state = 42L
+    )
+  }
   set.seed(333)
-  lf3 <- run_lf("python_legacy")
+  lf3 <- run_legacy()
   set.seed(777777)
-  lf4 <- run_lf("python_legacy")
+  lf4 <- run_legacy()
   expect_identical(
-    lf3$late_fusion$train_predictions,
-    lf4$late_fusion$train_predictions
+    lf3$train_predictions,
+    lf4$train_predictions
   )
+})
+
+test_that("F-CV-05: nested-seed offset streams are mutually collision-free", {
+  # .derive_nested_seed(base, i, off) = (base + off + i*7919) mod INT_MAX.
+  # Two streams sharing a base collide iff (off1 - off2) is a multiple of
+  # 7919 (an index shift then aligns them).  Production structure (verified
+  # 2026-10-18, F-CV-05 audit):
+  #   * the constant offsets below are pairwise collision-free for ALL
+  #     indices (no pairwise difference is divisible by 7919);
+  #   * the dynamic candidate family (offset k*100 in
+  #     `.evaluate_stabl_candidates_inner`) is only ever used under a base
+  #     pre-derived with offset 2000, so its values exceed every in-fold
+  #     constant stream (offsets <= 4000) by construction:
+  #     2000 + 100*k + 7919*fold_i >= 2000 + 100 + 7919 > 4000;
+  #   * within the candidate family, collisions need k >= 7919 candidates
+  #     (gcd(100, 7919) = 1).
+  base <- 12345L
+  offsets <- c(10L, 1000L, 2000L, 3000L, 4000L, 7000L, 29001L, 31001L,
+               39001L, 41000L, 42000L, 47001L)
+  diffs <- as.numeric(dist(offsets))
+  expect_false(any(diffs %% 7919 == 0))
+
+  # Concrete seeds over realistic index ranges are all distinct.
+  idx <- seq_len(50L)
+  seeds <- unlist(lapply(offsets, function(off) {
+    vapply(idx, function(i) .derive_nested_seed(base, i, off), integer(1L))
+  }))
+  expect_identical(anyDuplicated(seeds), 0L)
+
+  # Candidate family: internally distinct for any plausible candidate count.
+  dyn <- unlist(lapply(seq_len(100L), function(k) {
+    vapply(idx, function(i) .derive_nested_seed(base, i, k * 100L), integer(1L))
+  }))
+  expect_identical(anyDuplicated(dyn), 0L)
+
+  # Production invariant: under the offset-2000 pre-derived base, every
+  # candidate-stream value strictly exceeds every in-fold constant stream
+  # (offsets 1000/2000/3000/4000) at the same outer index.
+  outer_i <- 3L
+  base2 <- .derive_nested_seed(base, outer_i, 2000L)
+  cand_vals <- as.numeric(base2) + 100 * seq_len(100L) +
+    7919 * rep(idx, each = 100L)
+  const_vals <- as.numeric(base) + c(1000, 2000, 3000, 4000) + 7919 * outer_i
+  expect_true(min(cand_vals) > max(const_vals))
+})
+
+test_that("F-019: environment-stability seeds come from the hashed stream derivation", {
+  # The per-environment seeds must match .derive_stream_seeds() output
+  # (decorrelated), not the historical consecutive random_state + i.
+  seeds <- .derive_stream_seeds(11L, 3L)
+  expect_false(any(diff(as.numeric(sort(seeds))) == 1))
+  expect_identical(seeds, .derive_stream_seeds(11L, 3L))
+
+  d <- local({
+    set.seed(41L)
+    n <- 36L
+    x <- matrix(rnorm(n * 6L), n, 6L,
+                dimnames = list(paste0("s", seq_len(n)), paste0("f", seq_len(6L))))
+    y <- setNames(0.8 * x[, 1] + rnorm(n, sd = 0.5), rownames(x))
+    list(x = x, y = y, env = factor(rep(c("A", "B", "C"), each = 12L)))
+  })
+  res <- stabl_environment_stability(
+    d$x, d$y, d$env,
+    lambda_grid = data.frame(lambda = c(0.3, 0.15)),
+    n_bootstraps = 4L, artificial_type = NULL, hard_threshold = 0.5,
+    random_state = 11L
+  )
+  # Seeded with the hashed streams, the per-environment fits equal fits
+  # seeded explicitly with each derived stream seed.
+  for (i in seq_along(res$environments)) {
+    lv <- res$environments[[i]]
+    keep <- which(d$env == lv)
+    ref <- stabl_fit(
+      x = d$x[keep, ], y = d$y[keep],
+      lambda_grid = data.frame(lambda = c(0.3, 0.15)),
+      n_bootstraps = 4L, artificial_type = NULL, hard_threshold = 0.5,
+      random_state = seeds[[i]]
+    )
+    expect_identical(res$env_fits[[lv]]$stabl_scores_, ref$stabl_scores_)
+  }
 })

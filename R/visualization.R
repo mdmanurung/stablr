@@ -207,30 +207,34 @@ plot_stabl_path <- function(object, new_hard_threshold = NULL,
 
 # ── FDR diagnostic graph ──────────────────────────────────────────────────────
 
-#' Plot the FDP+ FDR Estimate Curve
+#' Plot the FDP+ Diagnostic Curve
 #'
-#' Displays how the estimated False Discovery Proportion (FDP+) changes across
-#' the full range of candidate stability thresholds, and marks the threshold
-#' that achieves the minimum FDR estimate.
+#' Displays how the FDP+ diagnostic (a decoy-based estimate of the false
+#' discovery proportion under the STABL procedure) changes across the full
+#' range of candidate stability thresholds, and marks the threshold selected
+#' by the first-minimum rule.
 #'
 #' This diagnostic shows why a particular stability threshold was chosen during
 #' fitting: the current rule selects the first minimum of the displayed FDP+
 #' curve. Curve shape is descriptive and does not by itself establish FDP
-#' control, calibration, or signal/noise separation. Interpretation depends on
-#' the artificial-feature assumptions and the fitted data.
+#' control, calibration, or signal/noise separation; the minimized value is a
+#' data-dependent diagnostic, not a controlled or nominal FDR. Interpretation
+#' depends on the artificial-feature assumptions and the fitted data.
 #'
 #' Requires that `object` was fitted with `artificial_type` set (not `NULL`).
 #'
 #' @param object A fitted `"stabl_fit"` object returned by [stabl_fit()].
-#' @param title Character scalar; plot title.  Default `"FDR Estimate"`.
-#' @param fdr_target Numeric scalar or `NULL`; a visual horizontal reference
-#'   line only. It is not used for fitting or threshold selection. Use `NULL`
-#'   to omit the line. Default `0.05`.
+#' @param title Character scalar; plot title.  Default `"FDP+ diagnostic"`.
+#' @param reference_fdp_plus Numeric scalar or `NULL`; a purely visual
+#'   horizontal reference line only. It is not used for fitting or threshold
+#'   selection and marks no control guarantee. Use `NULL` to omit the line.
+#'   Default `0.05`.  (Renamed from `fdr_target` in 1.0.0: the line is a
+#'   visual reference, not an FDR-control target.)
 #'
-#' @return A `ggplot` object.  The curve shows the FDP+ estimate at each
-#'   candidate threshold; a vertical dashed line marks the optimal threshold
+#' @return A `ggplot` object.  The curve shows the FDP+ diagnostic at each
+#'   candidate threshold; a vertical dashed line marks the selected threshold
 #'   stored in `object$fdr_min_threshold_`; a horizontal dashed line marks
-#'   `fdr_target` when supplied.
+#'   `reference_fdp_plus` when supplied.
 #'
 #' @seealso [stabl_fit()], [plot_stabl_path()]
 #'
@@ -251,13 +255,14 @@ plot_stabl_path <- function(object, new_hard_threshold = NULL,
 #' }
 #' }
 #' @export
-plot_fdr_graph <- function(object, title = "FDR Estimate", fdr_target = 0.05) {
+plot_fdr_graph <- function(object, title = "FDP+ diagnostic",
+                           reference_fdp_plus = 0.05) {
   .check_fitted_stabl(object)
   .require_ggplot2()
   title <- .validate_nonempty_scalar_character(title, "title")
-  fdr_target <- .validate_scalar_numeric(
-    fdr_target,
-    "fdr_target",
+  reference_fdp_plus <- .validate_scalar_numeric(
+    reference_fdp_plus,
+    "reference_fdp_plus",
     min = 0,
     allow_null = TRUE
   )
@@ -273,13 +278,15 @@ plot_fdr_graph <- function(object, title = "FDR Estimate", fdr_target = 0.05) {
   fdrs        <- object$FDRs_
   df          <- data.frame(threshold = thresh_grid, FDR = fdrs)
 
-  # Optimal threshold
+  # Selected threshold (first minimum of the FDP+ curve; ties: first-index
+  # wins, matching the Python reference argmin)
   if (!is.null(object$min_fdr_) && object$min_fdr_ > 1) {
     optimal_thresh <- 1.0
-    opt_label      <- "No optimal threshold (min FDR > 1)"
+    opt_label      <- "No threshold selected (minimum FDP+ > 1)"
   } else {
-    optimal_thresh <- thresh_grid[which.min(fdrs)]  # ties: first-index wins (matches Python argmin)
-    opt_label      <- sprintf("Optimal threshold = %.2f", optimal_thresh)
+    optimal_thresh <- thresh_grid[which.min(fdrs)]
+    opt_label      <- sprintf("Selected threshold (first FDP+ minimum) = %.2f",
+                              optimal_thresh)
   }
 
   p <- ggplot2::ggplot(df, ggplot2::aes(x = threshold, y = FDR)) +
@@ -302,16 +309,16 @@ plot_fdr_graph <- function(object, title = "FDR Estimate", fdr_target = 0.05) {
     ggplot2::labs(
       title = title,
       x     = "Stability threshold",
-      y     = "FDR estimate"
+      y     = "FDP+ diagnostic"
     ) +
     ggplot2::theme_minimal(base_size = 11) +
     ggplot2::theme(
       panel.grid.minor   = ggplot2::element_blank()
     )
 
-  if (!is.null(fdr_target)) {
+  if (!is.null(reference_fdp_plus)) {
     p <- p + ggplot2::geom_hline(
-      yintercept = fdr_target,
+      yintercept = reference_fdp_plus,
       linetype   = "dashed",
       colour     = .stablr_colors$threshold,
       linewidth  = 0.6
