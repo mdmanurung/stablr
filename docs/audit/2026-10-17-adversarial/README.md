@@ -27,7 +27,8 @@ coverage ledger, findings, specification matrix, and validation log.
 | 8-9 | Software, compiled code, test-suite audit | compiled-code pass **complete** (F-011..F-018; F-016 corrected to P3 fragility after runtime probe); test-suite audit **complete** (all ledger gaps refuted as false leads) |
 | 10-11 | Documentation + distribution standards | **complete** (F-P10-1 release-contract skew carried) |
 | FR | Final pre-publication per-function review (all 74 exports) | **complete** (2026-10-18: 28 OK / 34 OK-with-notes / 12 issue; 1 P1 fixed — rf auto-grid NULL-seed failure B-01; 5 fail-closed robustness fixes + regression tests; 9 doc corrections; advanced-vignette Jaccard-heatmap axis fix; 27 findings deferred to Phase 13 with rationale — see `final-review.md`) |
-| 12-15 | Publication readiness, remediation, referee report | pending (Phase 13 inputs extended by the FR deferred list) |
+| 12 | Cross-phase synthesis + residual risk + Phase 13 plan | **complete** (2026-10-18: 90 finding IDs consolidated — 73 open/owed, 15 fixed in `6aa5a6e`, 1 refuted, 1 positive; release blockers F-011/F-012/F-013/F-P6-1/F-001/F-002 verified open at HEAD; merged 6-workstream Phase 13 plan; program verdict: not release-ready pending PR-1..PR-3 + fresh release run + SCI-04 — see `phase12-synthesis.md`) |
+| 13-15 | Remediation execution, reconciliation, referee report | pending (plan in `phase12-synthesis.md` §7; release gates unchanged) |
 
 ## Files
 
@@ -38,6 +39,10 @@ coverage ledger, findings, specification matrix, and validation log.
   verdict rollup for all 74 exports, new findings N-01..N-06, B-01..B-08,
   C-1..C-14, D-1..D-13 with dispositions, ensemble-coherence notes,
   defaults-calibration verdict, publication-readiness verdict
+- `phase12-synthesis.md` — Phase 12 cross-phase synthesis (2026-10-18):
+  per-phase program status, consolidated 90-ID findings inventory with
+  HEAD-verified remediation status, release-blocking set, residual-risk
+  statement, merged Phase 13 remediation plan, program-level verdict
 - `specification-matrix.md` — Phase 1 output (from the independent pass,
   integrated and verified by the lead auditor)
 - `baseline-2026-10-17.md` — fresh baseline evidence
