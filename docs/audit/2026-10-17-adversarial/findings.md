@@ -196,17 +196,46 @@ both P1 runtime claims and statically confirmed P2-3 before integration.
   are safe; the boundary is one refactor away from memory unsafety. Fix: length
   validation (`length(xm)==ni`, `length(xs)==ni`, `xs>0`) at the R wrapper or
   C++ entry.
+  **Update (2026-10-18, Phase 13 PR-1 — FIXED):** `elnet.fit` now validates
+  the attributes before `.Call` (length vs `nvars`, then finite/positive
+  `xs`) and stops with an informative error; verified against all three
+  malformed variants (missing, short, zero-`xs`) — no abort, process alive.
+  Over-blocking guard: a well-formed sparse fit is identical to the dense
+  standardized fit to 6.9e-17 (`test-compiled-boundary-regressions.R`).
+  Residual sibling site, queued for the PR-4 batch: `cooperative-get_start.R:88-89`
+  reads the same attributes unvalidated for the lambda-max computation
+  (a missing attribute degrades to `numeric(0)` → `lambda_max = -Inf`
+  there, not OOB); unreachable from the shipped wrapper, which always sets
+  the attributes first.
 - **F-012 (P1, CONFIRMED — independently reproduced):** NA in `x` is silently
   accepted. NaN gradients fail all strong-rule/KKT comparisons
   (`check_kkt`: `g > l1_regul*penalty` is FALSE for NaN), so the affected
   column is silently dropped with `jerr=0` and no warning. Verified: NA column
   returns all-zero coefficients, `jerr=0`, no diagnostic.
+  **Update (2026-10-18, Phase 13 PR-1 — FIXED):** `elnet.fit` now rejects NA
+  in `x` (dense and sparse, via the stored-entry slot), `y`, and `weights`
+  with an informative error before any computation; regression-tested on all
+  four inputs.
 - **F-013 (P1, CONFIRMED — independently reproduced):** maxit non-convergence
   returns a bare, class-less `list(jerr=-1)` with no warning at the
   `elnet.fit` boundary (visible only as path-truncation warning in
   `multiview.path`). `jerr.multiview` conflates all negative codes as
   "convergence not reached" and all positive codes < 7777 as "memory
   allocation error" (misleading for `jerr=10001`, any `std::exception`).
+  **Update (2026-10-18, Phase 13 PR-1 — FIXED):** `elnet.fit` now warns at
+  the boundary with a code-specific message before returning
+  `list(jerr=...)` (return contract unchanged); both `jerr.glmnetfit` and
+  `jerr.multiview` delegate to a shared `.jerr_code_msg` with distinct
+  messages per glmnetpp code range (`-1` maxit, `-10001-m` max active-set,
+  `-20001-m` min-variance; `1` bad-alloc, `7777` all-excluded, `8888`
+  negative response, `9999` non-positive weights, `10000` non-positive
+  penalty, `10001` generic `std::exception` — per
+  `src/glmnetpp/.../util/exceptions.hpp` and the `gaussian_wls` `err_code(m-1)`
+  mapping). The `multiview.path` truncation warning still fires (path-level
+  context); the boundary warning is the only signal on the
+  `mvglmnet.fit`/cooperative paths that previously swallowed the code
+  silently. Forced non-convergence (`maxit=1`) verified: warning fires,
+  `jerr=-1` returned.
 - **F-014 (P2, CONFIRMED static):** C++ mutates caller-owned warm-start R
   memory in place via non-const `Eigen::Map`s; only `a` is copy-guarded on the
   R side (`:1063-1064`). Benign in the current call graph (warm state is

@@ -155,22 +155,58 @@ dev_function <- function(y, mu, weights, family) {
     sum(family$dev.resids(y, mu, weights))
 }
 
+# Internal: map a vendored glmnetpp jerr code to a human-readable message.
+#
+# Codes follow src/glmnetpp/include/glmnetpp_bits/util/exceptions.hpp and the
+# gaussian_wls fit(m, jerr) mapping `jerr = e.err_code(m - 1)` (m = 1 for the
+# single-lambda WLS point fit used by elnet.fit; path-level flows pass larger
+# m, so convergence codes are range-checked, not equality-matched):
+# negative = non-fatal: -m maxit non-convergence, -10001-m maximum active-set
+# reached, -20001-m minimum-variance floor reached;
+# positive = fatal: 1 bad_alloc, 7777 all features excluded, 8888 negative
+# response, 9999 non-positive weight sum, 10000 non-positive penalty factor,
+# 10001 generic std::exception (src/driver.h).
+# F-013 (P1, audit 2026-10-17): the previous mapping collapsed every negative
+# code into "convergence" and every positive code below 7777 into "memory
+# allocation error", which is wrong for 7777/8888/9999/10000.
+.jerr_code_msg <- function(n, maxit) {
+    if (n < 0) {
+        if (n > -10001) {
+            paste0("Convergence not reached after maxit=", maxit,
+                   " passes (jerr=", n, "); the non-converged solution is returned")
+        } else if (n > -20001) {
+            paste0("Maximum active-set size reached (jerr=", n, "); ",
+                   "the partial solution is returned")
+        } else {
+            paste0("Minimum-variance floor reached (jerr=", n, "); ",
+                   "the partial solution is returned")
+        }
+    } else {
+        if (n == 1) {
+            "Memory allocation error in the vendored cooperative engine"
+        } else if (n == 7777) {
+            "All features were excluded from the fit"
+        } else if (n == 8888) {
+            "Negative response encountered where not permitted by the family"
+        } else if (n == 9999) {
+            "Non-positive total observation weight"
+        } else if (n == 10000) {
+            "Non-positive penalty factor"
+        } else if (n == 10001) {
+            "Internal engine error (std::exception); contact package maintainer"
+        } else {
+            paste0("Unknown engine error code (jerr=", n, ")")
+        }
+    }
+}
+
 jerr.glmnetfit <- function (n, maxit, k = NULL) {
     if (n == 0) {
-        list(n = 0, fatal = FALSE, msg = "")
-    } else if (n > 0) {
-        # fatal error
-        fatal <- TRUE
-        msg <- ifelse(n < 7777,
-                      "Memory allocation error; contact package maintainer",
-                      "Unknown error")
-    } else {
-        # non-fatal error
-        fatal <- FALSE
-        msg <- paste("Convergence for ", k, "th lambda value not reached after maxit=",
-                     maxit, " iterations; solutions for larger lambdas returned",
-                     sep = "")
+        return(list(n = 0, fatal = FALSE, msg = ""))
     }
+    fatal <- n > 0
+    core <- .jerr_code_msg(n, maxit)
+    msg <- if (!is.null(k)) paste0("Lambda ", k, ": ", core) else core
     list(n = n, fatal = fatal, msg = msg)
 }
 

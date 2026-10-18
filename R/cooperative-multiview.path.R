@@ -45,7 +45,8 @@
 # 2*(loglike_sat -loglike(Null)). The null model refers to the intercept model.}
 # \item{npasses}{Total passes over the data summed over all lambda values.}
 # \item{jerr}{Error flag, for warnings and errors (largely for internal
-# debugging).}
+# debugging). Non-fatal codes (negative) are announced with a code-specific
+# warning at this boundary and returned for the caller to handle.}
 # \item{offset}{A logical variable indicating whether an offset was included
 # in the model.}
 # \item{call}{The call that produced this object.}
@@ -832,19 +833,15 @@ multiview.fit <- function(x_list, x, y, rho, weights, lambda, alpha = 1.0,
 
 jerr.multiview <- function (n, maxit, k = NULL) {
     if (n == 0) {
-        list(n = 0, fatal = FALSE, msg = "")
-    } else if (n > 0) {
-        # fatal error
-        fatal <- TRUE
-        msg <- ifelse(n < 7777,
-                      "Memory allocation error; contact package maintainer",
-                      "Unknown error")
+        return(list(n = 0, fatal = FALSE, msg = ""))
+    }
+    fatal <- n > 0
+    core <- .jerr_code_msg(n, maxit)
+    msg <- if (!is.null(k)) {
+        paste0("Lambda ", k, ": ", core,
+               if (!fatal) ". Solutions for larger lambdas returned." else "")
     } else {
-        # non-fatal error
-        fatal <- FALSE
-        msg <- paste("Convergence for ", k, "th lambda value not reached after maxit=",
-                     maxit, " iterations; solutions for larger lambdas returned",
-                     sep = "")
+        core
     }
     list(n = n, fatal = fatal, msg = msg)
 }
@@ -874,10 +871,14 @@ jerr.multiview <- function (n, maxit, k = NULL) {
 #
 # @param x Input matrix, of dimension \code{nobs x nvars}; each row is an
 # observation vector. If it is a sparse matrix, it is assumed to be unstandardized.
-# It should have attributes \code{xm} and \code{xs}, where \code{xm(j)} and
-# \code{xs(j)} are the centering and scaling factors for variable j respsectively.
-# If it is not a sparse matrix, it is assumed that any standardization needed
-# has already been done.
+# It must have attributes \code{xm} and \code{xs} of length \code{nvars}, where
+# \code{xm(j)} and \code{xs(j)} are the centering and scaling factors for
+# variable j respectively and every \code{xs(j)} is finite and positive;
+# \code{elnet.fit} stops with an informative error otherwise (the vendored
+# engine would read them out-of-bounds). NA values in \code{x}, \code{y} or
+# \code{weights} are also rejected (the engine would silently drop affected
+# columns). If it is not a sparse matrix, it is assumed that any
+# standardization needed has already been done.
 # @param y Quantitative response variable.
 # @param weights Observation weights. \code{elnet.fit} does NOT standardize
 # these weights.
@@ -946,6 +947,32 @@ elnet.fit <- function(x, y, weights, lambda, alpha = 1.0, intercept = TRUE,
                       lower.limits = -Inf, upper.limits = Inf, warm = NULL,
                       from.glmnet.fit = FALSE, save.fit = FALSE) {
     this.call <- match.call()
+    # F-012 (P1, audit 2026-10-17): the vendored engine silently drops
+    # columns containing NA (returns jerr=0 with no signal). Fail closed
+    # before any computation.
+    if (anyNA(y)) {
+        stop("elnet.fit: 'y' contains NA values; the vendored engine would ",
+             "silently drop affected columns.", call. = FALSE)
+    }
+    if (anyNA(weights)) {
+        stop("elnet.fit: 'weights' contains NA values; the vendored engine ",
+             "would silently drop affected columns.", call. = FALSE)
+    }
+    if (inherits(x, "sparseMatrix")) {
+        x_entries <- tryCatch(x@x, error = function(e) NULL)
+        if (is.null(x_entries)) {
+            stop("elnet.fit: unsupported sparse matrix type (no numeric ",
+                 "'x' slot); supply a numeric sparse matrix such as ",
+                 "dgCMatrix.", call. = FALSE)
+        }
+        if (anyNA(x_entries)) {
+            stop("elnet.fit: 'x' contains NA values; the vendored engine ",
+                 "would silently drop affected columns.", call. = FALSE)
+        }
+    } else if (anyNA(x)) {
+        stop("elnet.fit: 'x' contains NA values; the vendored engine would ",
+             "silently drop affected columns.", call. = FALSE)
+    }
     internal.parms <- .mv_multiview.control()
 
     # compute null deviance
@@ -1068,8 +1095,29 @@ elnet.fit <- function(x, y, weights, lambda, alpha = 1.0, intercept = TRUE,
   
     # take out components of x and run C++ subroutine
     if (inherits(x, "sparseMatrix")) {
-        xm <- as.double(attr(x, "xm"))
-        xs <- as.double(attr(x, "xs"))
+        xm <- attr(x, "xm")
+        xs <- attr(x, "xs")
+        # F-011 (P0, audit 2026-10-17): the vendored engine indexes xm/xs
+        # 0..ni-1 without checking; missing or short attributes caused an
+        # out-of-bounds read (SIGABRT observed; silent heap OOB under
+        # -DNDEBUG). Fail closed before .Call.
+        if (is.null(xm) || is.null(xs) ||
+            length(xm) != nvars || length(xs) != nvars) {
+            stop("elnet.fit: sparse 'x' lacks well-formed 'xm'/'xs' ",
+                 "standardization attributes (expected length ", nvars,
+                 "; got ", length(xm), " and ", length(xs), "). The vendored ",
+                 "engine reads them out-of-bounds otherwise. Supply the ",
+                 "attributes or standardize via the package's multiview ",
+                 "preparation.", call. = FALSE)
+        }
+        xm <- as.double(xm)
+        xs <- as.double(xs)
+        if (any(!is.finite(xs)) || any(xs <= 0)) {
+            stop("elnet.fit: sparse 'x' attribute 'xs' must be finite and ",
+                 "positive (the engine divides by it). Constant columns ",
+                 "must be excluded and given xs = 1 by the caller, as the ",
+                 "multiview preparation does.", call. = FALSE)
+        }
         wls_fit <- spwls_exp(alm0=alm0,almc=almc,alpha=alpha,m=m,no=nobs,ni=nvars,
                              x=x,xm=xm,xs=xs,r=r,xv=xv,v=v,intr=intr,ju=ju,vp=vp,cl=cl,nx=nx,thr=thr,
                              maxit=maxit,a=a.new,aint=aint,g=g,ia=ia,iy=iy,iz=iz,mm=mm,
@@ -1082,12 +1130,17 @@ elnet.fit <- function(x, y, weights, lambda, alpha = 1.0, intercept = TRUE,
     }
 
     # if error code > 0, fatal error occurred: stop immediately
-    # if error code < 0, non-fatal error occurred: return error code
+    # if error code < 0, non-fatal error occurred: warn (F-013, audit
+    # 2026-10-17 — previously returned silently) and return the error code;
+    # callers decide how to handle the partial solution
     if (wls_fit$jerr > 0) {
         errmsg <- jerr.glmnetfit(wls_fit$jerr, maxit)
         stop(errmsg$msg, call. = FALSE)
-    } else if (wls_fit$jerr < 0)
+    } else if (wls_fit$jerr < 0) {
+        errmsg <- jerr.glmnetfit(wls_fit$jerr, maxit)
+        warning(errmsg$msg, call. = FALSE)
         return(list(jerr = wls_fit$jerr))
+    }
     warm_fit <- wls_fit[c("almc", "r", "xv", "ju", "vp", "cl", "nx",
                           "a", "aint", "g", "ia", "iy", "iz", "mm", "nino",
                           "rsqc", "nlp")]

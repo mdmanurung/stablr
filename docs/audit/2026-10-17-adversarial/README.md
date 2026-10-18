@@ -20,7 +20,7 @@ coverage ledger, findings, specification matrix, and validation log.
 |---|---|---|
 | 0 | Reconnaissance + fresh baseline | **complete** (tests 3325 pass/0 fail/1 skip; R CMD check 0E/0W/1NOTE) |
 | 1 | Specification reconstruction from primary literature | **complete** (delegated independent pass, integrated + spot-verified; F-001..F-010) |
-| 2 | Core algorithm audit (bootstrap, learners, knockoffs, FDP+) | in progress (fdp_control.R, artificial_features.R, knockoff_mvr.R clean; MVR solver numerically verified) |
+| 2 | Core algorithm audit (bootstrap, learners, knockoffs, FDP+) | **complete** (fdp_control.R, artificial_features.R, knockoff_mvr.R clean; MVR solver numerically verified — L3 partially resolved; completion findings F-019..F-023; first-pass leads L1–L5 dispositioned) |
 | 3-5 | Leakage, multi-omic, outcome-family audits | **complete** (Phases 3+4 delegated independent passes + Phase 5 lead; no P0/P1; F-CV-01..08, P4-F24..F29, F-024..F-026) |
 | 6 | Independent validation program (synthetic DGPs) | **complete** (F-P6-1 headline: min_fdr_ anti-conservative 1.5-2.2× on pure nulls; regime-dependent calibration; env-permutation null clean) |
 | 7 | Aging case-study adversarial audit | **complete** (V8/V12/V13 + vignette §4/§10.3/§10.5 re-derived exactly from committed artifacts; saturation mechanism attributed: rf threshold-path median floor + max-over-lambda scoring + fixed 0.5 bar decoupled from FDP+ — F-P7-1; CP convention inconsistency F-P7-2; WS-5 calibration-scope gap F-P7-3; evidence in phase7_validation/) |
@@ -28,7 +28,8 @@ coverage ledger, findings, specification matrix, and validation log.
 | 10-11 | Documentation + distribution standards | **complete** (F-P10-1 release-contract skew carried) |
 | FR | Final pre-publication per-function review (all 74 exports) | **complete** (2026-10-18: 28 OK / 34 OK-with-notes / 12 issue; 1 P1 fixed — rf auto-grid NULL-seed failure B-01; 5 fail-closed robustness fixes + regression tests; 9 doc corrections; advanced-vignette Jaccard-heatmap axis fix; 27 findings deferred to Phase 13 with rationale — see `final-review.md`) |
 | 12 | Cross-phase synthesis + residual risk + Phase 13 plan | **complete** (2026-10-18: 90 finding IDs consolidated — 73 open/owed, 15 fixed in `6aa5a6e`, 1 refuted, 1 positive; release blockers F-011/F-012/F-013/F-P6-1/F-001/F-002 verified open at HEAD; merged 6-workstream Phase 13 plan; program verdict: not release-ready pending PR-1..PR-3 + fresh release run + SCI-04 — see `phase12-synthesis.md`) |
-| 13-15 | Remediation execution, reconciliation, referee report | pending (plan in `phase12-synthesis.md` §7; release gates unchanged) |
+| 13 | Remediation execution | **in progress** (PR-1 DONE 2026-10-18: F-011/F-012/F-013 fail-closed fixes + compiled-boundary regression tests, 9 blocks / 25 expectations; suite 0 failed / 0 errors; parity contract intact — next PR-2 RNG-hygiene cluster; plan in `phase12-synthesis.md` §7) |
+| 14-15 | Reconciliation, referee report | pending (release gates unchanged) |
 
 ## Files
 

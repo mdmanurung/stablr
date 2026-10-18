@@ -7,18 +7,29 @@ hygiene/robustness, batch at leisure. Every remediation must preserve the
 Python-parity contract or document the deliberate divergence (no silent
 workarounds).
 
+## Phase 13 progress
+
+- **PR-1 (2026-10-18) — DONE, blocking set cleared:** F-011, F-012, F-013
+  fixed in `R/cooperative-multiview.path.R` + `R/cooperative-get_start.R`
+  (shared `.jerr_code_msg` mapper), with compiled-boundary regression tests
+  in `tests/testthat/test-compiled-boundary-regressions.R` (9 blocks / 25
+  expectations). Full suite after the fix: 56 files, 593 tests, 0 failed,
+  0 errors, 3416 passed, 1 pre-existing skip. Numerical behavior on valid
+  inputs is unchanged (validation and warnings only — parity contract
+  intact). Next: PR-2 (RNG-hygiene cluster).
+
 ## P0 — blocks any release
 
 | ID | Defect | Fix | Est. |
 |---|---|---|---|
-| F-011 | Sparse path OOB read (SIGABRT) when `attr(x,"xm"/"xs")` missing; silent heap OOB under -DNDEBUG | Length-validate `xm`/`xs` vs `ni` and `xs > 0` in `elnet.fit` before `.Call` (or C++ entry → `jerr=10001`); add regression test | S |
+| ~~F-011~~ | Sparse path OOB read (SIGABRT) when `attr(x,"xm"/"xs")` missing; silent heap OOB under -DNDEBUG | **FIXED (PR-1, 2026-10-18):** length + finite/positive validation in `elnet.fit` before `.Call`; regression tests | DONE |
 
 ## P1 — scientific integrity, fix before release
 
 | ID | Defect | Fix | Est. |
 |---|---|---|---|
-| F-012 | NA in `x` silently drops columns (`jerr=0`, no warning) | `anyNA` check on x/y/weights in `elnet.fit`; regression test | S |
-| F-013 | maxit non-convergence returns bare `list(jerr=-1)`, no warning; `jerr.multiview` conflates codes | Warn at `elnet.fit` boundary; distinct messages per code range | S |
+| ~~F-012~~ | NA in `x` silently drops columns (`jerr=0`, no warning) | **FIXED (PR-1, 2026-10-18):** `anyNA` checks on x (dense+sparse)/y/weights in `elnet.fit`; regression tests | DONE |
+| ~~F-013~~ | maxit non-convergence returns bare `list(jerr=-1)`, no warning; `jerr.multiview` conflates codes | **FIXED (PR-1, 2026-10-18):** boundary warning in `elnet.fit`; shared `.jerr_code_msg` with distinct messages per code range in both mappers | DONE |
 | F-P6-1 | `min_fdr_` anti-conservative 1.5-2.2× on pure nulls (realized FDP 0.92-0.93 vs reported 0.42-0.66; 18-33 features selected on no-signal data) | Documentation-first: quantify null behavior in `?stabl_fit`/`?get_fdrs`/vignette; report the F-001 bound alongside `min_fdr_`; consider a null-calibration diagnostic. Do NOT silently change the threshold rule (parity contract) | M |
 
 ## P2 — fix or explicitly fence before release
