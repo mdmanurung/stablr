@@ -75,6 +75,17 @@
 
 ### Documentation
 
+- Two new vignettes (Phase 13 PR-B, 1.0.0 spec §8): “Python STABL
+  parity: precisely what matches” (`stablr-python-parity`) replays the
+  shipped byte-identical subset of the frozen Python-reference fixtures
+  (`inst/extdata/python_parity_vignette/`, SHA-256 manifest) and states
+  explicitly what parity does and does not establish; “Reading stability
+  paths and FDP+ plots” (`stablr-reading-plots`) is a
+  plot-interpretation guide. Both render without Python, using only
+  installed-package resources. `_pkgdown.yml` gains navbar and articles
+  entries, the README links both articles, and
+  `docs/PYTHON_TO_R_MAPPING.md` is corrected to the canonical
+  post-rename accessors.
 - [`?stabl_fit`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
   documents `min_fdr_` as a minimum-FDP+ diagnostic with the
   stochastic-bound caveat;

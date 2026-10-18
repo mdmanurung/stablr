@@ -1,0 +1,245 @@
+# Python STABL parity: precisely what matches
+
+## 1. Scope and source of the comparison
+
+`stablr` is an R implementation of the STABL procedure described by
+Hédou et al. (2024). This vignette demonstrates **the algorithmic parity
+that existing immutable Python-reference fixtures can support**. It does
+*not* claim that R `glmnet` and Python `scikit-learn` yield identical
+fitted coefficients, or that a match to Python establishes universal
+false-discovery calibration.
+
+The source-of-truth Python implementation is
+[`gregbellan/Stabl`](https://github.com/gregbellan/Stabl) at commit
+[`1d07f85a13cfbecb4f08ce21075bf4fbb8e34678`](https://github.com/gregbellan/Stabl/tree/1d07f85a13cfbecb4f08ce21075bf4fbb8e34678),
+labeled **1.0.0** in the frozen fixture provenance. The frozen reference
+used Python **3.11.9**, `scikit-learn` **1.3.2**, `numpy` **1.26.4**,
+and `scipy` **1.11.4**. R reads packaged reference CSVs; **Python is not
+required to build this article**.
+
+Canonical generator, input and integrity checks:
+
+- [Fixture
+  README](https://github.com/mdmanurung/stablr/blob/main/tests/testthat/fixtures/python_parity/README.md)
+- [Fixture
+  generator](https://github.com/mdmanurung/stablr/blob/main/tests/testthat/fixtures/python_parity/generate.py)
+- [Executable Python–R contract
+  tests](https://github.com/mdmanurung/stablr/blob/main/tests/testthat/test-python-parity-fixtures.R)
+- [Full-candidate release-evidence
+  status](https://github.com/mdmanurung/stablr/blob/main/docs/RELEASE_STATUS.md)
+
+| Comparison | Evidence level | Interpretation |
+|:---|:---|:---|
+| Accumulation of **frozen selection masks** | Exact numerical equality in unit tests | Tests score bookkeeping, not fitted learner equivalence |
+| FDP+ curve, selected threshold, strict-threshold support | Exact up to numerical tolerance on frozen scores | Tests algorithmic threshold semantics |
+| Utility metrics and fixed stacking candidate selection | Exact up to numerical tolerance in unit tests | Tests shared algorithm inputs and tie conventions |
+| Gaussian/binomial/multinomial LASSO; Gaussian elastic net | **Predeclared agreement thresholds** for rankings/support | Different optimization paths: not coefficient identity |
+| Environmental aggregation, RF, ordinal, sPLS-DA, full multi-omic candidate workflow | **Not established by this vignette** | Require separate benchmark/validation evidence |
+| Error-rate calibration on real or arbitrary null datasets | **Not established by parity** | Requires statistical assumptions and independent simulation evidence |
+
+## 2. Load the immutable reference scores
+
+The package ships a small byte-for-byte subset of its canonical Python
+parity inputs in `inst/extdata/python_parity_vignette`. These are copied
+from, not substituted for, the original frozen test fixtures. Every file
+is included in a SHA-256 manifest in the accompanying source bundle.
+
+``` r
+
+library(stablr)
+fixture_dir <- system.file("extdata", "python_parity_vignette", package = "stablr")
+stopifnot(nzchar(fixture_dir))
+read_fixture <- function(name) {
+  utils::read.csv(file.path(fixture_dir, name), check.names = FALSE,
+                  stringsAsFactors = FALSE)
+}
+scores <- read_fixture("stability_scores.csv")
+curve <- read_fixture("fdp_plus_curve.csv")
+reference <- read_fixture("stabl_fit_reference.csv")
+
+score_matrix <- function(kind) {
+  subset_scores <- scores[scores$feature_type == kind, , drop = FALSE]
+  {
+    features <- unique(subset_scores$feature)
+    lambdas <- unique(subset_scores$lambda_id)
+    out <- matrix(NA_real_, length(features), length(lambdas),
+                  dimnames = list(features, lambdas))
+    for (i in seq_len(nrow(subset_scores))) {
+      out[subset_scores$feature[i], subset_scores$lambda_id[i]] <-
+        subset_scores$stability_score[i]
+    }
+    stopifnot(!anyNA(out))
+    out
+  }
+}
+real_scores <- score_matrix("real")
+artificial_scores <- score_matrix("artificial")
+stopifnot(nrow(real_scores) == 8L, nrow(artificial_scores) == 4L)
+```
+
+## 3. Reproduce Python’s FDP+ diagnostic exactly
+
+With the identical stability scores, candidate thresholds and
+artificial-to-original feature proportion, the R implementation
+reproduces the pinned Python FDP+ curve and the **first** minimum of
+that curve. In this fixture the minimum is attained at both 0.25 and
+0.375; the first-minimum policy selects **0.25**.
+
+``` r
+
+observed <- compute_fdp_plus(
+  stabl_scores = real_scores,
+  stabl_scores_artificial = artificial_scores,
+  artificial_proportion = 0.5,
+  fdr_threshold_range = curve$threshold
+)
+stopifnot(
+  isTRUE(all.equal(unname(observed$FDRs), curve$fdp_plus,
+                   tolerance = 1e-12)),
+  isTRUE(all.equal(observed$min_fdr, min(curve$fdp_plus),
+                   tolerance = 1e-12))
+)
+first_min <- curve$threshold[curve$is_first_minimum == 1L]
+stopifnot(length(first_min) == 1L)
+stopifnot(isTRUE(all.equal(observed$fdr_min_threshold,
+                           first_min, tolerance = 1e-12)))
+knitr::kable(data.frame(
+  property = c("Minimum FDP+", "Chosen stability threshold",
+               "Number of tied minima"),
+  value = c(format(observed$min_fdr, digits = 5),
+            format(observed$fdr_min_threshold, digits = 5),
+            as.character(sum(curve$fdp_plus == min(curve$fdp_plus))))
+))
+```
+
+| property                   | value |
+|:---------------------------|:------|
+| Minimum FDP+               | 0.25  |
+| Chosen stability threshold | 0.25  |
+| Number of tied minima      | 2     |
+
+``` r
+
+plot(curve$threshold, curve$fdp_plus, type = "b", pch = 16,
+     xlab = "Candidate stability-score threshold",
+     ylab = "FDP+ diagnostic (not realized FDP)")
+abline(v = observed$fdr_min_threshold, lty = 2)
+points(observed$fdr_min_threshold, observed$min_fdr, pch = 19, cex = 1.5)
+```
+
+![Pinned Python-reference FDP+ curve. The dotted vertical line marks the
+first minimum, not a guaranteed false-discovery
+rate.](stablr-python-parity_files/figure-html/fdp-curve-1.png)
+
+Pinned Python-reference FDP+ curve. The dotted vertical line marks the
+first minimum, not a guaranteed false-discovery rate.
+
+## 4. Reproduce selected-feature support and tie policy
+
+The reference uses **strict `>`**: a feature with a maximum score
+*equal* to the chosen threshold is not selected. In this pinned example
+`gene_e` has score **0.25** and is therefore excluded, while `gene_d`
+has **0.5** and is selected. Strict-vs-inclusive comparisons are a
+documented methodological decision; this vignette preserves reference
+behavior rather than silently switching it.
+
+``` r
+
+maximum <- apply(real_scores, 1L, max)
+r_selected <- as.integer(maximum[reference$feature] > observed$fdr_min_threshold)
+stopifnot(
+  isTRUE(all.equal(unname(maximum[reference$feature]),
+                   reference$max_stability_score, tolerance = 1e-12)),
+  identical(r_selected, reference$selected)
+)
+knitr::kable(data.frame(feature = reference$feature,
+                        python_score = reference$max_stability_score,
+                        python_selected = as.logical(reference$selected),
+                        r_selected = as.logical(r_selected)))
+```
+
+| feature  | python_score | python_selected | r_selected |
+|:---------|-------------:|:----------------|:-----------|
+| signal_a |        1.000 | TRUE            | TRUE       |
+| signal_b |        0.875 | TRUE            | TRUE       |
+| gene_c   |        0.625 | TRUE            | TRUE       |
+| gene_d   |        0.500 | TRUE            | TRUE       |
+| gene_e   |        0.250 | FALSE           | FALSE      |
+| noise_f  |        0.250 | FALSE           | FALSE      |
+| noise_g  |        0.125 | FALSE           | FALSE      |
+| noise_h  |        0.000 | FALSE           | FALSE      |
+
+## 5. Solver-level parity is a different, tolerance-based contract
+
+A separate test suite performs R `glmnet` fits using the **same
+predictor matrix, responses and prescribed bootstrap sample IDs** as the
+pinned Python scikit-learn baseline. These are *not* comparisons of
+automatically generated R and Python lambda paths. The frozen
+benchmark’s acceptance limits are:
+
+``` r
+
+gates <- read_fixture("solver_cases.csv")
+knitr::kable(gates[, c("case", "spearman_min", "top5_overlap_min", "jaccard_min")],
+             digits = 2)
+```
+
+| case                 | spearman_min | top5_overlap_min | jaccard_min |
+|:---------------------|-------------:|-----------------:|------------:|
+| gaussian_lasso       |          0.8 |                4 |         0.6 |
+| binomial_lasso       |          0.8 |                4 |         0.6 |
+| multinomial_lasso    |          0.7 |                3 |         0.5 |
+| gaussian_elastic_net |          0.7 |                3 |         0.5 |
+
+These numbers are **minimum acceptance gates**, not observed agreement
+statistics. Do not label this table “Python–R achieved concordance”. The
+achieved comparison **is not displayed in this miniature vignette**. It
+is computed and asserted by
+[`test-python-parity-fixtures.R`](https://github.com/mdmanurung/stablr/blob/main/tests/testthat/test-python-parity-fixtures.R)
+against the full pinned `solver_*` fixtures; that test must pass in CI.
+Since coefficient penalties differ between scikit-learn and glmnet, an
+equivalent fitted model can require explicit parameter mapping (e.g.,
+Python `C` versus R `lambda`), intercept and normalization conventions.
+Do not imply byte-identical coefficients or random-number streams.
+
+## 6. What the two plots mean
+
+The **stability path** plots how frequently each feature is selected
+across bootstrap subsamples at each lambda/learner setting. High curves
+indicate repeated *algorithmic* selection, not biological truth.
+Sparse/dense directions depend on the chosen learner/grid and must be
+checked from the axis labels.
+
+The **FDP+ curve** plots a *decoy-based diagnostic* against candidate
+**stability cut-offs**. A minimum chooses a cut-off under the published
+STABL procedure; a lower minimum is **not automatically a controlled
+FDR**, and a curve value greater than 1 can occur because FDP+ is an
+estimator, not a probability. Near-zero artificial-score separation, a
+flat minimum or selection saturation warrants caution. An empty support
+is legitimate and should not be silently replaced by top-ranked
+features.
+
+For a compact illustrated walkthrough, see
+[`vignette("stablr-reading-plots")`](https://mdmanurung.github.io/stablr/articles/stablr-reading-plots.md)
+after installing the accompanying page.
+
+## 7. Reproduction boundaries
+
+- The installed vignette has **no Python dependency**, because it reads
+  frozen CSV evidence.
+- To regenerate *canonical* fixtures, use the pinned Python checkout,
+  explicit environment, generator and SHA-256 verification steps in the
+  [fixture
+  README](https://github.com/mdmanurung/stablr/blob/main/tests/testthat/fixtures/python_parity/README.md).
+- Passing parity means matching a specified reference contract. It
+  **does not** show that STABL’s selected set has a calibrated realized
+  false-discovery proportion in every empirical regime. See the
+  [adversarial scientific
+  findings](https://github.com/mdmanurung/stablr/blob/main/docs/audit/2026-10-17-adversarial/findings.md).
+- The separately governed full OOL candidate run historically failed its
+  0.1.1 parity gates; this page **must not** be cited as evidence that
+  the later full-candidate release gate has passed.
+
+**References:** Hédou J, et al. *Nature Biotechnology* (2024), DOI
+[10.1038/s41587-023-02033-x](https://doi.org/10.1038/s41587-023-02033-x);
+original [Python STABL repository](https://github.com/gregbellan/Stabl).

@@ -20,6 +20,8 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-vignettes" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Vignettes</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-vignettes"><li><a class="dropdown-item" href="../articles/stablr-getting-started.html">Getting started with stabl</a></li>
+    <li><a class="dropdown-item" href="../articles/stablr-python-parity.html">Python STABL parity (pinned snapshot)</a></li>
+    <li><a class="dropdown-item" href="../articles/stablr-reading-plots.html">Reading stability paths and FDP+ plots</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-intro.html">Quick start (expert interface)</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-multiomic.html">Multi-omic OOL workflow</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-tcga.html">TCGA Breast Cancer workflow</a></li>
@@ -70,7 +72,8 @@
 </ul></div>
 <div class="section level3">
 <h3 id="documentation-0-3-0-9000">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-3-0-9000"></a></h3>
-<ul><li>
+<ul><li>Two new vignettes (Phase 13 PR-B, 1.0.0 spec §8): “Python STABL parity: precisely what matches” (<code>stablr-python-parity</code>) replays the shipped byte-identical subset of the frozen Python-reference fixtures (<code>inst/extdata/python_parity_vignette/</code>, SHA-256 manifest) and states explicitly what parity does and does not establish; “Reading stability paths and FDP+ plots” (<code>stablr-reading-plots</code>) is a plot-interpretation guide. Both render without Python, using only installed-package resources. <code>_pkgdown.yml</code> gains navbar and articles entries, the README links both articles, and <code>docs/PYTHON_TO_R_MAPPING.md</code> is corrected to the canonical post-rename accessors.</li>
+<li>
 <code><a href="../reference/stabl_fit.html">?stabl_fit</a></code> documents <code>min_fdr_</code> as a minimum-FDP+ diagnostic with the stochastic-bound caveat; <code><a href="../reference/compute_fdp_plus.html">?compute_fdp_plus</a></code> gains a contract section pinning the strict <code>&gt;</code> exceedance comparator and first-index tie policy (Python <code>argmin</code> parity). The intro, multi-omic, and cooperative vignettes and <code>docs/API_REFERENCE.md</code> are updated for the 1.0.0 contract changes above.</li>
 <li>All nine vignettes audited against the current API and re-rendered. Replaced 25 deprecated <code><a href="../reference/get_feature_names_out.html">get_feature_names_out()</a></code> calls with <code><a href="../reference/get_feature_names.html">get_feature_names()</a></code>, <code><a href="../reference/jaccard_matrix.html">jaccard_matrix()</a></code> with <code><a href="../reference/jaccard_similarity_matrix.html">jaccard_similarity_matrix()</a></code>, <code>adjusted_similarity(nb_total_elements=)</code> with <code>n_universe=</code>, and deprecated <code>groups=</code> arguments to <code><a href="../reference/stabl_fit.html">stabl_fit()</a></code> with <code>sample_groups=</code> (advanced, environments). Corrected the <code><a href="../reference/stabl_multiomic_train_validate.html">stabl_multiomic_train_validate()</a></code> group argument to <code>groups_train</code> (multiomic, cooperative) and the stale <code>groups</code> note in the environments vignette.</li>
 <li>Added seven figure chunks so key conclusions are visually supported: environment-wise minimum-score heatmap (environments), Cox stability path, Jaccard similarity heatmap and interpretation scatter (advanced), late-fusion prediction scatter (multiomic), cooperative rho surface (cooperative), and FDR+ regularisation curve (intro).</li>

@@ -190,11 +190,15 @@ the class of the fitted object, which confirms that a
 result can be treated as a `stabl_fit` object. Read
 [`?stabl_fit`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
 for the full expert interface, and the other vignettes for multi-omic
-workflows, nested cross-validation, and environment stability.
+workflows, nested cross-validation, and environment stability. For what
+“Python parity” does and does not establish, see
+[`vignette("stablr-python-parity")`](https://mdmanurung.github.io/stablr/articles/stablr-python-parity.md);
+for a guide to the stability-path and FDP+ diagnostic plots, see
+[`vignette("stablr-reading-plots")`](https://mdmanurung.github.io/stablr/articles/stablr-reading-plots.md).
 
 ## 5 Compatibility with versions before 0.3.0
 
-Nothing is removed. A number of ambiguous names were renamed
+A number of ambiguous names were renamed
 ([`get_feature_names_out()`](https://mdmanurung.github.io/stablr/reference/get_feature_names_out.md)
 is now
 [`get_feature_names()`](https://mdmanurung.github.io/stablr/reference/get_feature_names.md),
@@ -206,3 +210,13 @@ is now
 [`jaccard_similarity_matrix()`](https://mdmanurung.github.io/stablr/reference/jaccard_similarity_matrix.md),
 and so on; see `NEWS.md` for the full table). The old names continue to
 work: each warns once and delegates to the new name.
+
+The 1.0.0 contract does remove a small set of legacy behaviors (Phase 13
+PR-A): the `explore`/`n_explore` arguments of
+[`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
+(an empty selection now stays empty instead of being relabelled as a
+top-N “explore” set), the in-sample
+`late_fusion_training = "python_legacy"` mode, and
+`cooperation_selection = "validation"` (both biased performance
+estimates). The remaining deprecated aliases are removed in the 1.0.0
+API pruning; see `NEWS.md` and the migration guide for replacements.

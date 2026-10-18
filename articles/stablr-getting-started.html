@@ -36,6 +36,8 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-vignettes" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Vignettes</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-vignettes">
 <li><a class="dropdown-item" href="../articles/stablr-getting-started.html">Getting started with stabl</a></li>
+    <li><a class="dropdown-item" href="../articles/stablr-python-parity.html">Python STABL parity (pinned snapshot)</a></li>
+    <li><a class="dropdown-item" href="../articles/stablr-reading-plots.html">Reading stability paths and FDP+ plots</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-intro.html">Quick start (expert interface)</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-multiomic.html">Multi-omic OOL workflow</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-tcga.html">TCGA Breast Cancer workflow</a></li>
@@ -265,12 +267,15 @@ and the class of the fitted object, which confirms that a
 <code><a href="../reference/stabl.html">stabl()</a></code> result can be treated as a <code>stabl_fit</code>
 object. Read <code><a href="../reference/stabl_fit.html">?stabl_fit</a></code> for the full expert interface, and
 the other vignettes for multi-omic workflows, nested cross-validation,
-and environment stability.</p>
+and environment stability. For what “Python parity” does and does not
+establish, see <code><a href="../articles/stablr-python-parity.html">vignette("stablr-python-parity")</a></code>; for a
+guide to the stability-path and FDP+ diagnostic plots, see
+<code><a href="../articles/stablr-reading-plots.html">vignette("stablr-reading-plots")</a></code>.</p>
 </div>
 <div class="section level2">
 <h2 id="compatibility-with-versions-before-0-3-0">5 Compatibility with versions before 0.3.0<a class="anchor" aria-label="anchor" href="#compatibility-with-versions-before-0-3-0"></a>
 </h2>
-<p>Nothing is removed. A number of ambiguous names were renamed
+<p>A number of ambiguous names were renamed
 (<code><a href="../reference/get_feature_names_out.html">get_feature_names_out()</a></code> is now
 <code><a href="../reference/get_feature_names.html">get_feature_names()</a></code>, <code><a href="../reference/stacked_multi_omic.html">stacked_multi_omic()</a></code> is
 now <code><a href="../reference/stabl_multiomic_stacked.html">stabl_multiomic_stacked()</a></code>,
@@ -278,6 +283,15 @@ now <code><a href="../reference/stabl_multiomic_stacked.html">stabl_multiomic_st
 <code><a href="../reference/jaccard_similarity_matrix.html">jaccard_similarity_matrix()</a></code>, and so on; see
 <code>NEWS.md</code> for the full table). The old names continue to
 work: each warns once and delegates to the new name.</p>
+<p>The 1.0.0 contract does remove a small set of legacy behaviors (Phase
+13 PR-A): the <code>explore</code>/<code>n_explore</code> arguments of
+<code><a href="../reference/stabl_fit.html">stabl_fit()</a></code> (an empty selection now stays empty instead of
+being relabelled as a top-N “explore” set), the in-sample
+<code>late_fusion_training = "python_legacy"</code> mode, and
+<code>cooperation_selection = "validation"</code> (both biased
+performance estimates). The remaining deprecated aliases are removed in
+the 1.0.0 API pruning; see <code>NEWS.md</code> and the migration guide
+for replacements.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

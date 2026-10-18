@@ -20,3 +20,10 @@
   cohorts](https://mdmanurung.github.io/stablr/articles/stablr-aging-case-study.md):
 - [Advanced stablr
   Workflows](https://mdmanurung.github.io/stablr/articles/stablr-advanced.md):
+
+### Parity and plot interpretation
+
+- [Python STABL parity: precisely what
+  matches](https://mdmanurung.github.io/stablr/articles/stablr-python-parity.md):
+- [Reading stability paths and FDP+
+  plots](https://mdmanurung.github.io/stablr/articles/stablr-reading-plots.md):
