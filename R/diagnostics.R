@@ -716,7 +716,7 @@ print.stabl_diagnostics <- function(x, ...) {
   if (!is.null(x$fdp_curve)) {
     cat(sprintf(
       "  FDP+ minimum: %s at threshold %s (%d minimizing threshold%s)\n",
-      format(x$fdp_curve$min_fdr),
+      format(signif(x$fdp_curve$min_fdr, 3L)),
       format(x$fdp_curve$minima_thresholds[[1L]]),
       x$fdp_curve$n_minima, if (x$fdp_curve$n_minima > 1L) "s" else ""
     ))

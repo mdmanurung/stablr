@@ -126,6 +126,27 @@
   DIABLO paragraph.
 
 ## New features
+- `stabl_null_check()` (Phase 13 PR-D, 1.0.0 spec A2): outcome-null
+  calibration workbench. Repeatedly reruns the complete `stabl_fit()`
+  pipeline on outcome-null versions of the data and summarizes the
+  selected-panel-size distribution, P(any null selection), per-feature
+  null selection frequencies, reported-FDP+ versus by-construction
+  realized FDP, null-saturation proportions, and per-replicate
+  decoy-generator provenance. Null generation is prescribed by an
+  explicit exchangeability unit: `"independent"` (global permutation —
+  refused when `blocks`/`clusters` are supplied), `"within_block"`,
+  `"whole_cluster"` (equal-sized clusters), or `"simulated"` (an explicit
+  user-supplied `null_simulator`; the package never invents a null DGP).
+  Unsupported designs are refused, never silently replaced by a global
+  permutation. Per-replicate permutation and fit seeds are derived from
+  the recorded base seed (fully replayable); `decoy_reps > 1` separates
+  sensitivity to random decoy realizations. Failures are recorded with
+  replicate ids, seeds, stage, and message, and the run aborts
+  (fail-closed) when they exceed `max_failures`. The result
+  (`stabl_null_validation`, with `print()`/`plot()` methods) carries
+  `truth_status` distinguishing synthetic global nulls from permutation
+  nulls of observational data — the latter quantify null selection
+  behavior, not FDP validity for partly non-null data.
 - `stabl_diagnose()` (Phase 13 PR-C, 1.0.0 spec A1): selection-reliability
   diagnostics for any `stabl_fit()`/`stabl()` result. Reports real and
   artificial score distributions, decoy-generator provenance

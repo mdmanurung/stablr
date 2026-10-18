@@ -34,9 +34,10 @@
 "_PACKAGE"
 
 utils::globalVariables(c(
-  "FDR", "count", "feature", "fdp_plus", "fpr", "kind", "lambda_idx",
-  "multiview.cox.path", "outcome", "precision", "proportion", "recall",
-  "score", "threshold", "tpr", "value"
+  "artificial", "FDR", "count", "feature", "fdp_plus", "fpr", "frequency",
+  "kind", "lambda_idx", "multiview.cox.path", "outcome", "panel_size",
+  "precision", "proportion", "real", "realized", "recall", "rep",
+  "reported", "score", "threshold", "tpr", "value"
 ))
 
 # Private helper so tests can mock Suggests-package availability.

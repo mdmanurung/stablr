@@ -792,6 +792,35 @@ regime (MINT parent: realized FDP 0.83 vs reported 0.10, calibration
 assertion; 148 expectations). Gates: suite 59 files / 0 failed /
 0 errors / 1 skip / 52 warnings (exact parity); R CMD check 0E/0W/1N.
 
+**PR-D (2026-10-19):** 1.0.0-spec A2 `stabl_null_check()` — outcome-null
+validation with explicit exchangeability units. Four null designs:
+`independent` (global permutation; refused when `blocks`/`clusters`
+supplied — exactly the case where global permutation silently breaks
+the design), `within_block` (>=2 blocks of >=2 samples),
+`whole_cluster` (>=3 equal-sized clusters; within-cluster dependence
+kept intact), `simulated` (user-supplied `null_simulator`; the only
+design with synthetic truth by construction). Replayable per-replicate
+permutation/fit seeds via `.derive_stream_seeds`; bounded fail-closed
+failure recording (`max_failures`); `decoy_reps` for decoy-realization
+sensitivity; `truth_status` distinguishes `synthetic_global_null` from
+`induced_global_null_permutation`; S3 print/plot for class
+`stabl_null_validation`. Also folded in: the `print.stabl_diagnostics`
+rounding fix (`signif(., 3)`) from the readability review. Five defects
+caught by the gate and fixed before push: (1) the man-page example
+failed under R CMD check because `fit_spec` did not default
+`lambda_grid` — `stabl_null_check` now defaults it to `"auto"`
+(documented); (2) non-ASCII em-dashes in comments replaced (portable-
+package WARNING); (3) `plot.stabl_null_validation` built but never
+printed its panels — now prints and invisibly returns the list,
+matching `plot.stabl_diagnostics`; (4) the `feature_frequency` panel
+broke on a 1-D `table` coercion (`unname` keeps table class; fixed
+with `as.numeric`); (5) `reported_vs_realized` geom warned on NA
+realized rows (empty null panels) — filtered data-side. Interface:
+76 exports / 44 S3; registry +3 rows; `test-null-validation.R` 9
+blocks / 56 expectations. Gates: suite 60 files / 0 failed / 0 errors
+/ 1 skip / 52 warnings (exact parity; 3830 expectation symbols); R CMD
+check 0E/0W/1N (pre-existing installed-size NOTE).
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3
