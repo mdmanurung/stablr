@@ -10,18 +10,22 @@ parity reviews and migration work explicit.
   - Implemented: `stabl_fit(x, y, groups = NULL, ...)`
 
 - `Stabl.get_support(indices=False, new_hard_threshold=None)`
-  - Implemented: `get_support(fit, indices = FALSE, threshold = NULL)`
+  - Implemented: `get_support(object, new_hard_threshold = NULL)` (logical
+    mask; use `which(get_support(...))` for indices)
 
 - `Stabl.get_feature_names_out(input_features=None, new_hard_threshold=None)`
-  - Implemented: `get_feature_names_out(fit, new_hard_threshold = NULL)`
+  - Implemented: `get_feature_names(object, new_hard_threshold = NULL)`
+    (the pre-0.3 name `get_feature_names_out()` remains as a deprecated
+    shim until the 1.0.0 API pruning)
 
 - `Stabl.transform(X, new_hard_threshold=None)`
-  - Implemented: `transform_stabl(fit, x, new_hard_threshold = NULL)`
+  - Implemented: `transform_stabl(object, x, new_hard_threshold = NULL)`
 
 ## Utility Contracts
 
 - `classic_bootstrap(...)`
-  - Implemented: `classic_bootstrap_indices(...)`
+  - Implemented: `sample_bootstrap_indices(...)`
+    (`classic_bootstrap_indices()` is a deprecated shim)
 
 - `group_bootstrap(...)`
   - Implemented: `group_bootstrap_indices(...)`
@@ -38,7 +42,8 @@ parity reviews and migration work explicit.
 - Lambda-grid helpers: `auto_lambda_grid()`
 - Multi-omic train/validation and CV: `stabl_multiomic_train_validate()`,
   `stabl_multiomic_cv()`, `stabl_multiomic_nested_cv()`
-- Late-fusion stacking: `stacked_multi_omic()`
+- Late-fusion stacking: `stabl_multiomic_stacked()`
+  (`stacked_multi_omic()` is a deprecated shim)
 - Cooperative multi-view fusion: built into `stabl_multiomic_train_validate()`
   and `stabl_multiomic_cv()` for gaussian and binomial outcomes
 - Export helpers: `export_stabl_to_csv()`, `save_stabl_results()`

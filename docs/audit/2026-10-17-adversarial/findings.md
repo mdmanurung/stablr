@@ -675,6 +675,46 @@ record: scope / behavior proof / contract / tests / parity / migration).
   parity). Python-parity (68 checks) and multiview-parity (63 checks)
   byte-identical.
 
+### Phase 13 PR-B — vignette bundle integration (2026-10-18)
+
+Spec §8 MUST: integrated the delivered documentation bundle
+(`stablr_vignette_integration/`) verbatim.
+
+- Copied `vignettes/stablr-python-parity.Rmd`,
+  `vignettes/stablr-reading-plots.Rmd`, and
+  `inst/extdata/python_parity_vignette/` (6 fixture files + README +
+  SHA-256 manifest) into the package. All six fixtures verified
+  byte-identical (SHA-256) to the canonical frozen
+  `tests/testthat/fixtures/python_parity/` set — copies, not substitutes;
+  the frozen fixtures themselves are untouched.
+- `_pkgdown.yml`: navbar articles menu + `articles.contents` entries per
+  the bundle's PKGDOWN_PATCH (slugs only in `contents`); README links both
+  articles; `docs/PYTHON_TO_R_MAPPING.md` corrected to the canonical
+  post-rename accessors (`get_feature_names`, `sample_bootstrap_indices`,
+  `stabl_multiomic_stacked`, `get_support(new_hard_threshold=)`).
+- `vignettes/stablr-getting-started.Rmd` §5: the pre-0.3 "Nothing is
+  removed" statement updated — the 1.0.0 contract removals (PR-A) are now
+  stated explicitly, with the alias pruning deferred to PR-G noted.
+- New `tests/testthat/test-python-parity-vignette.R` (4 blocks): asset
+  presence, SHA-256 manifest verification, byte-identity vs canonical
+  fixtures, and a render contract (both articles render to HTML without
+  Python, from installed `system.file()` resources only; render block is
+  `skip_on_cran()`-guarded, cran-comments.md updated 4 → 5 guards).
+- Gates: full suite 58 files / 609 tests / 0 failed / 0 errors / 1 skip /
+  52 warnings (exact parity); R CMD check 0E/0W/1N (pre-existing
+  installed-size NOTE only — a gitignored `vignettes/figure/` knitr
+  leftover from pre-PR-B local renders was removed from the working tree,
+  restoring the PR-A baseline); `pkgdown::build_articles(lazy = FALSE)`
+  clean with both new articles built. Gate-environment note: pkgdown 2.2.1
+  renders each article in a fresh R process where `library(stablr)`
+  resolves to the *installed* package, so the gate installs the freshly
+  built tarball into the gate library before building articles (a stale
+  pre-1.0.0 install initially caused a spurious `system.file()` failure
+  for the new extdata resources — environmental, not a content defect).
+  The bundle's own caveat is honored: this integration does NOT mark
+  full-OOL release parity as passing — the fixture replay is
+  documentation, not new evidence.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3

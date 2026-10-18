@@ -1,0 +1,5 @@
+case,family,base_learner,l1_ratio,hard_threshold,spearman_min,top5_overlap_min,jaccard_min
+gaussian_lasso,gaussian,lasso,1,0.5,0.80000000000000004,4,0.59999999999999998
+binomial_lasso,binomial,lasso,1,0.5,0.80000000000000004,4,0.59999999999999998
+multinomial_lasso,multinomial,lasso,1,0.5,0.69999999999999996,3,0.5
+gaussian_elastic_net,gaussian,elastic_net,0.69999999999999996,0.5,0.69999999999999996,3,0.5

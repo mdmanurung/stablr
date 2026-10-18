@@ -30,6 +30,10 @@ navbar:
       menu:
       - text: Getting started with stabl
         href: articles/stablr-getting-started.html
+      - text: Python STABL parity (pinned snapshot)
+        href: articles/stablr-python-parity.html
+      - text: Reading stability paths and FDP+ plots
+        href: articles/stablr-reading-plots.html
       - text: Quick start (expert interface)
         href: articles/stablr-intro.html
       - text: Multi-omic OOL workflow
@@ -228,3 +232,9 @@ articles:
   - stablr-environments
   - stablr-aging-case-study
   - stablr-advanced
+
+- title: Parity and plot interpretation
+  navbar: ~
+  contents:
+  - stablr-python-parity
+  - stablr-reading-plots

@@ -32,7 +32,10 @@ Major functionality of `stablr`:
   for multi-view analysis. <u>PNAS</u> (2022).
   [doi:10.1073/pnas.2202113119](https://doi.org/10.1073/pnas.2202113119)
 + [Documentation website](https://mdmanurung.github.io/stablr/) and the
-  Vignettes menu above for executable tutorials
+  Vignettes menu above for executable tutorials — including
+  [Python STABL parity](https://mdmanurung.github.io/stablr/articles/stablr-python-parity.html)
+  (what the pinned Python-reference fixtures do and do not establish) and
+  [Reading stability paths and FDP+ plots](https://mdmanurung.github.io/stablr/articles/stablr-reading-plots.html)
 + [Release governance and review status](https://github.com/mdmanurung/stablr/blob/main/docs/RELEASE_STATUS.md)
 
 ## Motivation

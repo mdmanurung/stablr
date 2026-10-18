@@ -1,0 +1,29 @@
+{
+  "contracts": {
+    "fdp_plus": "pinned Stabl._compute_FDPplus method extracted from source AST",
+    "metrics": "pinned stabl.metrics functions",
+    "selection": "frozen boolean masks accumulated exactly over eight bootstraps",
+    "solver": "pinned scikit-learn estimators on committed inputs and bootstrap schedules",
+    "stacking": "pinned stacked_multi_omic evaluated with committed candidate weights",
+    "support": "pinned Stabl._get_support_mask method extracted from source AST"
+  },
+  "environment": {
+    "joblib": "1.3.2",
+    "numpy": "1.26.4",
+    "pandas": "2.1.4",
+    "python": "3.11.9",
+    "scikit_learn": "1.3.2",
+    "scipy": "1.11.4"
+  },
+  "fixture_version": 1,
+  "limitations": [
+    "Selection masks are committed solver-independent inputs, not outputs of glmnet or scikit-learn fits.",
+    "Solver parity uses ranking and support contracts because exact coefficients are backend dependent.",
+    "These small deterministic fixtures are integrity and algorithm parity evidence, not statistical calibration evidence."
+  ],
+  "python_reference": {
+    "commit": "1d07f85a13cfbecb4f08ce21075bf4fbb8e34678",
+    "package_version_at_commit": "1.0.0",
+    "repository": "https://github.com/gregbellan/Stabl"
+  }
+}

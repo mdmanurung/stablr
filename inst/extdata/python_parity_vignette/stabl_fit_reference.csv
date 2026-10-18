@@ -1,0 +1,9 @@
+feature,max_stability_score,rank,selected
+signal_a,1,1,1
+signal_b,0.875,2,1
+gene_c,0.625,3,1
+gene_d,0.5,4,1
+gene_e,0.25,5,0
+noise_f,0.25,5,0
+noise_g,0.125,7,0
+noise_h,0,8,0
