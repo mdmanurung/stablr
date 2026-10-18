@@ -821,6 +821,38 @@ blocks / 56 expectations. Gates: suite 60 files / 0 failed / 0 errors
 / 1 skip / 52 warnings (exact parity; 3830 expectation symbols); R CMD
 check 0E/0W/1N (pre-existing installed-size NOTE).
 
+**PR-E (2026-10-19):** 1.0.0-spec A3 `stabl_replication_profile()` —
+cohort replication and heterogeneity profile for multi-study data
+(>= 3 studies). Four estimands distinguished explicitly: (i) pooled
+selection stability; (ii) training-cohort replication across LOSO fits,
+conditional on per-cohort eligibility (measured and non-constant;
+`all_missing`/`constant_in_cohort` reasons reported per feature x
+cohort); (iii) direction/effect replication — sign concordance,
+inverse-variance pooled estimate/CI, Cochran's Q — computed ONLY from
+user-supplied per-study effect estimates (duplicated (feature, study)
+rows rejected; the package never invents effect estimates); (iv)
+held-out cohort performance via a documented downstream `stats::glm`
+refit of each LOSO panel (gaussian MSE / binomial balanced error rate;
+empty panels contribute NA with reason `"empty_support"`; binomial
+factor levels pinned across partitions so response coding cannot flip).
+Every per-study/LOSO fit is a fresh `stabl_fit()` on the relevant
+partition (preprocessing/tuning recomputed inside training data by
+construction); no held-out cohort chooses a threshold; cohort-level
+observations only — no binomial CIs over dependent folds. Per-fit seeds
+derived from the recorded base seed (fully replayable; PR-2 hermetic
+`random_state` contract relied on, no ambient RNG). `fit_spec`
+`lambda_grid` defaults to `"auto"` (PR-D gate lesson applied
+preemptively). glm refit warnings (separation/non-convergence on tiny
+panels) are deliberately NOT muffled — honest signals; tests suppress
+them to hold suite parity. No plot method (lean API ahead of PR-G).
+Interface: 77 exports / 45 S3; registry +2 rows;
+`test-replication-profile.R` 12 blocks / 89 expectations (hand-worked
+assembly math, exact IV-pooling values, empty-support branch via
+`hard_threshold = 1`, replayability, read-only contract). Gates: suite
+61 files / 0 failed / 0 errors / 1 skip / 52 warnings (exact parity;
+3921 expectation symbols); R CMD check 0E/0W/1N (pre-existing
+installed-size NOTE).
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3

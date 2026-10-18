@@ -119,3 +119,5 @@ plot.stabl_diagnostics,s3,plot,stabl_diagnostics,visualization,R/diagnostics.R,m
 stabl_null_check,export,,,validation,R/null_validation.R,man/stabl_null_check.Rd,running,test-null-validation.R,test-null-validation.R,core_contract
 print.stabl_null_validation,s3,print,stabl_null_validation,validation,R/null_validation.R,man/print.stabl_null_validation.Rd,running,test-null-validation.R,not_applicable-print-method,accessor_contract
 plot.stabl_null_validation,s3,plot,stabl_null_validation,visualization,R/null_validation.R,man/plot.stabl_null_validation.Rd,running,test-null-validation.R,not_applicable-method,accessor_contract
+stabl_replication_profile,export,,,validation,R/replication.R,man/stabl_replication_profile.Rd,running,test-replication-profile.R,test-replication-profile.R,core_contract
+print.stabl_replication_profile,s3,print,stabl_replication_profile,validation,R/replication.R,man/print.stabl_replication_profile.Rd,running,test-replication-profile.R,not_applicable-print-method,accessor_contract

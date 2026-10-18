@@ -126,6 +126,25 @@
   DIABLO paragraph.
 
 ## New features
+- `stabl_replication_profile()` (Phase 13 PR-E, 1.0.0 spec A3): cohort
+  replication and heterogeneity profile for multi-study data (>= 3
+  studies). Distinguishes four estimands explicitly: (i) pooled
+  selection stability, (ii) training-cohort replication across
+  leave-one-study-out (LOSO) fits, conditional on per-cohort
+  eligibility (measured and non-constant; ineligibility reasons
+  reported), (iii) direction/effect replication -- sign concordance,
+  inverse-variance pooled estimate/CI, and Cochran's Q heterogeneity,
+  computed only from user-supplied per-study effect estimates (the
+  package never invents effect estimates), and (iv) held-out cohort
+  performance via a documented downstream `stats::glm()` refit of each
+  LOSO panel (gaussian MSE / binomial balanced error rate; empty panels
+  contribute `NA` with reason). Every per-study and LOSO fit is a fresh
+  `stabl_fit()` call on the relevant partition, so preprocessing and
+  tuning are recomputed inside training data by construction, and no
+  held-out cohort ever chooses a threshold. Uncertainty is reported as
+  cohort-level observations over dependent folds -- no binomial CIs.
+  Per-fit seeds derive from the recorded base seed (fully replayable).
+  S3 `print()` for class `stabl_replication_profile`.
 - `stabl_null_check()` (Phase 13 PR-D, 1.0.0 spec A2): outcome-null
   calibration workbench. Repeatedly reruns the complete `stabl_fit()`
   pipeline on outcome-null versions of the data and summarizes the
