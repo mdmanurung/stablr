@@ -456,12 +456,12 @@ five-signal simulation, the FDP+ lower bound is
 <code>1 / 5 = 0.2</code>. The graph is a calibration diagnostic, not a
 universal false-discovery guarantee.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_fdr_graph.html">plot_fdr_graph</a></span><span class="op">(</span><span class="va">fit_bin</span>, title <span class="op">=</span> <span class="st">"Binary classification - FDR estimate"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="stablr-intro_files/figure-html/fdr-binary-1.png" class="r-plt" alt="FDR estimate graph for binary classification" width="576"></p>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_fdr_graph.html">plot_fdr_graph</a></span><span class="op">(</span><span class="va">fit_bin</span>, title <span class="op">=</span> <span class="st">"Binary classification - FDP+ diagnostic"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="stablr-intro_files/figure-html/fdr-binary-1.png" class="r-plt" alt="FDP+ diagnostic graph for binary classification" width="576"></p>
 <p>You can also write the diagnostic to file.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Optional file writing; plot contract exercised by test-phase7.R.</span></span>
-<span><span class="va">fdr_plot</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_fdr_graph.html">plot_fdr_graph</a></span><span class="op">(</span><span class="va">fit_bin</span>, title <span class="op">=</span> <span class="st">"Binary classification - FDR estimate"</span><span class="op">)</span></span>
+<span><span class="va">fdr_plot</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_fdr_graph.html">plot_fdr_graph</a></span><span class="op">(</span><span class="va">fit_bin</span>, title <span class="op">=</span> <span class="st">"Binary classification - FDP+ diagnostic"</span><span class="op">)</span></span>
 <span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsave.html" class="external-link">ggsave</a></span><span class="op">(</span><span class="st">"fdr-graph.png"</span>, <span class="va">fdr_plot</span>, width <span class="op">=</span> <span class="fl">7</span>, height <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
@@ -558,8 +558,8 @@ model family. The definition of stability does not change.</p>
 <p><img src="stablr-intro_files/figure-html/plot-reg-1.png" class="r-plt" alt="Stability path for regression" width="576"></p>
 <p>The FDP+ diagnostic completes the parallel with the binary case.</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_fdr_graph.html">plot_fdr_graph</a></span><span class="op">(</span><span class="va">fit_reg</span>, title <span class="op">=</span> <span class="st">"Regression - FDR estimate"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="stablr-intro_files/figure-html/fdr-reg-1.png" class="r-plt" alt="FDR estimate graph for regression" width="576"></p>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_fdr_graph.html">plot_fdr_graph</a></span><span class="op">(</span><span class="va">fit_reg</span>, title <span class="op">=</span> <span class="st">"Regression - FDP+ diagnostic"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="stablr-intro_files/figure-html/fdr-reg-1.png" class="r-plt" alt="FDP+ diagnostic graph for regression" width="576"></p>
 </div>
 </div>
 <div class="section level2">

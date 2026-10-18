@@ -80,12 +80,12 @@ cooperative-fusion branches are additive to the per-omic STABL results.</p>
 <span>  random_state <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  early_fusion <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  late_fusion <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  late_fusion_training <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"oof"</span>, <span class="st">"python_legacy"</span><span class="op">)</span>,</span>
+<span>  late_fusion_training <span class="op">=</span> <span class="st">"oof"</span>,</span>
 <span>  late_fusion_nfolds <span class="op">=</span> <span class="fl">5L</span>,</span>
 <span>  n_iter_lf <span class="op">=</span> <span class="fl">10000L</span>,</span>
 <span>  cooperative_fusion <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  rho <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  cooperation_selection <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"cv"</span>, <span class="st">"validation"</span><span class="op">)</span>,</span>
+<span>  cooperation_selection <span class="op">=</span> <span class="st">"cv"</span>,</span>
 <span>  cooperation_selector <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lambda.min"</span>, <span class="st">"lambda.1se"</span><span class="op">)</span>,</span>
 <span>  cooperation_type_measure <span class="op">=</span> <span class="st">"default"</span>,</span>
 <span>  cooperation_nfolds <span class="op">=</span> <span class="fl">5L</span>,</span>
@@ -190,10 +190,13 @@ field.</p></dd>
 
 
 <dt id="arg-late-fusion-training">late_fusion_training<a class="anchor" aria-label="anchor" href="#arg-late-fusion-training"></a></dt>
-<dd><p>How stacking weights are trained. <code>"oof"</code>
-(default) refits STABL selection and the downstream model inside every
-stacking fold. <code>"python_legacy"</code> preserves the historical in-sample
-Python-compatible algorithm.</p></dd>
+<dd><p>How stacking weights are trained. Only <code>"oof"</code>
+(the default) is supported: STABL selection and the downstream model are
+refit inside every stacking fold.  The historical in-sample
+<code>"python_legacy"</code> algorithm was removed from the public API in 1.0.0
+because it trains the stacking weights on the same data used to fit the
+base models (optimistic); it survives only as the unexported
+<code>.late_fusion_multiomic_fit()</code> for Python-parity characterization tests.</p></dd>
 
 
 <dt id="arg-late-fusion-nfolds">late_fusion_nfolds<a class="anchor" aria-label="anchor" href="#arg-late-fusion-nfolds"></a></dt>
@@ -223,16 +226,19 @@ When <code>NULL</code>, defaults to <code>0</code>.</p></dd>
 
 
 <dt id="arg-cooperation-selection">cooperation_selection<a class="anchor" aria-label="anchor" href="#arg-cooperation-selection"></a></dt>
-<dd><p>Character scalar. Either <code>"cv"</code> or
-<code>"validation"</code>. <code>"cv"</code> tunes over <code>rho</code> with shared inner fold
-assignments. <code>"validation"</code> tunes over <code>rho</code> and <code>lambda</code> on the
-supplied validation set.</p></dd>
+<dd><p>Character scalar. Only <code>"cv"</code> is supported:
+tuning over <code>rho</code> uses shared inner fold assignments.  The
+<code>"validation"</code> option (tuning <code>rho</code> and <code>lambda</code> on the supplied
+validation set) was removed from the public API in 1.0.0 because it
+tunes on the assessment data and biases the performance estimate
+(F-CV-04); the branch survives only in unexported form for
+characterization tests.</p></dd>
 
 
 <dt id="arg-cooperation-selector">cooperation_selector<a class="anchor" aria-label="anchor" href="#arg-cooperation-selector"></a></dt>
 <dd><p>Character scalar. Selection rule for the
-cooperative <code>lambda</code>. <code>"lambda.1se"</code> is only available when
-<code>cooperation_selection = "cv"</code>.</p></dd>
+cooperative <code>lambda</code>. Both <code>"lambda.min"</code> and <code>"lambda.1se"</code> are
+available with <code>cooperation_selection = "cv"</code>.</p></dd>
 
 
 <dt id="arg-cooperation-type-measure">cooperation_type_measure<a class="anchor" aria-label="anchor" href="#arg-cooperation-type-measure"></a></dt>
@@ -278,9 +284,10 @@ list with <code>fit</code>, <code>selected_features</code>, <code>selected_train
 
 <dt><code>late_fusion</code></dt>
 <dd><p><code>NULL</code> when <code>late_fusion = FALSE</code>.  Otherwise a
-list with <code>weights</code>, <code>valid_predictions</code>, and mode-specific training
-results. OOF mode provides <code>oof_predictions</code> and <code>oof_score</code>; legacy
-mode provides <code>in_sample_predictions</code> and <code>in_sample_score</code>.
+list with <code>weights</code>, <code>valid_predictions</code>, and OOF training results
+(<code>oof_predictions</code>, <code>oof_score</code>).  (The removed <code>"python_legacy"</code>
+mode additionally provided <code>in_sample_predictions</code> and
+<code>in_sample_score</code>.)
 <code>oof_predictions</code> is a <em>base-model</em> out-of-fold matrix; the stacked
 <code>oof_score</code> is computed with stacking weights tuned on that same
 OOF matrix (maximum over <code>n_iter_lf</code> random weight draws), so it is

@@ -261,15 +261,15 @@ pairs.</p>
 <tr class="even">
 <td><code>cooperation_selection</code></td>
 <td><code>"cv"</code></td>
-<td>
-<code>"cv"</code> (inner CV) or <code>"validation"</code> (held-out
-set).</td>
+<td>Only <code>"cv"</code> (shared inner CV folds). The
+<code>"validation"</code> option was removed in 1.0.0 because tuning on
+the held-out set biases the performance estimate.</td>
 </tr>
 <tr class="odd">
 <td><code>cooperation_selector</code></td>
 <td><code>"lambda.min"</code></td>
 <td>Which lambda to pick: <code>"lambda.min"</code> or
-<code>"lambda.1se"</code> (CV only).</td>
+<code>"lambda.1se"</code>.</td>
 </tr>
 <tr class="even">
 <td><code>cooperation_type_measure</code></td>
@@ -495,12 +495,15 @@ data.</p>
 analyses that look reasonable in code but do not have a valid tuning
 interpretation.</p>
 <div class="section level3">
-<h3 id="lambda-1se-requires-cv-mode">7.1 <code>lambda.1se</code> requires CV mode<a class="anchor" aria-label="anchor" href="#lambda-1se-requires-cv-mode"></a>
+<h3 id="validation-based-tuning-was-removed-in-1-0-0">7.1 Validation-based tuning was removed in 1.0.0<a class="anchor" aria-label="anchor" href="#validation-based-tuning-was-removed-in-1-0-0"></a>
 </h3>
-<p><code>lambda.1se</code> applies the “one-standard-error” rule and is
-only well-defined when cross-validation is used to estimate the error
-surface. Requesting it with
-<code>cooperation_selection = "validation"</code> raises an error.</p>
+<p>Before 1.0.0, <code>cooperation_selection = "validation"</code> tuned
+<code>rho</code> and <code>lambda</code> directly on the supplied
+validation set. That design tunes on the assessment data: any
+performance estimate computed on the same set is optimistic, and the
+selected configuration is not comparable to the CV-tuned one. The option
+was removed from the public API (finding F-CV-04); only
+<code>"cv"</code> remains.</p>
 <p>The following call raises the corresponding error.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/stabl_multiomic_train_validate.html">stabl_multiomic_train_validate</a></span><span class="op">(</span></span>
@@ -518,9 +521,11 @@ surface. Requesting it with
 <span>  cooperation_selector  <span class="op">=</span> <span class="st">"lambda.1se"</span></span>
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;">:</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> `cooperation_selector = 'lambda.1se'` is only available when `cooperation_selection = 'cv'`.</span></span></code></pre></div>
-<p>The error confirms that <code>lambda.1se</code> cannot be combined
-with validation-based selection.</p>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> `cooperation_selection = "validation"` was removed from the public API in 1.0.0: tuning rho/lambda on the assessment or validation set biases the performance estimate (F-CV-04). Only `"cv"` (shared inner folds) is supported.</span></span></code></pre></div>
+<p>The error confirms that validation-based selection is no longer
+reachable from the public workflow. (<code>lambda.1se</code> remains
+available with the default <code>cooperation_selection = "cv"</code>,
+where the one-standard-error rule is well-defined.)</p>
 </div>
 <div class="section level3">
 <h3 id="cox-and-poisson-families-are-not-supported-in-native-v1">7.2 Cox and Poisson families are not supported in native v1<a class="anchor" aria-label="anchor" href="#cox-and-poisson-families-are-not-supported-in-native-v1"></a>
@@ -833,9 +838,10 @@ goal.</td>
 Must be &gt;= 3.</td>
 </tr>
 <tr class="odd">
-<td><strong><code>cooperation_selection = "validation"</code></strong></td>
-<td>Use when a true held-out set is available and <code>rho</code> and
-<code>lambda</code> are to be tuned together on it.</td>
+<td><strong><code>cooperation_selection</code></strong></td>
+<td>Only <code>"cv"</code> is supported since 1.0.0; the removed
+<code>"validation"</code> mode tuned on the assessment set and biased
+performance estimates.</td>
 </tr>
 <tr class="even">
 <td><strong>Native v1 families</strong></td>

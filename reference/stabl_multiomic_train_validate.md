@@ -28,12 +28,12 @@ stabl_multiomic_train_validate(
   random_state = NULL,
   early_fusion = FALSE,
   late_fusion = FALSE,
-  late_fusion_training = c("oof", "python_legacy"),
+  late_fusion_training = "oof",
   late_fusion_nfolds = 5L,
   n_iter_lf = 10000L,
   cooperative_fusion = FALSE,
   rho = NULL,
-  cooperation_selection = c("cv", "validation"),
+  cooperation_selection = "cv",
   cooperation_selector = c("lambda.min", "lambda.1se"),
   cooperation_type_measure = "default",
   cooperation_nfolds = 5L,
@@ -147,10 +147,14 @@ print(x, ...)
 
 - late_fusion_training:
 
-  How stacking weights are trained. `"oof"` (default) refits STABL
-  selection and the downstream model inside every stacking fold.
-  `"python_legacy"` preserves the historical in-sample Python-compatible
-  algorithm.
+  How stacking weights are trained. Only `"oof"` (the default) is
+  supported: STABL selection and the downstream model are refit inside
+  every stacking fold. The historical in-sample `"python_legacy"`
+  algorithm was removed from the public API in 1.0.0 because it trains
+  the stacking weights on the same data used to fit the base models
+  (optimistic); it survives only as the unexported
+  `.late_fusion_multiomic_fit()` for Python-parity characterization
+  tests.
 
 - late_fusion_nfolds:
 
@@ -182,14 +186,18 @@ print(x, ...)
 
 - cooperation_selection:
 
-  Character scalar. Either `"cv"` or `"validation"`. `"cv"` tunes over
-  `rho` with shared inner fold assignments. `"validation"` tunes over
-  `rho` and `lambda` on the supplied validation set.
+  Character scalar. Only `"cv"` is supported: tuning over `rho` uses
+  shared inner fold assignments. The `"validation"` option (tuning `rho`
+  and `lambda` on the supplied validation set) was removed from the
+  public API in 1.0.0 because it tunes on the assessment data and biases
+  the performance estimate (F-CV-04); the branch survives only in
+  unexported form for characterization tests.
 
 - cooperation_selector:
 
-  Character scalar. Selection rule for the cooperative `lambda`.
-  `"lambda.1se"` is only available when `cooperation_selection = "cv"`.
+  Character scalar. Selection rule for the cooperative `lambda`. Both
+  `"lambda.min"` and `"lambda.1se"` are available with
+  `cooperation_selection = "cv"`.
 
 - cooperation_type_measure:
 
@@ -241,14 +249,14 @@ A named list with class `"stabl_multiomic_fit"` containing:
 - `late_fusion`:
 
   `NULL` when `late_fusion = FALSE`. Otherwise a list with `weights`,
-  `valid_predictions`, and mode-specific training results. OOF mode
-  provides `oof_predictions` and `oof_score`; legacy mode provides
-  `in_sample_predictions` and `in_sample_score`. `oof_predictions` is a
-  *base-model* out-of-fold matrix; the stacked `oof_score` is computed
-  with stacking weights tuned on that same OOF matrix (maximum over
-  `n_iter_lf` random weight draws), so it is an optimistic,
-  in-sample-for-the-weight-step statistic and NOT a full-stack OOF
-  prediction. Use outer cross-validation
+  `valid_predictions`, and OOF training results (`oof_predictions`,
+  `oof_score`). (The removed `"python_legacy"` mode additionally
+  provided `in_sample_predictions` and `in_sample_score`.)
+  `oof_predictions` is a *base-model* out-of-fold matrix; the stacked
+  `oof_score` is computed with stacking weights tuned on that same OOF
+  matrix (maximum over `n_iter_lf` random weight draws), so it is an
+  optimistic, in-sample-for-the-weight-step statistic and NOT a
+  full-stack OOF prediction. Use outer cross-validation
   ([`stabl_multiomic_nested_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_nested_cv.md))
   for an honest performance estimate. `train_predictions` and `score`
   remain exact 0.1.x compatibility aliases for the active mode-specific

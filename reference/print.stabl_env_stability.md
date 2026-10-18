@@ -52,5 +52,5 @@ print(res)
 #>   Environments:    3 (batchA, batchB, batchC)
 #>   Features in:      6 
 #>   Min score >= 0.5: 2 feature(s)
-#>   Top by min score: f1, f2, f3, f4, f5 
+#>   Top by min score: f1, f2, f4, f3, f5 
 ```

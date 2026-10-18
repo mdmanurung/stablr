@@ -47,11 +47,13 @@ happen if
 [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
 was called with both `artificial_type = NULL` and no `hard_threshold`.
 
-**Explore fallback:** When `explore = TRUE` was set during fitting and
-no feature's score exceeds the threshold, the function returns the top
-`n_explore` features instead of an all-`FALSE` vector. This is useful in
-exploratory analyses where you want at least some candidates even when
-the signal is weak.
+An empty support is a valid result: when no feature's score exceeds the
+threshold, an all-`FALSE` vector is returned. Use
+[`get_importances()`](https://mdmanurung.github.io/stablr/reference/get_importances.md)
+for a ranked descriptive view; a top-ranked list is never silently
+substituted for threshold-selected support (1.0.0 contract; the pre-1.0
+`explore` fallback was removed because it relabelled a null selection as
+a discovery).
 
 ## See also
 

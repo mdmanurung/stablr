@@ -121,6 +121,21 @@ maximum-over-lambda stability scores for real feature \(j\), and
 \(\hat{q}_j^{\text{art}}\) are the scores for artificial feature \(j\).</p>
     </div>
     <div class="section level2">
+    <h2 id="comparator-and-tie-policy-contract-">Comparator and tie policy (contract)<a class="anchor" aria-label="anchor" href="#comparator-and-tie-policy-contract-"></a></h2>
+
+
+<p>Exceedance counts use a <strong>strict</strong> <code>&gt;</code> comparator: a feature whose
+score equals the threshold exactly is <em>not</em> counted.  This matches
+the Python STABL reference implementation and is part of the parity
+contract; do not "fix" it to <code>&gt;=</code>.  When several thresholds tie for the
+minimum FDP+, the <strong>first</strong> (lowest) threshold on the grid wins,
+matching Python's <code>argmin</code> first-index semantics.  <code>min_fdr</code> is a
+decoy-based diagnostic (a stochastic upper bound under exchangeability of
+the artificial features), not a controlled FDR guarantee; when it exceeds
+1, <code>fdr_min_threshold</code> is capped at 1 and downstream selection yields an
+empty support.</p>
+    </div>
+    <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="stabl_fit.html">stabl_fit()</a></code> which calls this internally when artificial features
 are used, <code><a href="plot_fdr_graph.html">plot_fdr_graph()</a></code> to visualise the FDP+ curve.</p></div>

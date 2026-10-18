@@ -78,8 +78,6 @@ minimizer; it is not a universal false-discovery guarantee. This is the R counte
 <span>  replace <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  hard_threshold <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  fdr_threshold_range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.99</span>, by <span class="op">=</span> <span class="fl">0.01</span><span class="op">)</span>,</span>
-<span>  explore <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  n_explore <span class="op">=</span> <span class="fl">5L</span>,</span>
 <span>  sample_groups <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  groups <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  stratify_bootstrap <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -196,15 +194,6 @@ Default: <code>NULL</code>.</p></dd>
 <dd><p>Numeric vector swept when computing FDP+.
 Default: <code>seq(0, 0.99, by = 0.01)</code>, matching Python STABL's
 <code>np.arange(0., 1., .01)</code>.</p></dd>
-
-
-<dt id="arg-explore">explore<a class="anchor" aria-label="anchor" href="#arg-explore"></a></dt>
-<dd><p>Logical; if <code>TRUE</code> and no features pass the threshold, fall
-back to the top <code>n_explore</code> features.  Default: <code>FALSE</code>.</p></dd>
-
-
-<dt id="arg-n-explore">n_explore<a class="anchor" aria-label="anchor" href="#arg-n-explore"></a></dt>
-<dd><p>Positive integer; fallback feature count.  Default: <code>5L</code>.</p></dd>
 
 
 <dt id="arg-sample-groups">sample_groups<a class="anchor" aria-label="anchor" href="#arg-sample-groups"></a></dt>
@@ -324,7 +313,15 @@ actually used.</p></dd>
 <dd><p>Numeric vector of FDP+ estimates per threshold, or <code>NULL</code>.</p></dd>
 
 <dt><code>min_fdr_</code></dt>
-<dd><p>Minimum FDP+ achieved, or <code>NULL</code>.</p></dd>
+<dd><p>Minimum FDP+ achieved across the threshold grid, or
+<code>NULL</code>.  This is a decoy-based <em>diagnostic</em> of the best
+attainable FDP+ on this fit, not a controlled false-discovery rate:
+the FDP+ formula is a stochastic upper bound whose validity depends
+on the exchangeability of the artificial features with the real
+noise features, on the number of bootstraps, and on the decoy
+count.  A value above 1 means no threshold on the grid achieved an
+FDP+ of at most 1, in which case no threshold is selected and the
+support is empty.</p></dd>
 
 <dt><code>fdrs_table_</code></dt>
 <dd><p>Per-lambda FDP+ matrix, or <code>NULL</code>.</p></dd>
@@ -343,12 +340,6 @@ the scientific source of truth for the generator used; or <code>NULL</code> when
 <code>artificial_type = NULL</code>.</p></dd>
 
 <dt><code>artificial_proportion</code></dt>
-<dd><p>As supplied.</p></dd>
-
-<dt><code>explore</code></dt>
-<dd><p>As supplied.</p></dd>
-
-<dt><code>n_explore</code></dt>
 <dd><p>As supplied.</p></dd>
 
 <dt><code>feature_names</code></dt>

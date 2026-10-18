@@ -173,18 +173,18 @@ summaries. The next chunk inspects them.</p>
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">env_scores</span>, <span class="fl">2</span><span class="op">)</span></span>
 <span><span class="co">#&gt;     batchA batchB batchC</span></span>
 <span><span class="co">#&gt; f1    1.00   1.00   1.00</span></span>
-<span><span class="co">#&gt; f2    1.00   1.00   1.00</span></span>
-<span><span class="co">#&gt; f3    1.00   0.00   0.05</span></span>
+<span><span class="co">#&gt; f2    0.95   1.00   1.00</span></span>
+<span><span class="co">#&gt; f3    1.00   0.05   0.00</span></span>
 <span><span class="co">#&gt; f4    0.00   0.00   0.00</span></span>
-<span><span class="co">#&gt; f5    0.00   0.00   0.00</span></span>
-<span><span class="co">#&gt; f6    0.00   0.00   0.30</span></span>
-<span><span class="co">#&gt; f7    0.40   0.05   0.00</span></span>
-<span><span class="co">#&gt; f8    0.15   0.00   0.00</span></span>
+<span><span class="co">#&gt; f5    0.10   0.00   0.00</span></span>
+<span><span class="co">#&gt; f6    0.00   0.05   0.10</span></span>
+<span><span class="co">#&gt; f7    0.25   0.00   0.00</span></span>
+<span><span class="co">#&gt; f8    0.00   0.00   0.05</span></span>
 <span><span class="co">#&gt; f9    0.05   0.00   0.00</span></span>
-<span><span class="co">#&gt; f10   0.00   0.15   0.00</span></span>
+<span><span class="co">#&gt; f10   0.00   0.10   0.05</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">min_scores</span>, <span class="fl">2</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  f1  f2  f3  f4  f5  f6  f7  f8  f9 f10 </span></span>
-<span><span class="co">#&gt;   1   1   0   0   0   0   0   0   0   0</span></span></code></pre></div>
+<span><span class="co">#&gt;   f1   f2   f3   f4   f5   f6   f7   f8   f9  f10 </span></span>
+<span><span class="co">#&gt; 1.00 0.95 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00</span></span></code></pre></div>
 <p>The same evidence is easier to read as a heatmap. Features are
 ordered by their min-agg score, so the transportable features cluster at
 the top and the batch-dependent ones sink to the bottom.</p>

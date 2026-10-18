@@ -28,8 +28,7 @@ get_feature_names(object, new_hard_threshold = NULL)
 ## Value
 
 Character vector of selected feature names. An empty character vector is
-returned when no feature passes the threshold (and `explore = FALSE` was
-used during fitting).
+returned when no feature passes the threshold.
 
 ## See also
 

@@ -42,7 +42,11 @@ stabl_environment_stability(x, y, environments, lambda_grid = "auto",
 - random_state:
 
   Optional integer seed; per-environment seeds are derived
-  deterministically as `random_state + level_index`.
+  deterministically from it via the package's hashed multi-stream
+  derivation (the same pattern as
+  [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
+  and the multiomic workflows; changed from the pre-1.0 consecutive
+  `random_state + i` derivation, F-019).
 
 - ...:
 
@@ -93,9 +97,9 @@ res <- stabl_environment_stability(
   random_state  = 1L
 )
 res$min_scores                      # transportability summary
-#> f1 f2 f3 f4 f5 f6 
-#>  1  1  0  0  0  0 
+#>  f1  f2  f3  f4  f5  f6 
+#> 1.0 1.0 0.0 0.2 0.0 0.0 
 get_min_scores(res)                 # same, via accessor
-#> f1 f2 f3 f4 f5 f6 
-#>  1  1  0  0  0  0 
+#>  f1  f2  f3  f4  f5  f6 
+#> 1.0 1.0 0.0 0.2 0.0 0.0 
 ```

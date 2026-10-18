@@ -387,7 +387,7 @@ and fold-safe preprocessing.
 - [`plot_stabl_path()`](https://mdmanurung.github.io/stablr/reference/plot_stabl_path.md)
   : Plot the STABL Stability Path
 - [`plot_fdr_graph()`](https://mdmanurung.github.io/stablr/reference/plot_fdr_graph.md)
-  : Plot the FDP+ FDR Estimate Curve
+  : Plot the FDP+ Diagnostic Curve
 - [`plot_roc()`](https://mdmanurung.github.io/stablr/reference/plot_roc.md)
   : Plot a ROC Curve
 - [`plot_prc()`](https://mdmanurung.github.io/stablr/reference/plot_prc.md)

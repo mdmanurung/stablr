@@ -70,6 +70,19 @@ The FDP+ at threshold \\\tau\\ is estimated as:
 feature \\j\\, and \\\hat{q}\_j^{\text{art}}\\ are the scores for
 artificial feature \\j\\.
 
+## Comparator and tie policy (contract)
+
+Exceedance counts use a **strict** `>` comparator: a feature whose score
+equals the threshold exactly is *not* counted. This matches the Python
+STABL reference implementation and is part of the parity contract; do
+not "fix" it to `>=`. When several thresholds tie for the minimum FDP+,
+the **first** (lowest) threshold on the grid wins, matching Python's
+`argmin` first-index semantics. `min_fdr` is a decoy-based diagnostic (a
+stochastic upper bound under exchangeability of the artificial
+features), not a controlled FDR guarantee; when it exceeds 1,
+`fdr_min_threshold` is capped at 1 and downstream selection yields an
+empty support.
+
 ## See also
 
 [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)

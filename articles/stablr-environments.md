@@ -100,18 +100,18 @@ The result object carries one full `stabl_fit` per environment
 round(res$env_scores, 2)
 #>     batchA batchB batchC
 #> f1    1.00   1.00   1.00
-#> f2    1.00   1.00   1.00
-#> f3    1.00   0.00   0.05
+#> f2    0.95   1.00   1.00
+#> f3    1.00   0.05   0.00
 #> f4    0.00   0.00   0.00
-#> f5    0.00   0.00   0.00
-#> f6    0.00   0.00   0.30
-#> f7    0.40   0.05   0.00
-#> f8    0.15   0.00   0.00
+#> f5    0.10   0.00   0.00
+#> f6    0.00   0.05   0.10
+#> f7    0.25   0.00   0.00
+#> f8    0.00   0.00   0.05
 #> f9    0.05   0.00   0.00
-#> f10   0.00   0.15   0.00
+#> f10   0.00   0.10   0.05
 round(res$min_scores, 2)
-#>  f1  f2  f3  f4  f5  f6  f7  f8  f9 f10 
-#>   1   1   0   0   0   0   0   0   0   0
+#>   f1   f2   f3   f4   f5   f6   f7   f8   f9  f10 
+#> 1.00 0.95 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00
 ```
 
 The same evidence is easier to read as a heatmap. Features are ordered

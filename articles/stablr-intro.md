@@ -322,10 +322,10 @@ false-discovery guarantee.
 
 ``` r
 
-plot_fdr_graph(fit_bin, title = "Binary classification - FDR estimate")
+plot_fdr_graph(fit_bin, title = "Binary classification - FDP+ diagnostic")
 ```
 
-![FDR estimate graph for binary
+![FDP+ diagnostic graph for binary
 classification](stablr-intro_files/figure-html/fdr-binary-1.png)
 
 You can also write the diagnostic to file.
@@ -333,7 +333,7 @@ You can also write the diagnostic to file.
 ``` r
 
 # Optional file writing; plot contract exercised by test-phase7.R.
-fdr_plot <- plot_fdr_graph(fit_bin, title = "Binary classification - FDR estimate")
+fdr_plot <- plot_fdr_graph(fit_bin, title = "Binary classification - FDP+ diagnostic")
 ggplot2::ggsave("fdr-graph.png", fdr_plot, width = 7, height = 5)
 ```
 
@@ -444,10 +444,10 @@ The FDP+ diagnostic completes the parallel with the binary case.
 
 ``` r
 
-plot_fdr_graph(fit_reg, title = "Regression - FDR estimate")
+plot_fdr_graph(fit_reg, title = "Regression - FDP+ diagnostic")
 ```
 
-![FDR estimate graph for
+![FDP+ diagnostic graph for
 regression](stablr-intro_files/figure-html/fdr-reg-1.png)
 
 ## 7 Alternative base learners

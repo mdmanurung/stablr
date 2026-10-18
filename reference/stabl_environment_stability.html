@@ -99,7 +99,10 @@ better.</p></dd>
 
 <dt id="arg-random-state">random_state<a class="anchor" aria-label="anchor" href="#arg-random-state"></a></dt>
 <dd><p>Optional integer seed; per-environment seeds are
-derived deterministically as <code>random_state + level_index</code>.</p></dd>
+derived deterministically from it via the package's hashed multi-stream
+derivation (the same pattern as <code><a href="stabl_fit.html">stabl_fit()</a></code> and
+the multiomic workflows; changed from the pre-1.0 consecutive
+<code>random_state + i</code> derivation, F-019).</p></dd>
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Additional arguments forwarded to <code><a href="stabl_fit.html">stabl_fit()</a></code>
@@ -150,11 +153,11 @@ guarantee.</p>
 <span class="r-in"><span>  random_state  <span class="op">=</span> <span class="fl">1L</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">res</span><span class="op">$</span><span class="va">min_scores</span>                      <span class="co"># transportability summary</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> f1 f2 f3 f4 f5 f6 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  1  1  0  0  0  0 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  f1  f2  f3  f4  f5  f6 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1.0 1.0 0.0 0.2 0.0 0.0 </span>
 <span class="r-in"><span><span class="fu"><a href="get_min_scores.html">get_min_scores</a></span><span class="op">(</span><span class="va">res</span><span class="op">)</span>                 <span class="co"># same, via accessor</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> f1 f2 f3 f4 f5 f6 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  1  1  0  0  0  0 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  f1  f2  f3  f4  f5  f6 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1.0 1.0 0.0 0.2 0.0 0.0 </span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
