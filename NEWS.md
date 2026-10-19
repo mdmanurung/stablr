@@ -109,6 +109,15 @@
   algorithm is unaffected and its fixtures pass byte-identically.
 
 ## Documentation
+- New vignette "Reliability diagnostics, validation, and final models"
+  (`stablr-reliability`, Phase 13): a runnable end-to-end tour of the
+  reliability toolchain — `stabl_diagnose()` warning codes and threshold
+  path, `stabl_null_check()` exchangeability designs including a live
+  fail-closed refusal, `stabl_replication_profile()` cohort replication,
+  and the validated-gaussian development path
+  (`stabl_analyze(mode = "validated")`) finalized into a portable
+  `"stabl_predictor"` with `stabl_finalize()`/`predict()`. Registered in
+  the `_pkgdown.yml` navbar and articles index.
 - Two new vignettes (Phase 13 PR-B, 1.0.0 spec §8): "Python STABL parity:
   precisely what matches" (`stablr-python-parity`) replays the shipped
   byte-identical subset of the frozen Python-reference fixtures

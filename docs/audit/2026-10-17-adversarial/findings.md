@@ -970,6 +970,26 @@ unchanged 133->133), public-interface-audit -50 (2 expectations per
 export row x 25 removed exports, 79 -> 54), stabl-wrapper -31 (the 7
 removed compatibility blocks).
 
+**Vignette PR (2026-10-19):** vignette updates closing the Phase 13
+program — new article `vignettes/stablr-reliability.Rmd` ("Reliability
+diagnostics, validation, and final models") giving a runnable
+end-to-end tour of the reliability toolchain: `stabl_diagnose()`
+(warning codes, selection-rule disclosure, full threshold path),
+`stabl_null_check()` (the four exchangeability designs, including a
+live fail-closed refusal rendered via an `error = TRUE` chunk),
+`stabl_replication_profile()` (three-study cohort replication), and the
+PR-F validated-gaussian narrative (`stabl_analyze(mode = "validated")`
+with `final_refit = TRUE` -> `stabl_finalize()` -> `predict()` under
+strict new-data schema). All nine chunks smoke-tested against
+`load_all` pre-gate; the rendered HTML carries the refusal error text
+and the predictor output (verified in the built tarball).
+`_pkgdown.yml` gains a navbar entry and a new "Reliability and
+validation" articles group; NEWS.md documents the article. Gates:
+suite 62 files / 0 failed / 0 errors / 1 skip / 3 warnings (exact
+parity with PR-G — no R or test code changed); R CMD check 0E/0W/1N
+(pre-existing installed-size NOTE; doc 3.7 -> 3.8 Mb with the new
+article); all 12 vignettes rebuild clean.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3

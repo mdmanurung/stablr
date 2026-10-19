@@ -1,0 +1,229 @@
+---
+title: "Reliability diagnostics, validation, and final models"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Reliability diagnostics, validation, and final models}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment  = "#>",
+  fig.width  = 6,
+  fig.height = 4
+)
+set.seed(42)
+```
+
+# Contents
+
+- 1 Introduction
+- 2 A reference selection
+- 3 Diagnosing a selection with `stabl_diagnose()`
+- 4 Outcome-null validation with `stabl_null_check()`
+- 5 Cohort replication with `stabl_replication_profile()`
+- 6 Validated development and a portable final model
+- 7 Putting it together
+
+# 1 Introduction
+
+A stability-selection run answers "which features?". The reliability
+toolchain answers the four questions that come next:
+
+1. **Is this selection itself well-behaved?** `stabl_diagnose()` inspects
+   the fitted object: score distributions, decoy provenance, the FDP+
+   curve along the full threshold path, and saturation or boundary
+   behaviour that weakens the error estimate.
+2. **Would the procedure select features when there is nothing to find?**
+   `stabl_null_check()` re-runs the same fit specification under an
+   explicit outcome-null exchangeability design and reports how often
+   anything is selected.
+3. **Does the selection replicate across cohorts?**
+   `stabl_replication_profile()` partitions the data by study label and
+   reports pooled stability, leave-one-study-out training replication,
+   and optional held-out performance.
+4. **How do I ship the final model?** `stabl_finalize()` packs a
+   development result into a portable `"stabl_predictor"` — with
+   preprocessing stored, no training observations serialized — and
+   `predict()` applies it to new data under a strict schema.
+
+All four are read-only with respect to the fitted object: they never
+refit, rethreshold, or otherwise modify the selection they inspect.
+
+# 2 A reference selection
+
+A small synthetic problem with three true signals and five noise
+features, fit with the expert interface:
+
+```{r reference-fit}
+library(stablr)
+
+set.seed(1)
+ids <- paste0("s", 1:60)
+x <- matrix(rnorm(60 * 8), 60, 8,
+            dimnames = list(ids, paste0("f", 1:8)))
+y <- setNames(2 * x[, 1] - x[, 2] + 0.5 * x[, 3] + rnorm(60), ids)
+
+fit <- stabl_fit(x, y, n_bootstraps = 50, lambda_grid = "auto",
+                 artificial_type = "random_permutation",
+                 random_state = 1)
+fit
+```
+
+# 3 Diagnosing a selection with `stabl_diagnose()`
+
+`stabl_diagnose()` takes a fitted `"stabl_fit"` and returns a
+machine-readable reliability report:
+
+```{r diagnose}
+d <- stabl_diagnose(fit)
+d$warning_codes
+```
+
+`warning_codes` is the headline field: each entry is a stable,
+machine-readable string naming a specific concern (for example a flat or
+boundary-hugging FDP+ curve, tie-heavy score distributions, or a low
+effective decoy count), so downstream code can branch on it without
+parsing prose. An empty vector means no concern fired — it is not a
+guarantee of validity.
+
+Two further fields carry the detail:
+
+```{r diagnose-detail}
+d$selection_rule
+head(d$threshold_path)
+```
+
+`selection_rule` discloses the comparator, threshold, and denominator
+conventions the FDP+ estimate relies on; `threshold_path` walks the full
+lambda grid with per-threshold selected counts and FDP+ estimates, which
+is what the saturation and boundary probes in `warning_codes` summarize.
+The evidence profile (`d$evidence_profile`) places the fit's learner x
+decoy x outcome x dimensionality regime against the calibration
+benchmarks — it is context for interpretation, not a binary safe/unsafe
+verdict.
+
+# 4 Outcome-null validation with `stabl_null_check()`
+
+A selection procedure should select nothing when the outcome carries no
+signal. `stabl_null_check()` tests exactly that by refitting the same
+specification under an explicit exchangeability design:
+
+```{r null-check}
+nv <- stabl_null_check(
+  x, y,
+  design = "independent",
+  fit_spec = list(n_bootstraps = 10,
+                  artificial_type = "random_permutation"),
+  n_reps = 5, seed = 7
+)
+nv$p_any_selection
+```
+
+`p_any_selection` is the fraction of null replicates in which anything
+was selected at all; on a problem with real signal fitted under the
+independent design it should be near zero, because permuting the outcome
+destroys the signal. The four designs — `independent`, `within_block`,
+`whole_cluster`, and `simulated` — encode different exchangeability
+assumptions, and the function refuses fail-closed combinations rather
+than silently running an invalid null. Asking for a global permutation
+while supplying block structure is an error:
+
+```{r null-refusal, error = TRUE}
+stabl_null_check(
+  x, y,
+  design = "independent",
+  blocks = rep(1:3, each = 20),
+  fit_spec = list(n_bootstraps = 10),
+  n_reps = 2, seed = 7
+)
+```
+
+Every replicate seed is derived replayably from `seed`, so a null check
+is exactly reproducible.
+
+# 5 Cohort replication with `stabl_replication_profile()`
+
+When samples come from several studies, `stabl_replication_profile()`
+measures whether the selection is a property of the pooled data or of
+individual cohorts:
+
+```{r replication}
+studies <- setNames(rep(paste0("study", 1:3), each = 20L), ids)
+rp <- stabl_replication_profile(
+  x, y, studies,
+  fit_spec = list(n_bootstraps = 50,
+                  artificial_type = "random_permutation"),
+  seed = 5
+)
+head(rp$features)
+```
+
+The `features` table contrasts each feature's pooled stability score
+with its leave-one-study-out training replication, so a feature whose
+support collapses when one cohort is held out is visible directly.
+Preprocessing is recomputed inside each training partition — nothing
+fitted on held-out cohorts leaks into selection, and no held-out cohort
+chooses thresholds. With `effects = ` supplied, the profile additionally
+pools user-provided per-study effect estimates (inverse-variance pooling
+with Cochran's Q); with `heldout_performance = TRUE`, a downstream
+`stats::glm` refit is evaluated on each held-out study.
+
+# 6 Validated development and a portable final model
+
+For an honest held-out performance estimate during development,
+`stabl_analyze(mode = "validated")` wraps selection in nested
+cross-validation: selection runs inside every outer training fold, and
+the outer test folds produce unbiased predictions. The gaussian path is
+fully supported alongside binomial:
+
+```{r validated}
+val <- stabl_analyze(
+  x, y,
+  family = "gaussian", mode = "validated",
+  outer_v = 4L, inner_v = 3L,
+  n_bootstraps = 30L,
+  random_state = 42,
+  final_refit = TRUE
+)
+val$performance
+```
+
+`final_refit = TRUE` refits on the full data after validation, which is
+what makes the result eligible for finalization. `stabl_finalize()`
+then packs the selected support, the stored preprocessing, and the
+refitted model into a portable `"stabl_predictor"`:
+
+```{r finalize}
+final <- stabl_finalize(val, x, y, preprocessing = c("center", "scale"),
+                        random_state = 2)
+final
+predict(final, x[1:3, ], type = "response")
+```
+
+No training observations are serialized into the object — one-feature
+models are packed as bare coefficients and preprocessing templates are
+stripped — so the predictor can be shipped without disclosing the
+development cohort. `predict()` validates new data against the stored
+schema: missing, renamed, or duplicated columns always error, and extra
+columns error unless explicitly dropped with
+`extra_columns = "drop"`.
+
+# 7 Putting it together
+
+The intended order of operations:
+
+1. Fit and **diagnose** (`stabl_diagnose()`): resolve any
+   `warning_codes` before trusting the selection.
+2. **Null-check** (`stabl_null_check()`) under the exchangeability
+   design that matches the sampling structure.
+3. **Replicate** (`stabl_replication_profile()`) when multiple cohorts
+   exist.
+4. **Validate and finalize** (`stabl_analyze(mode = "validated")` with
+   `final_refit = TRUE`, then `stabl_finalize()`) to obtain a portable
+   model with an honest held-out performance estimate.
+
+Each step is read-only over the previous one's output, so the chain can
+be scripted, rerun, and audited end to end.

@@ -34,6 +34,8 @@ navbar:
         href: articles/stablr-python-parity.html
       - text: Reading stability paths and FDP+ plots
         href: articles/stablr-reading-plots.html
+      - text: Reliability, validation, and final models
+        href: articles/stablr-reliability.html
       - text: Quick start (expert interface)
         href: articles/stablr-intro.html
       - text: Multi-omic OOL workflow
@@ -205,3 +207,8 @@ articles:
   contents:
   - stablr-python-parity
   - stablr-reading-plots
+
+- title: Reliability and validation
+  navbar: ~
+  contents:
+  - stablr-reliability
