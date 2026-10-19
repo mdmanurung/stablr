@@ -1067,6 +1067,53 @@ parity with PR-G — no R or test code changed); R CMD check 0E/0W/1N
 (pre-existing installed-size NOTE; doc 3.8 Mb); all 12 vignettes
 rebuild clean.
 
+**Vignette-hygiene PR (2026-10-19):** user-reported review of all 12
+vignettes/case studies for train/test leakage and ML best practices.
+
+Audit result — one leak-unsafe demonstration found, in
+`vignettes/stablr-multiomic.Rmd` (the per-omic STABL section the user
+flagged): the Proteomics matrix was standardised with a bare
+`scale()` on the training data, the validation matrix was never
+transformed, and the integrated workflow of Section 5 then fit the
+*unscaled* proteomics — so the vignette never demonstrated the
+fit-on-train/apply-to-test rule, and the Section 4 baseline vs
+Section 5 pipeline comparison the text invites was confounded by
+preprocessing. All other vignettes are clean: `stablr-tcga.Rmd` uses
+the pre-made mixOmics train/test split with no manual preprocessing;
+`stablr-tcga-nestedcv.Rmd` is a protocol document whose design repeats
+selection inside each training split; `stablr-aging-case-study.Rmd` is
+narrative over pre-computed results (selection-isolated LOCO, all
+evaluation out-of-fold); `stablr-cooperative.Rmd` and
+`stablr-advanced.Rmd` build lambda grids from training data only and
+use the fold-safe workflow/CV functions; `stablr-reliability.Rmd`
+uses `stabl_analyze(mode = "validated")` with fold-fitted
+preprocessing; the remaining vignettes make no held-out claims.
+
+Fix: the per-omic section now fits the standardiser with
+`stabl_preprocess_fit(transforms = c("center", "scale"))` on the
+training samples only and applies the stored training means/SDs to the
+validation matrix with `stabl_preprocess_apply()` — verified
+numerically identical to `scale()` on the training data (max abs diff
+1.8e-15), so Section 4 results are unchanged. Prose now names both
+failure modes (pooled fitting = leakage; separate validation fitting =
+feature-space mismatch, not leakage but wrong predictions) and points
+to the same rule inside `stabl_analyze(mode = "validated")`. The
+integrated workflow now receives the scaled training matrix and the
+train-parameterised scaled validation matrix, with the proteomics
+lambda grid built from the scaled training data — Section 4 and
+Section 5 are directly comparable, and the late-fusion validation
+predictions are computed in the correct feature space. Downstream
+outputs re-verified against live runs: under the compact build
+settings both omics return empty selections and the blended predictor
+is exactly constant at the training mean (Section 6.4 prose updated
+from "nearly constant" to match).
+
+Gates: suite 62 files / 0 failed / 0 errors / 1 skip / 3 warnings (exact
+parity with PR-G — no R or test code changed); R CMD check 0E/0W/1N
+(pre-existing installed-size NOTE; doc 3.8 Mb); all 12 vignettes
+rebuild clean, including the revised multiomic article with the new
+preprocessing chunks.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3
