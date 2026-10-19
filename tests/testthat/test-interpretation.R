@@ -234,3 +234,52 @@ test_that("plot returns a ggplot for a non-empty selection", {
     expect_s3_class(plot(ins), "ggplot")
   }
 })
+
+test_that("non-syntactic feature names get correct effect coefficients (B4 regression)", {
+  # Regression: glm returns non-syntactic names backtick-escaped, and the
+  # name-based coefficient assignment silently missed, reporting every such
+  # selected feature as coefficient = NA / "effect_not_estimable".
+  set.seed(11L)
+  n <- 60L
+  x <- matrix(rnorm(n * 4), n, 4,
+              dimnames = list(paste0("s", seq_len(n)),
+                              c("feat 1", "feat 2", "f3", "f4")))
+  y <- setNames(1.2 * x[, "feat 1"] - 0.9 * x[, "f3"] + rnorm(n, sd = 0.3),
+                rownames(x))
+  fit <- stabl_fit(x, y, lambda_grid = data.frame(lambda = c(0.2, 0.08)),
+                   n_bootstraps = 10L, artificial_type = NULL,
+                   hard_threshold = 0.5, random_state = 11L)
+  ins <- stabl_interpret(fit, x, y, family = "gaussian",
+                         n_repeats = 2L, random_state = 12L)
+  ev <- ins$evidence
+  # The strong non-syntactic signal feature must be selected.
+  expect_true("feat 1" %in% ev$feature[ev$selected])
+  # No selected feature may be reported as not estimable.
+  expect_true(all(!is.na(ev$coefficient[ev$selected])))
+  # Coefficients match a direct glm on the selected panel.
+  sel <- ev$feature[ev$selected]
+  df <- as.data.frame(x[, sel, drop = FALSE])
+  df$.y <- unname(y)
+  direct <- stats::coef(stats::glm(.y ~ ., data = df))[-1L]
+  expect_equal(unname(ev$coefficient[match(sel, ev$feature)]),
+               unname(direct), tolerance = 1e-8)
+  expect_equal(ev$effect_direction[ev$feature == "feat 1"], "positive")
+})
+
+test_that("a feature named '.y' is not silently dropped from the effect model", {
+  set.seed(13L)
+  n <- 60L
+  x <- matrix(rnorm(n * 3), n, 3,
+              dimnames = list(paste0("s", seq_len(n)), c(".y", "f2", "f3")))
+  y <- setNames(1.5 * x[, ".y"] + rnorm(n, sd = 0.3), rownames(x))
+  fit <- stabl_fit(x, y, lambda_grid = data.frame(lambda = c(0.2, 0.08)),
+                   n_bootstraps = 10L, artificial_type = NULL,
+                   hard_threshold = 0.5, random_state = 13L)
+  ins <- stabl_interpret(fit, x, y, family = "gaussian",
+                         n_repeats = 2L, random_state = 14L)
+  ev <- ins$evidence
+  expect_true(".y" %in% ev$feature[ev$selected])
+  coef_y <- ev$coefficient[ev$feature == ".y"]
+  expect_true(is.finite(coef_y))
+  expect_equal(unname(coef_y), 1.5, tolerance = 0.2)
+})

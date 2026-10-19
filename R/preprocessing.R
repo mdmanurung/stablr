@@ -52,6 +52,12 @@ stabl_preprocess_fit <- function(x_train,
   if (is.null(colnames(x_train))) {
     stop("`x_train` must have column (feature) names.", call. = FALSE)
   }
+  if (anyDuplicated(colnames(x_train))) {
+    # Name-based subsetting at apply time (`x[, retained]`) would silently
+    # duplicate the first matching column and replace the second feature's
+    # data (review B5); stabl_fit() rejects duplicates for the same reason.
+    stop("`x_train` column (feature) names must be unique.", call. = FALSE)
+  }
   transforms <- transforms %||% character()
   supported <- c("zv", "impute_median", "center", "scale")
   bad <- setdiff(transforms, supported)
@@ -158,6 +164,9 @@ stabl_preprocess_apply.stabl_preprocessing <- function(object, x, ...) {
   }
   if (is.null(colnames(x))) {
     stop("`x` must have column (feature) names.", call. = FALSE)
+  }
+  if (anyDuplicated(colnames(x))) {
+    stop("`x` column (feature) names must be unique.", call. = FALSE)
   }
   retained <- object$retained_features
   missing_feats <- setdiff(retained, colnames(x))

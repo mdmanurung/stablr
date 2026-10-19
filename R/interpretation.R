@@ -256,19 +256,35 @@ stabl_interpret <- function(object, x, y, family = c("gaussian", "binomial"),
   if (length(selected) == 0L) return(empty)
 
   df <- as.data.frame(x[, selected, drop = FALSE])
-  df$.y <- unname(y_vec)
+  # Collision-free response name: a feature literally named ".y" would
+  # otherwise be silently overwritten by the outcome column below.
+  resp <- "..y.."
+  while (resp %in% names(df)) resp <- paste0(".", resp)
+  df[[resp]] <- unname(y_vec)
   fam <- if (identical(family, "binomial")) {
     stats::binomial(link = "logit")
   } else {
     stats::gaussian()
   }
   model <- tryCatch(
-    suppressWarnings(stats::glm(.y ~ ., data = df, family = fam)),
+    suppressWarnings(stats::glm(stats::as.formula(paste(resp, "~ .")),
+                                data = df, family = fam)),
     error = function(e) e
   )
   if (inherits(model, "error")) return(empty)
 
   coefs <- stats::coef(model)[-1L]  # drop intercept
+  # Map coefficients to features POSITIONALLY: with an all-numeric model
+  # frame, coefficient order matches the `selected` column order (aliased
+  # columns appear as NA in position).  Name-based matching breaks for
+  # non-syntactic feature names, which glm returns backtick-escaped
+  # (review B4: every such feature was silently reported NA).
+  if (length(coefs) == length(selected)) {
+    names(coefs) <- selected
+  } else {
+    # Defensive fallback: strip glm's backtick escaping before matching.
+    names(coefs) <- gsub("^`|`$", "", names(coefs))
+  }
   # Standardized effect: coefficient * SD(feature) (per-SD change).
   sds <- apply(x[, selected, drop = FALSE], 2L, stats::sd, na.rm = TRUE)
   std <- coefs * sds[names(coefs)]

@@ -1274,6 +1274,42 @@ parity with PR-G — the new test adds no warnings or skips); R CMD
 check 0E/0W/1N (pre-existing installed-size NOTE; doc 3.8 Mb); all
 12 vignettes rebuild clean.
 
+**Name-handling fixes PR (2026-10-19):** implementation-review findings
+B4/B5 fixed with regression tests.
+
+- B4 (`R/interpretation.R`, `.interpret_effects`): non-syntactic feature
+  names (accepted by `stabl_fit`, e.g. `"feat 1"`) came back from
+  `coef(glm)` backtick-escaped, so the name-based assignment missed and
+  every such selected feature was silently reported `coefficient = NA`
+  with `na_reason = "effect_not_estimable"` (runtime-verified during
+  review: 0.899 sitting under the escaped name while the feature showed
+  NA). Fixed by positional coefficient mapping (coefficient order matches
+  the selected-column order for an all-numeric model frame; aliased
+  columns appear as NA in position), with a backtick-stripping fallback
+  if lengths ever mismatch. Same edit also gives the response a
+  collision-free name, so a feature literally named `.y` is no longer
+  silently overwritten by the outcome column.
+- B5 (`R/preprocessing.R`): `stabl_preprocess_fit` accepted duplicate
+  column names, and `stabl_preprocess_apply`'s name-based subsetting
+  (`x[, retained]`) then silently duplicated the first matching column,
+  replacing the second feature's data (runtime-verified during review).
+  `stabl_fit` already rejected duplicate feature names at entry; the
+  exported preprocessing API now fails closed too — duplicates rejected
+  at both fit and apply.
+
+Regression tests: `test-interpretation.R` gains a non-syntactic-names
+test (selected features all estimable; coefficients match a direct glm
+on the selected panel at 1e-8; direction recovery) and a `.y`-named
+feature test (not dropped; coefficient recovers the true 1.5 within
+0.2); `test-preprocessing.R` gains a duplicate-names rejection test
+(fit and apply). Both tests assert the negation of the broken behavior
+observed pre-fix.
+
+Gates: suite 62 files / 0 failed / 0 errors / 1 skip / 3 warnings (exact
+parity with PR-G — the new tests add no warnings or skips); R CMD
+check 0E/0W/1N (pre-existing installed-size NOTE; doc 3.8 Mb); all
+12 vignettes rebuild clean.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3

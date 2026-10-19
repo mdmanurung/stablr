@@ -194,3 +194,17 @@ test_that("recipes path requires the recipes package and preps on training", {
   expect_equal(colMeans(xt), setNames(rep(0, 5), colnames(xt)),
                tolerance = 1e-8)
 })
+
+test_that("duplicate feature names are rejected at fit and apply (B5 regression)", {
+  # Regression: name-based subsetting (`x[, retained]`) silently duplicated
+  # the first matching column, replacing the second feature's data.
+  d <- .make_pp_data()
+  x_dup <- d$x_tr
+  colnames(x_dup)[2L] <- "f1"  # two columns named "f1"
+  expect_error(stabl_preprocess_fit(x_dup, transforms = c("center", "scale")),
+               "unique")
+  pp <- stabl_preprocess_fit(d$x_tr, transforms = c("center", "scale"))
+  x_as_dup <- d$x_as
+  colnames(x_as_dup)[2L] <- "f1"
+  expect_error(stabl_preprocess_apply(pp, x_as_dup), "unique")
+})
