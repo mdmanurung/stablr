@@ -260,3 +260,46 @@ test_that("print and plot methods work", {
   out2 <- capture.output(print(nv2))
   expect_false(any(grepl("permutation induces a global null", out2)))
 })
+
+test_that("independent-design null survives stabl_fit name alignment (C1 regression)", {
+  # Regression: sample(y) carried each value's name along, and stabl_fit's
+  # name-based outcome alignment (y[rownames(x)]) then exactly undid the
+  # permutation — every "null" replicate fitted the observed data.
+  d <- make_nv_data()
+  ids <- rownames(d$x)
+  out <- stablr:::.generate_null_outcome(
+    d$y, d$x, "independent", blocks = NULL, clusters = NULL,
+    null_simulator = NULL, rep_id = 1L, seed = 3L
+  )
+  aligned <- out[ids]  # what stabl_fit does with the null outcome
+  # Still a global permutation of the values...
+  expect_identical(sort(unname(aligned)), sort(unname(d$y)))
+  # ...with names at their ORIGINAL positions...
+  expect_identical(names(aligned), ids)
+  # ...so name alignment does NOT restore the observed pairing.
+  expect_false(identical(unname(aligned), unname(d$y)))
+
+  # End-to-end: with the same seed and data, a fit on the aligned null must
+  # differ from a fit on the observed outcome (previously bit-identical).
+  fit_obs <- stabl_fit(d$x, d$y, lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+                       n_bootstraps = 3L, artificial_type = NULL,
+                       hard_threshold = 0.5, random_state = 8L)
+  fit_null <- stabl_fit(d$x, aligned, lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+                        n_bootstraps = 3L, artificial_type = NULL,
+                        hard_threshold = 0.5, random_state = 8L)
+  expect_false(identical(fit_obs$stabl_scores_, fit_null$stabl_scores_))
+})
+
+test_that("systematic null-generation failures abort fail-closed (C2 regression)", {
+  # Regression: generation failures bypassed the max_failures abort via
+  # `next`, so a systematically failing null_simulator returned
+  # n_successful = 0 instead of aborting.
+  d <- make_nv_data()
+  expect_error(
+    stabl_null_check(d$x, d$y, design = "simulated",
+                     null_simulator = function(...) stop("always fails"),
+                     fit_spec = fast_spec, n_reps = 3L, seed = 1L,
+                     max_failures = 0L),
+    "max_failures"
+  )
+})

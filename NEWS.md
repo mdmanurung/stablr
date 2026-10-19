@@ -1,5 +1,31 @@
 # stablr 0.3.0.9000 (development)
 
+## Bug fixes (implementation review, 2026-10-19)
+
+- **Critical:** `stabl_null_check(design = "independent")` (the default)
+  generated no-op nulls: `sample(y)` carried each value's name along, and
+  `stabl_fit()`'s name-based outcome alignment exactly undid the
+  permutation, so every null replicate fitted the observed data. The
+  permutation now keeps names at their original positions. **Any
+  null-check result computed with the default design should be re-run.**
+  Null-generation failures also now count toward the `max_failures`
+  fail-closed budget (previously a systematically failing `null_simulator`
+  returned `n_successful = 0` instead of aborting).
+- `stabl_interpret()` reported `coefficient = NA`
+  (`"effect_not_estimable"`) for every selected feature with a
+  non-syntactic name (e.g. `"feat 1"`); coefficients are now mapped
+  positionally. A feature named `.y` is no longer silently dropped from
+  the effect model.
+- `stabl_preprocess_fit()` / `stabl_preprocess_apply()` now reject
+  duplicate column names (previously the second duplicate's data was
+  silently replaced by the first's at apply time).
+- Late fusion (`stabl_multiomic_train_validate(late_fusion = TRUE)`): the
+  full-refit per-omic fits now use the same per-omic RNG streams as the
+  `late_fusion = FALSE` path (toggling late fusion no longer changes the
+  per-omic panels), the per-fold selection fits and downstream predictors
+  use per-omic derived seeds, and the recorded provenance seeds now
+  replay the fits exactly.
+
 ## Breaking changes — lean public API (1.0.0 contract, Phase 13 PR-G)
 
 - The eight pre-0.3.0 deprecation shims are **removed** (they now error):

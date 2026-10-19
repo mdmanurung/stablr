@@ -1356,6 +1356,48 @@ parity with PR-G — the new tests add no warnings or skips); R CMD
 check 0E/0W/1N (pre-existing installed-size NOTE; doc 3.8 Mb); all
 12 vignettes rebuild clean.
 
+**Null-validation fixes PR (2026-10-19):** implementation-review findings
+C1/C2 (critical) fixed with regression tests.
+
+- C1 (`R/null_validation.R`, `.generate_null_outcome`): the default
+  `design = "independent"` generated a no-op null.  `sample(y)` carries
+  each value's name along, and `stabl_fit()`'s name-based outcome
+  alignment (`y[rownames(x)]`, stabl_fit.R:261) then exactly undid the
+  permutation — every "null" replicate fitted the observed data
+  (runtime-verified in the review: `identical(unname(sample(y)[ids]),
+  unname(y[ids]))` == TRUE).  Only `independent` was affected:
+  `within_block`/`whole_cluster` assign positionally into a names-intact
+  copy, and `simulated` attaches `names(y)` to the simulator output.
+  The audit's PR-D reviewed this module's design legality (refusals,
+  seeds, failure recording) but not the name-alignment interaction.
+  Fixed: `out <- setNames(sample(unname(y)), names(y))` — values
+  permuted, names kept at their original positions, so the null survives
+  alignment.  RNG consumption is unchanged (same length-n draw), so
+  recorded per-replicate seeds remain replayable.  NEWS.md entry added
+  with a re-run advisory for prior default-design null-check results.
+- C2 (`R/null_validation.R`): null-generation failures bypassed the
+  `max_failures` abort via `next`, so a systematically failing
+  `null_simulator` returned a "successful" object with
+  `n_successful = 0`.  Fixed: the abort check is factored into
+  `.null_abort_if_over_budget()` and now runs in both the
+  generation-failure and fit-failure branches.
+
+Regression tests (`test-null-validation.R`), both confirmed to FAIL
+against the pre-fix code (git-stash negative control) and pass after:
+(1) the aligned null is still a global permutation of the values with
+names at their original positions, but name alignment no longer restores
+the observed pairing, and an end-to-end fit on the aligned null differs
+from the observed fit under the same seed; (2) a systematically failing
+`null_simulator` with `max_failures = 0` aborts with the documented
+fail-closed error.  Existing tests (positional-permutation, replayability,
+bounded failure recording) pass unchanged.
+
+Gates: suite 62 files / 0 failed / 0 errors / 1 skip / 3 warnings (exact
+parity with PR-G — the new tests add no warnings or skips); R CMD
+check 0E/0W/1N (pre-existing installed-size NOTE; doc 3.8 Mb); all
+12 vignettes rebuild clean.  NEWS.md is docs-only and parse-verified with
+utils::news(); the code tree is exactly the gated tree.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3

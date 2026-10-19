@@ -249,6 +249,11 @@ stabl_null_check <- function(x, y,
         rep_id, NA_integer_, perm_seeds[[rep_id]], NA_integer_,
         "null_generation", conditionMessage(y_null)
       )
+      # Review C2: generation failures count toward the same fail-closed
+      # budget as fit failures — previously `next` bypassed the
+      # max_failures abort, so a systematically failing null_simulator
+      # returned a "successful" object with n_successful = 0.
+      .null_abort_if_over_budget(failures, max_failures, n_done)
       next
     }
     for (decoy_id in seq_len(decoy_reps)) {
@@ -273,19 +278,7 @@ stabl_null_check <- function(x, y,
           .null_replicate_record(fit, rep_id, decoy_id,
                                  perm_seeds[[rep_id]], fit_seed)
       }
-      if (length(failures) > max_failures) {
-        stop(
-          sprintf(
-            paste0(
-              "stabl_null_check aborted: %d failures exceed max_failures ",
-              "= %d after %d attempt(s). First failure: %s"
-            ),
-            length(failures), max_failures, n_done,
-            failures[[1L]]$message
-          ),
-          call. = FALSE
-        )
-      }
+      .null_abort_if_over_budget(failures, max_failures, n_done)
     }
   }
 
@@ -329,7 +322,13 @@ stabl_null_check <- function(x, y,
   }
   .with_local_seed(seed, {
     if (design == "independent") {
-      out <- sample(y)
+      # Permute VALUES while keeping names at their original positions:
+      # sample(y) would carry each value's name along, and stabl_fit's
+      # name-based outcome alignment (y[rownames(x)]) would then exactly
+      # undo the permutation — every "null" replicate would fit the
+      # observed data (review C1).  within_block/whole_cluster below
+      # already assign positionally into a names-intact copy.
+      out <- stats::setNames(sample(unname(y)), names(y))
     } else if (design == "within_block") {
       out <- y
       for (b in levels(blocks)) {
@@ -350,6 +349,26 @@ stabl_null_check <- function(x, y,
 }
 
 # ---- per-replicate records --------------------------------------------------
+
+# Shared fail-closed budget check: abort once recorded failures exceed
+# max_failures, regardless of whether they arose at null generation or at
+# fit time (review C2).
+.null_abort_if_over_budget <- function(failures, max_failures, n_done) {
+  if (length(failures) > max_failures) {
+    stop(
+      sprintf(
+        paste0(
+          "stabl_null_check aborted: %d failures exceed max_failures ",
+          "= %d after %d attempt(s). First failure: %s"
+        ),
+        length(failures), max_failures, n_done,
+        failures[[1L]]$message
+      ),
+      call. = FALSE
+    )
+  }
+  invisible(NULL)
+}
 
 .null_failure_record <- function(rep_id, decoy_id, perm_seed, fit_seed,
                                  stage, message) {
