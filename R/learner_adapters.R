@@ -42,11 +42,11 @@
 #'   set.seed(1L)
 #'   x <- matrix(rnorm(200L), 20L, 10L)
 #'   y <- rnorm(20L)
-#'   adapter <- make_glmnet_adapter(family = "gaussian", bootstrap_threshold = 1e-5)
+#'   adapter <- stablr:::make_glmnet_adapter(family = "gaussian", bootstrap_threshold = 1e-5)
 #'   mask <- adapter(x, y, data.frame(lambda = 0.1))
 #'   cat("selected:", sum(mask), "of", ncol(x), "features\n")
 #' }
-#' @export
+#' @keywords internal
 make_glmnet_adapter <- function(
     family              = "gaussian",
     alpha_fixed         = NULL,
@@ -110,11 +110,11 @@ make_glmnet_adapter <- function(
 #'   set.seed(2L)
 #'   x <- matrix(rnorm(200L), 20L, 10L)
 #'   y <- rnorm(20L)
-#'   adapter <- make_adaptive_lasso_adapter(family = "gaussian", gamma = 1, epsilon = 1e-6)
+#'   adapter <- stablr:::make_adaptive_lasso_adapter(family = "gaussian", gamma = 1, epsilon = 1e-6)
 #'   mask <- adapter(x, y, data.frame(lambda = 0.1))
 #'   cat("selected:", sum(mask), "of", ncol(x), "features\n")
 #' }
-#' @export
+#' @keywords internal
 make_adaptive_lasso_adapter <- function(
     family              = "gaussian",
     gamma               = 1.0,
@@ -198,11 +198,11 @@ make_adaptive_lasso_adapter <- function(
 #'   x <- matrix(rnorm(200L), 20L, 10L)
 #'   y <- rnorm(20L)
 #'   groups  <- rep(1:5, each = 2L)
-#'   adapter <- make_sgl_adapter(family = "gaussian", feature_groups = groups)
+#'   adapter <- stablr:::make_sgl_adapter(family = "gaussian", feature_groups = groups)
 #'   mask <- adapter(x, y, data.frame(lambda = 0.1))
 #'   cat("selected:", sum(mask), "of", ncol(x), "features\n")
 #' }
-#' @export
+#' @keywords internal
 make_sgl_adapter <- function(
     family              = "gaussian",
     feature_groups,

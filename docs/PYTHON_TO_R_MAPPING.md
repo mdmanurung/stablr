@@ -15,8 +15,7 @@ parity reviews and migration work explicit.
 
 - `Stabl.get_feature_names_out(input_features=None, new_hard_threshold=None)`
   - Implemented: `get_feature_names(object, new_hard_threshold = NULL)`
-    (the pre-0.3 name `get_feature_names_out()` remains as a deprecated
-    shim until the 1.0.0 API pruning)
+    (the pre-0.3 name `get_feature_names_out()` was removed in 1.0.0)
 
 - `Stabl.transform(X, new_hard_threshold=None)`
   - Implemented: `transform_stabl(object, x, new_hard_threshold = NULL)`
@@ -25,7 +24,7 @@ parity reviews and migration work explicit.
 
 - `classic_bootstrap(...)`
   - Implemented: `sample_bootstrap_indices(...)`
-    (`classic_bootstrap_indices()` is a deprecated shim)
+    (`classic_bootstrap_indices()` was removed in 1.0.0)
 
 - `group_bootstrap(...)`
   - Implemented: `group_bootstrap_indices(...)`
@@ -43,9 +42,9 @@ parity reviews and migration work explicit.
 - Multi-omic train/validation and CV: `stabl_multiomic_train_validate()`,
   `stabl_multiomic_cv()`, `stabl_multiomic_nested_cv()`
 - Late-fusion stacking: `stabl_multiomic_stacked()`
-  (`stacked_multi_omic()` is a deprecated shim)
+  (`stacked_multi_omic()` was removed in 1.0.0)
 - Cooperative multi-view fusion: built into `stabl_multiomic_train_validate()`
   and `stabl_multiomic_cv()` for gaussian and binomial outcomes
 - Export helpers: `export_stabl_to_csv()`, `save_stabl_results()`
-- Reproducibility metrics: Jaccard, adjusted similarity, Pearson similarity,
-  FDR/TPR/F-score similarity helpers
+- Reproducibility metrics: Jaccard, adjusted similarity, Pearson similarity
+  (the FDR/TPR/F-score benchmark helpers are internal in 1.0.0)

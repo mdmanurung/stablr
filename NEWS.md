@@ -1,5 +1,42 @@
 # stablr 0.3.0.9000 (development)
 
+## Breaking changes — lean public API (1.0.0 contract, Phase 13 PR-G)
+
+- The eight pre-0.3.0 deprecation shims are **removed** (they now error):
+  `classic_bootstrap_indices()` -> `sample_bootstrap_indices()`;
+  `get_feature_names_out()` -> `get_feature_names()`;
+  `jaccard_matrix()` -> `jaccard_similarity_matrix()`;
+  `adjusted_similarity_values()` -> `adjusted_similarity_pairwise()`;
+  `adjusted_similarity_measure()` -> `adjusted_similarity_summary()`;
+  `pearson_similarity_values()` -> `pearson_similarity_pairwise()`;
+  `pearson_similarity_measure()` -> `pearson_similarity_summary()`;
+  `stacked_multi_omic()` -> `stabl_multiomic_stacked()`.
+- The duplicate beginner generics `support()` and `feature_names()` (and
+  their S3 methods) are removed; use `get_support()` /
+  `get_feature_names()`.
+- The single-row learner factories `make_glmnet_adapter()`,
+  `make_adaptive_lasso_adapter()`, `make_sgl_adapter()`,
+  `make_ranger_adapter()`, `make_ordinal_adapter()`, and
+  `make_splsda_adapter()` are internalized: select learners via the
+  `base_learner` argument of `stabl_fit()`. The grid helpers
+  `auto_lambda_grid()`, `auto_rf_threshold_grid()`,
+  `auto_ordinal_lambda_grid()`, and `auto_splsda_keepx_grid()` remain
+  exported.
+- The experimental oblique random forest is **retired**:
+  `base_learner = "oblique_rf"` fails closed with an explanatory error, and
+  `make_aorsf_adapter()` / `auto_oblique_threshold_grid()` are removed
+  (WS-3 failed the predeclared FDP+ calibration bar; archived source and
+  tests live in `attic/`). Use `base_learner = "rf"`.
+- `plot_roc()`, `plot_prc()`, `boxplot_features()`, and
+  `scatterplot_features()` are internalized (use general plotting packages;
+  the TCGA vignette shows inline ggplot2 replacements), as are the
+  benchmark metrics `fdr_similarity()`, `tpr_similarity()`, and
+  `fscore_similarity()` (realized proportions against known truth, not
+  general-purpose similarities).
+- See `docs/MIGRATION_0.3_TO_1.0.md` for the full migration guide and
+  `inst/release/removal-ledger.csv` for the machine-readable removal
+  record. Public interface: 54 exports and 43 S3 methods (from 79 and 47).
+
 ## Breaking changes (1.0.0 contract, Phase 13 PR-A)
 - `stabl_fit()` loses the `explore`/`n_explore` arguments and
   `get_support()` loses its top-N fallback: an empty selection now stays

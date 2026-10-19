@@ -362,9 +362,9 @@ plot_fdr_graph <- function(object, title = "FDP+ diagnostic",
 #'   set.seed(1L)
 #'   y_true  <- sample(0:1, 50, replace = TRUE)
 #'   y_preds <- pmin(pmax(y_true * 0.6 + rnorm(50, 0, 0.3), 0), 1)
-#'   plot_roc(y_true, y_preds)
+#'   stablr:::plot_roc(y_true, y_preds)
 #' }
-#' @export
+#' @keywords internal
 plot_roc <- function(y_true, y_preds, title = "ROC Curve") {
   .require_ggplot2()
   title <- .validate_nonempty_scalar_character(title, "title")
@@ -433,9 +433,9 @@ plot_roc <- function(y_true, y_preds, title = "ROC Curve") {
 #'   set.seed(1L)
 #'   y_true  <- sample(0:1, 50, replace = TRUE)
 #'   y_preds <- pmin(pmax(y_true * 0.6 + rnorm(50, 0, 0.3), 0), 1)
-#'   plot_prc(y_true, y_preds)
+#'   stablr:::plot_prc(y_true, y_preds)
 #' }
-#' @export
+#' @keywords internal
 plot_prc <- function(y_true, y_preds, show_iso = TRUE, title = "Precision-Recall Curve") {
   .require_ggplot2()
   if (!is.logical(show_iso) || length(show_iso) != 1L || is.na(show_iso)) {
@@ -520,9 +520,9 @@ plot_prc <- function(y_true, y_preds, show_iso = TRUE, title = "Precision-Recall
 #'   x <- matrix(rnorm(40 * 4), 40, 4,
 #'                dimnames = list(paste0("s", 1:40), c("A", "B", "C", "D")))
 #'   y <- factor(rep(c("ctrl", "case"), 20))
-#'   boxplot_features(c("A", "B"), x, y)
+#'   stablr:::boxplot_features(c("A", "B"), x, y)
 #' }
-#' @export
+#' @keywords internal
 boxplot_features <- function(features, x, y, title = "Selected Features", ncol = 3L) {
   .require_ggplot2()
   title <- .validate_nonempty_scalar_character(title, "title")
@@ -582,9 +582,9 @@ boxplot_features <- function(features, x, y, title = "Selected Features", ncol =
 #'   x <- matrix(rnorm(40 * 4), 40, 4,
 #'                dimnames = list(paste0("s", 1:40), c("A", "B", "C", "D")))
 #'   y <- x[, "A"] * 0.8 + rnorm(40, 0, 0.5)
-#'   scatterplot_features(c("A", "B"), x, y)
+#'   stablr:::scatterplot_features(c("A", "B"), x, y)
 #' }
-#' @export
+#' @keywords internal
 scatterplot_features <- function(features, x, y, title = "Selected Features", ncol = 3L) {
   .require_ggplot2()
   title <- .validate_nonempty_scalar_character(title, "title")

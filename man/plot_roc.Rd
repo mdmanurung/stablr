@@ -39,10 +39,11 @@ if (requireNamespace("ggplot2", quietly = TRUE)) {
   set.seed(1L)
   y_true  <- sample(0:1, 50, replace = TRUE)
   y_preds <- pmin(pmax(y_true * 0.6 + rnorm(50, 0, 0.3), 0), 1)
-  plot_roc(y_true, y_preds)
+  stablr:::plot_roc(y_true, y_preds)
 }
 }
 \seealso{
 \code{\link[=plot_prc]{plot_prc()}} for precision-recall curves (preferred when classes
 are severely imbalanced).
 }
+\keyword{internal}

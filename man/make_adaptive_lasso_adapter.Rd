@@ -59,7 +59,7 @@ if (requireNamespace("glmnet", quietly = TRUE)) {
   set.seed(2L)
   x <- matrix(rnorm(200L), 20L, 10L)
   y <- rnorm(20L)
-  adapter <- make_adaptive_lasso_adapter(family = "gaussian", gamma = 1, epsilon = 1e-6)
+  adapter <- stablr:::make_adaptive_lasso_adapter(family = "gaussian", gamma = 1, epsilon = 1e-6)
   mask <- adapter(x, y, data.frame(lambda = 0.1))
   cat("selected:", sum(mask), "of", ncol(x), "features\n")
 }
@@ -67,3 +67,4 @@ if (requireNamespace("glmnet", quietly = TRUE)) {
 \seealso{
 \code{\link[=make_glmnet_adapter]{make_glmnet_adapter()}}, \code{\link[=make_sgl_adapter]{make_sgl_adapter()}}, \code{\link[=stabl_fit]{stabl_fit()}}
 }
+\keyword{internal}

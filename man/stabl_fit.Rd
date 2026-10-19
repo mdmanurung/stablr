@@ -53,18 +53,14 @@ data-driven grid via \code{\link[=auto_lambda_grid]{auto_lambda_grid()}} (uses \
 (reads \code{alpha} from the \code{lambda_grid} \code{alpha} column), or
 \code{"adaptive_lasso"}, or \code{"sparse_group_lasso"}, or \code{"rf"} (random forest
 via \code{ranger}; requires \code{lambda_grid} from \code{\link[=auto_rf_threshold_grid]{auto_rf_threshold_grid()}} or
-\code{"auto"}), or \code{"oblique_rf"} (oblique random forest via \code{aorsf};
-requires \code{lambda_grid} from \code{\link[=auto_oblique_threshold_grid]{auto_oblique_threshold_grid()}} or
 \code{"auto"}), or \code{"ordinal"} (elastic-net cumulative logit via \code{ordinalNet}
 for ordered-band outcomes; requires a factor \code{y} and
-\code{\link[=auto_ordinal_lambda_grid]{auto_ordinal_lambda_grid()}} or \code{"auto"}). Default: \code{"lasso"}. \code{"rf"},
-\code{"oblique_rf"}, and \code{"ordinal"} are experimental
-extensions beyond Python STABL: FDP+ calibration for (oblique) random
+\code{\link[=auto_ordinal_lambda_grid]{auto_ordinal_lambda_grid()}} or \code{"auto"}). Default: \code{"lasso"}. \code{"rf"}
+and \code{"ordinal"} are experimental
+extensions beyond Python STABL: FDP+ calibration for random
 forests is empirical, not guaranteed, and is validated separately (see
 the package's RF validation study); they must be paired with model-X
-knockoff artificial features. For \code{"oblique_rf"} the per-feature
-selection frequencies are noisier than for \code{"rf"} because importance is
-spread across the linear combinations used in each split, or
+knockoff artificial features, or
 \code{"splsda"} (sparse PLS discriminant analysis via \code{mixOmics};
 classification only, requires \code{family = "binomial"}; sweeps a
 per-component \code{keepX} grid — use \code{\link[=auto_splsda_keepx_grid]{auto_splsda_keepx_grid()}} or

@@ -653,34 +653,3 @@ print.stabl_multiomic_cv <- function(x, ...) {
 
 # Null-coalescing helper (package-internal)
 `%||%` <- function(a, b) if (is.null(a)) b else a
-
-# ── Deprecation shim (0.3.0 API overhaul) ─────────────────────────────────────
-
-#' Deprecated: use [get_feature_names()]
-#'
-#' `get_feature_names_out()` is deprecated and will be removed in a future
-#' release; use [get_feature_names()] instead.
-#' @param object,new_hard_threshold See [get_feature_names()].
-#' @examples
-#' set.seed(1L)
-#' x <- matrix(rnorm(30 * 4), 30, 4,
-#'             dimnames = list(paste0("s", 1:30), paste0("f", 1:4)))
-#' y <- setNames(x[, "f1"] + rnorm(30, sd = 0.5), rownames(x))
-#' fit <- stabl_fit(x, y, lambda_grid = data.frame(lambda = 0.1),
-#'                  n_bootstraps = 10L, artificial_type = NULL,
-#'                  hard_threshold = 0.5)
-#' # warns; use get_feature_names()
-#' same <- suppressWarnings(identical(
-#'   get_feature_names_out(fit),
-#'   get_feature_names(fit)
-#' ))
-#' stopifnot(same)
-#' @keywords internal
-#' @export
-get_feature_names_out <- function(object, new_hard_threshold = NULL) {
-  warning(
-    "`get_feature_names_out()` is deprecated; use `get_feature_names()` ",
-    "instead.", call. = FALSE
-  )
-  get_feature_names(object, new_hard_threshold = new_hard_threshold)
-}

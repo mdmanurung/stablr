@@ -24,9 +24,10 @@ known in advance.
 \examples{
 true_signal <- c("f1", "f2", "f3")
 predicted   <- c("f1", "f2", "f4", "f5")  # f4, f5 are false discoveries
-fdr_similarity(predicted, true_signal)      # 2/4 = 0.5
-fdr_similarity(character(0), true_signal)   # 0 (empty prediction)
+stablr:::fdr_similarity(predicted, true_signal)      # 2/4 = 0.5
+stablr:::fdr_similarity(character(0), true_signal)   # 0 (empty prediction)
 }
 \seealso{
 \code{\link[=tpr_similarity]{tpr_similarity()}}, \code{\link[=fscore_similarity]{fscore_similarity()}}
 }
+\keyword{internal}

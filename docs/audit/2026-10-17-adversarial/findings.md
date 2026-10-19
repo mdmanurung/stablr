@@ -899,6 +899,77 @@ refit preprocessing, replay). Gates: suite 63 files / 0 failed / 0
 errors / 1 skip / 52 warnings (exact parity; 4082 expectation symbols);
 R CMD check 0E/0W/1N (pre-existing installed-size NOTE).
 
+**PR-G (2026-10-19):** 1.0.0-spec PR 7 / section 5 — lean public API and
+migration ledger. Removals (spec 5.1): the eight pre-0.3.0 deprecation
+shims are deleted outright (`classic_bootstrap_indices`,
+`get_feature_names_out`, `jaccard_matrix`, `adjusted_similarity_values`,
+`adjusted_similarity_measure`, `pearson_similarity_values`,
+`pearson_similarity_measure`, `stacked_multi_omic`) together with their
+man pages, pkgdown "Deprecated names" section, and compatibility-only
+tests; the meaningful Python-parity math tests in `test-phase7.R` were
+repointed to the canonical functions (frozen fixture keys untouched).
+Duplicate generics (spec 5.3): `support()`/`feature_names()` and their
+four S3 methods deleted; canonical `get_support()`/`get_feature_names()`
+are the single accessor layer (getting-started vignette, README, and the
+`print.stabl` hint text migrated). Learner factories (spec 5.2): the six
+single-row factories (`make_glmnet_adapter`, `make_adaptive_lasso_adapter`,
+`make_sgl_adapter`, `make_ranger_adapter`, `make_ordinal_adapter`,
+`make_splsda_adapter`) are internalized after a repository-wide call-graph
+sweep found no executable callers outside tests (vignette/README mentions
+were documentation cross-references, reworded to `base_learner = ...`);
+implementations, tests, and man pages (now `@keywords internal`,
+`stablr:::`-prefixed examples) are retained, and the grid helpers
+(`auto_lambda_grid`, `auto_rf_threshold_grid`,
+`auto_ordinal_lambda_grid`, `auto_splsda_keepx_grid`) stay exported.
+Oblique RF (spec 5.5): retired from the core — `R/learner_oblique_rf.R`
+and its suite archived to `attic/` (`.Rbuildignore`d, provenance README),
+`aorsf` dropped from Suggests, dispatch in `stabl_fit()` replaced by a
+fail-closed retirement error pointing at `base_learner = "rf"` and the
+migration guide; the `stabl_diagnose()` evidence row updated to record
+the WS-3 retirement (retained so pre-1.0.0 fits still diagnose).
+Utilities (spec 5.3): `plot_roc`/`plot_prc`/`boxplot_features`/
+`scatterplot_features` and the benchmark metrics
+`fdr_similarity`/`tpr_similarity`/`fscore_similarity` internalized
+(implementations retained; `save_stabl_results()` internal calls
+unchanged; the TCGA vignette now builds ROC/PRC and per-feature
+boxplots with inline ggplot2; the shipped reproducibility script
+`inst/analysis/run_methodology_validation.R` migrated to canonical
+exports and `stablr:::` internals so published simulations remain
+reproducible). Deliverables: `docs/MIGRATION_0.3_TO_1.0.md`,
+`inst/release/removal-ledger.csv` (25 rows, spec columns), NEWS.md
+migration section, `_pkgdown.yml` reference cleanup, registry 126 -> 97
+rows. Interface: 54 exports / 43 S3 (from 79 / 47). Gate-caught defects
+fixed pre-push: (1) `test-learner-ordinal.R` still asserted the factory
+was a public export — updated to the new contract (factory internal,
+`auto_ordinal_lambda_grid` exported); (2) three alias call sites missed
+inside the shipped methodology-validation script's
+`.similarity_vector_observations()` (`stablr::jaccard_matrix`,
+`stablr::adjusted_similarity_values`, `stablr::pearson_similarity_values`)
+— repointed to canonical names with fixture-key element names preserved.
+Gates: suite 62 files / 0 failed / 0 errors / 1 skip / 3 warnings;
+R CMD check 0E/0W/1N (pre-existing installed-size NOTE). Warning
+reconciliation vs the 52-entry PR-F baseline (unique entries in the
+summary reporter's Warnings section): -33 `test-methodology-validation-runner.R`
+(deprecation warnings emitted by the shipped script's alias call sites,
+removed by the canonical-name migration), -14 `test-phase7.R` (alias
+calls repointed to canonical names), -2 `test-oblique-rf-adapter.R`
+(suite retired to attic); 52 - 33 - 14 - 2 = 3 exactly, zero new
+warnings. The 3 survivors are intentional guardrails, not deprecations:
+1x `test-artificial-feature-provenance.R` (solve_mvr numerical-
+infeasibility fail-closed fallback) and 2x `test-rf-adapter.R` (RF +
+random_permutation anti-conservative FDP+ warning). Symbol-level
+accounting (reporter symbols, PR-F -> PR-G): total 3979 -> 3819
+(-160), passes 3924 -> 3815 (-109 = 28 oblique + 50 audit + 31
+wrapper), warning symbols 54 -> 3 (-51 = 35 runner + 14 phase7 + 2
+oblique; the section lists 52 unique entries at PR-F because 2 runner
+duplicates collapse). Per-file deltas, all explained:
+methodology-validation-runner -35 (warnings only; expectations
+unchanged 130->130), oblique-rf-adapter -30 (28 expectations + 2
+warnings; file retired), phase7 -14 (warnings only; expectations
+unchanged 133->133), public-interface-audit -50 (2 expectations per
+export row x 25 removed exports, 79 -> 54), stabl-wrapper -31 (the 7
+removed compatibility blocks).
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3

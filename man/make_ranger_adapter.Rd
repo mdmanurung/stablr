@@ -46,7 +46,7 @@ if (requireNamespace("ranger", quietly = TRUE)) {
   x <- matrix(rnorm(60 * 6), 60, 6,
               dimnames = list(paste0("s", 1:60), paste0("f", 1:6)))
   y <- setNames(x[, 1] * x[, 2] * 0.5 + rnorm(60, sd = 0.3), rownames(x))
-  adapter <- make_ranger_adapter(num_trees = 100L)
+  adapter <- stablr:::make_ranger_adapter(num_trees = 100L)
   grid <- auto_rf_threshold_grid(x, y, n_grid = 5L, num_trees = 100L, seed = 1L)
   mask <- adapter(x, y, grid[1L, ])  # sparsest end of the path
   cat("selected:", sum(mask), "of", ncol(x), "features\n")

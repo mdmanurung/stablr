@@ -96,9 +96,9 @@ test_that("jaccard_similarity both empty returns 0", {
   expect_equal(jaccard_similarity(character(0), character(0)), 0)
 })
 
-test_that("jaccard_matrix returns correct dimensions with remove_diag", {
+test_that("jaccard_similarity_matrix returns correct dimensions with remove_diag", {
   lists <- list(c("a","b"), c("b","c"), c("a","c"))
-  mat <- jaccard_matrix(lists, remove_diag = TRUE)
+  mat <- jaccard_similarity_matrix(lists, remove_diag = TRUE)
   # Python parity: N lists -> N rows and (N - 1) columns.
   expect_equal(nrow(mat), 3L)
   expect_equal(ncol(mat), 2L)
@@ -149,7 +149,7 @@ test_that("metrics functions match frozen Python reference values", {
     tolerance = tol
   )
 
-  r_jaccard_rowmajor <- as.vector(t(jaccard_matrix(inp$list_of_lists, remove_diag = TRUE)))
+  r_jaccard_rowmajor <- as.vector(t(jaccard_similarity_matrix(inp$list_of_lists, remove_diag = TRUE)))
   expect_equal(
     r_jaccard_rowmajor,
     .get_python_metric_vector(ref, "jaccard_matrix_remove_diag_rowmajor"),
@@ -157,17 +157,17 @@ test_that("metrics functions match frozen Python reference values", {
   )
 
   expect_equal(
-    adjusted_similarity_values(inp$list_of_lists, inp$nb_total),
+    adjusted_similarity_pairwise(inp$list_of_lists, inp$nb_total),
     .get_python_metric_vector(ref, "adjusted_similarity_values"),
     tolerance = tol
   )
   expect_equal(
-    pearson_similarity_values(inp$list_of_lists, inp$d),
+    pearson_similarity_pairwise(inp$list_of_lists, inp$d),
     .get_python_metric_vector(ref, "pearson_similarity_values"),
     tolerance = tol
   )
 
-  adj_med <- adjusted_similarity_measure(inp$list_of_lists, inp$nb_total, stat = "median")
+  adj_med <- adjusted_similarity_summary(inp$list_of_lists, inp$nb_total, stat = "median")
   expect_equal(
     adj_med$statistic,
     unname(ref$scalars[["adjusted_similarity_measure_median_stat"]]),
@@ -182,7 +182,7 @@ test_that("metrics functions match frozen Python reference values", {
     tolerance = tol
   )
 
-  adj_mean <- adjusted_similarity_measure(inp$list_of_lists, inp$nb_total, stat = "mean")
+  adj_mean <- adjusted_similarity_summary(inp$list_of_lists, inp$nb_total, stat = "mean")
   expect_equal(
     adj_mean$statistic,
     unname(ref$scalars[["adjusted_similarity_measure_mean_stat"]]),
@@ -194,7 +194,7 @@ test_that("metrics functions match frozen Python reference values", {
     tolerance = tol
   )
 
-  pear_med <- pearson_similarity_measure(inp$list_of_lists, inp$d, stat = "median")
+  pear_med <- pearson_similarity_summary(inp$list_of_lists, inp$d, stat = "median")
   expect_equal(
     pear_med$statistic,
     unname(ref$scalars[["pearson_similarity_measure_median_stat"]]),
@@ -209,7 +209,7 @@ test_that("metrics functions match frozen Python reference values", {
     tolerance = tol
   )
 
-  pear_mean <- pearson_similarity_measure(inp$list_of_lists, inp$d, stat = "mean")
+  pear_mean <- pearson_similarity_summary(inp$list_of_lists, inp$d, stat = "mean")
   expect_equal(
     pear_mean$statistic,
     unname(ref$scalars[["pearson_similarity_measure_mean_stat"]]),
@@ -238,30 +238,30 @@ test_that("adjusted_similarity errors when union > nb_total_elements", {
   )
 })
 
-test_that("adjusted_similarity_values returns upper-triangle vector", {
+test_that("adjusted_similarity_pairwise returns upper-triangle vector", {
   lists <- list(c("a","b","c"), c("b","c","d"), c("a","c","d"), c("a","b","d"))
-  vals  <- adjusted_similarity_values(lists, 6L)
+  vals  <- adjusted_similarity_pairwise(lists, 6L)
   expect_length(vals, 4L * 3L / 2L)  # n*(n-1)/2 = 6
   expect_true(all(is.numeric(vals)))
 })
 
-test_that("adjusted_similarity_measure median returns list with statistic and err", {
+test_that("adjusted_similarity_summary median returns list with statistic and err", {
   lists <- list(c("a","b"), c("b","c"), c("a","c"))
-  res   <- adjusted_similarity_measure(lists, 5L, stat = "median")
+  res   <- adjusted_similarity_summary(lists, 5L, stat = "median")
   expect_named(res, c("statistic", "err"))
   expect_length(res$err, 2L)
 })
 
-test_that("adjusted_similarity_measure mean returns sd as err", {
+test_that("adjusted_similarity_summary mean returns sd as err", {
   lists <- list(c("a","b"), c("b","c"), c("a","c"))
-  res   <- adjusted_similarity_measure(lists, 5L, stat = "mean")
+  res   <- adjusted_similarity_summary(lists, 5L, stat = "mean")
   expect_named(res, c("statistic", "err"))
   expect_length(res$err, 1L)
 })
 
-test_that("adjusted_similarity_measure errors on unknown stat", {
+test_that("adjusted_similarity_summary errors on unknown stat", {
   lists <- list(c("a","b"), c("b","c"))
-  expect_error(adjusted_similarity_measure(lists, 5L, stat = "mode"), "mean")
+  expect_error(adjusted_similarity_summary(lists, 5L, stat = "mode"), "mean")
 })
 
 test_that("pearson_similarity returns 1 when both sets empty", {
@@ -272,15 +272,15 @@ test_that("pearson_similarity returns 0 when one set empty", {
   expect_equal(pearson_similarity(character(0), c("a","b"), 10L), 0)
 })
 
-test_that("pearson_similarity_values upper-triangle length", {
+test_that("pearson_similarity_pairwise upper-triangle length", {
   lists <- list(c("a","b"), c("b","c"), c("c","d"))
-  vals  <- pearson_similarity_values(lists, 6L)
+  vals  <- pearson_similarity_pairwise(lists, 6L)
   expect_length(vals, 3L)  # 3*(3-1)/2 = 3
 })
 
-test_that("pearson_similarity_measure returns correct structure", {
+test_that("pearson_similarity_summary returns correct structure", {
   lists <- list(c("a","b"), c("b","c"), c("a","d"))
-  res   <- pearson_similarity_measure(lists, 6L)
+  res   <- pearson_similarity_summary(lists, 6L)
   expect_named(res, c("statistic", "err"))
 })
 

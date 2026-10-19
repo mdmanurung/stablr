@@ -2248,34 +2248,3 @@ stabl_multiomic_stacked <- function(
   list(train_preds = train_preds, valid_preds = valid_preds, model = m)
 }
 
-# ── Deprecation shim (0.3.0 API overhaul) ─────────────────────────────────────
-
-#' Deprecated: use [stabl_multiomic_stacked()]
-#'
-#' `stacked_multi_omic()` is deprecated and will be removed in a future
-#' release; use [stabl_multiomic_stacked()] instead.  (The Python parity
-#' fixtures keep the historical `stacked_multi_omic` name on the Python
-#' side; the R entry point is `stabl_multiomic_stacked()`.)
-#' @param ... See [stabl_multiomic_stacked()].
-#' @examples
-#' set.seed(1L)
-#' y <- rep(c(0L, 1L), 10)
-#' pred <- data.frame(
-#'   omic_a = y + rnorm(20, sd = 0.5),
-#'   omic_b = y + rnorm(20, sd = 1.5)
-#' )
-#' # warns; use stabl_multiomic_stacked()
-#' old <- suppressWarnings(stacked_multi_omic(pred, y, task_type = "binary",
-#'                                            n_iter = 200L, random_state = 42L))
-#' new <- stabl_multiomic_stacked(pred, y, task_type = "binary",
-#'                                n_iter = 200L, random_state = 42L)
-#' stopifnot(identical(names(old), names(new)))
-#' @keywords internal
-#' @export
-stacked_multi_omic <- function(...) {
-  warning(
-    "`stacked_multi_omic()` is deprecated; use `stabl_multiomic_stacked()` ",
-    "instead.", call. = FALSE
-  )
-  stabl_multiomic_stacked(...)
-}

@@ -81,11 +81,11 @@
 #'   y <- x[, 1] * x[, 2] + rnorm(20L)
 #'   grid  <- auto_rf_threshold_grid(x, y, n_grid = 5L, num_trees = 100L,
 #'                                   seed = 1L)
-#'   adapter <- make_ranger_adapter(num_trees = 100L)
+#'   adapter <- stablr:::make_ranger_adapter(num_trees = 100L)
 #'   mask <- adapter(x, y, grid[1L, , drop = FALSE])
 #'   cat("selected at sparsest threshold:", sum(mask), "of", ncol(x), "\n")
 #' }
-#' @export
+#' @keywords internal
 make_ranger_adapter <- function(num_trees = 500L) {
   .require_pkg("ranger", "for base_learner = \"rf\"")
   num_trees <- .validate_scalar_integer_like(num_trees, "num_trees", min = 1L)

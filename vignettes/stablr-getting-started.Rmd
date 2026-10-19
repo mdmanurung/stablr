@@ -76,7 +76,7 @@ reliability of the selection.
 The selected features are also available as a character vector.
 
 ```{r names}
-feature_names(fit)
+get_feature_names(fit)
 ```
 
 `summary()` adds the stability threshold and the FDP+ estimate.
@@ -137,19 +137,26 @@ and does not establish, see `vignette("stablr-python-parity")`; for a guide
 to the stability-path and FDP+ diagnostic plots, see
 `vignette("stablr-reading-plots")`.
 
-# 5 Compatibility with versions before 0.3.0
+# 5 Migrating from pre-1.0.0 versions
 
-A number of ambiguous names were renamed
-(`get_feature_names_out()` is now `get_feature_names()`,
-`stacked_multi_omic()` is now `stabl_multiomic_stacked()`,
-`jaccard_matrix()` is now `jaccard_similarity_matrix()`, and so on; see
-`NEWS.md` for the full table). The old names continue to work: each warns once
-and delegates to the new name.
+The 1.0.0 contract removes the pre-0.3.0 compatibility names outright
+(`get_feature_names_out()`, `stacked_multi_omic()`, `jaccard_matrix()`,
+`adjusted_similarity_values()`, `adjusted_similarity_measure()`,
+`pearson_similarity_values()`, `pearson_similarity_measure()`,
+`classic_bootstrap_indices()`); calling them now raises an error. Use the
+canonical names — `get_feature_names()`, `stabl_multiomic_stacked()`,
+`jaccard_similarity_matrix()`, `adjusted_similarity_pairwise()`,
+`adjusted_similarity_summary()`, `pearson_similarity_pairwise()`,
+`pearson_similarity_summary()`, `sample_bootstrap_indices()` — and see
+`NEWS.md` and `docs/MIGRATION_0.3_TO_1.0.md` for the full mapping.
 
-The 1.0.0 contract does remove a small set of legacy behaviors (Phase 13
+The 1.0.0 contract also removes a small set of legacy behaviors (Phase 13
 PR-A): the `explore`/`n_explore` arguments of `stabl_fit()` (an empty
 selection now stays empty instead of being relabelled as a top-N "explore"
 set), the in-sample `late_fusion_training = "python_legacy"` mode, and
 `cooperation_selection = "validation"` (both biased performance estimates).
-The remaining deprecated aliases are removed in the 1.0.0 API pruning; see
-`NEWS.md` and the migration guide for replacements.
+The beginner generics `support()` and `feature_names()` are removed in
+favour of the canonical accessors `get_support()` and
+`get_feature_names()`, and the experimental oblique random-forest learner
+(`base_learner = "oblique_rf"`) is retired (use `"rf"`); see the migration
+guide for the complete list.

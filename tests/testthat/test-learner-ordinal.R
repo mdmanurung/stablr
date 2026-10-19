@@ -115,6 +115,8 @@ test_that("ordinal learner is exposed through the public interface audit", {
     audit_path,
     stringsAsFactors = FALSE, check.names = FALSE, na.strings = character()
   )
-  expect_true("make_ordinal_adapter" %in% audit$interface[audit$kind == "export"])
+  # 1.0.0 (Phase 13 PR-G): the single-row factory was internalized (select
+  # the learner via base_learner = "ordinal"); the grid helper stays public.
+  expect_false("make_ordinal_adapter" %in% audit$interface[audit$kind == "export"])
   expect_true("auto_ordinal_lambda_grid" %in% audit$interface[audit$kind == "export"])
 })

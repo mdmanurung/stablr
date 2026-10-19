@@ -69,8 +69,6 @@ reference:
   - print.stabl
   - summary.stabl
   - plot.stabl
-  - support
-  - feature_names
 
 - title: Core STABL Engine
   desc: Fit single-matrix STABL selectors and compute FDP+ thresholds
@@ -90,26 +88,15 @@ reference:
   - make_knockoff_mvr_features
   - make_rp_features
 
-- title: Learner Adapters
-  desc: Public learner factories for glmnet-family and sparse-group backends.
+- title: Learner Grid Helpers
+  desc: Data-driven threshold/lambda grid constructors for the non-glmnet
+    base learners. The random forest is calibrated within a measured scope
+    (WS-2); the ordinal learner is experimental (WS-9); sPLS-DA is
+    experimental and binomial-only. Learner factories are internal; select
+    learners via the `base_learner` argument of `stabl_fit()`.
   contents:
-  - make_glmnet_adapter
-  - make_adaptive_lasso_adapter
-  - make_sgl_adapter
-
-- title: Extended Learner Adapters
-  desc: Extensions beyond the glmnet family. The random forest is calibrated
-    within a measured scope (WS-2); the oblique forest is fenced (WS-3); the
-    ordinal learner is experimental (WS-9); sPLS-DA is experimental and
-    binomial-only.
-  contents:
-  - make_ranger_adapter
   - auto_rf_threshold_grid
-  - make_aorsf_adapter
-  - auto_oblique_threshold_grid
-  - make_ordinal_adapter
   - auto_ordinal_lambda_grid
-  - make_splsda_adapter
   - auto_splsda_keepx_grid
 
 - title: Environment Stability
@@ -171,10 +158,6 @@ reference:
   contents:
   - plot_stabl_path
   - plot_fdr_graph
-  - plot_roc
-  - plot_prc
-  - boxplot_features
-  - scatterplot_features
 
 - title: Plot a fitted stabl_fit
   desc: S3 plot method for fitted STABL objects (stability path and FDP+ graph).
@@ -202,22 +185,6 @@ reference:
   - pearson_similarity
   - pearson_similarity_pairwise
   - pearson_similarity_summary
-  - fdr_similarity
-  - tpr_similarity
-  - fscore_similarity
-
-- title: Deprecated names
-  desc: Old names kept as deprecation shims; they warn once and delegate to
-    the replacements above.
-  contents:
-  - jaccard_matrix
-  - adjusted_similarity_values
-  - adjusted_similarity_measure
-  - pearson_similarity_values
-  - pearson_similarity_measure
-  - get_feature_names_out
-  - classic_bootstrap_indices
-  - stacked_multi_omic
 
 articles:
 - title: Workflows

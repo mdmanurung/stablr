@@ -25,3 +25,4 @@ Rplots\.pdf$
 ^_pkgdown\.yml$
 ^LICENSE\.md$
 ^_site$
+^attic$

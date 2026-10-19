@@ -42,15 +42,17 @@ the returned data frame as `lambda_grid`.
 Computes FDP+ threshold diagnostics from original and artificial feature
 stability scores.
 
-## Learner Adapters
+## Learner Selection
 
-- `make_glmnet_adapter()` creates a single-lambda glmnet learner adapter.
-- `make_adaptive_lasso_adapter()` creates a single-lambda adaptive-lasso
-  adapter.
-- `make_sgl_adapter()` creates a single-lambda sparse-group-lasso adapter.
-
-The core fitting path uses internal batch adapters for efficiency, but the
-exported factories remain available for adapter-level workflows and tests.
+Learners are selected by name via the `base_learner` argument of
+`stabl_fit()` (`"lasso"`, `"elastic_net"`, `"adaptive_lasso"`,
+`"sparse_group_lasso"`, `"rf"`, `"ordinal"`, `"splsda"`). The fitting path
+uses internal batch adapters; the former single-row factory functions were
+internalized in 1.0.0. Grid helpers `auto_lambda_grid()`,
+`auto_rf_threshold_grid()`, `auto_ordinal_lambda_grid()`, and
+`auto_splsda_keepx_grid()` remain exported. The experimental oblique random
+forest (`"oblique_rf"`) was retired in 1.0.0 (see
+`docs/MIGRATION_0.3_TO_1.0.md`).
 
 ## Artificial Features
 
@@ -77,7 +79,7 @@ Supported `artificial_type` values in fit functions are:
 
 - `validate_sample_alignment()` validates single-matrix sample alignment.
 - `validate_multiomic_inputs()` validates named multi-omic input lists.
-- `classic_bootstrap_indices()` draws ordinary bootstrap/subsample indices.
+- `sample_bootstrap_indices()` draws ordinary bootstrap/subsample indices.
 - `group_bootstrap_indices()` draws group-aware bootstrap/subsample indices.
 
 Current validation rules are strict and name based:
@@ -95,7 +97,7 @@ Current validation rules are strict and name based:
 - `get_support(object, new_hard_threshold = NULL)` returns a named logical
   support mask. Use it for logical subsetting or counts such as
   `sum(get_support(fit))`.
-- `get_feature_names_out(object, new_hard_threshold = NULL)` returns selected
+- `get_feature_names(object, new_hard_threshold = NULL)` returns selected
   feature names as a character vector. Use it when displaying feature lists or
   selecting columns by name.
 - `transform_stabl(object, x, new_hard_threshold = NULL)` subsets new data to
@@ -158,9 +160,9 @@ performance for the specified workflow; it does not establish dataset-wide FDP
 control, and small outer-training folds can legitimately trigger the documented
 late-fusion prior fallbacks.
 
-### `stacked_multi_omic()`
+### `stabl_multiomic_stacked()`
 
-Performs random-search late-fusion weight selection for `task_type` values `"binary"`, `"regression"`, or `"multiclass"`.
+Performs random-search late-fusion weight selection for `task_type` values `"binary"`, `"regression"`, or `"multiclass"`. (The pre-0.3.0 name `stacked_multi_omic()` was removed in 1.0.0.)
 
 The pinned cross-language solver evidence compares feature rankings and support,
 not bit-identical coefficients. R and Python use different optimisation paths;
@@ -196,22 +198,11 @@ Cox and Poisson cooperative fusion are intentionally rejected.
 - `plot_fdr_graph(object, title = "FDP+ diagnostic", reference_fdp_plus = 0.05)`
   plots the FDP+ diagnostic over candidate thresholds; `reference_fdp_plus`
   draws a purely visual reference line (renamed from `fdr_target` in 1.0.0).
-- `plot_roc(y_true, y_preds, title = "ROC Curve")` plots ROC curves for
-  downstream binary predictors.
-- `plot_prc(y_true, y_preds, show_iso = TRUE, title = "Precision-Recall Curve")`
-  plots precision-recall curves.
-- `boxplot_features(features, x, y, title = "Selected Features", ncol = 3L)`
-  plots selected features by class.
-- `scatterplot_features(features, x, y, title = "Selected Features", ncol =
-  3L)` plots selected features against a continuous outcome.
-
-ROC/PRC helpers require explicit 0/1 numeric or logical outcomes with both
-classes present, plus finite predicted probabilities in `[0, 1]`. Character or
-factor outcomes should be recoded by the caller so the positive class is
-unambiguous. Tied prediction scores are aggregated at a single threshold before
-ROC AUC and precision-recall average-precision computation, so metrics do not
-depend on row order. Plot titles are validated as non-empty character scalars.
-`ncol` and similar numeric controls are finite integer-like scalars.
+The ROC/PRC and per-feature distribution helpers (`plot_roc()`,
+`plot_prc()`, `boxplot_features()`, `scatterplot_features()`) were
+internalized in 1.0.0; use general plotting packages (the TCGA vignette
+shows inline ggplot2 replacements). `save_stabl_results()` still uses the
+internal implementations when writing report plots.
 
 ## Export
 
@@ -257,9 +248,13 @@ Main output artifacts:
 
 ## Selection Similarity Metrics
 
-- `jaccard_similarity()` and `jaccard_matrix()`
-- `adjusted_similarity()`, `adjusted_similarity_values()`, and
-  `adjusted_similarity_measure()`
-- `pearson_similarity()`, `pearson_similarity_values()`, and
-  `pearson_similarity_measure()`
-- `fdr_similarity()`, `tpr_similarity()`, and `fscore_similarity()`
+- `jaccard_similarity()` and `jaccard_similarity_matrix()`
+- `adjusted_similarity()`, `adjusted_similarity_pairwise()`, and
+  `adjusted_similarity_summary()`
+- `pearson_similarity()`, `pearson_similarity_pairwise()`, and
+  `pearson_similarity_summary()`
+
+The realized-performance benchmark helpers `fdr_similarity()`,
+`tpr_similarity()`, and `fscore_similarity()` were internalized in 1.0.0
+(they are benchmark metrics against known truth, not general
+similarities).

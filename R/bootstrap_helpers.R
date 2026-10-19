@@ -556,28 +556,3 @@ group_bootstrap_indices <- function(y, groups, n_subsamples, replace = FALSE,
 
   sample(sampled_idx, length(sampled_idx), replace = FALSE)
 }
-
-# ── Deprecation shim (0.3.0 API overhaul) ─────────────────────────────────────
-
-#' Deprecated: use [sample_bootstrap_indices()]
-#'
-#' `classic_bootstrap_indices()` is deprecated and will be removed in a
-#' future release; use [sample_bootstrap_indices()] instead.
-#' @param ... See [sample_bootstrap_indices()].
-#' @examples
-#' y <- c(rep(0, 10), rep(1, 10))
-#' # warns; use sample_bootstrap_indices()
-#' same <- suppressWarnings(identical(
-#'   classic_bootstrap_indices(y, n_subsamples = 5L, random_state = 1L),
-#'   sample_bootstrap_indices(y, n_subsamples = 5L, random_state = 1L)
-#' ))
-#' stopifnot(same)
-#' @keywords internal
-#' @export
-classic_bootstrap_indices <- function(...) {
-  warning(
-    "`classic_bootstrap_indices()` is deprecated; use ",
-    "`sample_bootstrap_indices()` instead.", call. = FALSE
-  )
-  sample_bootstrap_indices(...)
-}

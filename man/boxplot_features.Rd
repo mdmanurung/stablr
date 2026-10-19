@@ -36,10 +36,11 @@ if (requireNamespace("ggplot2", quietly = TRUE)) {
   x <- matrix(rnorm(40 * 4), 40, 4,
                dimnames = list(paste0("s", 1:40), c("A", "B", "C", "D")))
   y <- factor(rep(c("ctrl", "case"), 20))
-  boxplot_features(c("A", "B"), x, y)
+  stablr:::boxplot_features(c("A", "B"), x, y)
 }
 }
 \seealso{
 \code{\link[=scatterplot_features]{scatterplot_features()}} for regression tasks,
 \code{\link[=save_stabl_results]{save_stabl_results()}} which calls this automatically.
 }
+\keyword{internal}

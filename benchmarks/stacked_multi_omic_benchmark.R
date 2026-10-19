@@ -102,7 +102,7 @@ old_elapsed <- system.time({
 })
 
 new_elapsed <- system.time({
-  new <- stablr::stacked_multi_omic(
+  new <- stablr::stabl_multiomic_stacked(
     predictions = predictions,
     y = y,
     task_type = "binary",

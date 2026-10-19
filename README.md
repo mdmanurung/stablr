@@ -102,7 +102,7 @@ fallback, automatic lambda grid — and prints a plain-language answer:
 library(stablr)
 fit <- stabl(df, y = "response", n_bootstraps = 1000L, random_state = 42L)
 fit                    # plain-language answer
-feature_names(fit)     # the selected features
+get_feature_names(fit) # the selected features
 plot(fit)              # stability paths + FDP+ curve
 ```
 
@@ -114,8 +114,8 @@ Everything beyond core STABL is labelled as an extension. Cooperative fusion
 (Ding et al. 2022) ships on the vendored multiview engine for gaussian and
 binomial families (Cox deferred). The random-forest learner is calibrated for
 scoped settings: linear and nonlinear gaussian problems with up to a few
-dozen predictors (see `?make_ranger_adapter`). The ordinal learner is
-experimental pending its calibration study (see `?make_ordinal_adapter`).
+dozen predictors (`base_learner = "rf"`). The ordinal learner is
+experimental pending its calibration study (`base_learner = "ordinal"`).
 The environment-stability workflow aggregates per-environment selections by
 their minimum frequency; it is calibrated for small feature panels (see
 `?stabl_environment_stability`).

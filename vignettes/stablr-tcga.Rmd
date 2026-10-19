@@ -255,10 +255,28 @@ The late-fusion predictions are evaluated on the test set with ROC and PRC curve
 ```{r validation-performance}
 lf_preds <- multi_fit$late_fusion$valid_predictions
 
-plot_roc(y_true = y_test, y_preds = lf_preds,
-         title = "Late fusion - ROC curve (test set)")
-plot_prc(y_true = y_test, y_preds = lf_preds,
-         title = "Late fusion - PRC curve (test set)")
+# ROC/PRC curves computed inline (the package's plot_roc/plot_prc helpers
+# were internalized in 1.0.0; any general plotting package serves here).
+ord <- order(lf_preds, decreasing = TRUE)
+y_ord <- y_test[ord]
+n_pos <- sum(y_ord == 1); n_neg <- sum(y_ord == 0)
+tpr <- cumsum(y_ord == 1) / n_pos
+fpr <- cumsum(y_ord == 0) / n_neg
+roc_df <- data.frame(fpr = c(0, fpr), tpr = c(0, tpr))
+prc_df <- data.frame(
+  recall    = c(0, tpr),
+  precision = c(1, cumsum(y_ord == 1) / seq_along(y_ord))
+)
+
+ggplot2::ggplot(roc_df, ggplot2::aes(fpr, tpr)) +
+  ggplot2::geom_line() +
+  ggplot2::geom_abline(slope = 1, intercept = 0, linetype = 2, colour = "grey50") +
+  ggplot2::labs(title = "Late fusion - ROC curve (test set)",
+                x = "False positive rate", y = "True positive rate")
+ggplot2::ggplot(prc_df, ggplot2::aes(recall, precision)) +
+  ggplot2::geom_line() +
+  ggplot2::labs(title = "Late fusion - PRC curve (test set)",
+                x = "Recall", y = "Precision")
 
 pred_class <- as.integer(lf_preds >= 0.5)
 conf_mat <- table(
@@ -283,12 +301,20 @@ The distributions of the selected mRNA features are plotted by outcome class.
 ```{r feature-boxplots, fig.alt = "Distribution of selected mRNA features"}
 mrna_feats <- get_feature_names(multi_fit$fits$mrna)
 if (length(mrna_feats) > 0) {
-  boxplot_features(
-    features = mrna_feats,
-    x        = X_train_mrna,
-    y        = y_train,
-    title    = "Top mRNA features - training set",
-    ncol     = min(3L, length(mrna_feats))
+  # Per-feature class distributions (boxplot_features() was internalized
+  # in 1.0.0; plain ggplot2 serves the same purpose).
+  plot_df <- data.frame(
+    value   = as.vector(X_train_mrna[, mrna_feats]),
+    feature = rep(mrna_feats, each = nrow(X_train_mrna)),
+    class   = factor(rep(y_train, times = length(mrna_feats)))
+  )
+  print(
+    ggplot2::ggplot(plot_df, ggplot2::aes(class, value)) +
+      ggplot2::geom_boxplot() +
+      ggplot2::facet_wrap(~ feature, scales = "free_y",
+                          ncol = min(3L, length(mrna_feats))) +
+      ggplot2::labs(title = "Top mRNA features - training set",
+                    x = "Class", y = "Expression")
   )
 }
 ```
@@ -348,7 +374,7 @@ frequency survives resampling and passes an FDP-aware threshold**.
   grouped bootstrap for repeated measures.
 - An sPLS-DA-style classification learner is wanted inside the
   stability-selection machinery (`base_learner = "splsda"`; see
-  `?make_splsda_adapter`).
+  `base_learner = "splsda"`).
 - Integration strategies (per-omic, early, late, cooperative) are to be compared
   under one stability-selection framework.
 - The glmnet / resampling idiom is preferred over PLS components.

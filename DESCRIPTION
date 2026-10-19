@@ -59,7 +59,6 @@ LinkingTo:
     Rcpp,
     RcppEigen
 Suggests:
-    aorsf,
     multiview,
     corpcor,
     covr,
@@ -91,7 +90,6 @@ Collate:
     'fdp_control.R'
     'learner_adapters.R'
     'learner_rf.R'
-    'learner_oblique_rf.R'
     'learner_ordinal.R'
     'learner_splsda.R'
     'metrics.R'

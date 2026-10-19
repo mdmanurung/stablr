@@ -48,7 +48,7 @@
 #'   `"multinomial"`, or `"cox"`.  Use `"binomial"` for two-class outcomes,
 #'   `"multinomial"` for more.
 #' @param base_learner Character; `"lasso"` (default), `"elastic_net"`,
-#'   `"adaptive_lasso"`, `"sparse_group_lasso"`, `"rf"`, or `"oblique_rf"`.
+#'   `"adaptive_lasso"`, `"sparse_group_lasso"`, or `"rf"`.
 #' @param n_bootstraps Integer; bootstrap iterations per lambda.  Default
 #'   `1000L` (the published STABL default); lower it only for quick
 #'   exploration.
@@ -77,7 +77,7 @@
 #' \donttest{
 #' fit <- stabl(df, y = "y", n_bootstraps = 50L, random_state = 1L)
 #' fit                      # plain-language print
-#' feature_names(fit)       # selected features
+#' get_feature_names(fit)   # selected features
 #' }
 #' @export
 stabl <- function(x, y, family = "gaussian", base_learner = "lasso",
@@ -166,8 +166,8 @@ print.stabl <- function(x, ...) {
     cat("\n")
   }
   cat("  use summary() for details, plot() for stability paths,\n")
-  cat("  feature_names() / support() for the selection, get_fdrs() for the\n")
-  cat("  FDP+ curve.\n")
+  cat("  get_feature_names() / get_support() for the selection,\n")
+  cat("  get_fdrs() for the FDP+ curve.\n")
   invisible(x)
 }
 
@@ -210,64 +210,4 @@ summary.stabl <- function(object, ...) {
 #' @export
 plot.stabl <- function(x, ...) {
   plot.stabl_fit(x, ...)
-}
-
-#' Support and Feature Names of a STABL Selection
-#'
-#' Beginner-friendly generics for the selection: `support()` returns the
-#' selected features' names or mask (delegating to [get_support()]) and
-#' `feature_names()` returns the selected feature names at the chosen
-#' threshold (delegating to [get_feature_names()]).  Methods are provided
-#' for `stabl`/`stabl_fit` objects.
-#'
-#' @param object A fitted `stabl`/`stabl_fit` object.
-#' @param ... Passed through (e.g. `new_hard_threshold`).
-#'
-#' @return See [get_support()] / [get_feature_names()].
-#' @seealso [get_support()], [get_feature_names()], [stabl()]
-#' @name support
-#' @examples
-#' \donttest{
-#' set.seed(1L)
-#' df <- data.frame(m1 = rnorm(40), m2 = rnorm(40), m3 = rnorm(40))
-#' df$y <- 0.8 * df$m1 + rnorm(40, sd = 0.5)
-#' fit <- stabl(df, y = "y", n_bootstraps = 50L, random_state = 1L)
-#' feature_names(fit)
-#' }
-NULL
-
-#' @rdname support
-#' @export
-support <- function(object, ...) {
-  UseMethod("support")
-}
-
-#' @rdname support
-#' @export
-feature_names <- function(object, ...) {
-  UseMethod("feature_names")
-}
-
-#' @rdname support
-#' @export
-support.stabl_fit <- function(object, ...) {
-  get_support(object, ...)
-}
-
-#' @rdname support
-#' @export
-support.stabl <- function(object, ...) {
-  get_support(object, ...)
-}
-
-#' @rdname support
-#' @export
-feature_names.stabl_fit <- function(object, ...) {
-  get_feature_names(object, ...)
-}
-
-#' @rdname support
-#' @export
-feature_names.stabl <- function(object, ...) {
-  get_feature_names(object, ...)
 }

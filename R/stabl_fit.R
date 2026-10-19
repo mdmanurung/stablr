@@ -18,18 +18,14 @@
 #'   (reads `alpha` from the `lambda_grid` `alpha` column), or
 #'   `"adaptive_lasso"`, or `"sparse_group_lasso"`, or `"rf"` (random forest
 #'   via `ranger`; requires `lambda_grid` from [auto_rf_threshold_grid()] or
-#'   `"auto"`), or `"oblique_rf"` (oblique random forest via `aorsf`;
-#'   requires `lambda_grid` from [auto_oblique_threshold_grid()] or
 #'   `"auto"`), or `"ordinal"` (elastic-net cumulative logit via `ordinalNet`
 #'   for ordered-band outcomes; requires a factor `y` and
-#'   [auto_ordinal_lambda_grid()] or `"auto"`). Default: `"lasso"`. `"rf"`,
-#'   `"oblique_rf"`, and `"ordinal"` are experimental
-#'   extensions beyond Python STABL: FDP+ calibration for (oblique) random
+#'   [auto_ordinal_lambda_grid()] or `"auto"`). Default: `"lasso"`. `"rf"`
+#'   and `"ordinal"` are experimental
+#'   extensions beyond Python STABL: FDP+ calibration for random
 #'   forests is empirical, not guaranteed, and is validated separately (see
 #'   the package's RF validation study); they must be paired with model-X
-#'   knockoff artificial features. For `"oblique_rf"` the per-feature
-#'   selection frequencies are noisier than for `"rf"` because importance is
-#'   spread across the linear combinations used in each split, or
+#'   knockoff artificial features, or
 #'   `"splsda"` (sparse PLS discriminant analysis via `mixOmics`;
 #'   classification only, requires `family = "binomial"`; sweeps a
 #'   per-component `keepX` grid — use [auto_splsda_keepx_grid()] or
@@ -328,9 +324,6 @@ stabl_fit <- function(
     lambda_grid <- if (identical(base_learner, "rf")) {
       # RF sweeps an importance-threshold path, not a glmnet lambda path.
       auto_rf_threshold_grid(x, y, n_grid = n_lambda, seed = random_state)
-    } else if (identical(base_learner, "oblique_rf")) {
-      # Oblique RF sweeps a negation-importance-threshold path (plan D2).
-      auto_oblique_threshold_grid(x, y, n_grid = n_lambda, seed = random_state)
     } else if (identical(base_learner, "ordinal")) {
       # Ordinal sweeps an ordinalNet cumulative-logit lambda path (WS-9).
       auto_ordinal_lambda_grid(x, y, n_lambda = n_lambda)
@@ -401,15 +394,13 @@ stabl_fit <- function(
   }
 
   # D1/D2 guardrail, extended per audit A2 (confirmatory guard): for the
-  # multivariate RF learners, FDP+ calibration is validated only with
+  # multivariate RF learner, FDP+ calibration is validated only with
   # model-X knockoff artificial features.  Permuted nulls are not fair
   # importance competitors (leakage asymmetry), and fixed-X knockoffs lose
   # their exchangeability under the bootstrap row subsampling.  Both
   # unvalidated pairings warn; the model-X pairings (`knockoff_equi` /
   # `knockoff_mvr`) stay silent.
-  if ((identical(base_learner, "rf") ||
-       identical(base_learner, "oblique_rf")) &&
-      !is.null(artificial_type)) {
+  if (identical(base_learner, "rf") && !is.null(artificial_type)) {
     if (identical(artificial_type, "random_permutation")) {
       .warn_rf_random_permutation_nulls()
     } else if (identical(artificial_type, "knockoff")) {
@@ -917,9 +908,13 @@ stabl_fit <- function(
       family    = family,
       num_trees = 500L
     ),
-    oblique_rf = .make_aorsf_batch_adapter(
-      family    = family,
-      num_trees = 500L
+    oblique_rf = stop(
+      "`base_learner = \"oblique_rf\"` was retired in stablr 1.0.0: the ",
+      "oblique random forest failed the predeclared FDP+ calibration bar ",
+      "(WS-3). Use `base_learner = \"rf\"` instead; the archived ",
+      "experimental source lives in `attic/` (see ",
+      "docs/MIGRATION_0.3_TO_1.0.md).",
+      call. = FALSE
     ),
     ordinal = .make_ordinal_batch_adapter(alpha = 1),
     splsda = .make_splsda_batch_adapter(
@@ -928,7 +923,7 @@ stabl_fit <- function(
       bootstrap_threshold = .SPLSDA_LOAD_TOL
     ),
     stop(
-      "`base_learner` must be one of: \"lasso\", \"elastic_net\", \"adaptive_lasso\", \"sparse_group_lasso\", \"rf\", \"oblique_rf\", \"ordinal\", \"splsda\".",
+      "`base_learner` must be one of: \"lasso\", \"elastic_net\", \"adaptive_lasso\", \"sparse_group_lasso\", \"rf\", \"ordinal\", \"splsda\".",
       call. = FALSE
     )
   )

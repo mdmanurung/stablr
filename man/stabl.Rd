@@ -30,7 +30,7 @@ the outcome column, which is then removed from the predictors.}
 \code{"multinomial"} for more.}
 
 \item{base_learner}{Character; \code{"lasso"} (default), \code{"elastic_net"},
-\code{"adaptive_lasso"}, \code{"sparse_group_lasso"}, \code{"rf"}, or \code{"oblique_rf"}.}
+\code{"adaptive_lasso"}, \code{"sparse_group_lasso"}, or \code{"rf"}.}
 
 \item{n_bootstraps}{Integer; bootstrap iterations per lambda.  Default
 \code{1000L} (the published STABL default); lower it only for quick
@@ -83,7 +83,7 @@ df$y <- 0.8 * df$m1 + 0.8 * df$m2 + rnorm(40, sd = 0.5)
 \donttest{
 fit <- stabl(df, y = "y", n_bootstraps = 50L, random_state = 1L)
 fit                      # plain-language print
-feature_names(fit)       # selected features
+get_feature_names(fit)   # selected features
 }
 }
 \seealso{

@@ -118,7 +118,7 @@
     "Empirical calibration only; simulation scope, not application-data evidence.",
     "Design-scope restriction retained: do not read the FDP+ minimum as calibrated here.",
     "Anti-conservative by construction: permuted decoys do not receive the correlation leakage real null features receive.",
-    "Adapter fenced by benchmark outcome; scheduled for retirement from the core API in 1.0.0.",
+    "Retired from the core API in 1.0.0 after failing the predeclared FDP+ calibration bar (WS-3); archived experimental source lives in attic/. Row retained so pre-1.0.0 fits still diagnose with their evidence.",
     "Ordinal adapter stays experimental with documented scope.",
     "Group-structured selection on correlated blocks is far outside any calibrated regime.",
     "Best-calibrated sPLS-DA arm in the MINT benchmark; single-regime simulation evidence only.",

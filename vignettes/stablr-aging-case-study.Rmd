@@ -194,8 +194,8 @@ The sign test assumes between-cohort independence.
 
 The primary analysis uses the random-forest learner. The WS-2 simulation
 calibrated this learner for gaussian problems with up to a few dozen
-predictors (mean FDP+ 0.025 linear, 0.065 nonlinear). See
-`?make_ranger_adapter`.
+predictors (mean FDP+ 0.025 linear, 0.065 nonlinear). Select it with
+`base_learner = "rf"`.
 
 As a sensitivity analysis, we repeat the full workflow with the lasso
 learner. The knockoff type, the bootstrap count, and the seed stay the

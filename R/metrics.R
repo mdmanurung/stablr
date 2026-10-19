@@ -429,9 +429,9 @@ pearson_similarity_summary <- function(list_of_lists, nb_total_elements,
 #' @examples
 #' true_signal <- c("f1", "f2", "f3")
 #' predicted   <- c("f1", "f2", "f4", "f5")  # f4, f5 are false discoveries
-#' fdr_similarity(predicted, true_signal)      # 2/4 = 0.5
-#' fdr_similarity(character(0), true_signal)   # 0 (empty prediction)
-#' @export
+#' stablr:::fdr_similarity(predicted, true_signal)      # 2/4 = 0.5
+#' stablr:::fdr_similarity(character(0), true_signal)   # 0 (empty prediction)
+#' @keywords internal
 fdr_similarity <- function(list1, list2) {
   tp <- length(intersect(list1, list2))
   fp <- length(setdiff(list1,  list2))
@@ -457,10 +457,10 @@ fdr_similarity <- function(list1, list2) {
 #' @examples
 #' true_signal <- c("f1", "f2", "f3")
 #' predicted   <- c("f1", "f2", "f4")  # misses f3
-#' tpr_similarity(predicted, true_signal)       # 2/3
-#' tpr_similarity(character(0), true_signal)    # 0
-#' tpr_similarity(c("f1","f2","f3"), true_signal)  # 1
-#' @export
+#' stablr:::tpr_similarity(predicted, true_signal)       # 2/3
+#' stablr:::tpr_similarity(character(0), true_signal)    # 0
+#' stablr:::tpr_similarity(c("f1","f2","f3"), true_signal)  # 1
+#' @keywords internal
 tpr_similarity <- function(list1, list2) {
   tp <- length(intersect(list1, list2))
   fn <- length(setdiff(list2,  list1))
@@ -492,10 +492,10 @@ tpr_similarity <- function(list1, list2) {
 #' @examples
 #' true_signal <- c("f1", "f2", "f3")
 #' predicted   <- c("f1", "f2", "f4")  # 2 TP, 1 FP, 1 FN
-#' fscore_similarity(predicted, true_signal)           # F1
-#' fscore_similarity(predicted, true_signal, beta = 2) # recall-weighted
-#' fscore_similarity(character(0), character(0))       # 0
-#' @export
+#' stablr:::fscore_similarity(predicted, true_signal)           # F1
+#' stablr:::fscore_similarity(predicted, true_signal, beta = 2) # recall-weighted
+#' stablr:::fscore_similarity(character(0), character(0))       # 0
+#' @keywords internal
 fscore_similarity <- function(list1, list2, beta = 1) {
   tp <- length(intersect(list1, list2))
   fp <- length(setdiff(list1,  list2))
@@ -659,124 +659,4 @@ fscore_similarity <- function(list1, list2, beta = 1) {
     n = length(truth),
     n_events = sum(y_event)
   )
-}
-
-# ── Deprecation shims (0.3.0 API overhaul) ────────────────────────────────────
-# The 0.3.0 rename scheme: `*_similarity()` for a pair, `*_similarity_matrix()`
-# for an all-pairs matrix, `*_similarity_pairwise()` for the vector of unique
-# pairwise values, `*_similarity_summary()` for a one-number summary.  The old
-# names remain as shims emitting a one-time-per-call deprecation warning.
-
-#' Deprecated: use [jaccard_similarity_matrix()]
-#'
-#' `jaccard_matrix()` is deprecated and will be removed in a future release;
-#' use [jaccard_similarity_matrix()] instead.
-#' @param list_of_lists See [jaccard_similarity_matrix()].
-#' @examples
-#' sets <- list(c("f1", "f2", "f3"), c("f2", "f3", "f4"), c("f1", "f3", "f5"))
-#' # warns; use jaccard_similarity_matrix()
-#' same <- suppressWarnings(identical(
-#'   jaccard_matrix(sets),
-#'   jaccard_similarity_matrix(sets)
-#' ))
-#' stopifnot(same)
-#' @keywords internal
-#' @export
-jaccard_matrix <- function(list_of_lists, remove_diag = TRUE) {
-  warning(
-    "`jaccard_matrix()` is deprecated; use `jaccard_similarity_matrix()` ",
-    "instead.", call. = FALSE
-  )
-  jaccard_similarity_matrix(list_of_lists, remove_diag = remove_diag)
-}
-
-#' Deprecated: use [adjusted_similarity_pairwise()]
-#'
-#' `adjusted_similarity_values()` is deprecated and will be removed in a
-#' future release; use [adjusted_similarity_pairwise()] instead.
-#' @examples
-#' sets <- list(c("f1", "f2", "f3"), c("f2", "f3", "f4"), c("f1", "f3", "f5"))
-#' # warns; use adjusted_similarity_pairwise()
-#' same <- suppressWarnings(identical(
-#'   adjusted_similarity_values(sets, nb_total_elements = 10L),
-#'   adjusted_similarity_pairwise(sets, nb_total_elements = 10L)
-#' ))
-#' stopifnot(same)
-#' @keywords internal
-#' @export
-adjusted_similarity_values <- function(list_of_lists, nb_total_elements) {
-  warning(
-    "`adjusted_similarity_values()` is deprecated; use ",
-    "`adjusted_similarity_pairwise()` instead.", call. = FALSE
-  )
-  adjusted_similarity_pairwise(list_of_lists, nb_total_elements)
-}
-
-#' Deprecated: use [adjusted_similarity_summary()]
-#'
-#' `adjusted_similarity_measure()` is deprecated and will be removed in a
-#' future release; use [adjusted_similarity_summary()] instead.
-#' @param list_of_lists,nb_total_elements,stat See
-#'   [adjusted_similarity_summary()].
-#' @examples
-#' sets <- list(c("f1", "f2", "f3"), c("f2", "f3", "f4"), c("f1", "f3", "f5"))
-#' # warns; use adjusted_similarity_summary()
-#' same <- suppressWarnings(identical(
-#'   adjusted_similarity_measure(sets, nb_total_elements = 10L),
-#'   adjusted_similarity_summary(sets, nb_total_elements = 10L)
-#' ))
-#' stopifnot(same)
-#' @keywords internal
-#' @export
-adjusted_similarity_measure <- function(list_of_lists, nb_total_elements,
-                                        stat = "median") {
-  warning(
-    "`adjusted_similarity_measure()` is deprecated; use ",
-    "`adjusted_similarity_summary()` instead.", call. = FALSE
-  )
-  adjusted_similarity_summary(list_of_lists, nb_total_elements, stat = stat)
-}
-
-#' Deprecated: use [pearson_similarity_pairwise()]
-#'
-#' `pearson_similarity_values()` is deprecated and will be removed in a
-#' future release; use [pearson_similarity_pairwise()] instead.
-#' @examples
-#' sets <- list(c("f1", "f2", "f3"), c("f2", "f3", "f4"), c("f1", "f3", "f5"))
-#' # warns; use pearson_similarity_pairwise()
-#' same <- suppressWarnings(identical(
-#'   pearson_similarity_values(sets, d = 10L),
-#'   pearson_similarity_pairwise(sets, nb_total_elements = 10L)
-#' ))
-#' stopifnot(same)
-#' @keywords internal
-#' @export
-pearson_similarity_values <- function(list_of_lists, d) {
-  warning(
-    "`pearson_similarity_values()` is deprecated; use ",
-    "`pearson_similarity_pairwise()` instead.", call. = FALSE
-  )
-  pearson_similarity_pairwise(list_of_lists, d)
-}
-
-#' Deprecated: use [pearson_similarity_summary()]
-#'
-#' `pearson_similarity_measure()` is deprecated and will be removed in a
-#' future release; use [pearson_similarity_summary()] instead.
-#' @examples
-#' sets <- list(c("f1", "f2", "f3"), c("f2", "f3", "f4"), c("f1", "f3", "f5"))
-#' # warns; use pearson_similarity_summary()
-#' same <- suppressWarnings(identical(
-#'   pearson_similarity_measure(sets, d = 10L),
-#'   pearson_similarity_summary(sets, nb_total_elements = 10L)
-#' ))
-#' stopifnot(same)
-#' @keywords internal
-#' @export
-pearson_similarity_measure <- function(list_of_lists, d, stat = "median") {
-  warning(
-    "`pearson_similarity_measure()` is deprecated; use ",
-    "`pearson_similarity_summary()` instead.", call. = FALSE
-  )
-  pearson_similarity_summary(list_of_lists, d, stat = stat)
 }

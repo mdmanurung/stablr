@@ -39,7 +39,7 @@ The introductory and multi-omic vignettes describe the core Gaussian and binomia
 |-------|-----------|
 | Survival STABL | `stabl_fit(family = "cox")` |
 | Multinomial classification | `stabl_fit(family = "multinomial")` |
-| sPLS-DA classification | `base_learner = "splsda"`, `make_splsda_adapter()`, `auto_splsda_keepx_grid()` |
+| sPLS-DA classification | `base_learner = "splsda"`, `auto_splsda_keepx_grid()` |
 | Artificial features | `artificial_type = "random_permutation"`, `"knockoff"`, `"knockoff_equi"`, `"knockoff_mvr"`, or `NULL` |
 | Grouped bootstrap | `groups`, `group_bootstrap_indices()` |
 | Reproducibility metrics | `jaccard_similarity()`, `adjusted_similarity()` |

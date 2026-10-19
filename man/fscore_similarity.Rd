@@ -32,10 +32,11 @@ a single number that balances both.
 \examples{
 true_signal <- c("f1", "f2", "f3")
 predicted   <- c("f1", "f2", "f4")  # 2 TP, 1 FP, 1 FN
-fscore_similarity(predicted, true_signal)           # F1
-fscore_similarity(predicted, true_signal, beta = 2) # recall-weighted
-fscore_similarity(character(0), character(0))       # 0
+stablr:::fscore_similarity(predicted, true_signal)           # F1
+stablr:::fscore_similarity(predicted, true_signal, beta = 2) # recall-weighted
+stablr:::fscore_similarity(character(0), character(0))       # 0
 }
 \seealso{
 \code{\link[=fdr_similarity]{fdr_similarity()}}, \code{\link[=tpr_similarity]{tpr_similarity()}}
 }
+\keyword{internal}

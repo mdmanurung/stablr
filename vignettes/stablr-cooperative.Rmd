@@ -390,7 +390,7 @@ but it is **not** equivalent to DIABLO:
 | Families (v1) | gaussian, binomial | Classification (sPLS-DA) |
 | Stability / FDP | STABL bootstrap + knockoff layer | Component sparsity only |
 
-Cooperative fusion is appropriate when **stable sparse features per omic** with cross-view agreement are the goal. DIABLO is appropriate when **joint latent factors** for classification and mixOmics visualisation are the goal. For a like-for-like classification comparison, `stablr` also ships an sPLS-DA base learner (`base_learner = "splsda"`, backed by mixOmics; see `?make_splsda_adapter`), which runs the same stability-selection machinery on top of the sPLS-DA learner. Head-to-head TCGA benchmarks that include early fusion (and future cooperative arms) are described in `inst/analysis/BENCHMARK_PLAN.md`.
+Cooperative fusion is appropriate when **stable sparse features per omic** with cross-view agreement are the goal. DIABLO is appropriate when **joint latent factors** for classification and mixOmics visualisation are the goal. For a like-for-like classification comparison, `stablr` also ships an sPLS-DA base learner (`base_learner = "splsda"`, backed by mixOmics), which runs the same stability-selection machinery on top of the sPLS-DA learner. Head-to-head TCGA benchmarks that include early fusion (and future cooperative arms) are described in `inst/analysis/BENCHMARK_PLAN.md`.
 
 # 10 Cross-validation with cooperative fusion
 

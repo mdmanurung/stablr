@@ -464,7 +464,7 @@
       error = conditionMessage(result$fit)
     )
   } else {
-    selected <- stablr::get_feature_names_out(result$fit)
+    selected <- stablr::get_feature_names(result$fit)
     row <- .replicate_row(
       scenario = scenario,
       family = family,
@@ -748,19 +748,19 @@
 }
 
 .similarity_scalar_observations <- function(inp) {
-  adj_median <- stablr::adjusted_similarity_measure(inp$list_of_lists, inp$nb_total)
-  adj_mean <- stablr::adjusted_similarity_measure(inp$list_of_lists, inp$nb_total, stat = "mean")
-  pear_median <- stablr::pearson_similarity_measure(inp$list_of_lists, inp$d)
-  pear_mean <- stablr::pearson_similarity_measure(inp$list_of_lists, inp$d, stat = "mean")
+  adj_median <- stablr::adjusted_similarity_summary(inp$list_of_lists, inp$nb_total)
+  adj_mean <- stablr::adjusted_similarity_summary(inp$list_of_lists, inp$nb_total, stat = "mean")
+  pear_median <- stablr::pearson_similarity_summary(inp$list_of_lists, inp$d)
+  pear_mean <- stablr::pearson_similarity_summary(inp$list_of_lists, inp$d, stat = "mean")
 
   c(
     jaccard_similarity_pair = stablr::jaccard_similarity(inp$pair_pred, inp$pair_true),
     adjusted_similarity_pair = stablr::adjusted_similarity(inp$pair_pred, inp$pair_true, inp$nb_total),
     pearson_similarity_pair = stablr::pearson_similarity(inp$pair_pred, inp$pair_true, inp$d),
-    fdr_similarity_pair = stablr::fdr_similarity(inp$pair_pred, inp$pair_true),
-    tpr_similarity_pair = stablr::tpr_similarity(inp$pair_pred, inp$pair_true),
-    fscore_similarity_beta1_pair = stablr::fscore_similarity(inp$pair_pred, inp$pair_true, beta = 1),
-    fscore_similarity_beta2_pair = stablr::fscore_similarity(inp$pair_pred, inp$pair_true, beta = 2),
+    fdr_similarity_pair = stablr:::fdr_similarity(inp$pair_pred, inp$pair_true),
+    tpr_similarity_pair = stablr:::tpr_similarity(inp$pair_pred, inp$pair_true),
+    fscore_similarity_beta1_pair = stablr:::fscore_similarity(inp$pair_pred, inp$pair_true, beta = 1),
+    fscore_similarity_beta2_pair = stablr:::fscore_similarity(inp$pair_pred, inp$pair_true, beta = 2),
     adjusted_similarity_measure_median_stat = adj_median$statistic,
     adjusted_similarity_measure_median_err_q25 = unname(adj_median$err[[1L]]),
     adjusted_similarity_measure_median_err_q75 = unname(adj_median$err[[2L]]),
@@ -775,11 +775,11 @@
 }
 
 .similarity_vector_observations <- function(inp) {
-  jaccard <- stablr::jaccard_matrix(inp$list_of_lists, remove_diag = TRUE)
+  jaccard <- stablr::jaccard_similarity_matrix(inp$list_of_lists, remove_diag = TRUE)
   list(
     jaccard_matrix_remove_diag_rowmajor = as.vector(t(jaccard)),
-    adjusted_similarity_values = stablr::adjusted_similarity_values(inp$list_of_lists, inp$nb_total),
-    pearson_similarity_values = stablr::pearson_similarity_values(inp$list_of_lists, inp$d)
+    adjusted_similarity_values = stablr::adjusted_similarity_pairwise(inp$list_of_lists, inp$nb_total),
+    pearson_similarity_values = stablr::pearson_similarity_pairwise(inp$list_of_lists, inp$d)
   )
 }
 
