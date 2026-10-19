@@ -22,8 +22,9 @@ set.seed(42)
 - 1 Introduction
 - 2 A worked example
 - 3 Defaults chosen by `stabl()`
-- 4 The expert interface
-- 5 Compatibility with versions before 0.3.0
+- 4 Leakage-safe preprocessing
+- 5 The expert interface
+- 6 Migrating from pre-1.0.0 versions
 
 # 1 Introduction
 
@@ -40,7 +41,7 @@ fit
 ```
 
 Everything else in the package is available when more control is required;
-see Section 4, The expert interface.
+see Section 5, The expert interface.
 
 # 2 A worked example
 
@@ -111,7 +112,54 @@ fit <- stabl(df, y = "response", base_learner = "elastic_net",
              artificial_proportion = 0.5)
 ```
 
-# 4 The expert interface
+# 4 Leakage-safe preprocessing
+
+The worked example above fits on the full dataset. That is correct for
+exploratory selection — the selection describes the data you have. The
+moment you want held-out predictions or a train/test evaluation, one rule
+applies to every *learned* transform (centering, scaling, imputation,
+variance filtering):
+
+**Fit the transform on the training samples only; apply the stored
+training parameters to the test samples.**
+
+Two shortcuts both corrupt the analysis. Fitting the transform on the
+pooled train + test data leaks test-distribution information into
+training — the test means and variances shift the fitted parameters, and
+the held-out estimate is optimistically biased. Fitting a separate
+transform on the test data is not leakage, but it places the test samples
+in a different feature space, so a model trained on the training
+transform mispredicts them.
+
+`stabl_preprocess_fit()` and `stabl_preprocess_apply()` implement the
+rule as a fit/apply pair.
+
+```{r leakage-safe}
+x <- as.matrix(df[, 1:8])
+idx <- seq_len(40)  # first 40 samples train, remaining 20 test
+
+pp <- stabl_preprocess_fit(x[idx, ], transforms = c("center", "scale"))
+x_train <- stabl_preprocess_apply(pp, x[idx, ])
+x_test  <- stabl_preprocess_apply(pp, x[-idx, ])
+```
+
+`pp` stores the training means and standard deviations, and `x_test` is
+scaled with those values — not with its own. You can see the difference:
+the test matrix is centred with the training means, so its own column
+means are not exactly zero.
+
+```{r leakage-safe-check}
+round(colMeans(x_test), 3)
+```
+
+The same rule is applied automatically inside every fold of
+`stabl_analyze(mode = "validated")` and inside the multi-omic
+cross-validation workflows, so a validated analysis cannot leak through
+preprocessing. For the multi-view case — including why the validation
+matrix must be transformed with the training parameters before
+late-fusion prediction — see `vignette("stablr-multiomic")`.
+
+# 5 The expert interface
 
 `stabl()` is a thin wrapper around `stabl_fit()`, the expert interface with
 full control over all arguments (lambda grids, bootstrap design, thresholds,
@@ -137,7 +185,7 @@ and does not establish, see `vignette("stablr-python-parity")`; for a guide
 to the stability-path and FDP+ diagnostic plots, see
 `vignette("stablr-reading-plots")`.
 
-# 5 Migrating from pre-1.0.0 versions
+# 6 Migrating from pre-1.0.0 versions
 
 The 1.0.0 contract removes the pre-0.3.0 compatibility names outright
 (`get_feature_names_out()`, `stacked_multi_omic()`, `jaccard_matrix()`,

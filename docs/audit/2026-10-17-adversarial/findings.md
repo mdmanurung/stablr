@@ -1114,6 +1114,81 @@ parity with PR-G — no R or test code changed); R CMD check 0E/0W/1N
 rebuild clean, including the revised multiomic article with the new
 preprocessing chunks.
 
+**Leakage-audit extension + getting-started PR (2026-10-19):**
+user-requested extension of the vignette leakage audit to the
+release-scale validation machinery, plus a "Leakage-safe
+preprocessing" section in the getting-started vignette.
+
+Release-scale audit (no code changes required — record only):
+
+- `inst/analysis/run_methodology_validation.R`: CLEAN. The one
+  `scale()` call sits inside `.simulate_scenario()` (the DGP); the
+  methodology gates are selection-property estimands (null selected
+  fraction, signal FDP/TPR against known simulated signals) computed
+  on the full simulated data — there is no held-out predictive
+  evaluation, so full-matrix scaling is a DGP choice, not leakage.
+- `inst/analysis/run_late_fusion_validation.R`: CLEAN. `.simulate()`
+  applies no preprocessing at all; the train/test split is by row
+  index over iid samples. `.simulate_well_posed()` rejects seeds on
+  predeclared minimum class counts in BOTH partitions (deterministic
+  retry offset 1000003) — inspected and judged acceptable: symmetric
+  across the compared stacking modes (OOF vs legacy see identical
+  data), touches neither features nor fitting, and is predeclared.
+- `inst/analysis/release_evidence.R` / `release_evidence_cli.R` /
+  `release_validation_child.R`: CLEAN — contract enforcement and
+  orchestration only; no data transforms.
+- `benchmarks/ws8_v2/` (the release-scale real-data benchmark run via
+  the stablr-reproducibility compendium): CLEAN and explicitly
+  fold-safe — per-donor deterministic logit transform (no leakage),
+  zero-variance drop set learned on TRAINING cohorts only and applied
+  to the held-out cohort (`fit_fold_transform`/`apply_fold_transform`
+  in `loco.R`), training-only direction signs, cohort-respecting inner
+  ridge CV, all six selectors training-only, and the age-permutation
+  null routed through the same fold-transform path (Amendment 1).
+- `benchmarks/interpretation_validation.R`: CLEAN — per-fold
+  preprocessing fitted on fold training data via
+  `stabl_preprocess_apply()`.
+- `benchmarks/ws8_aging_showcase.R` (v1 exploratory showcase):
+  contains the known selection-before-CV leak (`loco_sel` evaluates a
+  panel selected on all eight cohorts) — DISCLOSED in
+  `ws8_summary.md` ("apparent for the selection procedure, not
+  unbiased complete-pipeline LOCO") and corrected by the predeclared
+  selection-isolated LOCO (`ws8_loco_selection_isolated.R`; the aging
+  case-study vignette reports the corrected 12.3-year pooled error).
+  Retained as the historical exploratory artifact; no action.
+- Older exploratory benchmarks (`ws3_oblique_remedy.R` etc.): CLEAN —
+  full-matrix `scale()` appears only in no-held-out simulation
+  contexts (selection-property benchmarks).
+- Companion repo: `stablr-experiments` DOES NOT EXIST (GitHub 404);
+  `costablr-experiments` is an empty placeholder (`.gitignore` only).
+  The full OOL parity runner
+  (`analysis/generate_publication_parity_table.R`) is referenced in
+  `docs/RELEASE_STATUS.md`, `docs/SEALED_RELEASE_RUN_DESIGN.md`,
+  NEWS.md, and the STAR methods but is not yet authored — it is part
+  of the human-gated sealed-run work, and the design doc already
+  predeclares the training-only preprocessing gate it must implement.
+  OWNER ACTION: when the companion repo is created, reconcile its name
+  with the `stablr-experiments` references in those documents.
+
+Getting-started vignette: new Section 4 "Leakage-safe preprocessing"
+teaches the fit-on-train/apply-to-test rule before users reach the
+multiomic article — the two failure modes (pooled fitting = leakage;
+separate test fitting = feature-space mismatch), a runnable
+`stabl_preprocess_fit()`/`stabl_preprocess_apply()` split example on
+the worked-example data, and the observation that the test matrix's
+own column means are non-zero because centring uses the training
+means. Contents renumbered (expert interface -> 5, migration -> 6),
+the intro cross-reference updated, and a pre-existing contents/header
+title mismatch for the migration section fixed. New chunks
+smoke-tested: train exactly centred/scaled (max |mean| 2.9e-17, max
+|sd-1| 1.1e-16), test means non-zero as claimed.
+
+Gates: suite 62 files / 0 failed / 0 errors / 1 skip / 3 warnings (exact
+parity with PR-G — no R or test code changed); R CMD check 0E/0W/1N
+(pre-existing installed-size NOTE; doc 3.8 Mb); all 12 vignettes
+rebuild clean, including the getting-started article with the new
+leakage-safe preprocessing section.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3
