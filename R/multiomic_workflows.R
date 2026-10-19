@@ -310,7 +310,8 @@ stabl_multiomic_train_validate <- function(
       .lf_lambda_by_omic = lambda_by_omic, .lf_fit_params = fit_params,
       .lf_omic_names = omic_names,
       .lf_family = family, .lf_n_iter = n_iter_lf,
-      .lf_nfolds = late_fusion_nfolds, .lf_random_state = lf_seed, ...
+      .lf_nfolds = late_fusion_nfolds, .lf_random_state = lf_seed,
+      .lf_omic_seeds = omic_seeds, ...
     )
   } else {
     NULL

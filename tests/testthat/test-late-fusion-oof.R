@@ -575,3 +575,82 @@ test_that("binary fallback through the safe wrapper applies prevalence once", {
   expect_equal(unique(pred$train_preds), 5 / 16)
   expect_match(pred$fallback_reason, "selector_fit_error")
 })
+
+test_that("F-CV-03 (LF path): identical omics get decorrelated full-refit fits", {
+  # Review B1/B3 regression: the LF full-refit per-omic fits previously all
+  # used the user's raw random_state, so identical views produced
+  # bit-identical fits only when late_fusion = TRUE.
+  ids <- paste0("s", 1:24)
+  set.seed(21L)
+  x <- matrix(rnorm(24 * 6), 24, 6,
+              dimnames = list(ids, paste0("f", 1:6)))
+  y <- setNames(0.8 * x[, 1] + rnorm(24, sd = 0.5), ids)
+  fit <- stabl_multiomic_train_validate(
+    x_train_list = list(omic1 = x, omic2 = x),
+    y_train = y,
+    lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+    n_bootstraps = 5L, artificial_type = NULL, hard_threshold = 1e-9,
+    late_fusion = TRUE, late_fusion_nfolds = 2L, n_iter_lf = 2L,
+    random_state = 5L
+  )
+  expect_false(identical(
+    fit$fits$omic1$stabl_scores_,
+    fit$fits$omic2$stabl_scores_
+  ))
+})
+
+test_that("F-CV-03 (LF path): toggling late_fusion does not change per-omic panels", {
+  # Review B1 regression: the full-refit per-omic fits now run on the same
+  # top-level per-omic streams as the late_fusion = FALSE path.
+  ids <- paste0("s", 1:24)
+  set.seed(22L)
+  x1 <- matrix(rnorm(24 * 6), 24, 6,
+               dimnames = list(ids, paste0("a", 1:6)))
+  x2 <- matrix(rnorm(24 * 5), 24, 5,
+               dimnames = list(ids, paste0("b", 1:5)))
+  y <- setNames(0.8 * x1[, 1] - 0.5 * x2[, 2] + rnorm(24, sd = 0.5), ids)
+  args <- list(
+    x_train_list = list(omic1 = x1, omic2 = x2),
+    y_train = y,
+    lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+    n_bootstraps = 5L, artificial_type = NULL, hard_threshold = 1e-9,
+    random_state = 6L
+  )
+  fit_off <- do.call(stabl_multiomic_train_validate,
+                     c(args, list(late_fusion = FALSE)))
+  fit_on <- do.call(stabl_multiomic_train_validate,
+                    c(args, list(late_fusion = TRUE, late_fusion_nfolds = 2L,
+                                 n_iter_lf = 2L)))
+  expect_identical(fit_off$fits$omic1$stabl_scores_,
+                   fit_on$fits$omic1$stabl_scores_)
+  expect_identical(fit_off$fits$omic2$stabl_scores_,
+                   fit_on$fits$omic2$stabl_scores_)
+  expect_identical(fit_off$selected_features, fit_on$selected_features)
+})
+
+test_that("F-CV-03 (LF path): recorded full-refit seeds replay the per-omic fits", {
+  # Review B1 regression: provenance$seeds$full_refit previously recorded
+  # lf_seed while the fits actually used the user's raw random_state.
+  ids <- paste0("s", 1:24)
+  set.seed(23L)
+  x <- matrix(rnorm(24 * 6), 24, 6,
+              dimnames = list(ids, paste0("f", 1:6)))
+  y <- setNames(0.8 * x[, 1] + rnorm(24, sd = 0.5), ids)
+  fit <- stabl_multiomic_train_validate(
+    x_train_list = list(omic1 = x, omic2 = x),
+    y_train = y,
+    lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+    n_bootstraps = 5L, artificial_type = NULL, hard_threshold = 1e-9,
+    late_fusion = TRUE, late_fusion_nfolds = 2L, n_iter_lf = 2L,
+    random_state = 7L
+  )
+  seeds <- fit$late_fusion$provenance$seeds$full_refit$per_omic
+  expect_identical(names(seeds), c("omic1", "omic2"))
+  replay <- stabl_fit(
+    x = x, y = y, lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+    base_learner = "lasso", family = "gaussian", n_bootstraps = 5L,
+    artificial_type = NULL, hard_threshold = 1e-9,
+    random_state = unname(seeds[["omic1"]])
+  )
+  expect_identical(replay$stabl_scores_, fit$fits$omic1$stabl_scores_)
+})

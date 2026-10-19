@@ -248,7 +248,7 @@ test_that("F-CV-05: nested-seed offset streams are mutually collision-free", {
   #     (gcd(100, 7919) = 1).
   base <- 12345L
   offsets <- c(10L, 1000L, 2000L, 3000L, 4000L, 7000L, 29001L, 31001L,
-               39001L, 41000L, 42000L, 47001L)
+               39001L, 41000L, 42000L, 44000L, 47001L)
   diffs <- as.numeric(dist(offsets))
   expect_false(any(diffs %% 7919 == 0))
 

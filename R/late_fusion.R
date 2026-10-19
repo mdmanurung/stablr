@@ -40,7 +40,8 @@
                                  .lf_groups_train, .lf_bootstrap_strata_train,
                                  .lf_lambda_by_omic, .lf_fit_params,
                                  .lf_omic_names, .lf_family, .lf_n_iter,
-                                 .lf_nfolds, .lf_random_state, ...) {
+                                 .lf_nfolds, .lf_random_state,
+                                 .lf_omic_seeds = NULL, ...) {
   # C5 (`...` collision safety): every formal carries a `.lf_` prefix so that
   # no argument a caller forwards through `...` (intended for stabl_fit())
   # can be matched by multiple actual arguments at this internal boundary.
@@ -58,6 +59,10 @@
   n_iter_lf <- .lf_n_iter
   nfolds <- .lf_nfolds
   random_state <- .lf_random_state
+  # Top-level per-omic streams for the full-refit selection fits (review
+  # B1): the same seeds the late_fusion = FALSE path uses, so toggling
+  # late fusion does not change the per-omic panels.
+  full_refit_omic_seeds <- .lf_omic_seeds
   task_type <- .family_to_task_type(family)
   binary_mapping <- NULL
   y_downstream <- y_train
@@ -103,6 +108,16 @@
       bootstrap_strata_train, train_ids, "bootstrap_strata_train"
     )
     fold_params$random_state <- fold_seed
+    # F-CV-03 (LF path, review B3): one independent stream per omic within
+    # the fold — a single shared fold_seed previously seeded every omic's
+    # selection fit.  Offset 44000L is collision-free with the fold's
+    # downstream stream (41000L) modulo the 7919 stride (F-CV-05 registry).
+    fold_omic_seeds <- setNames(
+      vapply(seq_along(omic_names),
+             function(k) .derive_nested_seed(fold_seed, k, 44000L),
+             integer(1L)),
+      omic_names
+    )
 
     captured <- withCallingHandlers(
       .late_fusion_select_per_omic_safe(
@@ -110,7 +125,8 @@
         .lf_y_train = .subset_outcome_by_ids(y_train, train_ids),
         .lf_lambda_by_omic = lambda_by_omic,
         .lf_x_valid_list = .subset_multiomic_rows(x_train_list, assess_ids),
-        .lf_omic_names = omic_names, .lf_fit_params = fold_params, ...
+        .lf_omic_names = omic_names, .lf_fit_params = fold_params,
+        omic_seeds = fold_omic_seeds, ...
       ),
       warning = function(w) {
         warnings_seen <<- unique(c(warnings_seen, conditionMessage(w)))
@@ -128,8 +144,11 @@
         levels = if (identical(task_type, "multiclass")) classes else NULL,
         selection_condition = captured$selection_conditions[[omic]],
         # F-CV-03/P4-F28: dedicated downstream-predictor stream per OOF fold
-        # (offset 41000L, distinct from the fold's own 31001L selection seed).
-        random_state = .derive_nested_seed(fold_seed, 1L, 41000L)
+        # AND per omic (offset 41000L, distinct from the fold's own 31001L
+        # selection seed).  Review B2: the omic index was hard-coded to 1L,
+        # so every omic's downstream predictor in a fold shared one stream.
+        random_state = .derive_nested_seed(fold_seed, match(omic, omic_names),
+                                           41000L)
       )
       warnings_seen <- unique(c(warnings_seen, pred$warnings))
       fallback[[omic]] <- pred$fallback_reason %||% NA_character_
@@ -145,7 +164,7 @@
     )
     fold_details[[i]] <- list(
       fold = fold$fold, train_ids = train_ids, assessment_ids = assess_ids,
-      seed = fold_seed,
+      seed = fold_seed, omic_seeds = fold_omic_seeds,
       selected_features = captured$selected_features,
       artificial_provenance = fold_artificial_provenance,
       artificial_feature_provenance = fold_artificial_provenance,
@@ -166,7 +185,11 @@
     .late_fusion_select_per_omic_safe(
       .lf_x_train_list = x_train_list, .lf_y_train = y_train,
       .lf_lambda_by_omic = lambda_by_omic, .lf_x_valid_list = x_valid_list,
-      .lf_omic_names = omic_names, .lf_fit_params = fit_params, ...
+      .lf_omic_names = omic_names, .lf_fit_params = fit_params,
+      # F-CV-03 (LF path, review B1): full-refit per-omic selection fits
+      # run on the top-level per-omic streams (the same seeds the
+      # late_fusion = FALSE path uses), not on the user's raw random_state.
+      omic_seeds = full_refit_omic_seeds, ...
     ),
     warning = function(w) {
       warnings_seen <<- unique(c(warnings_seen, conditionMessage(w)))
@@ -194,7 +217,14 @@
       training_mode = "oof", fold_id = fold_id,
       seeds = list(folds = vapply(fold_details, `[[`, integer(1L), "seed"),
                    stacking = .derive_nested_seed(random_state, 1L, 47001L),
-                   full_refit = random_state),
+                   # Review B1: record the seeds actually used — the
+                   # per-omic selection fits run on the top-level per-omic
+                   # streams; the downstream predictors on the 42000L
+                   # stream derived from the late-fusion base seed.
+                   full_refit = list(
+                     per_omic = full_refit_omic_seeds,
+                     downstream = .derive_nested_seed(random_state, 1L, 42000L)
+                   )),
       folds = fold_details, warnings = warnings_seen,
       binary_event_mapping = binary_mapping,
       full_refit = full$diagnostics

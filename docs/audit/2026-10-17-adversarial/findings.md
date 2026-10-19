@@ -1310,6 +1310,52 @@ parity with PR-G — the new tests add no warnings or skips); R CMD
 check 0E/0W/1N (pre-existing installed-size NOTE; doc 3.8 Mb); all
 12 vignettes rebuild clean.
 
+**Late-fusion seed/provenance fixes PR (2026-10-19):** implementation-review
+findings B1-B3 fixed; the F-CV-03 claim is now re-verified for the
+late-fusion path (the Phase 13 PR-2 remediation had covered the OOF fold
+streams and downstream streams but missed the full-refit per-omic
+selection fits).
+
+- B1 (`R/late_fusion.R` full-refit call + `R/multiomic_workflows.R` call
+  site): the LF full-refit per-omic `stabl_fit`s previously fell back to
+  `fit_params$random_state` — the user's raw seed, shared across omics —
+  while `provenance$seeds$full_refit` recorded `lf_seed`.  Consequences:
+  provenance replay would not reproduce the fits; identical views gave
+  bit-identical full-refit fits only when `late_fusion = TRUE`; toggling
+  `late_fusion` changed the reported per-omic panels.  Fixed:
+  `.late_fusion_oof_fit` gains a `.lf_omic_seeds` formal (dot-prefixed
+  per the C5 convention) receiving the top-level `omic_seeds`, and the
+  full-refit per-omic fits run on those streams — the same seeds the
+  `late_fusion = FALSE` path uses, so the toggle no longer changes the
+  panels.  Provenance now records the seeds actually used:
+  `seeds$full_refit = list(per_omic = <top-level omic_seeds>,
+  downstream = <42000L stream>)`; each fold's details gain the per-omic
+  selection seeds (`folds[[i]]$omic_seeds`).
+- B2 (`R/late_fusion.R`, OOF downstream predictors): the per-fold
+  downstream seed hard-coded the omic index to `1L`, so every omic's
+  downstream predictor within a fold shared one stream.  Fixed to
+  `match(omic, omic_names)`, matching the three sibling call sites.
+- B3 (`R/late_fusion.R`, OOF fold loop): all per-omic selection fits
+  within a fold shared `fold_seed`.  Fixed: per-omic seeds derived per
+  fold as `.derive_nested_seed(fold_seed, k, 44000L)`; offset 44000L is
+  collision-free with the fold's downstream stream (41000L) modulo the
+  7919 stride and is registered in the F-CV-05 offset test.
+
+Re-verification tests (`test-late-fusion-oof.R`), all confirmed to FAIL
+against the pre-fix code (git-stash negative control) and pass after:
+(1) identical omics get decorrelated full-refit fits; (2) toggling
+`late_fusion` does not change per-omic stability scores or selected
+features; (3) the recorded `full_refit$per_omic` seeds replay the
+per-omic fits bit-identically via a direct `stabl_fit` call.  No test
+pinned absolute OOF numeric outputs, so no golden updates were needed;
+the order-invariance and sequential/parallel bit-identity tests pass
+unchanged.
+
+Gates: suite 62 files / 0 failed / 0 errors / 1 skip / 3 warnings (exact
+parity with PR-G — the new tests add no warnings or skips); R CMD
+check 0E/0W/1N (pre-existing installed-size NOTE; doc 3.8 Mb); all
+12 vignettes rebuild clean.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3
