@@ -80,16 +80,6 @@ reference:
   - auto_lambda_grid
   - compute_fdp_plus
 
-- title: Knockoff Feature Construction
-  desc: Factories that inject artificial features (Model-X knockoffs or
-    random permutations) for FDP+ calibration; plug into stabl_fit through
-    the knockoff/solver arguments.
-  contents:
-  - make_knockoff_features
-  - make_knockoff_equi_features
-  - make_knockoff_mvr_features
-  - make_rp_features
-
 - title: Learner Grid Helpers
   desc: Data-driven threshold/lambda grid constructors for the non-glmnet
     base learners. The random forest is calibrated within a measured scope
@@ -155,6 +145,26 @@ reference:
   - stabl_preprocess_fit
   - stabl_preprocess_apply
   - stabl_preprocess_fit_recipes
+  - print.stabl_analysis
+  - summary.stabl_analysis
+
+- title: Reliability and Final Models
+  desc: Post-selection reliability diagnostics, outcome-null validation,
+    cohort replication, and portable final models (Phase 13; see the
+    stablr-reliability article for a guided tour).
+  contents:
+  - stabl_diagnose
+  - print.stabl_diagnostics
+  - plot.stabl_diagnostics
+  - stabl_null_check
+  - print.stabl_null_validation
+  - plot.stabl_null_validation
+  - stabl_replication_profile
+  - print.stabl_replication_profile
+  - stabl_finalize
+  - print.stabl_predictor
+  - predict.stabl_predictor
+  - validate_newdata_schema
 
 - title: Visualization
   contents:

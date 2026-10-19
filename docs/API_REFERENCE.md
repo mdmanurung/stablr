@@ -7,6 +7,16 @@ function documentation is generated from roxygen comments in `R/` and lives in
 
 ## Core STABL Engine
 
+### `stabl()`
+
+The high-level entry point for new users: a data frame in, a plain-language
+selection out. Runs STABL with statistically safe defaults — model-X
+knockoff artificial features, FDP+ calibration, strict fallback policy,
+automatic lambda grid — and prints a plain-language answer. Use
+`get_feature_names()` / `get_support()` for the selection and
+`get_fdrs()` for the FDP+ curve; `plot()` shows the stability path and
+FDP+ diagnostic.
+
 ### `stabl_fit()`
 
 Fits the core bootstrap stability-selection procedure for one feature matrix.
@@ -57,13 +67,12 @@ forest (`"oblique_rf"`) was retired in 1.0.0 (see
 ## Artificial Features
 
 - `make_artificial_features()` dispatches artificial-feature generation.
-- `make_rp_features()` creates column-permuted decoys.
-- `make_knockoff_features()` creates fixed-X knockoffs via the optional
-  `knockoff` package.
-- `make_knockoff_equi_features()` creates model-X equicorrelated Gaussian
-  knockoffs via the optional `knockoff` package.
-- `make_knockoff_mvr_features()` creates model-X MVR Gaussian knockoffs via
-  the optional `knockoff` package.
+
+The per-type constructors (`make_rp_features()`, `make_knockoff_features()`,
+`make_knockoff_equi_features()`, `make_knockoff_mvr_features()`) are
+internal machinery behind the `artificial_type` argument of the fit
+functions; select the construction by string (table below) rather than
+calling factories directly.
 
 Supported `artificial_type` values in fit functions are:
 
@@ -173,6 +182,91 @@ committed stacking-candidate matrix.
 
 Loads the bundled OOL example subset with aligned `cytof` and `proteomics`
 matrices plus a named DOS outcome vector.
+
+## Analysis Workflow
+
+### `stabl_analyze(x, y, family, mode, ...)`
+
+Explicit evidence-level analysis. The `mode` argument is required:
+
+- `mode = "exploratory"` fits STABL on the full data and returns a
+  canonical interpretation table labelled `post_selection_descriptive`
+  (describes the fitting data; not predictive evidence).
+- `mode = "validated"` runs nested cross-validation with fold-fitted
+  preprocessing and returns held-out predictions, pooled and per-repeat
+  performance, and held-out permutation importance labelled
+  `cross_validated`. Binary outcomes report accuracy, balanced error rate,
+  macro-F1, MCC, Brier, log-loss, and AUROC; gaussian outcomes report MAE,
+  RMSE, and R². With `final_refit = TRUE` the result can be finalized into
+  a portable model (see `stabl_finalize()`).
+
+### `stabl_interpret()`
+
+Builds the canonical interpretation table (coefficients, stability, effect
+directions, correlation groups) for an exploratory analysis.
+
+### Preprocessing
+
+- `stabl_preprocess_fit()` / `stabl_preprocess_apply()` fit and apply
+  fold-safe preprocessing so nothing learned on held-out data leaks into
+  training.
+- `stabl_preprocess_fit_recipes()` bridges to a `recipes` workflow.
+
+## Environment Stability
+
+- `stabl_environment_stability()` runs the ICP-inspired transportability
+  workflow across environments (batches, cohorts, sites); min-aggregation
+  is the calibrated read within the documented WS-5 scope (small feature
+  panels).
+- `get_min_scores()` extracts the per-environment minimum scores.
+
+## Reliability and Final Models
+
+### `stabl_diagnose(fit, ...)`
+
+Read-only reliability report for a fitted `"stabl_fit"`: machine-readable
+`warning_codes` (FDP+ curve saturation/boundary/tie/low-decoy probes),
+the `cutoff` block disclosing the selection rule, comparator, and
+denominator conventions, the full `threshold_path`, and a
+benchmark-provenanced `evidence_profile` for the fit's learner x decoy x
+outcome x dimensionality regime. An empty `warning_codes` is not a
+validity guarantee.
+
+### `stabl_null_check(x, y, design, ...)`
+
+Outcome-null validation: refits the same fit specification under an
+explicit exchangeability design (`"independent"`, `"within_block"`,
+`"whole_cluster"`, or `"simulated"`) and reports how often anything is
+selected (`p_any_selection`). Invalid design/structure combinations are
+refused fail-closed; replicate seeds are derived replayably from `seed`.
+
+### `stabl_replication_profile(x, y, study_labels, ...)`
+
+Cohort replication profile: pooled stability, leave-one-study-out training
+replication, optional inverse-variance pooling of user-supplied per-study
+effect estimates (Cochran's Q), and optional held-out downstream
+performance. Preprocessing is recomputed inside each training partition;
+no held-out cohort chooses thresholds.
+
+### `stabl_finalize(development_result, x, y, preprocessing = NULL, ...)`
+
+Packs a `"stabl_fit"` or a validated `"stabl_analysis"` (requires
+`final_refit = TRUE`) into a portable `"stabl_predictor"` for binomial or
+gaussian outcomes. Preprocessing is stored, not refit at predict time; no
+training observations are serialized.
+
+### `predict.stabl_predictor(object, newdata, type = NULL, extra_columns = ...)`
+
+Predicts from a portable final model. `type` defaults to `"response"`;
+binomial models also support `"class"` and `"probability"` (with the
+stored event-class mapping). New data is validated against the stored
+schema: missing, renamed, or duplicated columns always error; extra
+columns error unless `extra_columns = "drop"`.
+
+### `validate_newdata_schema()`
+
+The standalone schema checker used by `predict.stabl_predictor()`;
+returns the validated column mapping or errors with an explicit reason.
 
 ## Cooperative Fusion
 

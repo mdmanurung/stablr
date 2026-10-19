@@ -92,18 +92,24 @@ guarantee of validity.
 Two further fields carry the detail:
 
 ```{r diagnose-detail}
-d$selection_rule
+d$cutoff
 head(d$threshold_path)
+d$calibration_scope
 ```
 
-`selection_rule` discloses the comparator, threshold, and denominator
-conventions the FDP+ estimate relies on; `threshold_path` walks the full
-lambda grid with per-threshold selected counts and FDP+ estimates, which
-is what the saturation and boundary probes in `warning_codes` summarize.
-The evidence profile (`d$evidence_profile`) places the fit's learner x
-decoy x outcome x dimensionality regime against the calibration
-benchmarks — it is context for interpretation, not a binary safe/unsafe
-verdict.
+The `cutoff` block discloses the conventions the FDP+ estimate relies on
+— the selection rule (`fdp_plus_minimum`), the comparator (strictly
+greater), and the exact denominator formula with its plus-one offset and
+zero-real guard; `threshold_path` walks the full threshold grid with
+per-threshold selected counts and FDP+ estimates, which is what the
+saturation and boundary probes in `warning_codes` summarize. The evidence
+profile (`d$evidence_profile`) places the fit's learner x decoy x outcome
+x dimensionality regime against the calibration benchmarks — it is
+context for interpretation, not a binary safe/unsafe verdict. Read
+`calibration_scope` before trusting any single number: the FDP+ minimum
+is a stochastic-bound diagnostic, not a calibrated estimate of realized
+FDP, and a low minimum on the curve is not "controlled FDR" (the
+plot-reading article develops this distinction).
 
 # 4 Outcome-null validation with `stabl_null_check()`
 
@@ -161,9 +167,11 @@ rp <- stabl_replication_profile(
 head(rp$features)
 ```
 
-The `features` table contrasts each feature's pooled stability score
-with its leave-one-study-out training replication, so a feature whose
-support collapses when one cohort is held out is visible directly.
+The `features` table places each feature's pooled support
+(`in_pooled_support`) alongside its leave-one-study-out
+`training_replication` and `loso_retention`; `dropped_on_removal_of`
+names the cohort whose removal costs the feature its support, so a
+selection carried by a single cohort is visible directly.
 Preprocessing is recomputed inside each training partition — nothing
 fitted on held-out cohorts leaks into selection, and no held-out cohort
 chooses thresholds. With `effects = ` supplied, the profile additionally
@@ -173,10 +181,10 @@ with Cochran's Q); with `heldout_performance = TRUE`, a downstream
 
 # 6 Validated development and a portable final model
 
-For an honest held-out performance estimate during development,
+For a held-out performance estimate during development,
 `stabl_analyze(mode = "validated")` wraps selection in nested
 cross-validation: selection runs inside every outer training fold, and
-the outer test folds produce unbiased predictions. The gaussian path is
+the outer test folds produce held-out predictions. The gaussian path is
 fully supported alongside binomial:
 
 ```{r validated}
@@ -223,7 +231,7 @@ The intended order of operations:
    exist.
 4. **Validate and finalize** (`stabl_analyze(mode = "validated")` with
    `final_refit = TRUE`, then `stabl_finalize()`) to obtain a portable
-   model with an honest held-out performance estimate.
+   model with a held-out performance estimate.
 
 Each step is read-only over the previous one's output, so the chain can
 be scripted, rerun, and audited end to end.

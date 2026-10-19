@@ -34,8 +34,12 @@ Major functionality of `stablr`:
 + [Documentation website](https://mdmanurung.github.io/stablr/) and the
   Vignettes menu above for executable tutorials — including
   [Python STABL parity](https://mdmanurung.github.io/stablr/articles/stablr-python-parity.html)
-  (what the pinned Python-reference fixtures do and do not establish) and
-  [Reading stability paths and FDP+ plots](https://mdmanurung.github.io/stablr/articles/stablr-reading-plots.html)
+  (what the pinned Python-reference fixtures do and do not establish),
+  [Reading stability paths and FDP+ plots](https://mdmanurung.github.io/stablr/articles/stablr-reading-plots.html),
+  and
+  [Reliability diagnostics, validation, and final models](https://mdmanurung.github.io/stablr/articles/stablr-reliability.html)
+  (the `stabl_diagnose()` / `stabl_null_check()` /
+  `stabl_replication_profile()` / `stabl_finalize()` toolchain)
 + [Release governance and review status](https://github.com/mdmanurung/stablr/blob/main/docs/RELEASE_STATUS.md)
 
 ## Motivation
@@ -57,19 +61,24 @@ reliability and transportability are measured rather than assumed.
 
 <img src="man/figures/workflow.png" align="center" alt="stablr workflow" style="padding-left:10px;" />
 
-### Analysis modes (binary outcomes)
+### Analysis modes
 
 `stabl_analyze()` makes the evidence level explicit via a required `mode`
 argument. `mode = "exploratory"` fits STABL on the full data and returns a
 canonical interpretation table (`stabl_interpret()`) labelled
 `post_selection_descriptive` — coefficients, stability, effect directions,
 and correlation groups describe the fitting data and are not predictive
-evidence. `mode = "validated"` (binary only) runs nested cross-validation
-with fold-fitted preprocessing (`stabl_preprocess_fit()` /
+evidence. `mode = "validated"` runs nested cross-validation with
+fold-fitted preprocessing (`stabl_preprocess_fit()` /
 `stabl_preprocess_apply()`) and returns held-out predictions, pooled and
-per-repeat performance (accuracy, balanced error rate, macro-F1, MCC,
-Brier, log-loss, AUROC), and held-out permutation importance labelled
-`cross_validated`.
+per-repeat performance, and held-out permutation importance labelled
+`cross_validated`. Binary outcomes report accuracy, balanced error rate,
+macro-F1, MCC, Brier, log-loss, and AUROC; gaussian outcomes report MAE,
+RMSE, and R² (with explicit definitions — negative R² is retained, and an
+empty selection falls back to a deterministic intercept-only model). A
+validated analysis with `final_refit = TRUE` can be packed into a portable
+final model with `stabl_finalize()` and applied to new data with
+`predict()`.
 
 Evidence status (simulation-only, predeclared gates,
 `benchmarks/iv_summary.md`): effect-direction recovery 1.00; null

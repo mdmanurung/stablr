@@ -990,6 +990,83 @@ parity with PR-G — no R or test code changed); R CMD check 0E/0W/1N
 (pre-existing installed-size NOTE; doc 3.7 -> 3.8 Mb with the new
 article); all 12 vignettes rebuild clean.
 
+**Docs PR (2026-10-19):** documentation-site and audit-record updates
+closing the four-task documentation review —
+
+Site/API review (documentation website reflects the lean API).
+`_pkgdown.yml`: the "Knockoff Feature Construction" reference section
+is removed (the four per-type factories were internalized in PR-G and
+their Rd pages carry `\keyword{internal}`), a new "Reliability and
+Final Models" section lists the Phase 13 toolchain (stabl_diagnose,
+stabl_null_check, stabl_replication_profile, stabl_finalize, predict,
+validate_newdata_schema, plus print/plot methods), and
+print.stabl_analysis / summary.stabl_analysis join "Analysis
+Workflow"; all 54 exports are now indexed (S3 methods without their
+own Rd resolve via `\alias` on the shared pages). `README.md`:
+"Analysis modes (binary outcomes)" corrected to "Analysis modes" —
+validated mode supports gaussian outcomes (MAE/RMSE/R^2, negative R^2
+retained, deterministic intercept-only fallback on empty selection)
+and the stabl_finalize()/predict() path is named; the Resources list
+gains the reliability article. `docs/API_REFERENCE.md`: new `stabl()`
+subsection under Core STABL Engine; new "Analysis Workflow",
+"Environment Stability", and "Reliability and Final Models" sections;
+the Artificial Features bullets now describe string dispatch through
+`artificial_type` with the per-type factories internal.
+
+Reliability-article narrative review. Three correctness fixes:
+`d$selection_rule` -> `d$cutoff` (selection_rule is not a top-level
+diagnostics field — the chunk would have rendered NULL silently; the
+earlier smoke test passed because NULL is not an error — field names
+re-verified against live `names()` output), `d$calibration_scope`
+added to the diagnose-detail chunk with the FDP+ caveat in prose
+(stochastic-bound diagnostic, not a calibrated estimate of realized
+FDP; a low curve minimum is not "controlled FDR"), and the
+replication prose aligned to the real `features` columns
+(in_pooled_support, training_replication, loso_retention,
+dropped_on_removal_of). Emphasis: "honest"/"unbiased" overclaiming
+removed in three places per the package voice. All nine chunks
+re-smoke-tested; cutoff / threshold_path / calibration_scope values
+verified against live output.
+
+SCI-04 confirmation packet regenerated as
+`inst/analysis/review/SCI-04-independent-confirmation-packet-2026-10-19.md`
+at `2899a2a` per the original packet's hash-drift rule (the 2026-10-16
+packet is unedited; decision records are immutable). Two of ten
+tracked artifacts changed since `6cd041f`:
+`run_methodology_validation.R` (5a097065.. -> 9abf6f09.., the PR-G
+alias migration; all gate anchors byte-identical — lines 945, 1012,
+1013, 1342, and the release_evidence.R anchor at line 2105) and
+`SCI-04-acceptance-record.md` (be696e53.. -> 9444739c.., the amended
+hash line added per C10(c)). Reference tests at HEAD: 30 expectations,
+0 failed / 0 errors / 0 warnings / 0 skips; sealed fixtures pass
+`sha256sum -c`.
+
+Sealed full-OOL run design staged in
+`docs/SEALED_RELEASE_RUN_DESIGN.md` — an end-to-end execution
+walkthrough (cut tarball -> prepare -> methodology -> late-fusion ->
+full OOL parity -> assemble -> record) verified line-by-line against
+the contract, the CLI, and the runners. PRE-FLIGHT FINDING (owner
+action required in the confirmation-flip series):
+`.release_profile_settings()` still locks `replicates = 100L` and
+`test-methodology-validation-runner.R` pins `100L`, while the contract
+and `.release_expected_contract()` pin 150 (raised at the 2026-10-16
+provisional acceptance); the release-profile branch overrides the
+adapter-supplied value and the candidate-only guard checks
+seed/target_fdp/workers but not replicates — a sealed run today would
+execute at n = 100, where the SCI-04 Hoeffding margin (0.1224) exceeds
+the 0.10 criterion and the `null_selected_fraction` gate fails
+vacuously. Fail-closed (no false pass possible), but the run cannot
+succeed until the locked profile and its test pin are raised to the
+confirmed n. The contract's candidate identity is likewise stale
+(`stablr-0.1.1-release-v1` / version 0.1.1) and needs revision in the
+same series as the DESCRIPTION bump. The late-fusion runner has no
+such gap (candidate-only enforces exactly 50/20/500/220711).
+
+Gates: suite 62 files / 0 failed / 0 errors / 1 skip / 3 warnings (exact
+parity with PR-G — no R or test code changed); R CMD check 0E/0W/1N
+(pre-existing installed-size NOTE; doc 3.8 Mb); all 12 vignettes
+rebuild clean.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3
