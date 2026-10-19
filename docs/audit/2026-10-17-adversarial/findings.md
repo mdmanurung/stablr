@@ -1189,6 +1189,62 @@ parity with PR-G — no R or test code changed); R CMD check 0E/0W/1N
 rebuild clean, including the getting-started article with the new
 leakage-safe preprocessing section.
 
+**CyTOF-standardisation review PR (2026-10-19):** user-requested
+review of whether the multiomic vignette should also standardise the
+CyTOF view, for consistency with the Python tutorial's
+standardise-everything pipeline.
+
+Evidence assembled for the decision:
+
+- View scales differ materially in the bundled OOL data: CyTOF feature
+  SDs span [0, 0.326] (median 0.08, means in [0, 1.19]); Proteomics
+  SDs span [0.176, 1.13] (median 0.46, means in [6.5, 17]).
+- The vignette's learner path is scale-INVARIANT: `auto_lambda_grid()`
+  and the lasso adapter call glmnet with its default
+  `standardize = TRUE`. Empirically, raw vs scaled CyTOF fits give
+  identical lambda grids and identical (empty) selections; stability
+  scores differ only at single-bootstrap numerical tolerance (max
+  |diff| 0.1 = one flip in 10 bootstraps at the zero boundary).
+- Scale-sensitivity is real elsewhere: sPLS-DA is a scale-sensitive
+  learner, the model-X equicorrelated/MVR knockoff constructions are
+  scale-dependent (covariance vs correlation SDP), and the early-fusion
+  branch concatenates the views — mixing raw CyTOF with standardised
+  proteomics would be learner-dependent.
+- Six of 100 CyTOF features are zero-variance in the training split:
+  a bare `scale()` would produce NaN columns; `stabl_preprocess_fit()`
+  guards them (SD set to 1, constant at zero after centring).
+
+Decision: YES — standardise both views, matching the Python tutorial
+pipeline the vignette explicitly references, removing the mixed-scale
+early-fusion concatenation, and keeping one uniform rule for readers
+who swap learners or decoy types. Implemented leak-safely: one
+per-view standardiser fitted on the training samples only
+(`stabl_preprocess_fit(transforms = c("center", "scale"))`), applied
+to the validation view with the stored training parameters
+(`stabl_preprocess_apply()`).
+
+Changes in `vignettes/stablr-multiomic.Rmd`: new `standardise` chunk
+in Section 4.2 covering both views; prose now explains WHEN scaling
+matters (scale-sensitive learners, knockoff construction, early-fusion
+concatenation) and documents the zero-variance guard (6 constant CyTOF
+features); per-omic lambda grids and fits use the scaled training
+matrices; the Section 5.3 joint workflow receives both scaled training
+views and both train-parameterised scaled validation views; the
+Python-notebook paragraph notes the vignette now standardises both
+views the same way.
+
+Outputs re-verified against live runs: no NA columns; per-omic
+selections empty (unchanged); late-fusion validation predictions
+exactly constant at the training mean (Section 6.4 prose holds);
+early fusion selects 12 features (Section 6.3 prose is count-free and
+holds); full vignette renders clean.
+
+Gates: suite 62 files / 0 failed / 0 errors / 1 skip / 3 warnings (exact
+parity with PR-G — no R or test code changed); R CMD check 0E/0W/1N
+(pre-existing installed-size NOTE; doc 3.8 Mb); all 12 vignettes
+rebuild clean, including the multiomic article with both views
+standardised.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3
