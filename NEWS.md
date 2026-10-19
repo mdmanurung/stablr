@@ -126,6 +126,41 @@
   DIABLO paragraph.
 
 ## New features
+- Gaussian validated analysis (Phase 13 PR-F, 1.0.0 spec A5):
+  `stabl_multiomic_nested_cv()` and `stabl_analyze(mode = "validated")`
+  now support `family = "gaussian"` end to end.  The complete procedure
+  (fold-fitted preprocessing, STABL selection, candidate tuning,
+  downstream predictor) is isolated inside each training partition;
+  held-out predictions are numeric and performance is reported as MAE,
+  RMSE and R-squared with explicit definitions (R-squared is computed
+  about the held-out mean, is reported as-is when negative, and is `NA`
+  for constant held-out truths).  The candidate-selection `metric`
+  resolves per family (`"rmse"` default, also `"mae"`/`"r2"`; binomial
+  keeps `"ber"`/`"accuracy"`), stratification uses quantile bins of the
+  numeric outcome, study-disjoint folds are supported, and an empty
+  selected panel falls back to deterministic intercept-only
+  (training-mean) predictions.  `event_class` and
+  `return_probabilities` are rejected for regression.
+- `stabl_finalize()` (Phase 13 PR-F, 1.0.0 spec A6): finalize a
+  completed development result (a `"stabl_fit"`, or a `"stabl_analysis"`
+  -- validated analyses must have been produced with
+  `final_refit = TRUE`) into a portable `"stabl_predictor"`.  The object
+  stores the selected panel, the training-fitted preprocessing transform,
+  the event/level mapping, the downstream engine (intercept-only
+  fallback, one-feature glm stored as bare coefficients, or seeded
+  `cv.glmnet`), the learner specification, feature provenance, and a
+  development summary explicitly labelled as a full-data refit distinct
+  from any cross-validated performance estimate.  No training
+  observations are serialized (one-feature glm objects are reduced to
+  coefficients; prepped recipes have their retained training `template`
+  stripped).  `predict.stabl_predictor()` applies the stored transform
+  without refitting, matches columns by name (order-invariant), and
+  supports `type = "response"` (gaussian) or `"class"` / `"probability"`
+  (binomial, respecting the stored event mapping).
+  `validate_newdata_schema()` enforces the recorded schema: unique,
+  named, numeric columns; missing, renamed or duplicated required columns
+  are always an error; extra columns are an error unless
+  `extra_columns = "drop"` is given explicitly.
 - `stabl_replication_profile()` (Phase 13 PR-E, 1.0.0 spec A3): cohort
   replication and heterogeneity profile for multi-study data (>= 3
   studies). Distinguishes four estimands explicitly: (i) pooled

@@ -7,13 +7,14 @@
 #   * "exploratory": full-data selection plus descriptive interpretation
 #     (PR1).  All metrics are apparent / post-selection and are labelled as
 #     such; nothing here is held-out evidence.
-#   * "validated": binary classification only.  The complete procedure
-#     (fold-fitted preprocessing -> STABL selection -> tuning -> downstream
-#     predictor) is isolated inside each training partition of the existing
-#     nested-CV machinery, yielding genuinely held-out event probabilities,
-#     hard labels, selected panels and held-out permutation importance.
-#     Gaussian, ordinal, Cox, multiclass-probability and fusion/stacking
-#     variants fail clearly.
+#   * "validated": binary classification and gaussian regression.  The
+#     complete procedure (fold-fitted preprocessing -> STABL selection ->
+#     tuning -> downstream predictor) is isolated inside each training
+#     partition of the existing nested-CV machinery, yielding genuinely
+#     held-out predictions (event probabilities and hard labels for
+#     classification, numeric responses for regression), selected panels
+#     and held-out permutation importance.  Ordinal, Cox,
+#     multiclass-probability and fusion/stacking variants fail clearly.
 #
 # An optional `final_refit = TRUE` adds an explicitly labelled
 # full-development refit for future inference; it is a different model from
@@ -23,17 +24,18 @@
 #'
 #' Runs STABL feature selection in one of two explicitly declared modes:
 #' `"exploratory"` (full-data selection with descriptive, apparent
-#' interpretation) or `"validated"` (binary classification with the whole
-#' pipeline — preprocessing, selection, tuning and prediction — isolated
-#' inside nested cross-validation training partitions).
+#' interpretation) or `"validated"` (binary classification or gaussian
+#' regression with the whole pipeline — preprocessing, selection, tuning
+#' and prediction — isolated inside nested cross-validation training
+#' partitions).
 #'
 #' @param x Numeric feature matrix (samples × features) with row names
 #'   (sample IDs) and column names (feature names).
 #' @param y Outcome aligned to the rows of `x`.  Named vector or factor whose
 #'   names cover exactly the row names of `x`.  For `family = "binomial"`,
 #'   exactly two classes; for `family = "gaussian"`, numeric.
-#' @param family `"binomial"` or `"gaussian"`.  Validated mode currently
-#'   supports `"binomial"` only.
+#' @param family `"binomial"` or `"gaussian"`; both are supported in
+#'   exploratory and validated modes.
 #' @param mode **Required.** `"exploratory"` or `"validated"`.  There is no
 #'   default: the evidence mode must be chosen explicitly.
 #' @param preprocessing Optional fold-safe preprocessing specification:
@@ -50,9 +52,14 @@
 #' @param event_class For binary outcomes, the level treated as the event for
 #'   probabilities, odds ratios and probability metrics; defaults to the
 #'   second level of the outcome factor.
-#' @param outer_v,outer_repeats,inner_v,stratified,study_labels,lambda_grid,n_bootstraps,artificial_type,hard_threshold,metric
+#' @param outer_v,outer_repeats,inner_v,stratified,study_labels,lambda_grid,n_bootstraps,artificial_type,hard_threshold
 #'   Validated-mode resampling and selection settings, passed to
 #'   [stabl_multiomic_nested_cv()].
+#' @param metric Validated-mode candidate-selection metric, passed to
+#'   [stabl_multiomic_nested_cv()].  `NULL` (default) resolves per family:
+#'   `"ber"` for binomial, `"rmse"` for gaussian.  Allowed values are
+#'   `"ber"`/`"accuracy"` (binomial) and `"rmse"`/`"mae"`/`"r2"`
+#'   (gaussian).
 #' @param cor_method,cor_threshold Correlation method and |correlation|
 #'   threshold for redundancy groups.  In validated mode, groups are derived
 #'   on each fold's transformed training data only.
@@ -77,9 +84,11 @@
 #'   `"post_selection_descriptive"`), the fitted `preprocessing` transform,
 #'   and `provenance`.  Validated mode returns the underlying
 #'   `"stabl_multiomic_nested_cv"` object in `nested`; fold-level held-out
-#'   `predictions` (one row per sample per repeat, with `event_probability`
-#'   for the named `event_class`); `performance` (pooled and per-repeat
-#'   accuracy, BER, macro-F1, MCC, Brier score, clipped log loss and AUROC);
+#'   `predictions` (one row per sample per repeat; for binomial with
+#'   `event_probability` for the named `event_class`, for gaussian with the
+#'   numeric `predicted` response); `performance` (pooled and per-repeat;
+#'   accuracy, BER, macro-F1, MCC, Brier score, clipped log loss and AUROC
+#'   for binomial, or MAE, RMSE and R-squared for gaussian);
 #'   fold-level `selected_features`; `heldout_importance` (per-feature and
 #'   per-group permutation importance computed with each fold's own
 #'   predictor on that fold's held-out rows, with correlation groups derived
@@ -128,7 +137,7 @@ stabl_analyze <- function(x,
                           n_bootstraps = 100L,
                           artificial_type = "random_permutation",
                           hard_threshold = NULL,
-                          metric = c("ber", "accuracy"),
+                          metric = NULL,
                           cor_method = c("pearson", "spearman"),
                           cor_threshold = 0.7,
                           n_repeats = 20L,
@@ -147,19 +156,17 @@ stabl_analyze <- function(x,
   }
   mode <- match.arg(mode, c("exploratory", "validated"))
   family <- match.arg(family)
-  if (identical(mode, "validated") && !identical(family, "binomial")) {
-    stop(
-      paste0(
-        "Validated mode currently supports binary classification only ",
-        "(family = \"binomial\").  Validated gaussian, ordinal, Cox, ",
-        "multiclass-probability and fusion/stacking workflows are not ",
-        "implemented; use mode = \"exploratory\" for descriptive full-data ",
-        "analysis."
-      ),
-      call. = FALSE
-    )
+  if (is.null(metric)) {
+    metric <- if (identical(family, "gaussian")) "rmse" else "ber"
   }
-  metric <- match.arg(metric)
+  metric <- match.arg(
+    metric,
+    if (identical(family, "gaussian")) {
+      c("rmse", "mae", "r2")
+    } else {
+      c("ber", "accuracy")
+    }
+  )
   cor_method <- match.arg(cor_method)
   cor_threshold <- .validate_proportion(cor_threshold, "cor_threshold",
                                         allow_one = TRUE)
@@ -221,7 +228,8 @@ stabl_analyze <- function(x,
   }
 
   .analyze_validated(
-    x = x, y = y, preprocessing = preprocessing, resampling = resampling,
+    x = x, y = y, family = family, preprocessing = preprocessing,
+    resampling = resampling,
     event_class = event_class, outer_v = outer_v, outer_repeats = outer_repeats,
     inner_v = inner_v, stratified = stratified, study_labels = study_labels,
     lambda_grid = lambda_grid, n_bootstraps = n_bootstraps,
@@ -363,14 +371,17 @@ stabl_analyze <- function(x,
 
 # ── Validated mode ───────────────────────────────────────────────────────────
 
-.analyze_validated <- function(x, y, preprocessing, resampling, event_class,
+.analyze_validated <- function(x, y, family, preprocessing, resampling,
+                               event_class,
                                outer_v, outer_repeats, inner_v, stratified,
                                study_labels, lambda_grid, n_bootstraps,
                                artificial_type, hard_threshold, metric,
                                cor_method, cor_threshold, n_repeats, loss,
                                random_state, final_refit, provenance, ...) {
   resampling <- match.arg(resampling, c("nested_cv"))
-  # y is already a validated two-class factor (see .analyze_align_inputs).
+  regression <- identical(family, "gaussian")
+  # y is already a validated two-class factor or numeric vector (see
+  # .analyze_align_inputs).
 
   nested <- stabl_multiomic_nested_cv(
     x_list = list(x = x),
@@ -382,7 +393,7 @@ stabl_analyze <- function(x,
     inner_v = inner_v,
     stratified = stratified,
     metric = metric,
-    family = "binomial",
+    family = family,
     n_bootstraps = n_bootstraps,
     artificial_type = artificial_type,
     hard_threshold = hard_threshold,
@@ -390,29 +401,31 @@ stabl_analyze <- function(x,
     study_labels = study_labels,
     preprocessing = preprocessing,
     event_class = event_class,
-    return_probabilities = TRUE,
+    return_probabilities = !regression,
     keep_fold_predictors = TRUE,
     ...
   )
 
   preds <- nested$outer_predictions
   performance <- list(
-    pooled = .analyze_performance_row(preds, y, event_class),
+    pooled = .analyze_performance_row(preds, y, event_class, family),
     by_repeat = do.call(rbind, lapply(
       split(preds, preds$repeat_id),
       .analyze_performance_row,
       y = y,
-      event_class = event_class
+      event_class = event_class,
+      family = family
     ))
   )
   rownames(performance$by_repeat) <- NULL
 
-  loss <- loss %||% "brier"
+  loss <- loss %||% (if (regression) "squared_error" else "brier")
   heldout <- .analyze_fold_importance(
     nested = nested,
     x = x,
     y = y,
     event_class = event_class,
+    family = family,
     loss = loss,
     n_repeats = n_repeats,
     cor_method = cor_method,
@@ -431,7 +444,7 @@ stabl_analyze <- function(x,
       x = x_full,
       y = y,
       lambda_grid = lambda_grid,
-      family = "binomial",
+      family = family,
       n_bootstraps = n_bootstraps,
       artificial_type = artificial_type,
       hard_threshold = hard_threshold,
@@ -440,7 +453,7 @@ stabl_analyze <- function(x,
     )
     interp_full <- stabl_interpret(
       fit_full, x_full, y,
-      family = "binomial",
+      family = family,
       assessment = FALSE,
       cor_method = cor_method,
       cor_threshold = cor_threshold,
@@ -467,7 +480,7 @@ stabl_analyze <- function(x,
   structure(
     list(
       mode = "validated",
-      family = "binomial",
+      family = family,
       event_class = event_class,
       resampling = resampling,
       nested = nested,
@@ -489,8 +502,19 @@ stabl_analyze <- function(x,
   )
 }
 
-# One row of hard-class + probability performance for a predictions frame.
-.analyze_performance_row <- function(preds, y, event_class) {
+# One row of performance for a predictions frame: hard-class + probability
+# metrics for binomial, MAE/RMSE/R-squared for gaussian.
+.analyze_performance_row <- function(preds, y, event_class, family) {
+  if (identical(family, "gaussian")) {
+    m <- .regression_metrics(preds$truth, preds$predicted)
+    return(data.frame(
+      n = nrow(preds),
+      mae = m$mae,
+      rmse = m$rmse,
+      r2 = m$r2,
+      stringsAsFactors = FALSE
+    ))
+  }
   truth <- factor(preds$truth, levels = levels(y))
   predicted <- factor(preds$predicted, levels = levels(y))
   hard <- .classification_metrics(truth, predicted)
@@ -524,10 +548,11 @@ stabl_analyze <- function(x,
 # rows.  Correlation groups are derived on the fold's transformed training
 # data only.  Positive importance means permuted loss exceeds baseline loss;
 # negative values are retained.
-.analyze_fold_importance <- function(nested, x, y, event_class, loss,
+.analyze_fold_importance <- function(nested, x, y, event_class, family, loss,
                                      n_repeats, cor_method, cor_threshold,
                                      random_state) {
-  loss_fun <- .interpret_loss(loss, "binomial")
+  regression <- identical(family, "gaussian")
+  loss_fun <- .interpret_loss(loss, family)
   fold_results <- nested$fold_results
   fold_rows <- list()
   groups_by_fold <- list()
@@ -537,7 +562,12 @@ stabl_analyze <- function(x,
     fit_rec <- fr$fit
     predictor <- fit_rec$predictor
     fold_id <- fr$outer_fold$fold_id
-    if (is.null(predictor) || is.null(predictor$predict_event_prob)) next
+    predict_fn <- if (regression) {
+      if (!is.null(predictor)) predictor$predict_response else NULL
+    } else {
+      if (!is.null(predictor)) predictor$predict_event_prob else NULL
+    }
+    if (is.null(predict_fn)) next
 
     support <- get_support(fit_rec$stabl_fit)
     selected <- names(support)[support]
@@ -554,7 +584,11 @@ stabl_analyze <- function(x,
       }
       xs_tr <- x_tr[, selected, drop = FALSE]
       xs_va <- x_va[, selected, drop = FALSE]
-      y_vec <- as.integer(y[valid_ids] == event_class)
+      y_vec <- if (regression) {
+        as.numeric(y[valid_ids])
+      } else {
+        as.integer(y[valid_ids] == event_class)
+      }
 
       groups <- .interpret_correlation_groups(xs_tr, selected, cor_method,
                                               cor_threshold)
@@ -573,7 +607,7 @@ stabl_analyze <- function(x,
       }
 
       imp <- .permutation_importance_sets(
-        predict_fn = predictor$predict_event_prob,
+        predict_fn = predict_fn,
         x_eval = xs_va,
         y_vec = y_vec,
         sets = sets,
@@ -623,7 +657,7 @@ stabl_analyze <- function(x,
     n_folds_selected = 0L,
     n_repeats = n_repeats,
     loss = loss,
-    event_class = event_class,
+    event_class = if (is.null(event_class)) NA_character_ else event_class,
     evidence_type = "cross_validated",
     evaluation_scope = "held_out_assessment",
     stringsAsFactors = FALSE
@@ -715,13 +749,23 @@ print.stabl_analysis <- function(x, ...) {
     p <- x$performance$pooled
     cat("  resampling:  ", x$resampling, " (", x$provenance$fold_scheme, ")\n",
         sep = "")
-    cat("  held-out:    ", p$n, " predictions; acc ",
-        sprintf("%.3f", p$accuracy), ", BER ",
-        sprintf("%.3f", p$balanced_error_rate), ", brier ",
-        sprintf("%.3f", p$brier), ", log-loss ",
-        sprintf("%.3f", p$log_loss), ", AUROC ",
-        if (is.na(p$auroc)) "NA (single-class)" else sprintf("%.3f", p$auroc),
-        "\n", sep = "")
+    if (identical(x$family, "gaussian")) {
+      cat("  held-out:    ", p$n, " predictions; MAE ",
+          sprintf("%.3f", p$mae), ", RMSE ",
+          sprintf("%.3f", p$rmse), ", R2 ",
+          if (is.na(p$r2)) "NA (constant held-out truth)" else
+            sprintf("%.3f", p$r2),
+          "\n", sep = "")
+    } else {
+      cat("  held-out:    ", p$n, " predictions; acc ",
+          sprintf("%.3f", p$accuracy), ", BER ",
+          sprintf("%.3f", p$balanced_error_rate), ", brier ",
+          sprintf("%.3f", p$brier), ", log-loss ",
+          sprintf("%.3f", p$log_loss), ", AUROC ",
+          if (is.na(p$auroc)) "NA (single-class)" else
+            sprintf("%.3f", p$auroc),
+          "\n", sep = "")
+    }
     cat("  evidence:    ", x$evidence_type, " (", x$evaluation_scope, ")\n",
         sep = "")
     if (!is.null(x$final_refit)) {

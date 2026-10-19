@@ -23,7 +23,7 @@ stabl_analyze(
   n_bootstraps = 100L,
   artificial_type = "random_permutation",
   hard_threshold = NULL,
-  metric = c("ber", "accuracy"),
+  metric = NULL,
   cor_method = c("pearson", "spearman"),
   cor_threshold = 0.7,
   n_repeats = 20L,
@@ -45,8 +45,8 @@ stabl_analyze(
 names cover exactly the row names of \code{x}.  For \code{family = "binomial"},
 exactly two classes; for \code{family = "gaussian"}, numeric.}
 
-\item{family}{\code{"binomial"} or \code{"gaussian"}.  Validated mode currently
-supports \code{"binomial"} only.}
+\item{family}{\code{"binomial"} or \code{"gaussian"}; both are supported in
+exploratory and validated modes.}
 
 \item{mode}{\strong{Required.} \code{"exploratory"} or \code{"validated"}.  There is no
 default: the evidence mode must be chosen explicitly.}
@@ -68,8 +68,14 @@ exploratory mode.}
 probabilities, odds ratios and probability metrics; defaults to the
 second level of the outcome factor.}
 
-\item{outer_v, outer_repeats, inner_v, stratified, study_labels, lambda_grid, n_bootstraps, artificial_type, hard_threshold, metric}{Validated-mode resampling and selection settings, passed to
+\item{outer_v, outer_repeats, inner_v, stratified, study_labels, lambda_grid, n_bootstraps, artificial_type, hard_threshold}{Validated-mode resampling and selection settings, passed to
 \code{\link[=stabl_multiomic_nested_cv]{stabl_multiomic_nested_cv()}}.}
+
+\item{metric}{Validated-mode candidate-selection metric, passed to
+\code{\link[=stabl_multiomic_nested_cv]{stabl_multiomic_nested_cv()}}.  \code{NULL} (default) resolves per family:
+\code{"ber"} for binomial, \code{"rmse"} for gaussian.  Allowed values are
+\code{"ber"}/\code{"accuracy"} (binomial) and \code{"rmse"}/\code{"mae"}/\code{"r2"}
+(gaussian).}
 
 \item{cor_method, cor_threshold}{Correlation method and |correlation|
 threshold for redundancy groups.  In validated mode, groups are derived
@@ -103,9 +109,11 @@ Exploratory mode returns the full-data \code{fit} (a \code{"stabl_fit"}), its
 \code{"post_selection_descriptive"}), the fitted \code{preprocessing} transform,
 and \code{provenance}.  Validated mode returns the underlying
 \code{"stabl_multiomic_nested_cv"} object in \code{nested}; fold-level held-out
-\code{predictions} (one row per sample per repeat, with \code{event_probability}
-for the named \code{event_class}); \code{performance} (pooled and per-repeat
-accuracy, BER, macro-F1, MCC, Brier score, clipped log loss and AUROC);
+\code{predictions} (one row per sample per repeat; for binomial with
+\code{event_probability} for the named \code{event_class}, for gaussian with the
+numeric \code{predicted} response); \code{performance} (pooled and per-repeat;
+accuracy, BER, macro-F1, MCC, Brier score, clipped log loss and AUROC
+for binomial, or MAE, RMSE and R-squared for gaussian);
 fold-level \code{selected_features}; \code{heldout_importance} (per-feature and
 per-group permutation importance computed with each fold's own
 predictor on that fold's held-out rows, with correlation groups derived
@@ -116,9 +124,10 @@ evidence is labelled \code{"cross_validated"} with evaluation scope
 \description{
 Runs STABL feature selection in one of two explicitly declared modes:
 \code{"exploratory"} (full-data selection with descriptive, apparent
-interpretation) or \code{"validated"} (binary classification with the whole
-pipeline — preprocessing, selection, tuning and prediction — isolated
-inside nested cross-validation training partitions).
+interpretation) or \code{"validated"} (binary classification or gaussian
+regression with the whole pipeline — preprocessing, selection, tuning
+and prediction — isolated inside nested cross-validation training
+partitions).
 }
 \section{Functions}{
 \itemize{

@@ -134,6 +134,7 @@ Collate:
     'diagnostics.R'
     'null_validation.R'
     'replication.R'
+    'finalize.R'
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.1.1

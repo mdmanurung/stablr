@@ -63,8 +63,20 @@
 #'   outcomes) and its fold-fitted preprocessing transform are retained in
 #'   `fold_results`, enabling held-out permutation importance with the same
 #'   fold-trained predictor.  Defaults to `FALSE` (legacy behaviour).
-#' @param metric Candidate-selection metric, `"ber"` or `"accuracy"`.
-#' @param family Passed to [stabl_fit()]. Defaults to `"multinomial"`.
+#' @param metric Candidate-selection metric. Classification families
+#'   (`"binomial"`, `"multinomial"`): `"ber"` (default) or `"accuracy"`.
+#'   Regression (`family = "gaussian"`): `"rmse"` (default), `"mae"`, or
+#'   `"r2"`. Ties are broken by first candidate.
+#' @param family Passed to [stabl_fit()]. `"multinomial"` (default) and
+#'   `"binomial"` run the classification path; `"gaussian"` runs the
+#'   regression path: `y` stays numeric, stratification uses
+#'   `strata_bins` quantile bins of the outcome, the downstream
+#'   selected-feature predictor is a gaussian model (seeded
+#'   `cv.glmnet`, one-feature `glm`, or the deterministic
+#'   intercept-only training-mean fallback for empty panels), and
+#'   performance is reported as MAE / RMSE / R2 with explicit
+#'   definitions (R2 is taken about the held-out mean, is reported
+#'   as-is when negative, and is `NA` for constant held-out truths).
 #' @param n_bootstraps Passed to [stabl_fit()].
 #' @param artificial_type Passed to [stabl_fit()].
 #' @param hard_threshold Passed to [stabl_fit()].
@@ -96,7 +108,10 @@
 #'   `study_labels` is supplied, `performance_by_study` holds per-study
 #'   outer held-out accuracy and balanced error rate (pooled across folds and
 #'   repeats; `NA` balanced error rate for studies whose pooled held-out
-#'   predictions contain a single outcome class).
+#'   predictions contain a single outcome class). For
+#'   `family = "gaussian"`, `performance` holds `mae`/`rmse`/`r2`,
+#'   `performance_by_study` holds per-study `mae`/`rmse`/`r2`, and
+#'   `outer_predictions$truth`/`predicted` are numeric.
 #'
 #' @note Batch harmonization (e.g. ComBat) fitted on the full dataset before
 #'   cross-validation leaks study-level information across folds and inflates
@@ -158,7 +173,7 @@ stabl_multiomic_nested_cv <- function(
     stratified      = TRUE,
     strata          = NULL,
     strata_bins     = 5L,
-    metric          = c("ber", "accuracy"),
+    metric          = NULL,
     family          = "multinomial",
     n_bootstraps    = 100L,
     artificial_type = "random_permutation",
@@ -175,7 +190,17 @@ stabl_multiomic_nested_cv <- function(
     keep_fold_predictors = FALSE,
     ...
 ) {
-  metric <- match.arg(metric)
+  regression <- identical(family, "gaussian")
+  if (!family %in% c("binomial", "multinomial", "gaussian")) {
+    stop("`family` must be \"binomial\", \"multinomial\", or \"gaussian\".",
+         call. = FALSE)
+  }
+  # Candidate-selection metric: per-family default and allowed set.
+  metric <- if (regression) {
+    if (is.null(metric)) "rmse" else match.arg(metric, c("mae", "rmse", "r2"))
+  } else {
+    if (is.null(metric)) "ber" else match.arg(metric, c("ber", "accuracy"))
+  }
   outer_v <- .validate_scalar_integer_like(outer_v, "outer_v", min = 2L)
   outer_repeats <- .validate_scalar_integer_like(outer_repeats, "outer_repeats", min = 1L)
   inner_v <- .validate_scalar_integer_like(inner_v, "inner_v", min = 2L)
@@ -189,10 +214,31 @@ stabl_multiomic_nested_cv <- function(
   validate_multiomic_inputs(x_list = x_list, y = y)
 
   y <- .subset_outcome_by_ids(y, rownames(x_list[[1L]]))
-  y <- factor(y)
-  sample_ids <- names(y)
-  if (nlevels(y) < 2L) {
-    stop("`y` must contain at least two outcome classes.", call. = FALSE)
+  if (regression) {
+    if (!is.numeric(y) || is.factor(y)) {
+      stop("`y` must be numeric for family = \"gaussian\".", call. = FALSE)
+    }
+    if (any(!is.finite(y))) {
+      stop("`y` must be finite (no NA/NaN/Inf) for family = \"gaussian\".",
+           call. = FALSE)
+    }
+    if (!is.null(event_class)) {
+      stop("`event_class` is only defined for classification outcomes.",
+           call. = FALSE)
+    }
+    if (isTRUE(return_probabilities)) {
+      stop(paste0(
+        "`return_probabilities` is only defined for binary classification; ",
+        "gaussian folds return numeric predictions."
+      ), call. = FALSE)
+    }
+    sample_ids <- names(y)
+  } else {
+    y <- factor(y)
+    sample_ids <- names(y)
+    if (nlevels(y) < 2L) {
+      stop("`y` must contain at least two outcome classes.", call. = FALSE)
+    }
   }
   .validate_preprocessing_spec(preprocessing)
   if (!isTRUE(return_probabilities) && !identical(return_probabilities, FALSE)) {
@@ -220,7 +266,9 @@ stabl_multiomic_nested_cv <- function(
     }
   }
   strata_labels <- .make_nested_strata(
-    strata = strata,
+    # Regression stratifies on quantile bins of the numeric outcome
+    # (strata_bins) unless the user supplies explicit strata.
+    strata = if (regression && is.null(strata)) y else strata,
     y = y,
     sample_ids = sample_ids,
     bins = strata_bins
@@ -268,9 +316,12 @@ stabl_multiomic_nested_cv <- function(
       ), call. = FALSE)
     }
     fold_scheme <- "study_disjoint"
+    # Regression balances study assignment on quantile bins of the
+    # outcome (strata_labels), not on the raw numeric values.
+    y_for_folds <- if (regression) strata_labels else y
     outer_folds <- .make_repeated_study_folds(
       study_labels = study_labels,
-      y = y,
+      y = y_for_folds,
       v = outer_v,
       repeats = outer_repeats,
       stratified = stratified,
@@ -279,7 +330,7 @@ stabl_multiomic_nested_cv <- function(
     inner_folds_pre <- .prebuild_study_disjoint_inner_folds(
       outer_folds = outer_folds,
       study_labels = study_labels,
-      y = y,
+      y = y_for_folds,
       inner_v = inner_v,
       stratified = stratified,
       random_state = random_state
@@ -342,9 +393,17 @@ stabl_multiomic_nested_cv <- function(
   predictions <- do.call(rbind, prediction_rows)
   diagnostics <- do.call(rbind, inner_rows)
   selected_features <- do.call(rbind, feature_rows)
-  performance <- .classification_metrics_from_preds_df(predictions, y)
+  performance <- if (regression) {
+    .regression_metrics_from_preds_df(predictions)
+  } else {
+    .classification_metrics_from_preds_df(predictions, y)
+  }
   performance_by_study <- if (!is.null(study_labels)) {
-    .per_study_performance(predictions, study_labels, y)
+    if (regression) {
+      .per_study_performance_regression(predictions, study_labels)
+    } else {
+      .per_study_performance(predictions, study_labels, y)
+    }
   } else {
     NULL
   }
@@ -359,6 +418,7 @@ stabl_multiomic_nested_cv <- function(
       performance = performance,
       performance_by_study = performance_by_study,
       levels = levels(y),
+      family = family,
       metric = metric,
       candidates = candidates,
       strata = strata_labels,
@@ -782,6 +842,7 @@ stabl_multiomic_nested_cv <- function(
                                              random_state, n_lambda, l1_ratio,
                                              workers, preprocessing = NULL,
                                              ...) {
+  regression <- identical(family, "gaussian")
   candidate_rows <- list()
   k <- 1L
 
@@ -818,22 +879,38 @@ stabl_multiomic_nested_cv <- function(
         ...
       )
       pred_rows[[fold_i]] <- data.frame(
-        truth = as.character(y[inner_valid]),
+        truth = if (regression) {
+          unname(y[inner_valid])
+        } else {
+          as.character(y[inner_valid])
+        },
         predicted = fit$predicted,
         stringsAsFactors = FALSE
       )
     }
 
     preds <- do.call(rbind, pred_rows)
-    metrics <- .classification_metrics_from_preds_df(preds, y)
-    candidate_rows[[cand_name]] <- data.frame(
-      candidate = cand_name,
-      accuracy = metrics$accuracy,
-      balanced_error_rate = metrics$balanced_error_rate,
-      macro_f1 = metrics$macro_f1,
-      n_inner_predictions = nrow(preds),
-      stringsAsFactors = FALSE
-    )
+    if (regression) {
+      metrics <- .regression_metrics_from_preds_df(preds)
+      candidate_rows[[cand_name]] <- data.frame(
+        candidate = cand_name,
+        mae = metrics$mae,
+        rmse = metrics$rmse,
+        r2 = metrics$r2,
+        n_inner_predictions = nrow(preds),
+        stringsAsFactors = FALSE
+      )
+    } else {
+      metrics <- .classification_metrics_from_preds_df(preds, y)
+      candidate_rows[[cand_name]] <- data.frame(
+        candidate = cand_name,
+        accuracy = metrics$accuracy,
+        balanced_error_rate = metrics$balanced_error_rate,
+        macro_f1 = metrics$macro_f1,
+        n_inner_predictions = nrow(preds),
+        stringsAsFactors = FALSE
+      )
+    }
     k <- k + 1L
   }
 
@@ -841,10 +918,17 @@ stabl_multiomic_nested_cv <- function(
 }
 
 .select_nested_candidate <- function(summary, metric) {
+  # Ties: first-index wins (documented).
   if (metric == "accuracy") {
-    return(summary$candidate[which.max(summary$accuracy)])  # ties: first-index wins
+    return(summary$candidate[which.max(summary$accuracy)])
   }
-  summary$candidate[which.min(summary$balanced_error_rate)]  # ties: first-index wins
+  if (metric == "r2") {
+    return(summary$candidate[which.max(summary$r2)])
+  }
+  if (metric %in% c("mae", "rmse")) {
+    return(summary$candidate[which.min(summary[[metric]])])
+  }
+  summary$candidate[which.min(summary$balanced_error_rate)]
 }
 
 .fit_stabl_nested_candidate <- function(x_list, y, train_ids, valid_ids,
@@ -898,14 +982,23 @@ stabl_multiomic_nested_cv <- function(
   importances <- get_importances(fit)
   # F-CV-01: dedicated stream for the downstream predictor (offset 4000L,
   # distinct from the 1000L/2000L/3000L fold-internal offsets).
-  predictor <- .fit_selected_predictor(
-    x_train = x_train[, selected, drop = FALSE],
-    y_train = y_train,
-    x_valid = x_valid[, selected, drop = FALSE],
-    levels = levels(y),
-    event_class = event_class,
-    random_state = .derive_nested_seed(random_state, 1L, 4000L)
-  )
+  predictor <- if (identical(family, "gaussian")) {
+    .fit_selected_regressor(
+      x_train = x_train[, selected, drop = FALSE],
+      y_train = y_train,
+      x_valid = x_valid[, selected, drop = FALSE],
+      random_state = .derive_nested_seed(random_state, 1L, 4000L)
+    )
+  } else {
+    .fit_selected_predictor(
+      x_train = x_train[, selected, drop = FALSE],
+      y_train = y_train,
+      x_valid = x_valid[, selected, drop = FALSE],
+      levels = levels(y),
+      event_class = event_class,
+      random_state = .derive_nested_seed(random_state, 1L, 4000L)
+    )
+  }
 
   list(
     stabl_fit = fit,
@@ -1195,6 +1288,154 @@ stabl_multiomic_nested_cv <- function(
   )
 }
 
+# Regression downstream predictor (1.0.0 spec A5): numeric predictions
+# from the selected panel.  Mirrors .fit_selected_predictor's fallback
+# ladder: an empty panel or a degenerate (constant) training outcome
+# falls back to the intercept-only model (training mean) — deterministic,
+# never an error; one feature uses a gaussian glm; two or more use a
+# seeded cv.glmnet gaussian fit.  Numerical infeasibility at any rung
+# falls back to the intercept-only model.
+.fit_selected_regressor <- function(x_train, y_train, x_valid,
+                                    random_state = NULL) {
+  y_train <- as.numeric(y_train)
+  n_sel <- ncol(x_train)
+
+  intercept_fallback <- function() {
+    mu <- mean(y_train)
+    list(
+      predicted = rep(mu, nrow(x_valid)),
+      probability = NULL,
+      model = list(intercept = mu),
+      predict_response = function(newx) rep(mu, nrow(newx)),
+      fallback = "training_mean"
+    )
+  }
+
+  if (n_sel == 0L || stats::var(y_train) <= 0) {
+    return(intercept_fallback())
+  }
+
+  if (n_sel == 1L) {
+    return(tryCatch(
+      {
+        fit <- .with_linear_algebra_numerical_infeasibility(
+          stats::glm(
+            y_train ~ .x,
+            data   = data.frame(.x = as.numeric(x_train[, 1L])),
+            family = stats::gaussian()
+          ),
+          source = "one-feature gaussian selected-feature fit",
+          subclass = "stablr_downstream_numerical_infeasibility"
+        )
+        list(
+          predicted = unname(stats::predict(
+            fit, newdata = data.frame(.x = as.numeric(x_valid[, 1L]))
+          )),
+          probability = NULL,
+          model = fit,
+          predict_response = function(newx) {
+            unname(stats::predict(
+              fit, newdata = data.frame(.x = as.numeric(newx[, 1L]))
+            ))
+          },
+          fallback = NA_character_
+        )
+      },
+      stablr_numerical_infeasibility = function(e) {
+        intercept_fallback()
+      }
+    ))
+  }
+
+  tryCatch(
+    {
+      fit <- .with_glmnet_numerical_infeasibility(
+        # F-CV-01: seeded so the downstream predictor is a pure function
+        # of `random_state` (cv.glmnet draws foldid from the ambient RNG
+        # otherwise).
+        .with_local_seed(
+          random_state,
+          glmnet::cv.glmnet(
+            x = x_train,
+            y = y_train,
+            family = "gaussian",
+            type.measure = "mse",
+            nfolds = max(3L, min(5L, length(y_train)))
+          )
+        ),
+        source = "glmnet selected-feature regression fit"
+      )
+      list(
+        predicted = as.numeric(stats::predict(
+          fit, newx = x_valid, s = "lambda.min"
+        )[, 1L]),
+        probability = NULL,
+        model = fit,
+        predict_response = function(newx) {
+          as.numeric(stats::predict(
+            fit, newx = newx, s = "lambda.min"
+          )[, 1L])
+        },
+        fallback = NA_character_
+      )
+    },
+    stablr_numerical_infeasibility = function(e) {
+      intercept_fallback()
+    }
+  )
+}
+
+# Regression metrics with explicit definitions (1.0.0 spec A5):
+#   MAE  = mean(|truth - predicted|)
+#   RMSE = sqrt(mean((truth - predicted)^2))
+#   R2   = 1 - SS_res / SS_tot, with SS_tot computed about the mean of
+#          the EVALUATED (held-out) truths.  Negative R2 is possible and
+#          reported as-is (worse than intercept-only on these data); R2
+#          is NA when the evaluated truths are constant (SS_tot == 0).
+.regression_metrics <- function(truth, predicted) {
+  truth <- as.numeric(truth)
+  predicted <- as.numeric(predicted)
+  resid <- truth - predicted
+  ss_res <- sum(resid^2)
+  ss_tot <- sum((truth - mean(truth))^2)
+  list(
+    mae  = mean(abs(resid)),
+    rmse = sqrt(mean(resid^2)),
+    r2   = if (ss_tot > 0) 1 - ss_res / ss_tot else NA_real_
+  )
+}
+
+.regression_metrics_from_preds_df <- function(predictions) {
+  .regression_metrics(predictions$truth, predictions$predicted)
+}
+
+# Per-study outer held-out regression performance: pools a study's
+# predictions across all outer folds and repeats.  R2 is NA when a
+# study's pooled truths are constant.
+.per_study_performance_regression <- function(predictions, study_labels) {
+  if (is.null(predictions) || nrow(predictions) == 0L) {
+    return(NULL)
+  }
+  study_of_prediction <- unname(study_labels[as.character(predictions$sample_id)])
+  studies <- sort(unique(study_of_prediction))
+  rows <- lapply(studies, function(study_id) {
+    idx <- which(study_of_prediction == study_id)
+    m <- .regression_metrics(predictions$truth[idx],
+                             predictions$predicted[idx])
+    data.frame(
+      study = as.character(study_id),
+      n_predictions = as.integer(length(idx)),
+      mae = m$mae,
+      rmse = m$rmse,
+      r2 = m$r2,
+      stringsAsFactors = FALSE
+    )
+  })
+  out <- do.call(rbind, rows)
+  rownames(out) <- NULL
+  out
+}
+
 .predict_selected_multinomial <- function(x_train, y_train, x_valid, levels) {
   .fit_selected_predictor(x_train, y_train, x_valid, levels)$predicted
 }
@@ -1238,6 +1479,7 @@ stabl_multiomic_nested_cv <- function(
                                workers, inner_folds = NULL, preprocessing = NULL,
                                event_class = NULL, return_probabilities = FALSE,
                                keep_fold_predictors = FALSE, ...) {
+  regression <- identical(family, "gaussian")
   outer <- outer_folds[[outer_i]]
   train_ids <- outer$train_ids
   valid_ids <- outer$valid_ids
@@ -1301,7 +1543,7 @@ stabl_multiomic_nested_cv <- function(
     fold = outer$fold,
     fold_id = outer$fold_id,
     sample_id = valid_ids,
-    truth = as.character(y[valid_ids]),
+    truth = if (regression) unname(y[valid_ids]) else as.character(y[valid_ids]),
     predicted = outer_fit$predicted,
     selected_candidate = selected_name,
     stringsAsFactors = FALSE
@@ -1354,7 +1596,13 @@ print.stabl_multiomic_nested_cv <- function(x, ...) {
   }
   cat("  candidates:  ", paste(names(x$candidates), collapse = ", "), "\n", sep = "")
   cat("  metric:      ", x$metric, "\n", sep = "")
-  cat("  accuracy:    ", sprintf("%.3f", x$performance$accuracy), "\n", sep = "")
-  cat("  BER:         ", sprintf("%.3f", x$performance$balanced_error_rate), "\n", sep = "")
+  if (identical(x$family, "gaussian")) {
+    cat("  MAE:         ", sprintf("%.3f", x$performance$mae), "\n", sep = "")
+    cat("  RMSE:        ", sprintf("%.3f", x$performance$rmse), "\n", sep = "")
+    cat("  R2:          ", sprintf("%.3f", x$performance$r2), "\n", sep = "")
+  } else {
+    cat("  accuracy:    ", sprintf("%.3f", x$performance$accuracy), "\n", sep = "")
+    cat("  BER:         ", sprintf("%.3f", x$performance$balanced_error_rate), "\n", sep = "")
+  }
   invisible(x)
 }

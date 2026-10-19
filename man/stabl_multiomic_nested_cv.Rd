@@ -16,7 +16,7 @@ stabl_multiomic_nested_cv(
   stratified = TRUE,
   strata = NULL,
   strata_bins = 5L,
-  metric = c("ber", "accuracy"),
+  metric = NULL,
   family = "multinomial",
   n_bootstraps = 100L,
   artificial_type = "random_permutation",
@@ -67,9 +67,21 @@ quantile groups before fold assignment. Cannot be combined with
 
 \item{strata_bins}{Number of quantile bins for numeric \code{strata}.}
 
-\item{metric}{Candidate-selection metric, \code{"ber"} or \code{"accuracy"}.}
+\item{metric}{Candidate-selection metric. Classification families
+(\code{"binomial"}, \code{"multinomial"}): \code{"ber"} (default) or \code{"accuracy"}.
+Regression (\code{family = "gaussian"}): \code{"rmse"} (default), \code{"mae"}, or
+\code{"r2"}. Ties are broken by first candidate.}
 
-\item{family}{Passed to \code{\link[=stabl_fit]{stabl_fit()}}. Defaults to \code{"multinomial"}.}
+\item{family}{Passed to \code{\link[=stabl_fit]{stabl_fit()}}. \code{"multinomial"} (default) and
+\code{"binomial"} run the classification path; \code{"gaussian"} runs the
+regression path: \code{y} stays numeric, stratification uses
+\code{strata_bins} quantile bins of the outcome, the downstream
+selected-feature predictor is a gaussian model (seeded
+\code{cv.glmnet}, one-feature \code{glm}, or the deterministic
+intercept-only training-mean fallback for empty panels), and
+performance is reported as MAE / RMSE / R2 with explicit
+definitions (R2 is taken about the held-out mean, is reported
+as-is when negative, and is \code{NA} for constant held-out truths).}
 
 \item{n_bootstraps}{Passed to \code{\link[=stabl_fit]{stabl_fit()}}.}
 
@@ -147,7 +159,10 @@ membership) and \code{class_counts} (per-fold held-out class counts). When
 \code{study_labels} is supplied, \code{performance_by_study} holds per-study
 outer held-out accuracy and balanced error rate (pooled across folds and
 repeats; \code{NA} balanced error rate for studies whose pooled held-out
-predictions contain a single outcome class).
+predictions contain a single outcome class). For
+\code{family = "gaussian"}, \code{performance} holds \code{mae}/\code{rmse}/\code{r2},
+\code{performance_by_study} holds per-study \code{mae}/\code{rmse}/\code{r2}, and
+\code{outer_predictions$truth}/\code{predicted} are numeric.
 }
 \description{
 Runs a repeated outer cross-validation loop for generalisation assessment.

@@ -853,6 +853,52 @@ assembly math, exact IV-pooling values, empty-support branch via
 3921 expectation symbols); R CMD check 0E/0W/1N (pre-existing
 installed-size NOTE).
 
+**PR-F (2026-10-19):** 1.0.0-spec A5+A6 — gaussian validated analysis
+and portable final predictive models. A5: `stabl_multiomic_nested_cv()`
+gains a full regression path (`family = "gaussian"`): numeric outcomes
+validated finite-only, strata from quantile bins of y, per-family
+candidate metric resolution (`NULL` default -> rmse/mae/r2 for
+gaussian, ber/accuracy otherwise), seeded gaussian `cv.glmnet`
+downstream regressor (`type.measure = "mse"`) with an intercept-only
+(training-mean) deterministic fallback for empty/degenerate panels, and
+MAE/RMSE/R2 reporting with explicit definitions (R2 about the held-out
+mean; negative R2 retained; NA for constant held-out truths).
+`stabl_analyze(mode = "validated")` drops its binomial-only stop and
+wires family through performance rows, held-out permutation importance
+(regression uses the fold's `predict_response` closure), and the
+`final_refit` block; `event_class`/`return_probabilities` are rejected
+for regression. A6: `stabl_finalize(development_result, x, y, ...)`
+accepts a `"stabl_fit"` or `"stabl_analysis"` (validated analyses must
+carry `final_refit = TRUE`; the CV performance summary is stored with
+an explicit "describes the development PROCEDURE, not this refitted
+model" label) and packs a portable `"stabl_predictor"`: selected panel,
+training-fitted preprocessing (applied unchanged at predict time;
+prepped recipes have their retained training `template` stripped),
+event/level mapping, learner spec, feature provenance, version, call.
+No training observations are serialized — one-feature glm engines are
+reduced to bare coefficient vectors after discovering predict.glm
+requires the qr/residuals slots (which encode the training design);
+cv.glmnet stores no raw data (verified empirically); a sentinel-value
+byte scan and an n-invariance size test prove the negative.
+`predict.stabl_predictor()` (response/class/probability with stored
+event mapping) and `validate_newdata_schema()` (unique named numeric
+columns; missing/renamed/duplicate always an error; extra columns error
+unless `extra_columns = "drop"`; reorder by name) complete the
+contract. Golden-test update (dated rationale in
+`test-analysis-workflow.R`): the validated-mode binomial-only rejection
+test now asserts gaussian support. Gate-caught defects fixed pre-push:
+(1) `validate_newdata_schema()` example used full-matrix newdata
+against a no-preprocessing predictor (required = panel only) — example
+corrected; (2) the updated golden test briefly added 7 cv.glmnet
+tiny-fold warnings (n=24 -> n=48 fixture) and a hard-coded `each = 8L`
+name mismatch. Interface: 79 exports / 47 S3; registry +4 rows;
+`test-nested-cv-gaussian.R` 12 blocks / 61 expectations and
+`test-finalize.R` 13 blocks / 69 expectations (saveRDS roundtrip,
+column-order invariance, schema violations, engine ladder, stored-not-
+refit preprocessing, replay). Gates: suite 63 files / 0 failed / 0
+errors / 1 skip / 52 warnings (exact parity; 4082 expectation symbols);
+R CMD check 0E/0W/1N (pre-existing installed-size NOTE).
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3

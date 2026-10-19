@@ -41,14 +41,27 @@ test_that("mode is required and validated explicitly", {
   )
 })
 
-test_that("validated mode rejects non-binary families and outcomes clearly", {
-  d <- .make_binary_data()
+# Golden-test update (2026-10-19, Phase 13 PR-F, 1.0.0 spec A5): validated
+# mode no longer rejects family = "gaussian" -- the full nested-CV path
+# (fold-fitted preprocessing, selection, tuning, downstream regression
+# predictor) now supports gaussian outcomes with MAE/RMSE/R2 reporting.
+# The remaining contract: binomial still requires exactly two classes in
+# both modes, and gaussian requires a numeric outcome.
+test_that("validated mode supports gaussian and rejects bad outcomes clearly", {
+  # n = 48 keeps inner cv.glmnet folds at >= 3 observations (no size
+  # warnings; the suite holds a fixed warning budget).
+  d <- .make_binary_data(n = 48L)
   y_num <- setNames(as.numeric(d$y == "B"), names(d$y))
-  expect_error(
-    stabl_analyze(d$x, y_num, family = "gaussian", mode = "validated"),
-    "binary classification only"
+  val_g <- stabl_analyze(
+    d$x, y_num, family = "gaussian", mode = "validated",
+    lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+    outer_v = 3L, inner_v = 3L, n_bootstraps = 10L,
+    random_state = 4L, n_repeats = 2L
   )
-  y3 <- setNames(factor(rep(c("A", "B", "C"), each = 8L)), names(d$y))
+  expect_identical(val_g$family, "gaussian")
+  expect_true(all(c("mae", "rmse", "r2") %in% names(val_g$performance$pooled)))
+  # Binomial still requires exactly two classes, in both modes.
+  y3 <- setNames(factor(rep(c("A", "B", "C"), each = 16L)), names(d$y))
   expect_error(
     stabl_analyze(d$x, y3, family = "binomial", mode = "validated"),
     "exactly two classes"
@@ -56,6 +69,11 @@ test_that("validated mode rejects non-binary families and outcomes clearly", {
   expect_error(
     stabl_analyze(d$x, y3, family = "binomial", mode = "exploratory"),
     "exactly two classes"
+  )
+  # Gaussian rejects non-numeric outcomes.
+  expect_error(
+    stabl_analyze(d$x, d$y, family = "gaussian", mode = "validated"),
+    "numeric"
   )
 })
 
