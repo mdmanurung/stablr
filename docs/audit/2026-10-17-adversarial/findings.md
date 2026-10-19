@@ -1245,6 +1245,35 @@ parity with PR-G — no R or test code changed); R CMD check 0E/0W/1N
 rebuild clean, including the multiomic article with both views
 standardised.
 
+**scale()-equivalence regression-test PR (2026-10-19):** user-requested
+regression test pinning the equivalence between the fold-safe
+preprocessing apply path and base `scale()`.
+
+New test in `tests/testthat/test-preprocessing.R`
+("apply reproduces scale() with stored training attributes (OOL
+regression)"): on the bundled OOL proteomics matrices,
+`stabl_preprocess_apply()` output must equal `scale(x_train)` on the
+training matrix, and `scale(x_valid, center, scale)` with the stored
+training attributes on the validation matrix. Measured max abs diff is
+1.7763568e-15 for both matrices (150 x 100 train, 21 x 100 valid;
+R 4.4.2, Linux x86_64) — the residual is the last-ulp difference
+between `stats::sd()` and `scale()`'s sum-of-squares SD, so the
+equivalence is not bitwise; the test pins it with tolerance 1e-12
+(~3 orders of margin) and records the measured value in a comment.
+Dimnames are identical between the two paths; the comparison strips
+only `scaled:center`/`scaled:scale`, the two attributes `scale()`
+attaches and the apply path deliberately does not.
+
+This pins the numerical contract the multiomic vignette's
+standardisation section now relies on: the fold-safe apply is exactly
+`scale()` with training-frozen parameters, on both seen and unseen
+data.
+
+Gates: suite 62 files / 0 failed / 0 errors / 1 skip / 3 warnings (exact
+parity with PR-G — the new test adds no warnings or skips); R CMD
+check 0E/0W/1N (pre-existing installed-size NOTE; doc 3.8 Mb); all
+12 vignettes rebuild clean.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3

@@ -41,6 +41,35 @@ test_that("assessment shift does not alter training-fitted parameters", {
                                 tolerance = 1e-6)))
 })
 
+test_that("apply reproduces scale() with stored training attributes (OOL regression)", {
+  # Regression pin: the fold-safe apply must reproduce base scale() up to
+  # floating-point associativity — on training data, and on assessment data
+  # when scale() is given the stored training attributes. Measured max abs
+  # diff on the OOL proteomics matrices (150 x 100 train, 21 x 100 valid):
+  # 1.7763568e-15 for both (2026-10-19, R 4.4.2, Linux x86_64). The residual
+  # is the last-ulp difference between stats::sd() and scale()'s
+  # sum-of-squares SD; pinned here with tolerance 1e-12.
+  x_tr <- load_ool_data(split = "train")$x_list$proteomics
+  x_as <- load_ool_data(split = "valid")$x_list$proteomics
+
+  pp <- stabl_preprocess_fit(x_tr, transforms = c("center", "scale"))
+  s <- scale(x_tr)
+  strip_scale_attrs <- function(m) {
+    attr(m, "scaled:center") <- NULL
+    attr(m, "scaled:scale") <- NULL
+    m
+  }
+
+  expect_equal(stabl_preprocess_apply(pp, x_tr), strip_scale_attrs(s),
+               tolerance = 1e-12)
+  expect_equal(
+    stabl_preprocess_apply(pp, x_as),
+    strip_scale_attrs(scale(x_as, center = attr(s, "scaled:center"),
+                            scale = attr(s, "scaled:scale"))),
+    tolerance = 1e-12
+  )
+})
+
 test_that("median imputation uses training medians on assessment data", {
   d <- .make_pp_data()
   d$x_tr[1L, 2L] <- NA
