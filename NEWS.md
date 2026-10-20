@@ -1,5 +1,26 @@
 # stablr 0.3.0.9000 (development)
 
+## Bug fixes (implementation review, 2026-10-20, batch E-3)
+
+- `stabl_multiomic_cv()` now stratifies classification folds on the
+  outcome (the ungrouped path was unstratified), and the single-class
+  assessment-fold guard applies to ungrouped CV too: infeasible class
+  counts abort with typed `stablr_cv_infeasible` at fold construction
+  instead of a deep bootstrap error mid-run.
+- `stabl_multiomic_train_validate()` now errors when train and
+  validation sets share samples (previously silently accepted — a
+  leakage foot-gun in the direct API).
+- `validate_sample_alignment()` and the outcome-alignment machinery now
+  handle data.frame outcomes correctly: row names are the sample IDs.
+  Previously `names()` returned column names, making the matrix-like
+  branches unreachable and producing a spurious mismatch error.
+- The late-fusion downstream glm/lm uses a collision-proof response
+  name, so a selected feature named `.y` is no longer silently
+  overwritten and dropped from the model.
+- Early-fusion cross-view duplicate feature names now fail with an error
+  naming the colliding views (previously a generic duplicate-names error
+  from deep inside `stabl_fit`).
+
 ## Bug fixes (implementation review, 2026-10-20, batch E-2)
 
 - `stabl_fit()` now fails fast when `sample_fraction` implies

@@ -1504,6 +1504,67 @@ check 0E/0W/1N (pre-existing installed-size NOTE; doc 3.8 Mb); all
 12 vignettes rebuild clean.  NEWS.md entries are docs-only and parse-verified with
 utils::news(); the code tree is exactly the gated tree.
 
+**Batch E-3 multiomic/API hardening PR (2026-10-20):** implementation-review
+findings E5/E6/E10/E14 fixed with regression tests (third batch of the
+approved four-batch E-triage).
+
+- E5 (`R/multiomic_workflows.R`): ungrouped classification CV was
+  unstratified and the single-class assessment-fold guard (C5) required
+  `groups`, so an imbalanced binomial outcome failed late with a deep
+  bootstrap error.  `stabl_multiomic_cv` now passes `strata = y` for
+  binomial/multinomial (as the late-fusion OOF path already does), and
+  the C5 guard applies to the ungrouped path too — infeasible class
+  counts abort with typed `stablr_cv_infeasible` at fold construction.
+  Guard message updated to not assume grouped data.
+- E6 (`R/multiomic_workflows.R`): train/validation sample overlap in the
+  direct API was silently accepted (fail-open leakage foot-gun).
+  Approved decision: error.  `stabl_multiomic_train_validate` now stops
+  naming the overlap count and first shared ID.  One pre-existing test
+  ("cooperative_fusion rejects cox family in native v1") used the
+  training matrices as the validation set incidentally; its setup was
+  updated to a disjoint validation set (intent unchanged).
+- E10 (`R/input_validation.R`): `names(y)` on a data.frame returns
+  COLUMN names (always non-NULL), so the `is.data.frame` branches of
+  `.outcome_sample_ids` / `.subset_outcome_by_ids` were unreachable and
+  sample IDs became column names (spurious mismatch error).  Both
+  functions now test matrix/data.frame/Surv before `names()`.  Named
+  atomic outcomes (the C1 fix's path) are unaffected; the
+  null-validation and interpretation test files pass unchanged.
+- E14a (`R/multiomic_workflows.R`, `.late_fusion_fit_omic`): a selected
+  feature named `.y` was silently overwritten by the response column and
+  dropped from the downstream glm/lm.  **Deviation from the approved
+  triage line (which said "reserve `.y` in `.validate_feature_names`"):
+  reservation breaks the shipped, gated B4 regression test ("a feature
+  named '.y' is not silently dropped from the effect model",
+  test-interpretation.R), which asserts `.y` features flow through
+  stabl_fit — a conflict the triage did not anticipate.  Implemented the
+  finding's alternative instead: collision-proof response name
+  (`..y..` with a while-loop), mirroring the B4 fix exactly.  `.y`
+  features remain legal everywhere; no shipped contract changes.**
+- E14b (`R/multiomic_workflows.R`, `.concat_omic_matrices`): early-fusion
+  cross-view name collisions failed closed but with stabl_fit's generic
+  duplicate-names error naming neither view.  The concat now checks
+  post-cbind and re-raises naming each duplicate and its owning views.
+  Approved decision honoured: error-only; automatic view prefixing
+  deferred as a release decision.
+
+Regression tests, each confirmed to FAIL against the pre-fix code
+(git-stash negative control; the stratification-mechanism assertions are
+anchors that pass both ways because the `strata` formal predates the
+fix — the discriminating assertions are the public-API ones): overlap
+errors naming the count (E6); rare-class ungrouped binomial CV aborts
+with the typed guard message via the public entry (E5); data.frame
+outcomes resolve row-name IDs and subset correctly, and
+`validate_sample_alignment` accepts them (E10); a `.y` feature appears
+in the downstream model coefficients and recovers its true coefficient
+(E14a); cross-view duplicates error naming the views (E14b).
+
+Gates: suite 62 files / 0 failed / 0 errors / 1 skip / 3 warnings (exact
+parity with PR-G — the new tests add no warnings or skips); R CMD
+check 0E/0W/1N (pre-existing installed-size NOTE; doc 3.8 Mb); all
+12 vignettes rebuild clean.  NEWS.md entries are docs-only and parse-verified with
+utils::news(); the code tree is exactly the gated tree.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3

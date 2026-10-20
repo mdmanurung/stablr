@@ -1263,13 +1263,22 @@ test_that("cooperative_fusion rejects cox family in native v1", {
   y <- survival::Surv(time = rexp(n, rate = 1), event = rbinom(n, 1L, 0.7))
   rownames(y) <- ids
 
+  # Validation samples must be disjoint from training (E6 contract).
+  ids_v <- paste0("v", seq_len(4L))
+  x_av <- matrix(rnorm(4L * 3L), nrow = 4L,
+                 dimnames = list(ids_v, paste0("a", seq_len(3L))))
+  x_bv <- matrix(rnorm(4L * 3L), nrow = 4L,
+                 dimnames = list(ids_v, paste0("b", seq_len(3L))))
+  y_v <- survival::Surv(time = rexp(4L, rate = 1), event = rbinom(4L, 1L, 0.7))
+  rownames(y_v) <- ids_v
+
   expect_error(
     stabl_multiomic_train_validate(
       x_train_list = list(omic_a = x_a, omic_b = x_b),
       y_train = y,
       lambda_grid = data.frame(lambda = c(0.2, 0.1)),
-      x_valid_list = list(omic_a = x_a, omic_b = x_b),
-      y_valid = y,
+      x_valid_list = list(omic_a = x_av, omic_b = x_bv),
+      y_valid = y_v,
       artificial_type = NULL,
       n_bootstraps = 2L,
       family = "cox",
@@ -1768,4 +1777,87 @@ test_that("[C7] .classification_metrics mcc = 0 for degenerate (all-one-class) p
   predicted <- factor(c("A", "A", "A", "A", "A", "A"), levels = c("A", "B"))
   m <- stablr:::.classification_metrics(truth, predicted)
   expect_equal(m$mcc, 0, tolerance = 1e-12)
+})
+
+test_that("train/validation sample overlap is rejected (E6 regression)", {
+  # Evaluating on training samples is never a legitimate validation
+  # design; previously accepted silently (fail-open leakage foot-gun).
+  set.seed(101)
+  n <- 24L
+  x_a <- matrix(rnorm(n * 4L), nrow = n,
+                dimnames = list(paste0("s", seq_len(n)), paste0("a", 1:4)))
+  y <- setNames(x_a[, 1L] + rnorm(n), rownames(x_a))
+  expect_error(
+    stabl_multiomic_train_validate(
+      x_train_list = list(omic_a = x_a),
+      y_train = y,
+      x_valid_list = list(omic_a = x_a),
+      y_valid = y,
+      lambda_grid = data.frame(lambda = 0.2),
+      artificial_type = NULL, hard_threshold = 0.3,
+      n_bootstraps = 2L, family = "gaussian", random_state = 1L
+    ),
+    "share .* sample"
+  )
+})
+
+test_that("ungrouped classification CV stratifies and fails closed on infeasible classes (E5 regression)", {
+  set.seed(5)
+  n <- 30L
+  ids <- paste0("s", seq_len(n))
+  x <- matrix(rnorm(n * 4L), nrow = n, dimnames = list(ids, paste0("f", 1:4)))
+
+  # Mechanism: outcome-stratified unit assignment gives every assessment
+  # fold both classes when feasible.
+  y_bal <- setNames(factor(rep(c("A", "B"), each = 15L)), ids)
+  folds <- stablr:::.make_multiomic_cv_folds(
+    sample_ids = ids, groups = NULL, v = 3L, random_state = 1L,
+    strata = y_bal, y = y_bal, family = "binomial"
+  )
+  expect_length(folds, 3L)
+  for (f in folds) {
+    expect_true(length(unique(y_bal[f$valid_ids])) == 2L)
+  }
+
+  # Public entry: 2 events in 30 samples must abort with the typed
+  # stablr_cv_infeasible guard at fold construction, not a deep bootstrap
+  # error mid-run (the pre-fix behavior).
+  y_rare <- setNames(factor(c(rep("A", 28L), rep("B", 2L))), ids)
+  expect_error(
+    stabl_multiomic_cv(
+      x_list = list(mrna = x), y = y_rare, v = 3L,
+      lambda_grid = data.frame(lambda = 0.2),
+      n_bootstraps = 2L, artificial_type = NULL,
+      hard_threshold = 0.3, family = "binomial", random_state = 1L
+    ),
+    "single outcome class"
+  )
+})
+
+test_that("early-fusion cross-view name collisions name the colliding views (E14 regression)", {
+  x1 <- matrix(rnorm(20), 5, 4,
+               dimnames = list(paste0("s", 1:5), c("V1", "V2", "V3", "V4")))
+  x2 <- matrix(rnorm(15), 5, 3,
+               dimnames = list(paste0("s", 1:5), c("V1", "V5", "V6")))
+  expect_error(
+    stablr:::.concat_omic_matrices(list(a = x1, b = x2), c("a", "b")),
+    "duplicate feature name.*'V1' \\(in: a, b\\)"
+  )
+})
+
+test_that("a selected feature named '.y' is not dropped from the downstream model (E14 regression)", {
+  # The late-fusion downstream glm/lm used `.y` as the response column,
+  # silently overwriting a selected feature with that name; the response
+  # now uses a collision-proof name (mirrors the B4 interpretation fix).
+  set.seed(3L)
+  n <- 60L
+  x <- matrix(rnorm(n * 3L), n, 3,
+              dimnames = list(paste0("s", 1:60), c("f1", ".y", "f3")))
+  y <- setNames(1.5 * x[, ".y"] + rnorm(n, sd = 0.5), rownames(x))
+  m <- stablr:::.late_fusion_fit_omic(
+    x_train_sel = x, y_train = y, x_valid_sel = NULL,
+    y_train_mean = mean(y), task_type = "regression"
+  )$model
+  expect_true(".y" %in% names(stats::coef(m)))
+  expect_equal(unname(stats::coef(m)[[".y"]]), 1.5, tolerance = 0.2)
 })

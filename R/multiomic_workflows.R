@@ -211,6 +211,19 @@ stabl_multiomic_train_validate <- function(
       train_omic_names = omic_names
     )
     valid_ids <- rownames(x_valid_list[[1L]])
+    # Fail closed on train/validation sample overlap: evaluating on
+    # training samples is never a legitimate validation design and was
+    # previously accepted silently (review E6; approved decision: error).
+    overlap <- intersect(train_ids, valid_ids)
+    if (length(overlap)) {
+      stop(sprintf(
+        paste0(
+          "Train and validation sets share %d sample(s) (e.g. '%s'): ",
+          "validation on training samples is not supported."
+        ),
+        length(overlap), overlap[1L]
+      ), call. = FALSE)
+    }
     x_valid_list <- .subset_multiomic_rows(x_valid_list, valid_ids)
     if (!is.null(y_valid)) y_valid <- .subset_outcome_by_ids(y_valid, valid_ids)
   }
@@ -516,6 +529,11 @@ stabl_multiomic_cv <- function(
     groups = groups,
     v = v,
     random_state = random_state,
+    # Ungrouped classification was previously unstratified, so an
+    # imbalanced outcome could fail late with a deep bootstrap error
+    # instead of the typed stablr_cv_infeasible (review E5).  Stratify on
+    # the outcome for classification, as the late-fusion OOF path does.
+    strata = if (family %in% c("binomial", "multinomial")) y else NULL,
     y = y,
     family = family
   )
@@ -594,10 +612,33 @@ stabl_multiomic_cv <- function(
 .named_omic_list <- function(omic_names) setNames(vector("list", length(omic_names)), omic_names)
 
 .concat_omic_matrices <- function(x_list, omic_names) {
-  do.call(cbind, lapply(omic_names, function(omic) {
+  out <- do.call(cbind, lapply(omic_names, function(omic) {
     x <- x_list[[omic]]
     if (is.data.frame(x)) as.matrix(x) else x
   }))
+  # Cross-view name collisions would fail closed downstream with a generic
+  # duplicate-names error naming neither view; re-raise with the colliding
+  # views named (review E14).  Automatic view prefixing is a release
+  # decision, not done implicitly.
+  dupes <- unique(colnames(out)[duplicated(colnames(out))])
+  if (length(dupes)) {
+    owners <- vapply(dupes, function(d) {
+      paste(
+        omic_names[vapply(omic_names,
+                          function(o) d %in% colnames(x_list[[o]]),
+                          logical(1L))],
+        collapse = ", "
+      )
+    }, character(1L))
+    stop(sprintf(
+      paste0(
+        "Early fusion concatenation produced duplicate feature name(s): ",
+        "%s. Rename features (e.g. view-prefix them) before fusion."
+      ),
+      paste(sprintf("'%s' (in: %s)", dupes, owners), collapse = "; ")
+    ), call. = FALSE)
+  }
+  out
 }
 
 .resolve_multiomic_lambda_grid <- function(lambda_grid, omic_names) {
@@ -1031,10 +1072,13 @@ stabl_multiomic_cv <- function(
     )
   })
 
-  # C5 guardrail: grouped assessment folds must hold both outcome classes
-  # for classification, mirroring the study-disjoint validation in
-  # stabl_multiomic_nested_cv. Regression is unaffected.
-  if (!is.null(groups) && !is.null(y) && !is.null(family) &&
+  # C5 guardrail: assessment folds must hold both outcome classes for
+  # classification, mirroring the study-disjoint validation in
+  # stabl_multiomic_nested_cv.  Regression is unaffected.  The guard
+  # applies to the ungrouped path too (review E5): outcome stratification
+  # above prevents the common case, and this catches degenerate class
+  # counts fail-closed with the typed error.
+  if (!is.null(y) && !is.null(family) &&
       family %in% c("binomial", "multinomial")) {
     for (fold in folds) {
       fold_classes <- unique(y[fold$valid_ids])
@@ -1044,8 +1088,8 @@ stabl_multiomic_cv <- function(
           paste0(
             "Cross-validation fold `", fold$fold,
             "` holds a single outcome class; classification metrics are ",
-            "undefined. Provide more groups, fewer folds, or groups with ",
-            "mixed outcome composition."
+            "undefined. Provide more samples per class, fewer folds, or ",
+            "(for grouped data) groups with mixed outcome composition."
           ),
           fold = fold$fold,
           classes_present = fold_classes
@@ -2217,12 +2261,18 @@ stabl_multiomic_stacked <- function(
   }
 
   train_df      <- as.data.frame(x_train_sel)
-  train_df$.y   <- unname(y_train)
+  # Collision-proof response name (review E14): a selected feature named
+  # ".y" would be silently overwritten by the response column here and
+  # dropped from the model.  Mirrors the B4 fix in .interpret_effects.
+  resp <- "..y.."
+  while (resp %in% names(train_df)) resp <- paste0(".", resp)
+  train_df[[resp]] <- unname(y_train)
+  resp_formula <- stats::as.formula(paste(resp, "~ ."))
 
   if (task_type == "binary") {
     m <- .with_linear_algebra_numerical_infeasibility(
       stats::glm(
-        .y ~ .,
+        resp_formula,
         data = train_df,
         family = stats::binomial(link = "logit")
       ),
@@ -2236,7 +2286,7 @@ stabl_multiomic_stacked <- function(
     } else NULL
   } else {
     m <- .with_linear_algebra_numerical_infeasibility(
-      stats::lm(.y ~ ., data = train_df),
+      stats::lm(resp_formula, data = train_df),
       source = "regression downstream fit",
       subclass = "stablr_downstream_numerical_infeasibility"
     )

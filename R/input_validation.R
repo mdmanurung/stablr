@@ -86,12 +86,15 @@ validate_sample_alignment <- function(x, y, groups = NULL) {
 
 # Resolve sample identifiers from supported outcome types.
 .outcome_sample_ids <- function(y) {
-  if (!is.null(names(y))) {
-    return(names(y))
-  }
-
+  # Matrix-like outcomes first: names() on a data.frame returns COLUMN
+  # names (always non-NULL), which made these branches unreachable and
+  # turned sample IDs into column names (review E10).
   if (is.matrix(y) || is.data.frame(y) || inherits(y, "Surv")) {
     return(rownames(y))
+  }
+
+  if (!is.null(names(y))) {
+    return(names(y))
   }
 
   NULL
@@ -106,12 +109,12 @@ validate_sample_alignment <- function(x, y, groups = NULL) {
     stop("`y` cannot contain missing sample mappings after alignment.", call. = FALSE)
   }
 
-  if (!is.null(names(y))) {
-    return(y[sample_ids])
-  }
-
   if (is.matrix(y) || is.data.frame(y) || inherits(y, "Surv")) {
     return(y[idx, , drop = FALSE])
+  }
+
+  if (!is.null(names(y))) {
+    return(y[sample_ids])
   }
 
   y[idx]

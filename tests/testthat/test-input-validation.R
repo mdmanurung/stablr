@@ -267,3 +267,19 @@ test_that("nested multi-omic CV scalar validators reject invalid values", {
   expect_error(base_call(n_lambda = 0L), "n_lambda")
   expect_error(base_call(random_state = 1.5), "random_state")
 })
+
+test_that("data.frame outcomes use row names as sample IDs (E10 regression)", {
+  # names() on a data.frame returns COLUMN names (always non-NULL), which
+  # made the matrix-like branches unreachable and turned sample IDs into
+  # column names (spurious mismatch error).
+  y_df <- data.frame(y = c(1.5, -0.5, 2.0), row.names = c("s1", "s2", "s3"))
+  expect_identical(stablr:::.outcome_sample_ids(y_df), c("s1", "s2", "s3"))
+  sub <- stablr:::.subset_outcome_by_ids(y_df, c("s3", "s1"))
+  expect_identical(rownames(sub), c("s3", "s1"))
+  expect_identical(sub[[1L]], c(2.0, 1.5))
+
+  x <- matrix(rnorm(12), 3, 4,
+              dimnames = list(c("s1", "s2", "s3"), paste0("f", 1:4)))
+  expect_true(validate_sample_alignment(x, y_df))
+})
+
