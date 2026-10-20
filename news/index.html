@@ -54,6 +54,19 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.0.9000" id="stablr-0309000-development">stablr 0.3.0.9000 (development)<a class="anchor" aria-label="anchor" href="#stablr-0309000-development"></a></h2>
 <div class="section level3">
+<h3 id="tests-functional-verification-audit-0-3-0-9000">Tests (2026-10-21, functional verification audit)<a class="anchor" aria-label="anchor" href="#tests-functional-verification-audit-0-3-0-9000"></a></h3>
+<ul><li>New test file <code>test-functional-audit.R</code> closes the gaps found by the covr line-coverage baseline (87.2%) and the integration-chain matrix:
+<ul><li>end-to-end chains previously covered only piecewise: study tools (<code><a href="../reference/stabl_multiomic_study_split.html">stabl_multiomic_study_split()</a></code> -&gt; <code><a href="../reference/stabl_multiomic_train_validate.html">stabl_multiomic_train_validate()</a></code> -&gt; <code><a href="../reference/stabl_multiomic_study_diagnostics.html">stabl_multiomic_study_diagnostics()</a></code>) and artificial features (<code><a href="../reference/make_artificial_features.html">make_artificial_features()</a></code> -&gt; bootstrap scoring -&gt; <code><a href="../reference/compute_fdp_plus.html">compute_fdp_plus()</a></code>, with a hand-checked FDP+ formula and a planted-signal separation check);</li>
+<li>the unexported cooperative <code>"validation"</code> selection branch retained for characterization tests (F-CV-04): binomial deviance/auc/class and gaussian mae exercised end to end through the internal path, poisson deviance verified directly against a dpois-based computation with the public family fence asserted explicitly;</li>
+<li>multinomial late fusion with a validation split (<code>.apply_multiclass_stack_weights()</code>);</li>
+<li>registered S3 methods never executed before: <code>family.cv.multiview()</code> and <code>plot.multiview()</code>;</li>
+<li>
+<code><a href="../reference/sample_bootstrap_indices.html">sample_bootstrap_indices()</a></code> <code>class_weights</code> happy path and error branches, and ordinal-learner error branches.</li>
+</ul></li>
+<li>
+<code>inst/release/public-interface-audit.csv</code> records the new evidence file for the eight interfaces it covers.</li>
+</ul></div>
+<div class="section level3">
 <h3 id="documentation-reproducibility-pointers-0-3-0-9000">Documentation (2026-10-20, reproducibility pointers)<a class="anchor" aria-label="anchor" href="#documentation-reproducibility-pointers-0-3-0-9000"></a></h3>
 <ul><li>README Resources and <code>benchmarks/README.md</code> now point to the <code>stablr-reproducibility</code> compendium (pinned submodule + MD5-pinned raw atlas + v1/v2 pipeline drivers + committed results + bit-for-bit verification evidence) as the way to re-run the aging case study end to end; the WS-8 raw-file requirement is documented where the benchmark scripts live.</li>
 </ul></div>
