@@ -345,8 +345,10 @@ stabl_diagnose <- function(fit,
     warning_codes <- c(warning_codes, "STABL_DIAG_NO_THRESHOLD")
     assumption_notes <- c(
       assumption_notes,
-      "No threshold is available (no artificial features and no ",
-      "hard_threshold): the selected support is empty by contract."
+      paste0(
+        "No threshold is available (no artificial features and no ",
+        "hard_threshold): the selected support is empty by contract."
+      )
     )
   }
   cutoff <- list(
@@ -370,9 +372,13 @@ stabl_diagnose <- function(fit,
     minima_thresholds <- fdr_threshold_range[at_min]
     is_tied <- length(at_min) > 1L
     is_flat <- is_tied && any(diff(at_min) == 1L)
-    first_min_idx <- at_min[[1L]]
-    is_boundary <- first_min_idx == 1L ||
-      first_min_idx == length(fdr_threshold_range)
+    # A hand-built fixture whose min_fdr is not exactly in FDRs (or is NA)
+    # yields no exact minimizing threshold; report zero minima instead of
+    # throwing on at_min[[1L]] (internal-only path; real fits always have
+    # min_fdr == min(FDRs) on the same vector).
+    first_min_idx <- if (length(at_min)) at_min[[1L]] else NA_integer_
+    is_boundary <- !is.na(first_min_idx) &&
+      (first_min_idx == 1L || first_min_idx == length(fdr_threshold_range))
     fdp_curve <- list(
       thresholds         = fdr_threshold_range,
       fdp_plus           = FDRs,
@@ -394,8 +400,10 @@ stabl_diagnose <- function(fit,
       warning_codes <- c(warning_codes, "STABL_DIAG_BOUNDARY_MINIMUM")
       assumption_notes <- c(
         assumption_notes,
-        "The first FDP+ minimum lies at the edge of fdr_threshold_range; ",
-        "consider widening the range before trusting the minimum."
+        paste0(
+          "The first FDP+ minimum lies at the edge of fdr_threshold_range; ",
+          "consider widening the range before trusting the minimum."
+        )
       )
     }
     # Low-decoy-count instability at the selected threshold.
@@ -667,7 +675,10 @@ stabl_diagnose <- function(fit,
 .match_diagnostic_evidence <- function(base_learner, artificial_type, family) {
   tbl <- .stabl_diagnostic_evidence
   match_dim <- function(column, value) {
-    column == "any" | (!is.null(value) & column == value)
+    # A NULL value means "unknown": match only "any" rows.  Guarding with
+    # `!is.null(value) &` is not enough — `column == NULL` is logical(0)
+    # and collapses the whole expression to zero rows (review B6).
+    if (is.null(value)) column == "any" else column == "any" | column == value
   }
   keep <- match_dim(tbl$learner, base_learner) &
     match_dim(tbl$decoy, artificial_type) &

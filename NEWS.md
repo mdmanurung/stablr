@@ -1,5 +1,26 @@
 # stablr 0.3.0.9000 (development)
 
+## Bug fixes (implementation review, 2026-10-20, batch F-1)
+
+- `stabl_diagnose()` evidence matching now honours its documented
+  contract for fits with unknown metadata: a NULL dimension matches
+  only "any" rows instead of collapsing the evidence table to zero
+  rows (latent defensive-path logic error).
+- Two `assumption_notes` ("no threshold available" and "boundary
+  minimum") are now single strings; they were split mid-sentence into
+  two vector elements by a stray `c()`.
+- The FDP+ minima diagnostic no longer crashes on hand-built fixtures
+  whose `min_fdr` is not exactly an element of `FDRs`; it reports zero
+  minima instead (real fits were never affected).
+- `adjusted_similarity_summary()` and `pearson_similarity_summary()`
+  now error when fewer than two sets are supplied (previously returned
+  NA/NaN silently).
+- `jaccard_similarity_matrix()` errors informatively on empty input
+  (previously a cryptic `seq_len` coercion error).
+- Binary probability metrics (brier/log_loss/AUROC internals) now
+  reject NA truth values, consistent with the classification-metrics
+  path.
+
 ## Bug fixes (implementation review, 2026-10-20, batch E-4)
 
 - The sPLS-DA learner no longer discards the selection mask for ALL

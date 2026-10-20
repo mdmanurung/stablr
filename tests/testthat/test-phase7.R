@@ -771,3 +771,23 @@ test_that("plot_stabl_path renders single-lambda grids as points (E12 regression
                            logical(1)))
   expect_true(has_points)
 })
+
+test_that("similarity summaries reject fewer than two sets", {
+  expect_error(adjusted_similarity_summary(list(c("a", "b")), 10L),
+               "at least two sets")
+  expect_error(pearson_similarity_summary(list(c("a", "b")), 10L),
+               "at least two sets")
+  expect_error(adjusted_similarity_summary(list(), 10L),
+               "at least two sets")
+})
+
+test_that("jaccard_similarity_matrix errors informatively on empty input", {
+  expect_error(jaccard_similarity_matrix(list()), "at least one set")
+})
+
+test_that(".binary_probability_metrics rejects NA truth", {
+  expect_error(
+    stablr:::.binary_probability_metrics(c(0, 1, NA), c(0.1, 0.9, 0.5), 1),
+    "must not contain NA"
+  )
+})

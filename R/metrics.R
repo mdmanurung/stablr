@@ -79,6 +79,9 @@ jaccard_similarity <- function(list1, list2) {
 #' @export
 jaccard_similarity_matrix <- function(list_of_lists, remove_diag = TRUE) {
   n   <- length(list_of_lists)
+  if (n < 1L) {
+    stop("`list_of_lists` must contain at least one set.", call. = FALSE)
+  }
   mat <- matrix(0, nrow = n, ncol = n)
   diag(mat) <- 1
   for (i in seq_len(n - 1L)) {
@@ -246,6 +249,10 @@ adjusted_similarity_pairwise <- function(list_of_lists, nb_total_elements) {
 #' @export
 adjusted_similarity_summary <- function(list_of_lists, nb_total_elements,
                                         stat = "median") {
+  if (length(list_of_lists) < 2L) {
+    stop("`list_of_lists` must contain at least two sets to summarize ",
+         "pairwise similarity.", call. = FALSE)
+  }
   vals <- adjusted_similarity_pairwise(list_of_lists, nb_total_elements)
   .similarity_summary(vals, stat)
 }
@@ -404,6 +411,10 @@ pearson_similarity_summary <- function(list_of_lists, nb_total_elements,
       "`d` is deprecated; use `nb_total_elements` instead.", call. = FALSE
     )
     if (is.null(nb_total_elements)) nb_total_elements <- d
+  }
+  if (length(list_of_lists) < 2L) {
+    stop("`list_of_lists` must contain at least two sets to summarize ",
+         "pairwise similarity.", call. = FALSE)
   }
   vals <- pearson_similarity_pairwise(list_of_lists, nb_total_elements)
   .similarity_summary(vals, stat)
@@ -628,6 +639,11 @@ fscore_similarity <- function(list1, list2, beta = 1) {
 # Binary probability metrics with explicit event-class mapping.  `truth` must
 # have exactly two levels; `probability` is P(truth == event_class).
 .binary_probability_metrics <- function(truth, probability, event_class) {
+  # Consistent with .classification_metrics: NA truth is a caller error, not
+  # a value to propagate silently into brier/log_loss/auroc.
+  if (anyNA(truth)) {
+    stop("`truth` must not contain NA values.", call. = FALSE)
+  }
   # Preserve the declared level set: a single-class assessment fold still has
   # two levels, and AUROC must return its diagnostic NA rather than error.
   truth <- if (is.factor(truth)) {

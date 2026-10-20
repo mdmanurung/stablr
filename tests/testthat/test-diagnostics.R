@@ -490,3 +490,54 @@ test_that("low-decoy-count instability fires at the selected threshold", {
   expect_true("STABL_DIAG_LOW_DECOY_COUNT" %in% d$warning_codes)
   expect_true(any(grepl("unstable", d$assumption_notes)))
 })
+
+test_that("NULL metadata dimension matches only 'any' rows (B6 regression)", {
+  res <- stablr:::.match_diagnostic_evidence("lasso", NULL, "gaussian")
+  expect_gt(nrow(res), 0L)
+  expect_true(all(res$decoy == "any"))
+  expect_true(all(res$learner %in% c("any", "lasso")))
+  expect_true(all(res$family %in% c("any", "gaussian")))
+})
+
+test_that("assumption_notes are single strings, not fragments (B7 regression)", {
+  # selection_rule == "none" note (fixture G setup).
+  real <- cbind(c(0.9, 0.2, 0.1), rep(0.05, 3L))
+  d <- .diagnose_stabl_scores(
+    stabl_scores = real, stabl_scores_artificial = NULL,
+    fdr_threshold_range = c(0, 0.25, 0.5), hard_threshold = NULL,
+    base_learner = "lasso", family = "gaussian",
+    n_bootstraps = 100L, low_decoy_count = 0L
+  )
+  expect_true(any(grepl("No threshold is available.*empty by contract",
+                        d$assumption_notes)))
+  # Boundary-minimum note (fixture D setup).
+  real2 <- cbind(c(0.4, 0.3, 0.2), rep(0.01, 3L))
+  art2  <- cbind(c(0.35, 0.25), rep(0.01, 2L))
+  d2 <- diagnose_fixture(real2, art2, 2/3, c(0, 0.25, 0.5))
+  expect_true("STABL_DIAG_BOUNDARY_MINIMUM" %in% d2$warning_codes)
+  expect_true(any(grepl("edge of fdr_threshold_range.*widening the range",
+                        d2$assumption_notes)))
+})
+
+test_that("min_fdr not exactly in FDRs yields zero minima, not a crash", {
+  # Hand-fixture path only: real fits always have min_fdr == min(FDRs) on
+  # the same vector.  Pre-fix this threw "subscript out of bounds".
+  d <- .diagnose_stabl_scores(
+    stabl_scores            = cbind(c(0.4, 0.3, 0.2), rep(0.01, 3L)),
+    stabl_scores_artificial = cbind(c(0.35, 0.25), rep(0.01, 2L)),
+    fdr_threshold_range     = c(0, 0.25, 0.5),
+    FDRs                    = c(1.2, 0.8, 1.0),
+    min_fdr                 = 0.75,  # not exactly any element of FDRs
+    fdr_min_threshold       = 0.25,
+    artificial_type         = "knockoff_equi",
+    artificial_proportion   = 2/3,
+    effective_artificial_proportion = 2/3,
+    base_learner            = "lasso", family = "gaussian",
+    n_bootstraps            = 100L,
+    feature_names           = c("f1", "f2"),
+    low_decoy_count         = 0L
+  )
+  expect_identical(d$fdp_curve$n_minima, 0L)
+  expect_false(d$fdp_curve$is_boundary)
+  expect_false(d$fdp_curve$is_tied)
+})

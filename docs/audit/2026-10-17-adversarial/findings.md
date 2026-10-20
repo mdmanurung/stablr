@@ -1609,6 +1609,57 @@ check 0E/0W/1N (pre-existing installed-size NOTE; doc 3.8 Mb); all
 12 vignettes rebuild clean.  NEWS.md entries are docs-only and parse-verified with
 utils::news(); the code tree is exactly the gated tree.
 
+**Batch F-1 diagnostics/metrics edges PR (2026-10-20):** implementation-review
+findings B6/B7 + diagnostics-appendix #10 + metrics-appendix #6/#7/#8
+fixed with regression tests (first batch of the post-E-triage remainder;
+the four embedded decisions were delegated by the user and resolved as:
+similarity single-run → error; dead vendored code → remove;
+evidence_type label → align docs only; typed accessor errors → defer
+and disclose).
+
+- B6 (`R/diagnostics.R`, `.match_diagnostic_evidence`): a NULL metadata
+  dimension collapsed matching to zero rows — `column == NULL` is
+  `logical(0)` and the `!is.null(value) &` guard does not prevent the
+  recycling collapse — contradicting the inline contract ("unknown
+  matches only 'any' rows").  Fixed with an explicit NULL branch.
+  Latent (real fits always carry `artificial_type`); defensive-path
+  logic error.
+- B7 (`R/diagnostics.R`): two `assumption_notes` ("no threshold
+  available", "boundary minimum") were split mid-sentence into two
+  vector elements by `c(...)` instead of `paste0(...)`; both now single
+  strings (the low-decoy note already used `paste0`).
+- diagnostics#10 (`R/diagnostics.R`): `which(FDRs == min_fdr)` on a
+  hand-built fixture with `min_fdr` not exactly in `FDRs` (or NA) threw
+  "subscript out of bounds" at `at_min[[1L]]`.  Guarded: zero minima
+  reported (`n_minima = 0L`, no boundary/tie flags).  Internal-only
+  path; real fits always have `min_fdr == min(FDRs)` on the same vector.
+- metrics#6 (`R/metrics.R`): `adjusted_similarity_summary` /
+  `pearson_similarity_summary` on a single set (or empty input)
+  returned NA/NaN silently.  Approved-delegated decision: fail closed —
+  both now error when `length(list_of_lists) < 2`.
+- metrics#7 (`R/metrics.R`): `jaccard_similarity_matrix(list())` threw
+  a cryptic `seq_len` coercion error; now an informative guard
+  (`n < 1`).  n = 1 behavior (1x0 matrix with `remove_diag`) unchanged.
+- metrics#8 (`R/metrics.R`, `.binary_probability_metrics`): `truth` NA
+  was not rejected (unlike `.classification_metrics`) and propagated to
+  NA brier/log_loss/AUROC silently; now an entry check errors.
+
+Regression tests, each confirmed to FAIL against the pre-fix code
+(git-stash negative control; vacuous-truth anchors on empty results
+pass both ways — the discriminating expectations are the row count, the
+single-string grepls, the no-crash zero-minima result, and the three
+new error contracts): NULL metadata matches only "any" rows (B6); both
+notes are single elements (B7); corrupt-min_fdr fixture diagnoses clean
+with `n_minima = 0` (diag#10); single-set summaries error (metrics#6);
+empty jaccard input errors informatively (metrics#7); NA truth errors
+(metrics#8).
+
+Gates: suite 62 files / 0 failed / 0 errors / 1 skip / 3 warnings (exact
+parity with PR-G — the new tests add no warnings or skips); R CMD
+check 0E/0W/1N (pre-existing installed-size NOTE; doc 3.8 Mb); all
+12 vignettes rebuild clean.  NEWS.md entries are docs-only and parse-verified with
+utils::news(); the code tree is exactly the gated tree.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3
