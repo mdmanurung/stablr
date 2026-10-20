@@ -98,8 +98,10 @@ standardisation. Here,
 [`load_ool_data()`](https://mdmanurung.github.io/stablr/reference/load_ool_data.md)
 ships 150 training samples and 21 aligned validation samples for `CyTOF`
 and `Proteomics` only. It keeps the first 100 features from each assay.
-The matrices are already aligned and have no missing values. These are
-quick-build settings, not the predeclared full OOL parity analysis. Use
+The matrices are already aligned and have no missing values. This
+vignette standardises both views the same way the notebook does — fitted
+on the training samples only (Section 4.2). These are quick-build
+settings, not the predeclared full OOL parity analysis. Use
 `docs/PYTHON_TO_R_MAPPING.md` when the goal is to mirror the tutorial
 notebook’s datasets and preprocessing choices.
 
@@ -174,12 +176,59 @@ easily.
 
 ### 4.2 Model fitting
 
+We standardise both views before fitting, matching the Python tutorial’s
+preprocessing pipeline (which standardises every view). The two views
+arrive on incommensurate scales — the CyTOF features here vary by about
+0.08 SD, the Proteomics features by about 0.5 SD with means far from
+zero. The lasso learner used below standardises internally, so the
+per-omic selections are numerically unaffected either way; the
+discipline matters when you swap learners (sPLS-DA is scale-sensitive),
+use model-X knockoff decoys (the equicorrelated construction is
+scale-dependent), or concatenate views for early fusion in Section 5.
+
+Each view’s standardiser is fitted on the training samples only, and the
+stored training means and standard deviations are then applied unchanged
+to the validation samples. Two shortcuts would corrupt the analysis.
+Fitting the scaler on the pooled train + validation matrix leaks
+validation distribution information into training. Fitting a separate
+scaler on the validation matrix is not leakage, but it places the
+validation samples in a different feature space, so a model trained on
+the training scaling mispredicts them.
+[`stabl_preprocess_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_preprocess_fit.md)
+and
+[`stabl_preprocess_apply()`](https://mdmanurung.github.io/stablr/reference/stabl_preprocess_apply.md)
+exist for exactly this fit-on-train, apply-everywhere pattern;
+`stabl_analyze(mode = "validated")` applies the same rule inside every
+cross-validation fold. The fitter also guards zero-variance features
+(their SD is set to 1, leaving them constant at zero after centring) —
+six CyTOF features are constant in this training split, and a bare
+[`scale()`](https://rdrr.io/r/base/scale.html) would turn them into
+`NaN`.
+
+``` r
+
+# Fit one standardiser per view on the TRAINING samples only ...
+pp_cytof <- stabl_preprocess_fit(ool_train$x_list$cytof,
+                                 transforms = c("center", "scale"))
+pp_prot  <- stabl_preprocess_fit(ool_train$x_list$proteomics,
+                                 transforms = c("center", "scale"))
+cytof_train_scaled      <- stabl_preprocess_apply(pp_cytof,
+                                                  ool_train$x_list$cytof)
+proteomics_train_scaled <- stabl_preprocess_apply(pp_prot,
+                                                  ool_train$x_list$proteomics)
+# ... then apply the stored training mean/SD to the validation samples
+cytof_valid_scaled      <- stabl_preprocess_apply(pp_cytof,
+                                                  ool_valid$x_list$cytof)
+proteomics_valid_scaled <- stabl_preprocess_apply(pp_prot,
+                                                  ool_valid$x_list$proteomics)
+```
+
 We build a compact lambda grid for the CyTOF view.
 
 ``` r
 
 lambda_cytof <- auto_lambda_grid(
-  ool_train$x_list$cytof, ool_train$y,
+  cytof_train_scaled, ool_train$y,
   family = "gaussian", n_lambda = 6
 )
 ```
@@ -189,7 +238,7 @@ We fit STABL to the CyTOF view with 10 bootstrap replicates.
 ``` r
 
 fit_cytof <- stabl_fit(
-  x               = ool_train$x_list$cytof,
+  x               = cytof_train_scaled,
   y               = ool_train$y,
   lambda_grid     = lambda_cytof,
   family          = "gaussian",
@@ -201,18 +250,16 @@ fit_cytof
 #> <stabl_fit>
 #>   Features in:      100 
 #>   Features selected: 0 
-#>   Min FDP+:         1.044 
+#>   Min FDP+:         1.0556 
 #>   FDP+ threshold:   1 
 #>   Artificial:       random_permutation
 ```
 
-We standardise the Proteomics matrix with
-[`scale()`](https://rdrr.io/r/base/scale.html). Then we compute its
-lambda grid and fit.
+We compute the Proteomics lambda grid on its scaled training matrix and
+fit.
 
 ``` r
 
-proteomics_train_scaled <- scale(ool_train$x_list$proteomics)
 lambda_prot <- auto_lambda_grid(
   proteomics_train_scaled, ool_train$y,
   family = "gaussian", n_lambda = 6
@@ -327,11 +374,11 @@ We build the per-omic lambda grids from the training data.
 
 ``` r
 
-# Build per-omic lambda grids
+# Build per-omic lambda grids from the scaled training matrices
 lambda_list <- list(
-  cytof      = auto_lambda_grid(ool_train$x_list$cytof,
+  cytof      = auto_lambda_grid(cytof_train_scaled,
                                 ool_train$y, family = "gaussian", n_lambda = 6),
-  proteomics = auto_lambda_grid(ool_train$x_list$proteomics,
+  proteomics = auto_lambda_grid(proteomics_train_scaled,
                                 ool_train$y, family = "gaussian", n_lambda = 6)
 )
 ```
@@ -343,15 +390,23 @@ grid computed on the full dataset leaks mild information into the
 cross-validated estimates. `"auto"` avoids this. It builds each fold’s
 grid from its training data alone.
 
-We run the integrated workflow with both fusion strategies enabled.
+We run the integrated workflow with both fusion strategies enabled. Both
+views enter under the same training-fitted standardisation as in Section
+4, and the validation matrices are transformed with the stored training
+parameters — so the early-fusion concatenation mixes only comparably
+scaled features, the late-fusion validation predictions are computed in
+the correct feature space, and the per-omic baseline above is directly
+comparable.
 
 ``` r
 
 multi_fit <- stabl_multiomic_train_validate(
-  x_train_list    = ool_train$x_list,
+  x_train_list    = list(cytof      = cytof_train_scaled,
+                         proteomics = proteomics_train_scaled),
   y_train         = ool_train$y,
   lambda_grid     = lambda_list,
-  x_valid_list    = ool_valid$x_list,
+  x_valid_list    = list(cytof      = cytof_valid_scaled,
+                         proteomics = proteomics_valid_scaled),
   y_valid         = ool_valid$y,
   family          = "gaussian",
   n_bootstraps    = 10L,
@@ -370,7 +425,7 @@ multi_fit
 #>     proteomics: 0
 #>   Validation data:  yes 
 #>   Early fusion:     yes (12 features selected) 
-#>   Late fusion:      yes (score = 0.0974)
+#>   Late fusion:      yes (score = 0.1968)
 ```
 
 The printed summary lists the active branches of the workflow together
@@ -413,7 +468,9 @@ print(get_feature_names(multi_fit$fits$proteomics))
 ```
 
 These lists come from the fits within the joint pipeline. Compare them
-with the standalone per-omic results of Section 4.
+with the standalone per-omic results of Section 4 — both use the same
+training-fitted standardisation, so any difference reflects the joint
+analysis, not the preprocessing.
 
 ### 6.3 Early fusion
 
@@ -479,11 +536,11 @@ ggplot2::ggplot(lf_df, ggplot2::aes(observed, predicted)) +
 DOS](stablr-multiomic_files/figure-html/late-fusion-scatter-1.png)
 
 On these compact build settings the scatter has an honest lesson: the
-blended predictor is nearly constant (the points form a horizontal line
-at the training-mean level). Ten bootstraps and six-lambda grids
-demonstrate the workflow shape, not a competitive prediction rule; run
-hundreds of bootstraps before reading predictive performance from this
-figure.
+blended predictor is exactly constant at the training-mean level — both
+omics return empty selections at ten bootstraps and six-lambda grids, so
+the blend has no feature signal to work with. These settings demonstrate
+the workflow shape, not a competitive prediction rule; run hundreds of
+bootstraps before reading predictive performance from this figure.
 
 The `$weights` element records the omic weights chosen by the
 training-prediction stacking objective. A small weight means that a view

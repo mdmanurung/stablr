@@ -38,10 +38,10 @@ Numeric scalar in \\\[0, 1\]\\. Returns 0 when the true set is empty.
 ``` r
 true_signal <- c("f1", "f2", "f3")
 predicted   <- c("f1", "f2", "f4")  # misses f3
-tpr_similarity(predicted, true_signal)       # 2/3
+stablr:::tpr_similarity(predicted, true_signal)       # 2/3
 #> [1] 0.6666667
-tpr_similarity(character(0), true_signal)    # 0
+stablr:::tpr_similarity(character(0), true_signal)    # 0
 #> [1] 0
-tpr_similarity(c("f1","f2","f3"), true_signal)  # 1
+stablr:::tpr_similarity(c("f1","f2","f3"), true_signal)  # 1
 #> [1] 1
 ```

@@ -6,8 +6,9 @@
 - 2 A worked example
 - 3 Defaults chosen by
   [`stabl()`](https://mdmanurung.github.io/stablr/reference/stabl.md)
-- 4 The expert interface
-- 5 Compatibility with versions before 0.3.0
+- 4 Leakage-safe preprocessing
+- 5 The expert interface
+- 6 Migrating from pre-1.0.0 versions
 
 ## 1 Introduction
 
@@ -26,7 +27,7 @@ fit
 ```
 
 Everything else in the package is available when more control is
-required; see Section 4, The expert interface.
+required; see Section 5, The expert interface.
 
 ## 2 A worked example
 
@@ -63,8 +64,8 @@ fit
 #>   3 feature(s) selected at FDP+ estimate 0.333:
 #>   m1, m2, n3
 #>   use summary() for details, plot() for stability paths,
-#>   feature_names() / support() for the selection, get_fdrs() for the
-#>   FDP+ curve.
+#>   get_feature_names() / get_support() for the selection,
+#>   get_fdrs() for the FDP+ curve.
 ```
 
 The printed output reports the selected features together with the
@@ -74,7 +75,7 @@ The selected features are also available as a character vector.
 
 ``` r
 
-feature_names(fit)
+get_feature_names(fit)
 #> [1] "m1" "m2" "n3"
 ```
 
@@ -121,7 +122,61 @@ fit <- stabl(df, y = "response", base_learner = "elastic_net",
              artificial_proportion = 0.5)
 ```
 
-## 4 The expert interface
+## 4 Leakage-safe preprocessing
+
+The worked example above fits on the full dataset. That is correct for
+exploratory selection — the selection describes the data you have. The
+moment you want held-out predictions or a train/test evaluation, one
+rule applies to every *learned* transform (centering, scaling,
+imputation, variance filtering):
+
+**Fit the transform on the training samples only; apply the stored
+training parameters to the test samples.**
+
+Two shortcuts both corrupt the analysis. Fitting the transform on the
+pooled train + test data leaks test-distribution information into
+training — the test means and variances shift the fitted parameters, and
+the held-out estimate is optimistically biased. Fitting a separate
+transform on the test data is not leakage, but it places the test
+samples in a different feature space, so a model trained on the training
+transform mispredicts them.
+
+[`stabl_preprocess_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_preprocess_fit.md)
+and
+[`stabl_preprocess_apply()`](https://mdmanurung.github.io/stablr/reference/stabl_preprocess_apply.md)
+implement the rule as a fit/apply pair.
+
+``` r
+
+x <- as.matrix(df[, 1:8])
+idx <- seq_len(40)  # first 40 samples train, remaining 20 test
+
+pp <- stabl_preprocess_fit(x[idx, ], transforms = c("center", "scale"))
+x_train <- stabl_preprocess_apply(pp, x[idx, ])
+x_test  <- stabl_preprocess_apply(pp, x[-idx, ])
+```
+
+`pp` stores the training means and standard deviations, and `x_test` is
+scaled with those values — not with its own. You can see the difference:
+the test matrix is centred with the training means, so its own column
+means are not exactly zero.
+
+``` r
+
+round(colMeans(x_test), 3)
+#>     m1     m2     m3     m4     m5     n1     n2     n3 
+#>  0.053  0.003  0.830 -0.396  0.087 -0.142  0.182  0.588
+```
+
+The same rule is applied automatically inside every fold of
+`stabl_analyze(mode = "validated")` and inside the multi-omic
+cross-validation workflows, so a validated analysis cannot leak through
+preprocessing. For the multi-view case — including why the validation
+matrix must be transformed with the training parameters before
+late-fusion prediction — see
+[`vignette("stablr-multiomic")`](https://mdmanurung.github.io/stablr/articles/stablr-multiomic.md).
+
+## 5 The expert interface
 
 [`stabl()`](https://mdmanurung.github.io/stablr/reference/stabl.md) is a
 thin wrapper around
@@ -196,27 +251,37 @@ workflows, nested cross-validation, and environment stability. For what
 for a guide to the stability-path and FDP+ diagnostic plots, see
 [`vignette("stablr-reading-plots")`](https://mdmanurung.github.io/stablr/articles/stablr-reading-plots.md).
 
-## 5 Compatibility with versions before 0.3.0
+## 6 Migrating from pre-1.0.0 versions
 
-A number of ambiguous names were renamed
-([`get_feature_names_out()`](https://mdmanurung.github.io/stablr/reference/get_feature_names_out.md)
-is now
+The 1.0.0 contract removes the pre-0.3.0 compatibility names outright
+(`get_feature_names_out()`, `stacked_multi_omic()`, `jaccard_matrix()`,
+`adjusted_similarity_values()`, `adjusted_similarity_measure()`,
+`pearson_similarity_values()`, `pearson_similarity_measure()`,
+`classic_bootstrap_indices()`); calling them now raises an error. Use
+the canonical names —
 [`get_feature_names()`](https://mdmanurung.github.io/stablr/reference/get_feature_names.md),
-[`stacked_multi_omic()`](https://mdmanurung.github.io/stablr/reference/stacked_multi_omic.md)
-is now
 [`stabl_multiomic_stacked()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_stacked.md),
-[`jaccard_matrix()`](https://mdmanurung.github.io/stablr/reference/jaccard_matrix.md)
-is now
 [`jaccard_similarity_matrix()`](https://mdmanurung.github.io/stablr/reference/jaccard_similarity_matrix.md),
-and so on; see `NEWS.md` for the full table). The old names continue to
-work: each warns once and delegates to the new name.
+[`adjusted_similarity_pairwise()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity_pairwise.md),
+[`adjusted_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity_summary.md),
+[`pearson_similarity_pairwise()`](https://mdmanurung.github.io/stablr/reference/pearson_similarity_pairwise.md),
+[`pearson_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/pearson_similarity_summary.md),
+[`sample_bootstrap_indices()`](https://mdmanurung.github.io/stablr/reference/sample_bootstrap_indices.md)
+— and see `NEWS.md` and `docs/MIGRATION_0.3_TO_1.0.md` for the full
+mapping.
 
-The 1.0.0 contract does remove a small set of legacy behaviors (Phase 13
-PR-A): the `explore`/`n_explore` arguments of
+The 1.0.0 contract also removes a small set of legacy behaviors (Phase
+13 PR-A): the `explore`/`n_explore` arguments of
 [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
 (an empty selection now stays empty instead of being relabelled as a
 top-N “explore” set), the in-sample
 `late_fusion_training = "python_legacy"` mode, and
 `cooperation_selection = "validation"` (both biased performance
-estimates). The remaining deprecated aliases are removed in the 1.0.0
-API pruning; see `NEWS.md` and the migration guide for replacements.
+estimates). The beginner generics `support()` and `feature_names()` are
+removed in favour of the canonical accessors
+[`get_support()`](https://mdmanurung.github.io/stablr/reference/get_support.md)
+and
+[`get_feature_names()`](https://mdmanurung.github.io/stablr/reference/get_feature_names.md),
+and the experimental oblique random-forest learner
+(`base_learner = "oblique_rf"`) is retired (use `"rf"`); see the
+migration guide for the complete list.

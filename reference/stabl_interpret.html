@@ -30,6 +30,7 @@ correlation/redundancy group, and a seeded permutation importance."></head><body
   <ul class="dropdown-menu" aria-labelledby="dropdown-vignettes"><li><a class="dropdown-item" href="../articles/stablr-getting-started.html">Getting started with stabl</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-python-parity.html">Python STABL parity (pinned snapshot)</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-reading-plots.html">Reading stability paths and FDP+ plots</a></li>
+    <li><a class="dropdown-item" href="../articles/stablr-reliability.html">Reliability, validation, and final models</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-intro.html">Quick start (expert interface)</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-multiomic.html">Multi-omic OOL workflow</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-tcga.html">TCGA Breast Cancer workflow</a></li>
@@ -153,13 +154,15 @@ explicit <code>NA</code> with a reason column.</p>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p><strong>Evidence labels.</strong>  All effects and importances are computed on the data
-supplied as <code>x</code>/<code>y</code>.  When that data is the fitting data, every row is
-labelled <code>post_selection_descriptive</code> (effects) and <code>apparent</code>
-(importance): the same samples informed both selection and the downstream
-fit, so the quantities are optimistic and carry no inferential meaning.
-Supplying genuinely held-out <code>x</code>/<code>y</code> relabels the importance scope, but
-the caller is responsible for that data being untouched by fitting — this
-function cannot verify it.</p>
+supplied as <code>x</code>/<code>y</code>.  The evidence table carries a single
+<code>evidence_type</code> column: with the fitting data (the default) every row is
+labelled <code>post_selection_descriptive</code> — the same samples informed both
+selection and the downstream fit, so the quantities are optimistic and
+carry no inferential meaning.  With <code>assessment = TRUE</code> (genuinely
+held-out <code>x</code>/<code>y</code>) rows are labelled <code>cross_validated</code> (a historical
+label for the held-out-assessment scope; the function does not itself
+cross-validate).  The caller is responsible for the assessment data
+being untouched by fitting — this function cannot verify it.</p>
 <p><strong>What each column is.</strong>  <code>stability</code> is the max-over-lambda selection
 frequency from <code><a href="get_importances.html">get_importances()</a></code>; it is not a coefficient magnitude or a
 prediction importance.  <code>coefficient</code> / <code>standardized_effect</code> /

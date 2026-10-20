@@ -1,0 +1,57 @@
+# Validate new data against a `"stabl_predictor"` schema
+
+Checks `newdata` against the column schema recorded at
+[`stabl_finalize()`](https://mdmanurung.github.io/stablr/reference/stabl_finalize.md)
+time and returns the required columns as a numeric matrix in training
+order. Column names must be present, non-empty and unique; missing or
+duplicated required columns are always an error; non-numeric columns are
+an error; extra columns are an error unless `extra_columns = "drop"` is
+given explicitly.
+
+## Usage
+
+``` r
+validate_newdata_schema(object, newdata, extra_columns = c("error", "drop"))
+```
+
+## Arguments
+
+- object:
+
+  A `"stabl_predictor"` from
+  [`stabl_finalize()`](https://mdmanurung.github.io/stablr/reference/stabl_finalize.md).
+
+- newdata:
+
+  A data frame or numeric matrix with column names.
+
+- extra_columns:
+
+  Policy for columns not required by the model: `"error"` (default) or
+  `"drop"` (explicit opt-in; the extra columns are discarded).
+
+## Value
+
+A numeric matrix with exactly the required columns in training order.
+For an intercept-only model (empty selected panel, no preprocessing) the
+matrix has zero columns and `nrow(newdata)` rows: the model ignores all
+feature columns.
+
+## Examples
+
+``` r
+set.seed(2L)
+ids <- paste0("s", 1:60)
+x <- matrix(rnorm(60 * 6), 60, 6,
+            dimnames = list(ids, paste0("f", 1:6)))
+y <- setNames(2 * x[, 1] - x[, 2] + rnorm(60), ids)
+fit <- stabl_fit(x, y, lambda_grid = data.frame(lambda = c(0.3, 0.2, 0.1)),
+                 family = "gaussian", n_bootstraps = 20L, random_state = 2L)
+final <- stabl_finalize(fit, x, y, random_state = 2L)
+req <- final$required_columns
+validate_newdata_schema(final, x[1:3, rev(req)])  # order does not matter
+#>            f1         f2
+#> s1 -0.8969145 -1.7882422
+#> s2  0.1848492  2.0312425
+#> s3  1.5878453 -0.7031443
+```

@@ -72,22 +72,17 @@ print(x, ...)
   `"sparse_group_lasso"`, or `"rf"` (random forest via `ranger`;
   requires `lambda_grid` from
   [`auto_rf_threshold_grid()`](https://mdmanurung.github.io/stablr/reference/auto_rf_threshold_grid.md)
-  or `"auto"`), or `"oblique_rf"` (oblique random forest via `aorsf`;
-  requires `lambda_grid` from
-  [`auto_oblique_threshold_grid()`](https://mdmanurung.github.io/stablr/reference/auto_oblique_threshold_grid.md)
   or `"auto"`), or `"ordinal"` (elastic-net cumulative logit via
   `ordinalNet` for ordered-band outcomes; requires a factor `y` and
   [`auto_ordinal_lambda_grid()`](https://mdmanurung.github.io/stablr/reference/auto_ordinal_lambda_grid.md)
-  or `"auto"`). Default: `"lasso"`. `"rf"`, `"oblique_rf"`, and
-  `"ordinal"` are experimental extensions beyond Python STABL: FDP+
-  calibration for (oblique) random forests is empirical, not guaranteed,
-  and is validated separately (see the package's RF validation study);
-  they must be paired with model-X knockoff artificial features. For
-  `"oblique_rf"` the per-feature selection frequencies are noisier than
-  for `"rf"` because importance is spread across the linear combinations
-  used in each split, or `"splsda"` (sparse PLS discriminant analysis
-  via `mixOmics`; classification only, requires `family = "binomial"`;
-  sweeps a per-component `keepX` grid — use
+  or `"auto"`). Default: `"lasso"`. `"rf"` and `"ordinal"` are
+  experimental extensions beyond Python STABL: FDP+ calibration for
+  random forests is empirical, not guaranteed, and is validated
+  separately (see the package's RF validation study); they must be
+  paired with model-X knockoff artificial features, or `"splsda"`
+  (sparse PLS discriminant analysis via `mixOmics`; classification only,
+  requires `family = "binomial"`; sweeps a per-component `keepX` grid —
+  use
   [`auto_splsda_keepx_grid()`](https://mdmanurung.github.io/stablr/reference/auto_splsda_keepx_grid.md)
   or `"auto"`, and control the number of latent components with
   `splsda_ncomp`). `"splsda"` is an experimental extension beyond Python

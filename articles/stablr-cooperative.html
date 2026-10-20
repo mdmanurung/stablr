@@ -38,6 +38,7 @@
 <li><a class="dropdown-item" href="../articles/stablr-getting-started.html">Getting started with stabl</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-python-parity.html">Python STABL parity (pinned snapshot)</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-reading-plots.html">Reading stability paths and FDP+ plots</a></li>
+    <li><a class="dropdown-item" href="../articles/stablr-reliability.html">Reliability, validation, and final models</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-intro.html">Quick start (expert interface)</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-multiomic.html">Multi-omic OOL workflow</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-tcga.html">TCGA Breast Cancer workflow</a></li>
@@ -614,7 +615,7 @@ run in one call, and the selected features are then compared.</p>
 <span><span class="co">#&gt;     proteomics: 2</span></span>
 <span><span class="co">#&gt;   Validation data:  yes </span></span>
 <span><span class="co">#&gt;   Early fusion:     yes (7 features selected) </span></span>
-<span><span class="co">#&gt;   Late fusion:      yes (score = 0.2565) </span></span>
+<span><span class="co">#&gt;   Late fusion:      yes (score = 0.2178) </span></span>
 <span><span class="co">#&gt;   Cooperative fusion:</span></span>
 <span><span class="co">#&gt;     selection:     cv</span></span>
 <span><span class="co">#&gt;     rho (chosen):  0.5</span></span>
@@ -754,10 +755,9 @@ appropriate when <strong>joint latent factors</strong> for
 classification and mixOmics visualisation are the goal. For a
 like-for-like classification comparison, <code>stablr</code> also ships
 an sPLS-DA base learner (<code>base_learner = "splsda"</code>, backed by
-mixOmics; see <code><a href="../reference/make_splsda_adapter.html">?make_splsda_adapter</a></code>), which runs the same
-stability-selection machinery on top of the sPLS-DA learner.
-Head-to-head TCGA benchmarks that include early fusion (and future
-cooperative arms) are described in
+mixOmics), which runs the same stability-selection machinery on top of
+the sPLS-DA learner. Head-to-head TCGA benchmarks that include early
+fusion (and future cooperative arms) are described in
 <code>inst/analysis/BENCHMARK_PLAN.md</code>.</p>
 </div>
 </div>

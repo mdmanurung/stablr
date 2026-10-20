@@ -504,7 +504,7 @@ all_fit
 #>     proteomics: 2
 #>   Validation data:  yes 
 #>   Early fusion:     yes (7 features selected) 
-#>   Late fusion:      yes (score = 0.2565) 
+#>   Late fusion:      yes (score = 0.2178) 
 #>   Cooperative fusion:
 #>     selection:     cv
 #>     rho (chosen):  0.5
@@ -614,12 +614,10 @@ omic** with cross-view agreement are the goal. DIABLO is appropriate
 when **joint latent factors** for classification and mixOmics
 visualisation are the goal. For a like-for-like classification
 comparison, `stablr` also ships an sPLS-DA base learner
-(`base_learner = "splsda"`, backed by mixOmics; see
-[`?make_splsda_adapter`](https://mdmanurung.github.io/stablr/reference/make_splsda_adapter.md)),
-which runs the same stability-selection machinery on top of the sPLS-DA
-learner. Head-to-head TCGA benchmarks that include early fusion (and
-future cooperative arms) are described in
-`inst/analysis/BENCHMARK_PLAN.md`.
+(`base_learner = "splsda"`, backed by mixOmics), which runs the same
+stability-selection machinery on top of the sPLS-DA learner.
+Head-to-head TCGA benchmarks that include early fusion (and future
+cooperative arms) are described in `inst/analysis/BENCHMARK_PLAN.md`.
 
 ## 10 Cross-validation with cooperative fusion
 

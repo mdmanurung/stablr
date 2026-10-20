@@ -1,11 +1,5 @@
 # Build an Ordinal-Regression Learner Adapter (Experimental)
 
-Simulated calibration evidence (10 seeds x 2 designs, proportional-odds
-ground truth): knockoff_equi mean FDP+ was 0.00 (nominal 0.1) but mean
-TPR was only 0.37 on both designs – the learner is strongly conservative
-and did NOT meet the predeclared graduation bar (FDP+ \<= 0.15 AND TPR
-\>= 0.8). It stays experimental; see benchmarks/ws9_summary.md.
-
 Returns a closure that fits ONE elastic-net cumulative-logit model
 (`ordinalNet`) on a single bootstrap subsample and returns a logical
 selection mask over the features, mirroring the role of
@@ -34,7 +28,7 @@ inside
 where `lambda_val` is a 1-row `data.frame` from the lambda grid (see
 [`auto_ordinal_lambda_grid()`](https://mdmanurung.github.io/stablr/reference/auto_ordinal_lambda_grid.md)).
 
-## Details
+## Selection rule
 
 With `parallelTerms = TRUE` the proportional-odds model gives one slope
 per feature. A feature is selected at a grid row when the absolute value
@@ -46,12 +40,28 @@ the stability-accumulation and FDP+ logic in
 [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
 work unchanged.
 
-Guardrails: `y` must be a factor whose level order is the band order (an
-ordered factor is recommended). This learner is an extension beyond
-Python STABL and has no Python-parity counterpart; it ships EXPERIMENTAL
-until the WS-9 benchmark passes. Artificial features are
-outcome-agnostic, so both `random_permutation` and model-X knockoff
-decoys apply unchanged.
+## Statistical guardrails (read before using)
+
+- **Outcome type.** `y` must be a factor; its level order is the band
+  order. An ordered factor is recommended. Numeric outcomes must be
+  banded by the caller (for example with
+  [`cut()`](https://rdrr.io/r/base/cut.html)).
+
+- **Experimental.** This learner is an extension beyond Python STABL and
+  has no Python-parity counterpart. FDP+ calibration for the ordinal
+  learner is validated by the WS-9 simulation benchmark; consult the
+  benchmark summary before treating FDP+ as calibrated.
+
+- **Decoys.** Artificial features are outcome-agnostic; both
+  `random_permutation` and model-X knockoffs apply unchanged.
+
+## Calibration status (experimental)
+
+Simulated calibration evidence (10 seeds x 2 proportional-odds designs)
+shows knockoff_equi mean FDP+ of 0.00 (nominal 0.1) but mean TPR of only
+0.37 on both designs – the learner is strongly conservative and did not
+meet the predeclared graduation bar. It stays experimental; see
+benchmarks/ws9_summary.md.
 
 ## See also
 
@@ -70,7 +80,7 @@ if (requireNamespace("ordinalNet", quietly = TRUE)) {
   y   <- cut(eta + rnorm(40L, sd = 0.5), breaks = 4,
              labels = paste0("L", 1:4), ordered_result = TRUE)
   grid   <- auto_ordinal_lambda_grid(x, y, n_lambda = 5L)
-  adapter <- make_ordinal_adapter()
+  adapter <- stablr:::make_ordinal_adapter()
   mask <- adapter(x, y, grid[1L, , drop = FALSE])
   cat("selected at sparsest lambda:", sum(mask), "of", ncol(x), "\n")
 }

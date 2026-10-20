@@ -28,6 +28,7 @@ known in advance."></head><body>
   <ul class="dropdown-menu" aria-labelledby="dropdown-vignettes"><li><a class="dropdown-item" href="../articles/stablr-getting-started.html">Getting started with stabl</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-python-parity.html">Python STABL parity (pinned snapshot)</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-reading-plots.html">Reading stability paths and FDP+ plots</a></li>
+    <li><a class="dropdown-item" href="../articles/stablr-reliability.html">Reliability, validation, and final models</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-intro.html">Quick start (expert interface)</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-multiomic.html">Multi-omic OOL workflow</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-tcga.html">TCGA Breast Cancer workflow</a></li>
@@ -93,9 +94,9 @@ is empty (no false discoveries possible).</p>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">true_signal</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"f1"</span>, <span class="st">"f2"</span>, <span class="st">"f3"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">predicted</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"f1"</span>, <span class="st">"f2"</span>, <span class="st">"f4"</span>, <span class="st">"f5"</span><span class="op">)</span>  <span class="co"># f4, f5 are false discoveries</span></span></span>
-<span class="r-in"><span><span class="fu">fdr_similarity</span><span class="op">(</span><span class="va">predicted</span>, <span class="va">true_signal</span><span class="op">)</span>      <span class="co"># 2/4 = 0.5</span></span></span>
+<span class="r-in"><span><span class="fu">stablr</span><span class="fu">:::</span><span class="fu">fdr_similarity</span><span class="op">(</span><span class="va">predicted</span>, <span class="va">true_signal</span><span class="op">)</span>      <span class="co"># 2/4 = 0.5</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.5</span>
-<span class="r-in"><span><span class="fu">fdr_similarity</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">character</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span>, <span class="va">true_signal</span><span class="op">)</span>   <span class="co"># 0 (empty prediction)</span></span></span>
+<span class="r-in"><span><span class="fu">stablr</span><span class="fu">:::</span><span class="fu">fdr_similarity</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">character</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span>, <span class="va">true_signal</span><span class="op">)</span>   <span class="co"># 0 (empty prediction)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0</span>
 </code></pre></div>
     </div>

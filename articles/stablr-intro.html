@@ -38,6 +38,7 @@
 <li><a class="dropdown-item" href="../articles/stablr-getting-started.html">Getting started with stabl</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-python-parity.html">Python STABL parity (pinned snapshot)</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-reading-plots.html">Reading stability paths and FDP+ plots</a></li>
+    <li><a class="dropdown-item" href="../articles/stablr-reliability.html">Reliability, validation, and final models</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-intro.html">Quick start (expert interface)</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-multiomic.html">Multi-omic OOL workflow</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-tcga.html">TCGA Breast Cancer workflow</a></li>
@@ -688,8 +689,7 @@ measured evidence for this design, not as guarantees for yours.</p>
 <td><code>splsda</code></td>
 <td><code>random_permutation</code></td>
 <td>1.00 / 1.00</td>
-<td>Best-calibrated classification pairing (see
-<code><a href="../reference/make_splsda_adapter.html">?make_splsda_adapter</a></code>).</td>
+<td>Best-calibrated classification pairing.</td>
 </tr>
 <tr class="odd">
 <td><code>sparse_group_lasso</code></td>
@@ -707,6 +707,14 @@ not (1.25 / 1.50).</td>
 </tr>
 <tr class="odd">
 <td>
+<code>oblique_rf</code> (retired in 1.0.0)</td>
+<td>either</td>
+<td>0.75-1.75</td>
+<td>Failed the predeclared calibration bar (WS-3); use
+<code>rf</code>.</td>
+</tr>
+<tr class="even">
+<td>
 <code>lasso</code>, <code>elastic_net</code>,
 <code>adaptive_lasso</code>
 </td>
@@ -714,13 +722,6 @@ not (1.25 / 1.50).</td>
 <td>1.05-2.00</td>
 <td>Anti-conservative for the glmnet family. Treat FDP+ as a diagnostic
 only.</td>
-</tr>
-<tr class="even">
-<td><code>oblique_rf</code></td>
-<td>either</td>
-<td>0.75-1.75</td>
-<td>Fenced: decoy importance is inflated; use <code>rf</code>
-instead.</td>
 </tr>
 </tbody>
 </table>
@@ -774,9 +775,8 @@ than the small values used here.</li>
 high-level <code><a href="../reference/stabl.html">stabl()</a></code> wrapper, which fixes safe defaults for
 the expert arguments shown here.</li>
 <li>For classification with an sPLS-DA base learner, set
-<code>base_learner = "splsda"</code> (see
-<code><a href="../reference/make_splsda_adapter.html">?make_splsda_adapter</a></code>); for random forests, see
-<code><a href="../reference/make_ranger_adapter.html">?make_ranger_adapter</a></code>.</li>
+<code>base_learner = "splsda"</code>; for random forests,
+<code>base_learner = "rf"</code>.</li>
 <li>Use <code><a href="../articles/stablr-multiomic.html">vignette("stablr-multiomic")</a></code> when the data contain
 multiple omic views.</li>
 <li>Use <code><a href="../reference/save_stabl_results.html">?save_stabl_results</a></code> to export scores, plots, and

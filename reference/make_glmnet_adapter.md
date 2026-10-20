@@ -75,7 +75,7 @@ if (requireNamespace("glmnet", quietly = TRUE)) {
   set.seed(1L)
   x <- matrix(rnorm(200L), 20L, 10L)
   y <- rnorm(20L)
-  adapter <- make_glmnet_adapter(family = "gaussian", bootstrap_threshold = 1e-5)
+  adapter <- stablr:::make_glmnet_adapter(family = "gaussian", bootstrap_threshold = 1e-5)
   mask <- adapter(x, y, data.frame(lambda = 0.1))
   cat("selected:", sum(mask), "of", ncol(x), "features\n")
 }

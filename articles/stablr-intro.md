@@ -550,11 +550,11 @@ guarantees for yours.
 | `lasso` | `random_permutation` | 1.08 / 0.92 | Calibrated fast default. |
 | `elastic_net` | `random_permutation` | 1.00 / 0.95 | Calibrated; prefer for correlated features. |
 | `adaptive_lasso` | `random_permutation` | 1.00 / 0.52 | Calibrated to conservative; tighter lists. |
-| `splsda` | `random_permutation` | 1.00 / 1.00 | Best-calibrated classification pairing (see [`?make_splsda_adapter`](https://mdmanurung.github.io/stablr/reference/make_splsda_adapter.md)). |
+| `splsda` | `random_permutation` | 1.00 / 1.00 | Best-calibrated classification pairing. |
 | `sparse_group_lasso` | `knockoff_equi` | 1.00 / 0.97 | Calibrated with the highest power, but realized FDP 0.85-0.91: a screening pairing, not a short list. |
 | `rf` | `knockoff_equi` | 0.92 / 0.96 | Calibrated. `rf` with `random_permutation` is not (1.25 / 1.50). |
+| `oblique_rf` (retired in 1.0.0) | either | 0.75-1.75 | Failed the predeclared calibration bar (WS-3); use `rf`. |
 | `lasso`, `elastic_net`, `adaptive_lasso` | `knockoff_equi` | 1.05-2.00 | Anti-conservative for the glmnet family. Treat FDP+ as a diagnostic only. |
-| `oblique_rf` | either | 0.75-1.75 | Fenced: decoy importance is inflated; use `rf` instead. |
 
 Two rules follow from the table. First, for the glmnet-family learners
 and `splsda`, `random_permutation` is the calibrated pairing in this
@@ -599,10 +599,7 @@ extensions are available:
   wrapper, which fixes safe defaults for the expert arguments shown
   here.
 - For classification with an sPLS-DA base learner, set
-  `base_learner = "splsda"` (see
-  [`?make_splsda_adapter`](https://mdmanurung.github.io/stablr/reference/make_splsda_adapter.md));
-  for random forests, see
-  [`?make_ranger_adapter`](https://mdmanurung.github.io/stablr/reference/make_ranger_adapter.md).
+  `base_learner = "splsda"`; for random forests, `base_learner = "rf"`.
 - Use
   [`vignette("stablr-multiomic")`](https://mdmanurung.github.io/stablr/articles/stablr-multiomic.md)
   when the data contain multiple omic views.

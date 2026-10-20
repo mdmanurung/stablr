@@ -1,71 +1,109 @@
 # Build a Random-Forest Learner Adapter (Calibrated, Scoped)
 
-Learner adapter extending STABL to non-linear signals with random
-forests (`ranger`). One forest is fit per bootstrap subsample; the
-"penalty path" is an importance-threshold path built from quantiles of
-the pooled permutation-importance distribution (see
-[`auto_rf_threshold_grid()`](https://mdmanurung.github.io/stablr/reference/auto_rf_threshold_grid.md)),
-so the selection set grows monotonically as the threshold decreases —
-the same sparse-to-dense nesting the lambda path provides for glmnet
-learners.
+Returns a closure that fits ONE `ranger` random forest on a single
+bootstrap subsample and returns a logical selection mask over the
+features, mirroring the role of
+[`make_glmnet_adapter()`](https://mdmanurung.github.io/stablr/reference/make_glmnet_adapter.md)
+for tree-based learners.
 
 ## Usage
 
 ``` r
-make_ranger_adapter(num_trees = 500L)
+make_ranger_adapter(num_trees = 500L, family = "gaussian")
 ```
 
 ## Arguments
 
 - num_trees:
 
-  Positive integer; number of trees per ranger forest.
+  Positive integer; number of trees per forest (`ranger`'s `num.trees`).
+  Default `500L`.
+
+- family:
+
+  Character scalar; response family passed to the batch adapter. Default
+  `"gaussian"`.
 
 ## Value
 
 A function with signature
-`function(x, y, lambda_val) -> logical vector of length ncol(x)`,
-mirroring
-[`make_glmnet_adapter()`](https://mdmanurung.github.io/stablr/reference/make_glmnet_adapter.md):
-the mask selects features whose permutation importance meets the
-threshold carried by `lambda_val`.
+`function(x, y, lambda_val) -> logical vector of length ncol(x)` for use
+inside
+[`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md),
+where `lambda_val` is a 1-row `data.frame` from the threshold grid (see
+[`auto_rf_threshold_grid()`](https://mdmanurung.github.io/stablr/reference/auto_rf_threshold_grid.md)).
 
 ## Details
 
-**Calibrated within a measured scope (WS-2, 60 simulation runs):** with
-`knockoff_equi` decoys the mean empirical FDP is 0.025 on a linear
-design and 0.065 on a low-dimensional nonlinear design (p = 10), meeting
-the predeclared criterion (FDP \<= 0.15, TPR \>= 0.8). The criterion is
-NOT met on a high-dimensional correlated design at p = 50 (mean FDP
-0.44) or for binary outcomes (0.26); avoid this pairing there. This is
-simulation evidence, not a guarantee for your dataset.
+This adapter factory is primarily an internal backend used by
+[`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
+(`base_learner = "rf"`). The response family is inferred by `ranger`
+from `y` (numeric -\> regression, factor -\> classification, `Surv` -\>
+survival);
+[`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
+coerces `y` for the binomial/multinomial families. The forest seed is
+drawn from the caller's RNG stream so that results are reproducible
+under
+[`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)'s
+`random_state` and identical across sequential and parallel execution.
 
-**Statistical guardrails:** permutation importance is used (not Gini).
-Random forests must be paired with model-X knockoff artificial features
-(`knockoff_equi` / `knockoff_mvr`): permuted nulls do not receive the
-correlation leakage that real null features receive in a multivariate
-learner, so `random_permutation` nulls make FDP+ anti-conservative —
-stablr warns when this combination is requested.
+## Selection rule
+
+Instead of a penalty path, the RF adapter sweeps an
+**importance-threshold path**. The grid (see
+[`auto_rf_threshold_grid()`](https://mdmanurung.github.io/stablr/reference/auto_rf_threshold_grid.md))
+contains quantiles of the pooled permutation-importance distribution;
+given a 1-row grid `lambda_val`, a feature is selected when its
+permutation importance is `>= ` the row's threshold. Lower thresholds
+therefore give supersets of the selections at higher thresholds — the
+same sparse-to-dense nesting the glmnet lambda path provides, so the
+stability-accumulation and FDP+ logic in
+[`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
+work unchanged.
+
+## Statistical guardrails (read before using)
+
+- **Permutation importance, not Gini.** Gini importance is biased
+  towards high-cardinality features; permutation importance is the
+  better-studied choice for null calibration (Boruta likewise builds on
+  mean-decrease-accuracy).
+
+- **Pair with model-X knockoff artificial features.** A random forest is
+  a multivariate learner: real null features correlated with true
+  signals receive leaked importance, and permuted null features
+  (`artificial_type = "random_permutation"`) do **not** reproduce that
+  leakage, so the FDP+ estimate is anti-conservative. Model-X knockoff
+  nulls (`"knockoff_equi"` / `"knockoff_mvr"`) preserve the correlation
+  structure and are the only statistically sound pairing. Combining
+  `base_learner = "rf"` with `artificial_type = "random_permutation"` in
+  [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
+  emits a package warning to this effect.
+
+- **Calibrated within a measured scope (WS-2).** With knockoff_equi
+  decoys the mean empirical FDP is 0.025 (linear design) and 0.065
+  (low-dimensional nonlinear design), meeting the predeclared criterion;
+  it is NOT met at p = 50 with strong correlation (0.44) or for binary
+  outcomes (0.26). Simulation evidence, not a guarantee.
 
 ## See also
 
 [`auto_rf_threshold_grid()`](https://mdmanurung.github.io/stablr/reference/auto_rf_threshold_grid.md),
 [`make_glmnet_adapter()`](https://mdmanurung.github.io/stablr/reference/make_glmnet_adapter.md),
 [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
-(`base_learner = "rf"`).
 
 ## Examples
 
 ``` r
 if (requireNamespace("ranger", quietly = TRUE)) {
   set.seed(1L)
-  x <- matrix(rnorm(60 * 6), 60, 6,
-              dimnames = list(paste0("s", 1:60), paste0("f", 1:6)))
-  y <- setNames(x[, 1] * x[, 2] * 0.5 + rnorm(60, sd = 0.3), rownames(x))
-  adapter <- make_ranger_adapter(num_trees = 100L)
-  grid <- auto_rf_threshold_grid(x, y, n_grid = 5L, num_trees = 100L, seed = 1L)
-  mask <- adapter(x, y, grid[1L, ])  # sparsest end of the path
-  cat("selected:", sum(mask), "of", ncol(x), "features\n")
+  x <- matrix(rnorm(200L), 20L, 10L,
+              dimnames = list(NULL, paste0("f", 1:10)))
+  y <- x[, 1] * x[, 2] + rnorm(20L)
+  grid  <- auto_rf_threshold_grid(x, y, n_grid = 5L, num_trees = 100L,
+                                  seed = 1L)
+  adapter <- stablr:::make_ranger_adapter(num_trees = 100L)
+  mask <- adapter(x, y, grid[1L, , drop = FALSE])
+  cat("selected at sparsest threshold:", sum(mask), "of", ncol(x), "\n")
 }
-#> selected: 0 of 6 features
+#> selected at sparsest threshold: 0 of 10 
 ```

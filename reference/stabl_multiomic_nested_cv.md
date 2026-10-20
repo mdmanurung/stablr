@@ -20,7 +20,7 @@ stabl_multiomic_nested_cv(
   stratified = TRUE,
   strata = NULL,
   strata_bins = 5L,
-  metric = c("ber", "accuracy"),
+  metric = NULL,
   family = "multinomial",
   n_bootstraps = 100L,
   artificial_type = "random_permutation",
@@ -95,13 +95,24 @@ print(x, ...)
 
 - metric:
 
-  Candidate-selection metric, `"ber"` or `"accuracy"`.
+  Candidate-selection metric. Classification families (`"binomial"`,
+  `"multinomial"`): `"ber"` (default) or `"accuracy"`. Regression
+  (`family = "gaussian"`): `"rmse"` (default), `"mae"`, or `"r2"`. Ties
+  are broken by first candidate.
 
 - family:
 
   Passed to
   [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md).
-  Defaults to `"multinomial"`.
+  `"multinomial"` (default) and `"binomial"` run the classification
+  path; `"gaussian"` runs the regression path: `y` stays numeric,
+  stratification uses `strata_bins` quantile bins of the outcome, the
+  downstream selected-feature predictor is a gaussian model (seeded
+  `cv.glmnet`, one-feature `glm`, or the deterministic intercept-only
+  training-mean fallback for empty panels), and performance is reported
+  as MAE / RMSE / R2 with explicit definitions (R2 is taken about the
+  held-out mean, is reported as-is when negative, and is `NA` for
+  constant held-out truths).
 
 - n_bootstraps:
 
@@ -222,7 +233,10 @@ carries `study_ids` (per-fold study membership) and `class_counts`
 `performance_by_study` holds per-study outer held-out accuracy and
 balanced error rate (pooled across folds and repeats; `NA` balanced
 error rate for studies whose pooled held-out predictions contain a
-single outcome class).
+single outcome class). For `family = "gaussian"`, `performance` holds
+`mae`/`rmse`/`r2`, `performance_by_study` holds per-study
+`mae`/`rmse`/`r2`, and `outer_predictions$truth`/`predicted` are
+numeric.
 
 ## Methods (by generic)
 

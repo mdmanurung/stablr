@@ -36,8 +36,8 @@ empty (no false discoveries possible).
 ``` r
 true_signal <- c("f1", "f2", "f3")
 predicted   <- c("f1", "f2", "f4", "f5")  # f4, f5 are false discoveries
-fdr_similarity(predicted, true_signal)      # 2/4 = 0.5
+stablr:::fdr_similarity(predicted, true_signal)      # 2/4 = 0.5
 #> [1] 0.5
-fdr_similarity(character(0), true_signal)   # 0 (empty prediction)
+stablr:::fdr_similarity(character(0), true_signal)   # 0 (empty prediction)
 #> [1] 0
 ```

@@ -19,9 +19,6 @@ plain-language selection out.
   : Summarize a Fitted STABL Object (Beginner Style)
 - [`plot(`*`<stabl>`*`)`](https://mdmanurung.github.io/stablr/reference/plot.stabl.md)
   : Plot Stability Paths for a Fitted STABL Object (Beginner Style)
-- [`support()`](https://mdmanurung.github.io/stablr/reference/support.md)
-  [`feature_names()`](https://mdmanurung.github.io/stablr/reference/support.md)
-  : Support and Feature Names of a STABL Selection
 
 ## Core STABL Engine
 
@@ -36,56 +33,21 @@ interface).
 - [`compute_fdp_plus()`](https://mdmanurung.github.io/stablr/reference/compute_fdp_plus.md)
   : Compute FDP+ (False Discovery Proportion Upper Bound)
 
-## Knockoff Feature Construction
+## Learner Grid Helpers
 
-Factories that inject artificial features (Model-X knockoffs or random
-permutations) for FDP+ calibration; plug into stabl_fit through the
-knockoff/solver arguments.
+Data-driven threshold/lambda grid constructors for the non-glmnet base
+learners. The random forest is calibrated within a measured scope
+(WS-2); the ordinal learner is experimental (WS-9); sPLS-DA is
+experimental and binomial-only. Learner factories are internal; select
+learners via the `base_learner` argument of
+[`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md).
 
-- [`make_knockoff_features()`](https://mdmanurung.github.io/stablr/reference/make_knockoff_features.md)
-  : Make Knockoff Artificial Features
-- [`make_knockoff_equi_features()`](https://mdmanurung.github.io/stablr/reference/make_knockoff_equi_features.md)
-  : Make Model-X Equicorrelated Knockoff Artificial Features
-- [`make_knockoff_mvr_features()`](https://mdmanurung.github.io/stablr/reference/make_knockoff_mvr_features.md)
-  : Make Model-X MVR Knockoff Artificial Features
-- [`make_rp_features()`](https://mdmanurung.github.io/stablr/reference/make_rp_features.md)
-  : Make Random-Permutation Artificial Features
-
-## Learner Adapters
-
-Public learner factories for glmnet-family and sparse-group backends.
-
-- [`make_glmnet_adapter()`](https://mdmanurung.github.io/stablr/reference/make_glmnet_adapter.md)
-  : Build a glmnet Learner Adapter
-- [`make_adaptive_lasso_adapter()`](https://mdmanurung.github.io/stablr/reference/make_adaptive_lasso_adapter.md)
-  : Build an Adaptive Lasso Learner Adapter
-- [`make_sgl_adapter()`](https://mdmanurung.github.io/stablr/reference/make_sgl_adapter.md)
-  : Build a Sparse Group Lasso Learner Adapter
-
-## Extended Learner Adapters
-
-Extensions beyond the glmnet family. The random forest is calibrated
-within a measured scope (WS-2); the oblique forest is fenced (WS-3); the
-ordinal learner is experimental (WS-9); sPLS-DA is experimental and
-binomial-only.
-
-- [`make_ranger_adapter()`](https://mdmanurung.github.io/stablr/reference/make_ranger_adapter.md)
-  : Build a Random-Forest Learner Adapter (Calibrated, Scoped)
 - [`auto_rf_threshold_grid()`](https://mdmanurung.github.io/stablr/reference/auto_rf_threshold_grid.md)
   : Auto-Generate an Importance-Threshold Grid for Random-Forest STABL
   (Experimental)
-- [`make_aorsf_adapter()`](https://mdmanurung.github.io/stablr/reference/make_aorsf_adapter.md)
-  : Build an Oblique Random-Forest Learner Adapter (Fenced)
-- [`auto_oblique_threshold_grid()`](https://mdmanurung.github.io/stablr/reference/auto_oblique_threshold_grid.md)
-  : Auto-Generate an Importance-Threshold Grid for Oblique-Random-Forest
-  STABL (Experimental)
-- [`make_ordinal_adapter()`](https://mdmanurung.github.io/stablr/reference/make_ordinal_adapter.md)
-  : Build an Ordinal-Regression Learner Adapter (Experimental)
 - [`auto_ordinal_lambda_grid()`](https://mdmanurung.github.io/stablr/reference/auto_ordinal_lambda_grid.md)
   : Build a Data-Driven Lambda Grid for the Ordinal Learner
   (Experimental)
-- [`make_splsda_adapter()`](https://mdmanurung.github.io/stablr/reference/make_splsda_adapter.md)
-  : Build a sPLS-DA Learner Adapter
 - [`auto_splsda_keepx_grid()`](https://mdmanurung.github.io/stablr/reference/auto_splsda_keepx_grid.md)
   : Build an Automatic keepX Grid for the sPLS-DA Learner
 
@@ -184,20 +146,52 @@ and fold-safe preprocessing.
 - [`stabl_preprocess_fit_recipes()`](https://mdmanurung.github.io/stablr/reference/stabl_preprocess_fit_recipes.md)
   : Fit a preprocessing transform from a recipes recipe
 
+## Reliability and Final Models
+
+Post-selection reliability diagnostics, outcome-null validation, cohort
+replication, and portable final models (Phase 13; see the
+stablr-reliability article for a guided tour).
+
+- [`stabl_diagnose()`](https://mdmanurung.github.io/stablr/reference/stabl_diagnose.md)
+  : Diagnose selection reliability of a fitted STABL object
+
+- [`print(`*`<stabl_diagnostics>`*`)`](https://mdmanurung.github.io/stablr/reference/print.stabl_diagnostics.md)
+  : Print STABL Selection Diagnostics
+
+- [`plot(`*`<stabl_diagnostics>`*`)`](https://mdmanurung.github.io/stablr/reference/plot.stabl_diagnostics.md)
+  : Plot STABL selection diagnostics
+
+- [`stabl_null_check()`](https://mdmanurung.github.io/stablr/reference/stabl_null_check.md)
+  : Outcome-Null Calibration Check for STABL
+
+- [`print(`*`<stabl_null_validation>`*`)`](https://mdmanurung.github.io/stablr/reference/print.stabl_null_validation.md)
+  : Print an Outcome-Null Validation Summary
+
+- [`plot(`*`<stabl_null_validation>`*`)`](https://mdmanurung.github.io/stablr/reference/plot.stabl_null_validation.md)
+  : Plot Outcome-Null Validation Results
+
+- [`stabl_replication_profile()`](https://mdmanurung.github.io/stablr/reference/stabl_replication_profile.md)
+  : Cohort Replication and Heterogeneity Profile
+
+- [`print(`*`<stabl_replication_profile>`*`)`](https://mdmanurung.github.io/stablr/reference/print.stabl_replication_profile.md)
+  : Print a Cohort Replication Profile
+
+- [`stabl_finalize()`](https://mdmanurung.github.io/stablr/reference/stabl_finalize.md)
+  [`predict(`*`<stabl_predictor>`*`)`](https://mdmanurung.github.io/stablr/reference/stabl_finalize.md)
+  [`print(`*`<stabl_predictor>`*`)`](https://mdmanurung.github.io/stablr/reference/stabl_finalize.md)
+  : Finalize a STABL selection into a portable predictive model
+
+- [`validate_newdata_schema()`](https://mdmanurung.github.io/stablr/reference/validate_newdata_schema.md)
+  :
+
+  Validate new data against a `"stabl_predictor"` schema
+
 ## Visualization
 
 - [`plot_stabl_path()`](https://mdmanurung.github.io/stablr/reference/plot_stabl_path.md)
   : Plot the STABL Stability Path
 - [`plot_fdr_graph()`](https://mdmanurung.github.io/stablr/reference/plot_fdr_graph.md)
   : Plot the FDP+ Diagnostic Curve
-- [`plot_roc()`](https://mdmanurung.github.io/stablr/reference/plot_roc.md)
-  : Plot a ROC Curve
-- [`plot_prc()`](https://mdmanurung.github.io/stablr/reference/plot_prc.md)
-  : Plot a Precision-Recall Curve
-- [`boxplot_features()`](https://mdmanurung.github.io/stablr/reference/boxplot_features.md)
-  : Boxplots of Selected Features Grouped by Outcome
-- [`scatterplot_features()`](https://mdmanurung.github.io/stablr/reference/scatterplot_features.md)
-  : Scatterplots of Selected Features Against a Continuous Outcome
 
 ## Plot a fitted stabl_fit
 
@@ -239,62 +233,3 @@ S3 summary and print methods for fitted STABL objects.
   : Upper-Triangle Pearson Similarity Values
 - [`pearson_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/pearson_similarity_summary.md)
   : Summary Statistic of Pearson Similarity Values
-- [`fdr_similarity()`](https://mdmanurung.github.io/stablr/reference/fdr_similarity.md)
-  : FDR Between Two Feature Sets
-- [`tpr_similarity()`](https://mdmanurung.github.io/stablr/reference/tpr_similarity.md)
-  : TPR Between Two Feature Sets
-- [`fscore_similarity()`](https://mdmanurung.github.io/stablr/reference/fscore_similarity.md)
-  : F-Score Between Two Feature Sets
-
-## Deprecated names
-
-Old names kept as deprecation shims; they warn once and delegate to the
-replacements above.
-
-- [`jaccard_matrix()`](https://mdmanurung.github.io/stablr/reference/jaccard_matrix.md)
-  :
-
-  Deprecated: use
-  [`jaccard_similarity_matrix()`](https://mdmanurung.github.io/stablr/reference/jaccard_similarity_matrix.md)
-
-- [`adjusted_similarity_values()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity_values.md)
-  :
-
-  Deprecated: use
-  [`adjusted_similarity_pairwise()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity_pairwise.md)
-
-- [`adjusted_similarity_measure()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity_measure.md)
-  :
-
-  Deprecated: use
-  [`adjusted_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity_summary.md)
-
-- [`pearson_similarity_values()`](https://mdmanurung.github.io/stablr/reference/pearson_similarity_values.md)
-  :
-
-  Deprecated: use
-  [`pearson_similarity_pairwise()`](https://mdmanurung.github.io/stablr/reference/pearson_similarity_pairwise.md)
-
-- [`pearson_similarity_measure()`](https://mdmanurung.github.io/stablr/reference/pearson_similarity_measure.md)
-  :
-
-  Deprecated: use
-  [`pearson_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/pearson_similarity_summary.md)
-
-- [`get_feature_names_out()`](https://mdmanurung.github.io/stablr/reference/get_feature_names_out.md)
-  :
-
-  Deprecated: use
-  [`get_feature_names()`](https://mdmanurung.github.io/stablr/reference/get_feature_names.md)
-
-- [`classic_bootstrap_indices()`](https://mdmanurung.github.io/stablr/reference/classic_bootstrap_indices.md)
-  :
-
-  Deprecated: use
-  [`sample_bootstrap_indices()`](https://mdmanurung.github.io/stablr/reference/sample_bootstrap_indices.md)
-
-- [`stacked_multi_omic()`](https://mdmanurung.github.io/stablr/reference/stacked_multi_omic.md)
-  :
-
-  Deprecated: use
-  [`stabl_multiomic_stacked()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_stacked.md)

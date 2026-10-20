@@ -44,7 +44,7 @@ stabl(
 - base_learner:
 
   Character; `"lasso"` (default), `"elastic_net"`, `"adaptive_lasso"`,
-  `"sparse_group_lasso"`, `"rf"`, or `"oblique_rf"`.
+  `"sparse_group_lasso"`, or `"rf"`.
 
 - n_bootstraps:
 
@@ -127,9 +127,9 @@ fit                      # plain-language print
 #>   5 feature(s) selected at FDP+ estimate 1.000:
 #>   m1, m2, m3, m4, m5
 #>   use summary() for details, plot() for stability paths,
-#>   feature_names() / support() for the selection, get_fdrs() for the
-#>   FDP+ curve.
-feature_names(fit)       # selected features
+#>   get_feature_names() / get_support() for the selection,
+#>   get_fdrs() for the FDP+ curve.
+get_feature_names(fit)   # selected features
 #> [1] "m1" "m2" "m3" "m4" "m5"
 # }
 ```

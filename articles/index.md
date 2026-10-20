@@ -27,3 +27,8 @@
   matches](https://mdmanurung.github.io/stablr/articles/stablr-python-parity.md):
 - [Reading stability paths and FDP+
   plots](https://mdmanurung.github.io/stablr/articles/stablr-reading-plots.md):
+
+### Reliability and validation
+
+- [Reliability diagnostics, validation, and final
+  models](https://mdmanurung.github.io/stablr/articles/stablr-reliability.md):

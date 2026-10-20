@@ -2,6 +2,313 @@
 
 ## stablr 0.3.0.9000 (development)
 
+### Bug fixes (implementation review, 2026-10-20, batch F-4)
+
+- `stabl_preprocess_fit(transforms = "zv")` now fails closed when the
+  zero-variance filter removes ALL features (previously every downstream
+  transform fitted on a 0-column matrix and
+  [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
+  failed deep).
+- [`make_artificial_features()`](https://mdmanurung.github.io/stablr/reference/make_artificial_features.md)
+  now requires `nrow(x) >= 2`: with a single sample,
+  [`make_rp_features()`](https://mdmanurung.github.io/stablr/reference/make_rp_features.md)’s
+  within-column `sample(col)` would hit the length-1 pitfall and
+  silently replace a value \>= 1 with a draw from `1:x`.
+- [`auto_splsda_keepx_grid()`](https://mdmanurung.github.io/stablr/reference/auto_splsda_keepx_grid.md)
+  no longer advertises `keepX > p` (with `p = 1` the grid spuriously
+  included `keepX = 2`, invalid for mixOmics).
+- Fractional `keepX` values in a sPLS-DA `lambda_grid` now error instead
+  of being silently truncated by
+  [`as.integer()`](https://rdrr.io/r/base/integer.html).
+- The MVR knockoff solver now warns when its PSD scaling search finds no
+  feasible factor and returns a degenerate all-zero `S` (behavior
+  inherited from knockpy; previously silent).
+- [`make_ranger_adapter()`](https://mdmanurung.github.io/stablr/reference/make_ranger_adapter.md)
+  gains a `family` argument (default `"gaussian"`) passed through to the
+  batch adapter — previously the family could not be set through this
+  factory.
+- Two comment corrections (no behavior change): the MVR degenerate-nudge
+  comment claimed “toward upper bound” for a step that is negative when
+  `s_j > 1/cd`; the PD-covariance fallback comment claimed Ledoit-Wolf
+  shrinkage where corpcor performs eigenvalue clipping.
+- Documentation repairs: the README’s eight reference links were
+  relative (`reference/*.html`) and 404’d on the GitHub repo page — they
+  now point at the pkgdown site absolutely; and the hand-written
+  `make_ranger_adapter.Rd` / `make_ordinal_adapter.Rd` (stale since the
+  learner-factory internalization, invisible to roxygen2) were
+  regenerated from source — the staleness both caused a codoc WARNING
+  and broke the pkgdown workflow’s missing-topics check, which had left
+  the deployed site stale.
+
+### Bug fixes (implementation review, 2026-10-20, batch F-3)
+
+- Accessor and input-validation errors are now typed `stablr_error`
+  conditions (`stablr_accessor_error` / `stablr_input_error`
+  subclasses), consistent with the package’s conditions machinery;
+  messages are unchanged.
+- `.check_fitted_stabl()` now also requires `feature_names` to be a
+  character vector matching `nrow(stabl_scores_)` — a malformed object
+  previously made
+  [`get_feature_names()`](https://mdmanurung.github.io/stablr/reference/get_feature_names.md)
+  return NULL, masquerading as an empty support. A stored out-of-range
+  `hard_threshold` is now re-validated on use.
+- [`get_cooperative_diagnostics()`](https://mdmanurung.github.io/stablr/reference/get_cooperative_diagnostics.md)
+  on a malformed multiomic CV object now errors informatively (missing
+  columns named) instead of “undefined columns selected”.
+- [`print.stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
+  no longer crashes when `min_fdr_` is set but `fdr_min_threshold_` is
+  NULL (`round(NULL)` errored); the two lines are guarded separately.
+- [`stabl()`](https://mdmanurung.github.io/stablr/reference/stabl.md)
+  now errors with guidance when `y` is a *named* length-1 string naming
+  a column of `x` (previously treated as data, failing deep); the
+  column-selector contract is an unnamed string.
+- The ranger learner’s seed-retry arithmetic no longer overflows to NA
+  near `.Machine$integer.max` (which crashed ranger on a retry); the
+  retry seed wraps within the valid range and attempt 1 is bit-identical
+  to before. The internal NULL-seed draw is also bounded to the valid
+  range.
+- `inst/COPYING.cooperative` now discloses all four silent upstream-bug
+  fixes in the vendored cooperative backend (IRLS step-halving
+  warm-residual form, `lower.limits` propagation, the `length(rho)` typo
+  fix, and the `build_predmat` offset crash fix), so future upstream
+  diffs are not misread as regressions.
+- Removed the dead vendored `coef_ordered` generic and its two
+  unregistered, uncalled methods (disclosed in COPYING.cooperative).
+
+### Bug fixes (implementation review, 2026-10-20, batch F-2)
+
+- [`stabl_interpret()`](https://mdmanurung.github.io/stablr/reference/stabl_interpret.md)
+  permutation importance no longer uses `sample(x)` on a column vector:
+  with a single observation a positive-integer-valued column would draw
+  from `1:x`. The permutation is now index-based (RNG-identical for n \>
+  1).
+- [`stabl_interpret()`](https://mdmanurung.github.io/stablr/reference/stabl_interpret.md)
+  now validates `loss` against `family` at entry: an invalid `loss`
+  previously errored only when the selection was non-empty (silently
+  accepted otherwise), and `family = "gaussian"` silently treated
+  `"brier"`/`"log_loss"` as squared error — both now error with the
+  allowed values.
+- The
+  [`stabl_interpret()`](https://mdmanurung.github.io/stablr/reference/stabl_interpret.md)
+  man page now documents the actual single `evidence_type` column
+  (`post_selection_descriptive` / `cross_validated`) instead of
+  promising per-dimension labels that do not exist; the exported values
+  are unchanged.
+- [`stabl_replication_profile()`](https://mdmanurung.github.io/stablr/reference/stabl_replication_profile.md)
+  now requires at least 2 samples per study at entry (a 1-sample study
+  previously crashed deep inside
+  [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)),
+  and the NULL-seed draw can no longer hit `.Machine$integer.max` and
+  fail validation.
+- The replication held-out refit uses a collision-proof response name,
+  so a selected feature literally named `"y"` is no longer silently
+  renamed to `y.1` in the model frame.
+- `.validate_effects()` duplicate (feature, study) detection no longer
+  false-positives on names containing spaces.
+
+### Bug fixes (implementation review, 2026-10-20, batch F-1)
+
+- [`stabl_diagnose()`](https://mdmanurung.github.io/stablr/reference/stabl_diagnose.md)
+  evidence matching now honours its documented contract for fits with
+  unknown metadata: a NULL dimension matches only “any” rows instead of
+  collapsing the evidence table to zero rows (latent defensive-path
+  logic error).
+- Two `assumption_notes` (“no threshold available” and “boundary
+  minimum”) are now single strings; they were split mid-sentence into
+  two vector elements by a stray [`c()`](https://rdrr.io/r/base/c.html).
+- The FDP+ minima diagnostic no longer crashes on hand-built fixtures
+  whose `min_fdr` is not exactly an element of `FDRs`; it reports zero
+  minima instead (real fits were never affected).
+- [`adjusted_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity_summary.md)
+  and
+  [`pearson_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/pearson_similarity_summary.md)
+  now error when fewer than two sets are supplied (previously returned
+  NA/NaN silently).
+- [`jaccard_similarity_matrix()`](https://mdmanurung.github.io/stablr/reference/jaccard_similarity_matrix.md)
+  errors informatively on empty input (previously a cryptic `seq_len`
+  coercion error).
+- Binary probability metrics (brier/log_loss/AUROC internals) now reject
+  NA truth values, consistent with the classification-metrics path.
+
+### Bug fixes (implementation review, 2026-10-20, batch E-4)
+
+- The sPLS-DA learner no longer discards the selection mask for ALL
+  features when a bootstrap subsample contains one constant column:
+  constant columns are dropped for that bootstrap’s fit and the mask is
+  mapped back, so only the dropped columns are all-FALSE. Previously
+  rare binary features (common in omics) silently biased every stability
+  frequency downward.
+- The ordinal learner now validates OBSERVED classes (with
+  [`droplevels()`](https://rdrr.io/r/base/droplevels.html)) instead of
+  declared factor levels, so a bootstrap subsample missing a class fails
+  with a clear error instead of reaching ordinalNet with unobserved
+  levels.
+
+### Bug fixes (implementation review, 2026-10-20, batch E-3)
+
+- [`stabl_multiomic_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_cv.md)
+  now stratifies classification folds on the outcome (the ungrouped path
+  was unstratified), and the single-class assessment-fold guard applies
+  to ungrouped CV too: infeasible class counts abort with typed
+  `stablr_cv_infeasible` at fold construction instead of a deep
+  bootstrap error mid-run.
+- [`stabl_multiomic_train_validate()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_train_validate.md)
+  now errors when train and validation sets share samples (previously
+  silently accepted — a leakage foot-gun in the direct API).
+- [`validate_sample_alignment()`](https://mdmanurung.github.io/stablr/reference/validate_sample_alignment.md)
+  and the outcome-alignment machinery now handle data.frame outcomes
+  correctly: row names are the sample IDs. Previously
+  [`names()`](https://rdrr.io/r/base/names.html) returned column names,
+  making the matrix-like branches unreachable and producing a spurious
+  mismatch error.
+- The late-fusion downstream glm/lm uses a collision-proof response
+  name, so a selected feature named `.y` is no longer silently
+  overwritten and dropped from the model.
+- Early-fusion cross-view duplicate feature names now fail with an error
+  naming the colliding views (previously a generic duplicate-names error
+  from deep inside `stabl_fit`).
+
+### Bug fixes (implementation review, 2026-10-20, batch E-2)
+
+- [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
+  now fails fast when `sample_fraction` implies `n_subsamples = 0`
+  (previously surfaced only after the diversity guard’s redraws with a
+  message blaming class balance);
+  [`sample_bootstrap_indices()`](https://mdmanurung.github.io/stablr/reference/sample_bootstrap_indices.md)
+  and
+  [`group_bootstrap_indices()`](https://mdmanurung.github.io/stablr/reference/group_bootstrap_indices.md)
+  validate `n_subsamples >= 1`.
+- Stratified bootstrap samplers no longer hit R’s `sample(x, 1)`
+  length-1 pitfall: a single-member stratum’s draws could come from
+  `1:x` instead of being that member’s row (wrong-stratum indices). All
+  shuffles now use index-then-subset via `sample.int`.
+- [`stabl_multiomic_nested_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_nested_cv.md)’s
+  stratification guard now accounts for inner folds being built on
+  outer-*training* splits: configurations such as 5 samples/class with
+  `outer_v = inner_v = 5` are rejected at entry instead of crashing
+  mid-run.
+- Nested-CV candidate selection now fails closed with an informative
+  error when every candidate is NA on the selection metric (e.g. R^2
+  with a constant outcome) instead of an opaque subscript error.
+- [`plot_stabl_path()`](https://mdmanurung.github.io/stablr/reference/plot_stabl_path.md)
+  renders single-lambda grids as points (previously `geom_line` dropped
+  the singleton groups, leaving an empty path).
+
+### Bug fixes (implementation review, 2026-10-20, batch E-1)
+
+- [`stabl_preprocess_apply()`](https://mdmanurung.github.io/stablr/reference/stabl_preprocess_apply.md)
+  now fails closed when a feature had no finite training values under
+  `center`/`scale` (previously a NaN mean was stored and apply silently
+  emitted an all-NA column unless `impute_median` was requested).
+- [`stabl_multiomic_study_diagnostics()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_study_diagnostics.md):
+  a feature that is constant within both a study and its complement but
+  at *different* values (true SMD = ±Inf — a maximal, perfectly
+  separated study shift) now surfaces as `Inf` in `smd_max_abs` instead
+  of being masked as NA and counted in `n_zero_sd`.
+- [`stabl_replication_profile()`](https://mdmanurung.github.io/stablr/reference/stabl_replication_profile.md):
+  held-out metrics are now computed on rows complete in the outcome and
+  selected predictors; a held-out study with no scorable rows gets
+  `reason = "incomplete_predictors"` instead of a silently misaligned or
+  NA metric.
+- [`stabl_interpret()`](https://mdmanurung.github.io/stablr/reference/stabl_interpret.md)
+  now errors when `x` or `y` contain missing values (previously `glm`
+  na-omitted while the importance loss used the full vector, so all
+  permutation importances were silently NA).
+
+### Bug fixes (implementation review, 2026-10-19)
+
+- **Critical:** `stabl_null_check(design = "independent")` (the default)
+  generated no-op nulls: `sample(y)` carried each value’s name along,
+  and
+  [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)’s
+  name-based outcome alignment exactly undid the permutation, so every
+  null replicate fitted the observed data. The permutation now keeps
+  names at their original positions. **Any null-check result computed
+  with the default design should be re-run.** Null-generation failures
+  also now count toward the `max_failures` fail-closed budget
+  (previously a systematically failing `null_simulator` returned
+  `n_successful = 0` instead of aborting).
+- [`stabl_interpret()`](https://mdmanurung.github.io/stablr/reference/stabl_interpret.md)
+  reported `coefficient = NA` (`"effect_not_estimable"`) for every
+  selected feature with a non-syntactic name (e.g. `"feat 1"`);
+  coefficients are now mapped positionally. A feature named `.y` is no
+  longer silently dropped from the effect model.
+- [`stabl_preprocess_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_preprocess_fit.md)
+  /
+  [`stabl_preprocess_apply()`](https://mdmanurung.github.io/stablr/reference/stabl_preprocess_apply.md)
+  now reject duplicate column names (previously the second duplicate’s
+  data was silently replaced by the first’s at apply time).
+- Late fusion (`stabl_multiomic_train_validate(late_fusion = TRUE)`):
+  the full-refit per-omic fits now use the same per-omic RNG streams as
+  the `late_fusion = FALSE` path (toggling late fusion no longer changes
+  the per-omic panels), the per-fold selection fits and downstream
+  predictors use per-omic derived seeds, and the recorded provenance
+  seeds now replay the fits exactly.
+
+### Breaking changes — lean public API (1.0.0 contract, Phase 13 PR-G)
+
+- The eight pre-0.3.0 deprecation shims are **removed** (they now
+  error): `classic_bootstrap_indices()` -\>
+  [`sample_bootstrap_indices()`](https://mdmanurung.github.io/stablr/reference/sample_bootstrap_indices.md);
+  `get_feature_names_out()` -\>
+  [`get_feature_names()`](https://mdmanurung.github.io/stablr/reference/get_feature_names.md);
+  `jaccard_matrix()` -\>
+  [`jaccard_similarity_matrix()`](https://mdmanurung.github.io/stablr/reference/jaccard_similarity_matrix.md);
+  `adjusted_similarity_values()` -\>
+  [`adjusted_similarity_pairwise()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity_pairwise.md);
+  `adjusted_similarity_measure()` -\>
+  [`adjusted_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity_summary.md);
+  `pearson_similarity_values()` -\>
+  [`pearson_similarity_pairwise()`](https://mdmanurung.github.io/stablr/reference/pearson_similarity_pairwise.md);
+  `pearson_similarity_measure()` -\>
+  [`pearson_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/pearson_similarity_summary.md);
+  `stacked_multi_omic()` -\>
+  [`stabl_multiomic_stacked()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_stacked.md).
+- The duplicate beginner generics `support()` and `feature_names()` (and
+  their S3 methods) are removed; use
+  [`get_support()`](https://mdmanurung.github.io/stablr/reference/get_support.md)
+  /
+  [`get_feature_names()`](https://mdmanurung.github.io/stablr/reference/get_feature_names.md).
+- The single-row learner factories
+  [`make_glmnet_adapter()`](https://mdmanurung.github.io/stablr/reference/make_glmnet_adapter.md),
+  [`make_adaptive_lasso_adapter()`](https://mdmanurung.github.io/stablr/reference/make_adaptive_lasso_adapter.md),
+  [`make_sgl_adapter()`](https://mdmanurung.github.io/stablr/reference/make_sgl_adapter.md),
+  [`make_ranger_adapter()`](https://mdmanurung.github.io/stablr/reference/make_ranger_adapter.md),
+  [`make_ordinal_adapter()`](https://mdmanurung.github.io/stablr/reference/make_ordinal_adapter.md),
+  and
+  [`make_splsda_adapter()`](https://mdmanurung.github.io/stablr/reference/make_splsda_adapter.md)
+  are internalized: select learners via the `base_learner` argument of
+  [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md).
+  The grid helpers
+  [`auto_lambda_grid()`](https://mdmanurung.github.io/stablr/reference/auto_lambda_grid.md),
+  [`auto_rf_threshold_grid()`](https://mdmanurung.github.io/stablr/reference/auto_rf_threshold_grid.md),
+  [`auto_ordinal_lambda_grid()`](https://mdmanurung.github.io/stablr/reference/auto_ordinal_lambda_grid.md),
+  and
+  [`auto_splsda_keepx_grid()`](https://mdmanurung.github.io/stablr/reference/auto_splsda_keepx_grid.md)
+  remain exported.
+- The experimental oblique random forest is **retired**:
+  `base_learner = "oblique_rf"` fails closed with an explanatory error,
+  and `make_aorsf_adapter()` / `auto_oblique_threshold_grid()` are
+  removed (WS-3 failed the predeclared FDP+ calibration bar; archived
+  source and tests live in `attic/`). Use `base_learner = "rf"`.
+- [`plot_roc()`](https://mdmanurung.github.io/stablr/reference/plot_roc.md),
+  [`plot_prc()`](https://mdmanurung.github.io/stablr/reference/plot_prc.md),
+  [`boxplot_features()`](https://mdmanurung.github.io/stablr/reference/boxplot_features.md),
+  and
+  [`scatterplot_features()`](https://mdmanurung.github.io/stablr/reference/scatterplot_features.md)
+  are internalized (use general plotting packages; the TCGA vignette
+  shows inline ggplot2 replacements), as are the benchmark metrics
+  [`fdr_similarity()`](https://mdmanurung.github.io/stablr/reference/fdr_similarity.md),
+  [`tpr_similarity()`](https://mdmanurung.github.io/stablr/reference/tpr_similarity.md),
+  and
+  [`fscore_similarity()`](https://mdmanurung.github.io/stablr/reference/fscore_similarity.md)
+  (realized proportions against known truth, not general-purpose
+  similarities).
+- See `docs/MIGRATION_0.3_TO_1.0.md` for the full migration guide and
+  `inst/release/removal-ledger.csv` for the machine-readable removal
+  record. Public interface: 54 exports and 43 S3 methods (from 79 and
+  47).
+
 ### Breaking changes (1.0.0 contract, Phase 13 PR-A)
 
 - [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
@@ -30,6 +337,20 @@
 
 ### Fixes
 
+- Evidence-profile provenance corrections in
+  [`stabl_diagnose()`](https://mdmanurung.github.io/stablr/reference/stabl_diagnose.md)
+  (Phase 13 PR-C follow-up, post-merge provenance review): the
+  adaptive_lasso row no longer cites Python-parity coverage that does
+  not exist (the pinned solver cases cover lasso and elastic_net only);
+  the sPLS-DA rows now reflect the MINT benchmark’s FDP+ calibration
+  results (random permutation arm calibrated, ratio 1.01; knockoff arms
+  conservative), replacing the incorrect “no calibration artifact”
+  status; the lasso block-correlated row’s regime is narrowed to the
+  evaluated Phase 6 D3 conditions with the cross-benchmark tension
+  noted; a new row surfaces the MINT parent benchmark’s severely
+  anti-conservative lasso + knockoff_equi result under cohort
+  heterogeneity (calibration 8.0); and the stale “68 byte-pinned”
+  fixture count is replaced by the durable SHA-256-manifest reference.
 - RNG hygiene residuals (Phase 13 PR-A; F-CV-09/10/11). The three
   remaining bare-`set.seed` sites outside the core fit paths —
   [`make_artificial_features()`](https://mdmanurung.github.io/stablr/reference/make_artificial_features.md),
@@ -75,6 +396,19 @@
 
 ### Documentation
 
+- New vignette “Reliability diagnostics, validation, and final models”
+  (`stablr-reliability`, Phase 13): a runnable end-to-end tour of the
+  reliability toolchain —
+  [`stabl_diagnose()`](https://mdmanurung.github.io/stablr/reference/stabl_diagnose.md)
+  warning codes and threshold path,
+  [`stabl_null_check()`](https://mdmanurung.github.io/stablr/reference/stabl_null_check.md)
+  exchangeability designs including a live fail-closed refusal,
+  [`stabl_replication_profile()`](https://mdmanurung.github.io/stablr/reference/stabl_replication_profile.md)
+  cohort replication, and the validated-gaussian development path
+  (`stabl_analyze(mode = "validated")`) finalized into a portable
+  `"stabl_predictor"` with
+  [`stabl_finalize()`](https://mdmanurung.github.io/stablr/reference/stabl_finalize.md)/[`predict()`](https://rdrr.io/r/stats/predict.html).
+  Registered in the `_pkgdown.yml` navbar and articles index.
 - Two new vignettes (Phase 13 PR-B, 1.0.0 spec §8): “Python STABL
   parity: precisely what matches” (`stablr-python-parity`) replays the
   shipped byte-identical subset of the frozen Python-reference fixtures
@@ -95,12 +429,9 @@
   multi-omic, and cooperative vignettes and `docs/API_REFERENCE.md` are
   updated for the 1.0.0 contract changes above.
 - All nine vignettes audited against the current API and re-rendered.
-  Replaced 25 deprecated
-  [`get_feature_names_out()`](https://mdmanurung.github.io/stablr/reference/get_feature_names_out.md)
-  calls with
+  Replaced 25 deprecated `get_feature_names_out()` calls with
   [`get_feature_names()`](https://mdmanurung.github.io/stablr/reference/get_feature_names.md),
-  [`jaccard_matrix()`](https://mdmanurung.github.io/stablr/reference/jaccard_matrix.md)
-  with
+  `jaccard_matrix()` with
   [`jaccard_similarity_matrix()`](https://mdmanurung.github.io/stablr/reference/jaccard_similarity_matrix.md),
   `adjusted_similarity(nb_total_elements=)` with `n_universe=`, and
   deprecated `groups=` arguments to
@@ -140,6 +471,119 @@
 
 ### New features
 
+- Gaussian validated analysis (Phase 13 PR-F, 1.0.0 spec A5):
+  [`stabl_multiomic_nested_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_nested_cv.md)
+  and `stabl_analyze(mode = "validated")` now support
+  `family = "gaussian"` end to end. The complete procedure (fold-fitted
+  preprocessing, STABL selection, candidate tuning, downstream
+  predictor) is isolated inside each training partition; held-out
+  predictions are numeric and performance is reported as MAE, RMSE and
+  R-squared with explicit definitions (R-squared is computed about the
+  held-out mean, is reported as-is when negative, and is `NA` for
+  constant held-out truths). The candidate-selection `metric` resolves
+  per family (`"rmse"` default, also `"mae"`/`"r2"`; binomial keeps
+  `"ber"`/`"accuracy"`), stratification uses quantile bins of the
+  numeric outcome, study-disjoint folds are supported, and an empty
+  selected panel falls back to deterministic intercept-only
+  (training-mean) predictions. `event_class` and `return_probabilities`
+  are rejected for regression.
+- [`stabl_finalize()`](https://mdmanurung.github.io/stablr/reference/stabl_finalize.md)
+  (Phase 13 PR-F, 1.0.0 spec A6): finalize a completed development
+  result (a `"stabl_fit"`, or a `"stabl_analysis"` – validated analyses
+  must have been produced with `final_refit = TRUE`) into a portable
+  `"stabl_predictor"`. The object stores the selected panel, the
+  training-fitted preprocessing transform, the event/level mapping, the
+  downstream engine (intercept-only fallback, one-feature glm stored as
+  bare coefficients, or seeded `cv.glmnet`), the learner specification,
+  feature provenance, and a development summary explicitly labelled as a
+  full-data refit distinct from any cross-validated performance
+  estimate. No training observations are serialized (one-feature glm
+  objects are reduced to coefficients; prepped recipes have their
+  retained training `template` stripped).
+  [`predict.stabl_predictor()`](https://mdmanurung.github.io/stablr/reference/stabl_finalize.md)
+  applies the stored transform without refitting, matches columns by
+  name (order-invariant), and supports `type = "response"` (gaussian) or
+  `"class"` / `"probability"` (binomial, respecting the stored event
+  mapping).
+  [`validate_newdata_schema()`](https://mdmanurung.github.io/stablr/reference/validate_newdata_schema.md)
+  enforces the recorded schema: unique, named, numeric columns; missing,
+  renamed or duplicated required columns are always an error; extra
+  columns are an error unless `extra_columns = "drop"` is given
+  explicitly.
+- [`stabl_replication_profile()`](https://mdmanurung.github.io/stablr/reference/stabl_replication_profile.md)
+  (Phase 13 PR-E, 1.0.0 spec A3): cohort replication and heterogeneity
+  profile for multi-study data (\>= 3 studies). Distinguishes four
+  estimands explicitly: (i) pooled selection stability, (ii)
+  training-cohort replication across leave-one-study-out (LOSO) fits,
+  conditional on per-cohort eligibility (measured and non-constant;
+  ineligibility reasons reported), (iii) direction/effect replication –
+  sign concordance, inverse-variance pooled estimate/CI, and Cochran’s Q
+  heterogeneity, computed only from user-supplied per-study effect
+  estimates (the package never invents effect estimates), and (iv)
+  held-out cohort performance via a documented downstream
+  [`stats::glm()`](https://rdrr.io/r/stats/glm.html) refit of each LOSO
+  panel (gaussian MSE / binomial balanced error rate; empty panels
+  contribute `NA` with reason). Every per-study and LOSO fit is a fresh
+  [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
+  call on the relevant partition, so preprocessing and tuning are
+  recomputed inside training data by construction, and no held-out
+  cohort ever chooses a threshold. Uncertainty is reported as
+  cohort-level observations over dependent folds – no binomial CIs.
+  Per-fit seeds derive from the recorded base seed (fully replayable).
+  S3 [`print()`](https://rdrr.io/r/base/print.html) for class
+  `stabl_replication_profile`.
+- [`stabl_null_check()`](https://mdmanurung.github.io/stablr/reference/stabl_null_check.md)
+  (Phase 13 PR-D, 1.0.0 spec A2): outcome-null calibration workbench.
+  Repeatedly reruns the complete
+  [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
+  pipeline on outcome-null versions of the data and summarizes the
+  selected-panel-size distribution, P(any null selection), per-feature
+  null selection frequencies, reported-FDP+ versus by-construction
+  realized FDP, null-saturation proportions, and per-replicate
+  decoy-generator provenance. Null generation is prescribed by an
+  explicit exchangeability unit: `"independent"` (global permutation —
+  refused when `blocks`/`clusters` are supplied), `"within_block"`,
+  `"whole_cluster"` (equal-sized clusters), or `"simulated"` (an
+  explicit user-supplied `null_simulator`; the package never invents a
+  null DGP). Unsupported designs are refused, never silently replaced by
+  a global permutation. Per-replicate permutation and fit seeds are
+  derived from the recorded base seed (fully replayable);
+  `decoy_reps > 1` separates sensitivity to random decoy realizations.
+  Failures are recorded with replicate ids, seeds, stage, and message,
+  and the run aborts (fail-closed) when they exceed `max_failures`. The
+  result (`stabl_null_validation`, with
+  [`print()`](https://rdrr.io/r/base/print.html)/[`plot()`](https://rdrr.io/r/graphics/plot.default.html)
+  methods) carries `truth_status` distinguishing synthetic global nulls
+  from permutation nulls of observational data — the latter quantify
+  null selection behavior, not FDP validity for partly non-null data.
+- [`stabl_diagnose()`](https://mdmanurung.github.io/stablr/reference/stabl_diagnose.md)
+  (Phase 13 PR-C, 1.0.0 spec A1): selection-reliability diagnostics for
+  any
+  [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)/[`stabl()`](https://mdmanurung.github.io/stablr/reference/stabl.md)
+  result. Reports real and artificial score distributions,
+  decoy-generator provenance (requested/actual/fallback), real/decoy
+  selection counts along the full threshold path and per lambda, the
+  selection rule in effect (user `hard_threshold` vs minimized-FDP+),
+  the strict `>` comparator and the FDP+ denominator convention, FDP+
+  curve features (all minimizing thresholds, ties, flat minima, boundary
+  solutions, low-decoy-count instability), a null-saturation probe (the
+  RF/oblique-RF importance-leakage signature, evaluated at the selected
+  threshold — including off-grid user thresholds), a score-dependence
+  assumption probe (explicitly not an exchangeability or
+  knockoff-validity test), and a learner × decoy × outcome ×
+  dimensionality evidence profile with benchmark provenance
+  (`validated_in_stablr` / `empirically_concerning` / `not_evaluated` /
+  `unsupported`; deliberately no binary safe/unsafe score). Returns
+  machine-readable `warning_codes`, `assumption_notes`, and
+  `calibration_scope`; [`print()`](https://rdrr.io/r/base/print.html)
+  and [`plot()`](https://rdrr.io/r/graphics/plot.default.html) S3
+  methods included. The diagnostic is read-only: it never changes the
+  fit or its support.
+  [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
+  objects gain `base_learner` and `family` fields to support the
+  evidence profile (additive; also fixes a latent
+  [`print.stabl()`](https://mdmanurung.github.io/stablr/reference/print.stabl.md)
+  fallback that always displayed “gaussian”/“lasso”).
 - New experimental base learner `base_learner = "splsda"`: sparse PLS
   discriminant analysis via `mixOmics` for binary classification
   (`family = "binomial"` only). The STABL lambda grid sweeps sPLS-DA’s
@@ -356,11 +800,8 @@ audit reconciliation):
   (stability paths plus the FDP+ curve). `stabl` objects also remain
   full `stabl_fit` objects, so every accessor and workflow applies
   unchanged.
-- **New beginner generics
-  [`support()`](https://mdmanurung.github.io/stablr/reference/support.md)
-  and
-  [`feature_names()`](https://mdmanurung.github.io/stablr/reference/support.md)**
-  with methods for `stabl` and `stabl_fit`; they delegate to
+- **New beginner generics `support()` and `feature_names()`** with
+  methods for `stabl` and `stabl_fit`; they delegate to
   [`get_support()`](https://mdmanurung.github.io/stablr/reference/get_support.md)
   and
   [`get_feature_names()`](https://mdmanurung.github.io/stablr/reference/get_feature_names.md).
@@ -373,14 +814,14 @@ the new name. Positional calls are unaffected.
 | Old name | New name | Why |
 |----|----|----|
 | `stabl_fit(groups =)` | `stabl_fit(sample_groups =)` | `groups` collided with `feature_groups`; sample- vs feature-grouping is now unambiguous |
-| [`get_feature_names_out()`](https://mdmanurung.github.io/stablr/reference/get_feature_names_out.md) | [`get_feature_names()`](https://mdmanurung.github.io/stablr/reference/get_feature_names.md) | drops the sklearn-ism; reads naturally in R |
-| [`stacked_multi_omic()`](https://mdmanurung.github.io/stablr/reference/stacked_multi_omic.md) | [`stabl_multiomic_stacked()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_stacked.md) | joins the `stabl_multiomic_*` family and fixes the multi_omic/multiomic casing split |
-| [`jaccard_matrix()`](https://mdmanurung.github.io/stablr/reference/jaccard_matrix.md) | [`jaccard_similarity_matrix()`](https://mdmanurung.github.io/stablr/reference/jaccard_similarity_matrix.md) | states what the matrix contains |
-| [`adjusted_similarity_values()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity_values.md) | [`adjusted_similarity_pairwise()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity_pairwise.md) | the triplet now reads pair / all-pairs matrix / summary consistently |
-| [`adjusted_similarity_measure()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity_measure.md) | [`adjusted_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity_summary.md) | as above |
-| [`pearson_similarity_values()`](https://mdmanurung.github.io/stablr/reference/pearson_similarity_values.md) | [`pearson_similarity_pairwise()`](https://mdmanurung.github.io/stablr/reference/pearson_similarity_pairwise.md) | as above |
-| [`pearson_similarity_measure()`](https://mdmanurung.github.io/stablr/reference/pearson_similarity_measure.md) | [`pearson_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/pearson_similarity_summary.md) | as above |
-| [`classic_bootstrap_indices()`](https://mdmanurung.github.io/stablr/reference/classic_bootstrap_indices.md) | [`sample_bootstrap_indices()`](https://mdmanurung.github.io/stablr/reference/sample_bootstrap_indices.md) | states what is resampled (samples, not features or groups) |
+| `get_feature_names_out()` | [`get_feature_names()`](https://mdmanurung.github.io/stablr/reference/get_feature_names.md) | drops the sklearn-ism; reads naturally in R |
+| `stacked_multi_omic()` | [`stabl_multiomic_stacked()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_stacked.md) | joins the `stabl_multiomic_*` family and fixes the multi_omic/multiomic casing split |
+| `jaccard_matrix()` | [`jaccard_similarity_matrix()`](https://mdmanurung.github.io/stablr/reference/jaccard_similarity_matrix.md) | states what the matrix contains |
+| `adjusted_similarity_values()` | [`adjusted_similarity_pairwise()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity_pairwise.md) | the triplet now reads pair / all-pairs matrix / summary consistently |
+| `adjusted_similarity_measure()` | [`adjusted_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity_summary.md) | as above |
+| `pearson_similarity_values()` | [`pearson_similarity_pairwise()`](https://mdmanurung.github.io/stablr/reference/pearson_similarity_pairwise.md) | as above |
+| `pearson_similarity_measure()` | [`pearson_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/pearson_similarity_summary.md) | as above |
+| `classic_bootstrap_indices()` | [`sample_bootstrap_indices()`](https://mdmanurung.github.io/stablr/reference/sample_bootstrap_indices.md) | states what is resampled (samples, not features or groups) |
 | `pearson_similarity_pairwise(d =)` / `_summary(d =)` | `nb_total_elements =` | aligns the element-count argument with the adjusted-similarity family (`d =` still accepted with a deprecation warning) |
 
 ### Documentation
@@ -516,17 +957,15 @@ the new name. Positional calls are unaffected.
 
 ### New experimental oblique random-forest learner (plan item D2)
 
-- `base_learner = "oblique_rf"` via
-  [`make_aorsf_adapter()`](https://mdmanurung.github.io/stablr/reference/make_aorsf_adapter.md)
-  /
-  [`auto_oblique_threshold_grid()`](https://mdmanurung.github.io/stablr/reference/auto_oblique_threshold_grid.md)
-  (aorsf backend, negation importance), mirroring the random-forest
-  adapter: importance-threshold penalty path, per-tree seeds drawn from
-  the caller’s seeded RNG stream, and the same model-X-knockoff-pairing
-  guardrail. As with `rf`, selection frequencies are noisier than the
-  glmnet family’s; the adapter is experimental and FDP+ calibration is
-  empirical (F5-style benchmarks). aorsf is a Suggests dependency; the
-  feature is guarded by `.require_pkg()`.
+- `base_learner = "oblique_rf"` via `make_aorsf_adapter()` /
+  `auto_oblique_threshold_grid()` (aorsf backend, negation importance),
+  mirroring the random-forest adapter: importance-threshold penalty
+  path, per-tree seeds drawn from the caller’s seeded RNG stream, and
+  the same model-X-knockoff-pairing guardrail. As with `rf`, selection
+  frequencies are noisier than the glmnet family’s; the adapter is
+  experimental and FDP+ calibration is empirical (F5-style benchmarks).
+  aorsf is a Suggests dependency; the feature is guarded by
+  `.require_pkg()`.
 
 ### Multiview-parity fixtures (plan item F4)
 
@@ -578,9 +1017,7 @@ today.
 
 ### API consistency
 
-- **`seed` deprecated:**
-  [`classic_bootstrap_indices()`](https://mdmanurung.github.io/stablr/reference/classic_bootstrap_indices.md)
-  and
+- **`seed` deprecated:** `classic_bootstrap_indices()` and
   [`group_bootstrap_indices()`](https://mdmanurung.github.io/stablr/reference/group_bootstrap_indices.md)
   now take `random_state`; `seed` still works but warns, and will be
   removed in the following minor release. The helpers no longer clobber
@@ -791,11 +1228,10 @@ today.
   for selected feature subsetting, `matrixStats`-backed row maxima,
   bundled Python-parity fixture checks, fixed-seed methodology/stacking
   scripts, validator rollout across workflow/plot/export helpers, and
-  parity-preserving chunked
-  [`stacked_multi_omic()`](https://mdmanurung.github.io/stablr/reference/stacked_multi_omic.md)
-  evaluation for binary/regression tasks. The multiclass stacking path
-  remains scalar by design to preserve probability-normalization parity.
-  \## Quality and publication-readiness sweep
+  parity-preserving chunked `stacked_multi_omic()` evaluation for
+  binary/regression tasks. The multiclass stacking path remains scalar
+  by design to preserve probability-normalization parity. \## Quality
+  and publication-readiness sweep
 
 - **Infrastructure:** corrected `License:` field; lowered
   `Depends: R (>= 4.1.0)` from 4.4.0; moved package-level doc to

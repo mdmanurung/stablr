@@ -94,12 +94,14 @@ reason column.
 ## Details
 
 **Evidence labels.** All effects and importances are computed on the
-data supplied as `x`/`y`. When that data is the fitting data, every row
-is labelled `post_selection_descriptive` (effects) and `apparent`
-(importance): the same samples informed both selection and the
-downstream fit, so the quantities are optimistic and carry no
-inferential meaning. Supplying genuinely held-out `x`/`y` relabels the
-importance scope, but the caller is responsible for that data being
+data supplied as `x`/`y`. The evidence table carries a single
+`evidence_type` column: with the fitting data (the default) every row is
+labelled `post_selection_descriptive` — the same samples informed both
+selection and the downstream fit, so the quantities are optimistic and
+carry no inferential meaning. With `assessment = TRUE` (genuinely
+held-out `x`/`y`) rows are labelled `cross_validated` (a historical
+label for the held-out-assessment scope; the function does not itself
+cross-validate). The caller is responsible for the assessment data being
 untouched by fitting — this function cannot verify it.
 
 **What each column is.** `stability` is the max-over-lambda selection

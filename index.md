@@ -15,24 +15,24 @@ but has no Python or tidymodels runtime dependency.
 
 Major functionality of `stablr`:
 
-- [`stabl()`](https://mdmanurung.github.io/stablr/reference/stabl.md)
+- [`stabl()`](https://mdmanurung.github.io/stablr/reference/stabl.html)
                       Simple selector: a data.frame in, a plain-language
   selection out
-- [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
+- [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.html)
                      Expert interface: full control of lambda grid,
   bootstrap design, thresholds, and learners
-- [`compute_fdp_plus()`](https://mdmanurung.github.io/stablr/reference/compute_fdp_plus.md)
+- [`compute_fdp_plus()`](https://mdmanurung.github.io/stablr/reference/compute_fdp_plus.html)
                 FDP+ thresholding with random-permutation and knockoff
   artificial features
-- [`stabl_multiomic_train_validate()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_train_validate.md)
+- [`stabl_multiomic_train_validate()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_train_validate.html)
   Multi-omic train/validation with early, late, and cooperative fusion
-- [`stabl_multiomic_nested_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_nested_cv.md)
+- [`stabl_multiomic_nested_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_nested_cv.html)
       Outer CV with sample-i.i.d., grouped, or study-disjoint folds
-- [`stabl_multiomic_scheme_comparison()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_scheme_comparison.md)
+- [`stabl_multiomic_scheme_comparison()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_scheme_comparison.html)
   Compare CV schemes arm-by-arm on held-out error
-- [`stabl_environment_stability()`](https://mdmanurung.github.io/stablr/reference/stabl_environment_stability.md)
+- [`stabl_environment_stability()`](https://mdmanurung.github.io/stablr/reference/stabl_environment_stability.html)
   Transportable selections across environments (experimental)
-- [`jaccard_similarity_matrix()`](https://mdmanurung.github.io/stablr/reference/jaccard_similarity_matrix.md)
+- [`jaccard_similarity_matrix()`](https://mdmanurung.github.io/stablr/reference/jaccard_similarity_matrix.html)
      Selection-reproducibility metrics
 
 ## Resources
@@ -47,9 +47,20 @@ Major functionality of `stablr`:
   Vignettes menu above for executable tutorials — including [Python
   STABL
   parity](https://mdmanurung.github.io/stablr/articles/stablr-python-parity.html)
-  (what the pinned Python-reference fixtures do and do not establish)
-  and [Reading stability paths and FDP+
-  plots](https://mdmanurung.github.io/stablr/articles/stablr-reading-plots.html)
+  (what the pinned Python-reference fixtures do and do not establish),
+  [Reading stability paths and FDP+
+  plots](https://mdmanurung.github.io/stablr/articles/stablr-reading-plots.html),
+  and [Reliability diagnostics, validation, and final
+  models](https://mdmanurung.github.io/stablr/articles/stablr-reliability.html)
+  (the
+  [`stabl_diagnose()`](https://mdmanurung.github.io/stablr/reference/stabl_diagnose.md)
+  /
+  [`stabl_null_check()`](https://mdmanurung.github.io/stablr/reference/stabl_null_check.md)
+  /
+  [`stabl_replication_profile()`](https://mdmanurung.github.io/stablr/reference/stabl_replication_profile.md)
+  /
+  [`stabl_finalize()`](https://mdmanurung.github.io/stablr/reference/stabl_finalize.md)
+  toolchain)
 - [Release governance and review
   status](https://github.com/mdmanurung/stablr/blob/main/docs/RELEASE_STATUS.md)
 
@@ -76,7 +87,7 @@ rather than assumed.
 
 ![stablr workflow](reference/figures/workflow.png)
 
-### Analysis modes (binary outcomes)
+### Analysis modes
 
 [`stabl_analyze()`](https://mdmanurung.github.io/stablr/reference/stabl_analyze.md)
 makes the evidence level explicit via a required `mode` argument.
@@ -85,14 +96,22 @@ canonical interpretation table
 ([`stabl_interpret()`](https://mdmanurung.github.io/stablr/reference/stabl_interpret.md))
 labelled `post_selection_descriptive` — coefficients, stability, effect
 directions, and correlation groups describe the fitting data and are not
-predictive evidence. `mode = "validated"` (binary only) runs nested
-cross-validation with fold-fitted preprocessing
+predictive evidence. `mode = "validated"` runs nested cross-validation
+with fold-fitted preprocessing
 ([`stabl_preprocess_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_preprocess_fit.md)
 /
 [`stabl_preprocess_apply()`](https://mdmanurung.github.io/stablr/reference/stabl_preprocess_apply.md))
-and returns held-out predictions, pooled and per-repeat performance
-(accuracy, balanced error rate, macro-F1, MCC, Brier, log-loss, AUROC),
-and held-out permutation importance labelled `cross_validated`.
+and returns held-out predictions, pooled and per-repeat performance, and
+held-out permutation importance labelled `cross_validated`. Binary
+outcomes report accuracy, balanced error rate, macro-F1, MCC, Brier,
+log-loss, and AUROC; gaussian outcomes report MAE, RMSE, and R² (with
+explicit definitions — negative R² is retained, and an empty selection
+falls back to a deterministic intercept-only model). A validated
+analysis with `final_refit = TRUE` can be packed into a portable final
+model with
+[`stabl_finalize()`](https://mdmanurung.github.io/stablr/reference/stabl_finalize.md)
+and applied to new data with
+[`predict()`](https://rdrr.io/r/stats/predict.html).
 
 Evidence status (simulation-only, predeclared gates,
 `benchmarks/iv_summary.md`): effect-direction recovery 1.00; null
@@ -130,7 +149,7 @@ prints a plain-language answer:
 library(stablr)
 fit <- stabl(df, y = "response", n_bootstraps = 1000L, random_state = 42L)
 fit                    # plain-language answer
-feature_names(fit)     # the selected features
+get_feature_names(fit) # the selected features
 plot(fit)              # stability paths + FDP+ curve
 ```
 
@@ -145,13 +164,11 @@ Everything beyond core STABL is labelled as an extension. Cooperative
 fusion (Ding et al. 2022) ships on the vendored multiview engine for
 gaussian and binomial families (Cox deferred). The random-forest learner
 is calibrated for scoped settings: linear and nonlinear gaussian
-problems with up to a few dozen predictors (see
-[`?make_ranger_adapter`](https://mdmanurung.github.io/stablr/reference/make_ranger_adapter.md)).
-The ordinal learner is experimental pending its calibration study (see
-[`?make_ordinal_adapter`](https://mdmanurung.github.io/stablr/reference/make_ordinal_adapter.md)).
-The environment-stability workflow aggregates per-environment selections
-by their minimum frequency; it is calibrated for small feature panels
-(see
+problems with up to a few dozen predictors (`base_learner = "rf"`). The
+ordinal learner is experimental pending its calibration study
+(`base_learner = "ordinal"`). The environment-stability workflow
+aggregates per-environment selections by their minimum frequency; it is
+calibrated for small feature panels (see
 [`?stabl_environment_stability`](https://mdmanurung.github.io/stablr/reference/stabl_environment_stability.md)).
 
 Interpretation limits are part of the contract. The fitted threshold is

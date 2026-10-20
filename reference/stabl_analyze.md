@@ -2,9 +2,10 @@
 
 Runs STABL feature selection in one of two explicitly declared modes:
 `"exploratory"` (full-data selection with descriptive, apparent
-interpretation) or `"validated"` (binary classification with the whole
-pipeline — preprocessing, selection, tuning and prediction — isolated
-inside nested cross-validation training partitions).
+interpretation) or `"validated"` (binary classification or gaussian
+regression with the whole pipeline — preprocessing, selection, tuning
+and prediction — isolated inside nested cross-validation training
+partitions).
 
 ## Usage
 
@@ -26,7 +27,7 @@ stabl_analyze(
   n_bootstraps = 100L,
   artificial_type = "random_permutation",
   hard_threshold = NULL,
-  metric = c("ber", "accuracy"),
+  metric = NULL,
   cor_method = c("pearson", "spearman"),
   cor_threshold = 0.7,
   n_repeats = 20L,
@@ -58,8 +59,8 @@ summary(object, ...)
 
 - family:
 
-  `"binomial"` or `"gaussian"`. Validated mode currently supports
-  `"binomial"` only.
+  `"binomial"` or `"gaussian"`; both are supported in exploratory and
+  validated modes.
 
 - mode:
 
@@ -92,10 +93,18 @@ summary(object, ...)
   the outcome factor.
 
 - outer_v, outer_repeats, inner_v, stratified, study_labels,
-  lambda_grid, n_bootstraps, artificial_type, hard_threshold, metric:
+  lambda_grid, n_bootstraps, artificial_type, hard_threshold:
 
   Validated-mode resampling and selection settings, passed to
   [`stabl_multiomic_nested_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_nested_cv.md).
+
+- metric:
+
+  Validated-mode candidate-selection metric, passed to
+  [`stabl_multiomic_nested_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_nested_cv.md).
+  `NULL` (default) resolves per family: `"ber"` for binomial, `"rmse"`
+  for gaussian. Allowed values are `"ber"`/`"accuracy"` (binomial) and
+  `"rmse"`/`"mae"`/`"r2"` (gaussian).
 
 - cor_method, cor_threshold:
 
@@ -145,15 +154,16 @@ mode returns the full-data `fit` (a `"stabl_fit"`), its `interpretation`
 `"post_selection_descriptive"`), the fitted `preprocessing` transform,
 and `provenance`. Validated mode returns the underlying
 `"stabl_multiomic_nested_cv"` object in `nested`; fold-level held-out
-`predictions` (one row per sample per repeat, with `event_probability`
-for the named `event_class`); `performance` (pooled and per-repeat
-accuracy, BER, macro-F1, MCC, Brier score, clipped log loss and AUROC);
-fold-level `selected_features`; `heldout_importance` (per-feature and
-per-group permutation importance computed with each fold's own predictor
-on that fold's held-out rows, with correlation groups derived from
-training data only); and optionally `final_refit`. Validated evidence is
-labelled `"cross_validated"` with evaluation scope
-`"held_out_assessment"`.
+`predictions` (one row per sample per repeat; for binomial with
+`event_probability` for the named `event_class`, for gaussian with the
+numeric `predicted` response); `performance` (pooled and per-repeat;
+accuracy, BER, macro-F1, MCC, Brier score, clipped log loss and AUROC
+for binomial, or MAE, RMSE and R-squared for gaussian); fold-level
+`selected_features`; `heldout_importance` (per-feature and per-group
+permutation importance computed with each fold's own predictor on that
+fold's held-out rows, with correlation groups derived from training data
+only); and optionally `final_refit`. Validated evidence is labelled
+`"cross_validated"` with evaluation scope `"held_out_assessment"`.
 
 ## Functions
 

@@ -70,7 +70,7 @@ if (requireNamespace("mixOmics", quietly = TRUE)) {
   set.seed(1L)
   x <- matrix(rnorm(120L), 30L, 20L)
   y <- factor(rep(c("0", "1"), each = 15L))
-  adapter <- make_splsda_adapter()
+  adapter <- stablr:::make_splsda_adapter()
   mask <- adapter(x, y, data.frame(lambda = 5))
   cat("selected:", sum(mask), "of", ncol(x), "features\n")
 }

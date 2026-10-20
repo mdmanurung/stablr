@@ -50,10 +50,10 @@ when you want to report precision and recall separately; use
 ``` r
 true_signal <- c("f1", "f2", "f3")
 predicted   <- c("f1", "f2", "f4")  # 2 TP, 1 FP, 1 FN
-fscore_similarity(predicted, true_signal)           # F1
+stablr:::fscore_similarity(predicted, true_signal)           # F1
 #> [1] 0.6666667
-fscore_similarity(predicted, true_signal, beta = 2) # recall-weighted
+stablr:::fscore_similarity(predicted, true_signal, beta = 2) # recall-weighted
 #> [1] 0.6666667
-fscore_similarity(character(0), character(0))       # 0
+stablr:::fscore_similarity(character(0), character(0))       # 0
 #> [1] 0
 ```

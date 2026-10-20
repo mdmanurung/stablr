@@ -22,6 +22,7 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-vignettes"><li><a class="dropdown-item" href="../articles/stablr-getting-started.html">Getting started with stabl</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-python-parity.html">Python STABL parity (pinned snapshot)</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-reading-plots.html">Reading stability paths and FDP+ plots</a></li>
+    <li><a class="dropdown-item" href="../articles/stablr-reliability.html">Reliability, validation, and final models</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-intro.html">Quick start (expert interface)</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-multiomic.html">Multi-omic OOL workflow</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-tcga.html">TCGA Breast Cancer workflow</a></li>
@@ -100,13 +101,6 @@
 
         </dt>
         <dd>Plot Stability Paths for a Fitted STABL Object (Beginner Style)</dd>
-
-        <dt>
-
-          <code><a href="support.html">support()</a></code> <code><a href="support.html">feature_names()</a></code>
-
-        </dt>
-        <dd>Support and Feature Names of a STABL Selection</dd>
       </dl></div><div class="section level2">
       <h2 id="core-stabl-engine">Core STABL Engine<a class="anchor" aria-label="anchor" href="#core-stabl-engine"></a></h2>
 
@@ -138,46 +132,9 @@
         </dt>
         <dd>Compute FDP+ (False Discovery Proportion Upper Bound)</dd>
       </dl></div><div class="section level2">
-      <h2 id="knockoff-feature-construction">Knockoff Feature Construction<a class="anchor" aria-label="anchor" href="#knockoff-feature-construction"></a></h2>
+      <h2 id="learner-grid-helpers">Learner Grid Helpers<a class="anchor" aria-label="anchor" href="#learner-grid-helpers"></a></h2>
 
-      <div class="section-desc"><p>Factories that inject artificial features (Model-X knockoffs or random permutations) for FDP+ calibration; plug into stabl_fit through the knockoff/solver arguments.</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="make_knockoff_features.html">make_knockoff_features()</a></code>
-
-        </dt>
-        <dd>Make Knockoff Artificial Features</dd>
-
-        <dt>
-
-          <code><a href="make_knockoff_equi_features.html">make_knockoff_equi_features()</a></code>
-
-        </dt>
-        <dd>Make Model-X Equicorrelated Knockoff Artificial Features</dd>
-
-        <dt>
-
-          <code><a href="make_knockoff_mvr_features.html">make_knockoff_mvr_features()</a></code>
-
-        </dt>
-        <dd>Make Model-X MVR Knockoff Artificial Features</dd>
-
-        <dt>
-
-          <code><a href="make_rp_features.html">make_rp_features()</a></code>
-
-        </dt>
-        <dd>Make Random-Permutation Artificial Features</dd>
-      </dl></div><div class="section level2">
-      <h2 id="learner-adapters">Learner Adapters<a class="anchor" aria-label="anchor" href="#learner-adapters"></a></h2>
-
-      <div class="section-desc"><p>Public learner factories for glmnet-family and sparse-group backends.</p></div>
+      <div class="section-desc"><p>Data-driven threshold/lambda grid constructors for the non-glmnet base learners. The random forest is calibrated within a measured scope (WS-2); the ordinal learner is experimental (WS-9); sPLS-DA is experimental and binomial-only. Learner factories are internal; select learners via the <code>base_learner</code> argument of <code><a href="../reference/stabl_fit.html">stabl_fit()</a></code>.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -185,43 +142,6 @@
 
 
       <dl><dt>
-
-          <code><a href="make_glmnet_adapter.html">make_glmnet_adapter()</a></code>
-
-        </dt>
-        <dd>Build a glmnet Learner Adapter</dd>
-
-        <dt>
-
-          <code><a href="make_adaptive_lasso_adapter.html">make_adaptive_lasso_adapter()</a></code>
-
-        </dt>
-        <dd>Build an Adaptive Lasso Learner Adapter</dd>
-
-        <dt>
-
-          <code><a href="make_sgl_adapter.html">make_sgl_adapter()</a></code>
-
-        </dt>
-        <dd>Build a Sparse Group Lasso Learner Adapter</dd>
-      </dl></div><div class="section level2">
-      <h2 id="extended-learner-adapters">Extended Learner Adapters<a class="anchor" aria-label="anchor" href="#extended-learner-adapters"></a></h2>
-
-      <div class="section-desc"><p>Extensions beyond the glmnet family. The random forest is calibrated within a measured scope (WS-2); the oblique forest is fenced (WS-3); the ordinal learner is experimental (WS-9); sPLS-DA is experimental and binomial-only.</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="make_ranger_adapter.html">make_ranger_adapter()</a></code>
-
-        </dt>
-        <dd>Build a Random-Forest Learner Adapter (Calibrated, Scoped)</dd>
-
-        <dt>
 
           <code><a href="auto_rf_threshold_grid.html">auto_rf_threshold_grid()</a></code>
 
@@ -230,38 +150,10 @@
 
         <dt>
 
-          <code><a href="make_aorsf_adapter.html">make_aorsf_adapter()</a></code>
-
-        </dt>
-        <dd>Build an Oblique Random-Forest Learner Adapter (Fenced)</dd>
-
-        <dt>
-
-          <code><a href="auto_oblique_threshold_grid.html">auto_oblique_threshold_grid()</a></code>
-
-        </dt>
-        <dd>Auto-Generate an Importance-Threshold Grid for Oblique-Random-Forest STABL (Experimental)</dd>
-
-        <dt>
-
-          <code><a href="make_ordinal_adapter.html">make_ordinal_adapter()</a></code>
-
-        </dt>
-        <dd>Build an Ordinal-Regression Learner Adapter (Experimental)</dd>
-
-        <dt>
-
           <code><a href="auto_ordinal_lambda_grid.html">auto_ordinal_lambda_grid()</a></code>
 
         </dt>
         <dd>Build a Data-Driven Lambda Grid for the Ordinal Learner (Experimental)</dd>
-
-        <dt>
-
-          <code><a href="make_splsda_adapter.html">make_splsda_adapter()</a></code>
-
-        </dt>
-        <dd>Build a sPLS-DA Learner Adapter</dd>
 
         <dt>
 
@@ -541,6 +433,85 @@
         </dt>
         <dd>Fit a preprocessing transform from a recipes recipe</dd>
       </dl></div><div class="section level2">
+      <h2 id="reliability-and-final-models">Reliability and Final Models<a class="anchor" aria-label="anchor" href="#reliability-and-final-models"></a></h2>
+
+      <div class="section-desc"><p>Post-selection reliability diagnostics, outcome-null validation, cohort replication, and portable final models (Phase 13; see the stablr-reliability article for a guided tour).</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="stabl_diagnose.html">stabl_diagnose()</a></code>
+
+        </dt>
+        <dd>Diagnose selection reliability of a fitted STABL object</dd>
+
+        <dt>
+
+          <code><a href="print.stabl_diagnostics.html">print(<i>&lt;stabl_diagnostics&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Print STABL Selection Diagnostics</dd>
+
+        <dt>
+
+          <code><a href="plot.stabl_diagnostics.html">plot(<i>&lt;stabl_diagnostics&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Plot STABL selection diagnostics</dd>
+
+        <dt>
+
+          <code><a href="stabl_null_check.html">stabl_null_check()</a></code>
+
+        </dt>
+        <dd>Outcome-Null Calibration Check for STABL</dd>
+
+        <dt>
+
+          <code><a href="print.stabl_null_validation.html">print(<i>&lt;stabl_null_validation&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Print an Outcome-Null Validation Summary</dd>
+
+        <dt>
+
+          <code><a href="plot.stabl_null_validation.html">plot(<i>&lt;stabl_null_validation&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Plot Outcome-Null Validation Results</dd>
+
+        <dt>
+
+          <code><a href="stabl_replication_profile.html">stabl_replication_profile()</a></code>
+
+        </dt>
+        <dd>Cohort Replication and Heterogeneity Profile</dd>
+
+        <dt>
+
+          <code><a href="print.stabl_replication_profile.html">print(<i>&lt;stabl_replication_profile&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Print a Cohort Replication Profile</dd>
+
+        <dt>
+
+          <code><a href="stabl_finalize.html">stabl_finalize()</a></code> <code><a href="stabl_finalize.html">predict(<i>&lt;stabl_predictor&gt;</i>)</a></code> <code><a href="stabl_finalize.html">print(<i>&lt;stabl_predictor&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Finalize a STABL selection into a portable predictive model</dd>
+
+        <dt>
+
+          <code><a href="validate_newdata_schema.html">validate_newdata_schema()</a></code>
+
+        </dt>
+        <dd>Validate new data against a <code>"stabl_predictor"</code> schema</dd>
+      </dl></div><div class="section level2">
       <h2 id="visualization">Visualization<a class="anchor" aria-label="anchor" href="#visualization"></a></h2>
 
 
@@ -563,34 +534,6 @@
 
         </dt>
         <dd>Plot the FDP+ Diagnostic Curve</dd>
-
-        <dt>
-
-          <code><a href="plot_roc.html">plot_roc()</a></code>
-
-        </dt>
-        <dd>Plot a ROC Curve</dd>
-
-        <dt>
-
-          <code><a href="plot_prc.html">plot_prc()</a></code>
-
-        </dt>
-        <dd>Plot a Precision-Recall Curve</dd>
-
-        <dt>
-
-          <code><a href="boxplot_features.html">boxplot_features()</a></code>
-
-        </dt>
-        <dd>Boxplots of Selected Features Grouped by Outcome</dd>
-
-        <dt>
-
-          <code><a href="scatterplot_features.html">scatterplot_features()</a></code>
-
-        </dt>
-        <dd>Scatterplots of Selected Features Against a Continuous Outcome</dd>
       </dl></div><div class="section level2">
       <h2 id="plot-a-fitted-stabl-fit">Plot a fitted stabl_fit<a class="anchor" aria-label="anchor" href="#plot-a-fitted-stabl-fit"></a></h2>
 
@@ -711,92 +654,6 @@
 
         </dt>
         <dd>Summary Statistic of Pearson Similarity Values</dd>
-
-        <dt>
-
-          <code><a href="fdr_similarity.html">fdr_similarity()</a></code>
-
-        </dt>
-        <dd>FDR Between Two Feature Sets</dd>
-
-        <dt>
-
-          <code><a href="tpr_similarity.html">tpr_similarity()</a></code>
-
-        </dt>
-        <dd>TPR Between Two Feature Sets</dd>
-
-        <dt>
-
-          <code><a href="fscore_similarity.html">fscore_similarity()</a></code>
-
-        </dt>
-        <dd>F-Score Between Two Feature Sets</dd>
-      </dl></div><div class="section level2">
-      <h2 id="deprecated-names">Deprecated names<a class="anchor" aria-label="anchor" href="#deprecated-names"></a></h2>
-
-      <div class="section-desc"><p>Old names kept as deprecation shims; they warn once and delegate to the replacements above.</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="jaccard_matrix.html">jaccard_matrix()</a></code>
-
-        </dt>
-        <dd>Deprecated: use <code><a href="../reference/jaccard_similarity_matrix.html">jaccard_similarity_matrix()</a></code></dd>
-
-        <dt>
-
-          <code><a href="adjusted_similarity_values.html">adjusted_similarity_values()</a></code>
-
-        </dt>
-        <dd>Deprecated: use <code><a href="../reference/adjusted_similarity_pairwise.html">adjusted_similarity_pairwise()</a></code></dd>
-
-        <dt>
-
-          <code><a href="adjusted_similarity_measure.html">adjusted_similarity_measure()</a></code>
-
-        </dt>
-        <dd>Deprecated: use <code><a href="../reference/adjusted_similarity_summary.html">adjusted_similarity_summary()</a></code></dd>
-
-        <dt>
-
-          <code><a href="pearson_similarity_values.html">pearson_similarity_values()</a></code>
-
-        </dt>
-        <dd>Deprecated: use <code><a href="../reference/pearson_similarity_pairwise.html">pearson_similarity_pairwise()</a></code></dd>
-
-        <dt>
-
-          <code><a href="pearson_similarity_measure.html">pearson_similarity_measure()</a></code>
-
-        </dt>
-        <dd>Deprecated: use <code><a href="../reference/pearson_similarity_summary.html">pearson_similarity_summary()</a></code></dd>
-
-        <dt>
-
-          <code><a href="get_feature_names_out.html">get_feature_names_out()</a></code>
-
-        </dt>
-        <dd>Deprecated: use <code><a href="../reference/get_feature_names.html">get_feature_names()</a></code></dd>
-
-        <dt>
-
-          <code><a href="classic_bootstrap_indices.html">classic_bootstrap_indices()</a></code>
-
-        </dt>
-        <dd>Deprecated: use <code><a href="../reference/sample_bootstrap_indices.html">sample_bootstrap_indices()</a></code></dd>
-
-        <dt>
-
-          <code><a href="stacked_multi_omic.html">stacked_multi_omic()</a></code>
-
-        </dt>
-        <dd>Deprecated: use <code><a href="../reference/stabl_multiomic_stacked.html">stabl_multiomic_stacked()</a></code></dd>
       </dl></div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

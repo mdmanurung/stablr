@@ -38,6 +38,7 @@
 <li><a class="dropdown-item" href="../articles/stablr-getting-started.html">Getting started with stabl</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-python-parity.html">Python STABL parity (pinned snapshot)</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-reading-plots.html">Reading stability paths and FDP+ plots</a></li>
+    <li><a class="dropdown-item" href="../articles/stablr-reliability.html">Reliability, validation, and final models</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-intro.html">Quick start (expert interface)</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-multiomic.html">Multi-omic OOL workflow</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-tcga.html">TCGA Breast Cancer workflow</a></li>
@@ -190,8 +191,10 @@ filtering, median imputation, and standardisation. Here,
 <code><a href="../reference/load_ool_data.html">load_ool_data()</a></code> ships 150 training samples and 21 aligned
 validation samples for <code>CyTOF</code> and <code>Proteomics</code>
 only. It keeps the first 100 features from each assay. The matrices are
-already aligned and have no missing values. These are quick-build
-settings, not the predeclared full OOL parity analysis. Use
+already aligned and have no missing values. This vignette standardises
+both views the same way the notebook does — fitted on the training
+samples only (Section 4.2). These are quick-build settings, not the
+predeclared full OOL parity analysis. Use
 <code>docs/PYTHON_TO_R_MAPPING.md</code> when the goal is to mirror the
 tutorial notebook’s datasets and preprocessing choices.</p>
 <p>Load the training and validation splits. Then inspect their
@@ -260,16 +263,57 @@ stability easily.</p>
 <div class="section level3">
 <h3 id="model-fitting">4.2 Model fitting<a class="anchor" aria-label="anchor" href="#model-fitting"></a>
 </h3>
-<p>We build a compact lambda grid for the CyTOF view.</p>
+<p>We standardise both views before fitting, matching the Python
+tutorial’s preprocessing pipeline (which standardises every view). The
+two views arrive on incommensurate scales — the CyTOF features here vary
+by about 0.08 SD, the Proteomics features by about 0.5 SD with means far
+from zero. The lasso learner used below standardises internally, so the
+per-omic selections are numerically unaffected either way; the
+discipline matters when you swap learners (sPLS-DA is scale-sensitive),
+use model-X knockoff decoys (the equicorrelated construction is
+scale-dependent), or concatenate views for early fusion in Section
+5.</p>
+<p>Each view’s standardiser is fitted on the training samples only, and
+the stored training means and standard deviations are then applied
+unchanged to the validation samples. Two shortcuts would corrupt the
+analysis. Fitting the scaler on the pooled train + validation matrix
+leaks validation distribution information into training. Fitting a
+separate scaler on the validation matrix is not leakage, but it places
+the validation samples in a different feature space, so a model trained
+on the training scaling mispredicts them.
+<code><a href="../reference/stabl_preprocess_fit.html">stabl_preprocess_fit()</a></code> and
+<code><a href="../reference/stabl_preprocess_apply.html">stabl_preprocess_apply()</a></code> exist for exactly this
+fit-on-train, apply-everywhere pattern;
+<code>stabl_analyze(mode = "validated")</code> applies the same rule
+inside every cross-validation fold. The fitter also guards zero-variance
+features (their SD is set to 1, leaving them constant at zero after
+centring) — six CyTOF features are constant in this training split, and
+a bare <code><a href="https://rdrr.io/r/base/scale.html" class="external-link">scale()</a></code> would turn them into <code>NaN</code>.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Fit one standardiser per view on the TRAINING samples only ...</span></span>
+<span><span class="va">pp_cytof</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stabl_preprocess_fit.html">stabl_preprocess_fit</a></span><span class="op">(</span><span class="va">ool_train</span><span class="op">$</span><span class="va">x_list</span><span class="op">$</span><span class="va">cytof</span>,</span>
+<span>                                 transforms <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"center"</span>, <span class="st">"scale"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">pp_prot</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stabl_preprocess_fit.html">stabl_preprocess_fit</a></span><span class="op">(</span><span class="va">ool_train</span><span class="op">$</span><span class="va">x_list</span><span class="op">$</span><span class="va">proteomics</span>,</span>
+<span>                                 transforms <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"center"</span>, <span class="st">"scale"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">cytof_train_scaled</span>      <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stabl_preprocess_apply.html">stabl_preprocess_apply</a></span><span class="op">(</span><span class="va">pp_cytof</span>,</span>
+<span>                                                  <span class="va">ool_train</span><span class="op">$</span><span class="va">x_list</span><span class="op">$</span><span class="va">cytof</span><span class="op">)</span></span>
+<span><span class="va">proteomics_train_scaled</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stabl_preprocess_apply.html">stabl_preprocess_apply</a></span><span class="op">(</span><span class="va">pp_prot</span>,</span>
+<span>                                                  <span class="va">ool_train</span><span class="op">$</span><span class="va">x_list</span><span class="op">$</span><span class="va">proteomics</span><span class="op">)</span></span>
+<span><span class="co"># ... then apply the stored training mean/SD to the validation samples</span></span>
+<span><span class="va">cytof_valid_scaled</span>      <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stabl_preprocess_apply.html">stabl_preprocess_apply</a></span><span class="op">(</span><span class="va">pp_cytof</span>,</span>
+<span>                                                  <span class="va">ool_valid</span><span class="op">$</span><span class="va">x_list</span><span class="op">$</span><span class="va">cytof</span><span class="op">)</span></span>
+<span><span class="va">proteomics_valid_scaled</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stabl_preprocess_apply.html">stabl_preprocess_apply</a></span><span class="op">(</span><span class="va">pp_prot</span>,</span>
+<span>                                                  <span class="va">ool_valid</span><span class="op">$</span><span class="va">x_list</span><span class="op">$</span><span class="va">proteomics</span><span class="op">)</span></span></code></pre></div>
+<p>We build a compact lambda grid for the CyTOF view.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lambda_cytof</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/auto_lambda_grid.html">auto_lambda_grid</a></span><span class="op">(</span></span>
-<span>  <span class="va">ool_train</span><span class="op">$</span><span class="va">x_list</span><span class="op">$</span><span class="va">cytof</span>, <span class="va">ool_train</span><span class="op">$</span><span class="va">y</span>,</span>
+<span>  <span class="va">cytof_train_scaled</span>, <span class="va">ool_train</span><span class="op">$</span><span class="va">y</span>,</span>
 <span>  family <span class="op">=</span> <span class="st">"gaussian"</span>, n_lambda <span class="op">=</span> <span class="fl">6</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>We fit STABL to the CyTOF view with 10 bootstrap replicates.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_cytof</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stabl_fit.html">stabl_fit</a></span><span class="op">(</span></span>
-<span>  x               <span class="op">=</span> <span class="va">ool_train</span><span class="op">$</span><span class="va">x_list</span><span class="op">$</span><span class="va">cytof</span>,</span>
+<span>  x               <span class="op">=</span> <span class="va">cytof_train_scaled</span>,</span>
 <span>  y               <span class="op">=</span> <span class="va">ool_train</span><span class="op">$</span><span class="va">y</span>,</span>
 <span>  lambda_grid     <span class="op">=</span> <span class="va">lambda_cytof</span>,</span>
 <span>  family          <span class="op">=</span> <span class="st">"gaussian"</span>,</span>
@@ -281,14 +325,13 @@ stability easily.</p>
 <span><span class="co">#&gt; &lt;stabl_fit&gt;</span></span>
 <span><span class="co">#&gt;   Features in:      100 </span></span>
 <span><span class="co">#&gt;   Features selected: 0 </span></span>
-<span><span class="co">#&gt;   Min FDP+:         1.044 </span></span>
+<span><span class="co">#&gt;   Min FDP+:         1.0556 </span></span>
 <span><span class="co">#&gt;   FDP+ threshold:   1 </span></span>
 <span><span class="co">#&gt;   Artificial:       random_permutation</span></span></code></pre></div>
-<p>We standardise the Proteomics matrix with <code><a href="https://rdrr.io/r/base/scale.html" class="external-link">scale()</a></code>. Then
-we compute its lambda grid and fit.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">proteomics_train_scaled</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/scale.html" class="external-link">scale</a></span><span class="op">(</span><span class="va">ool_train</span><span class="op">$</span><span class="va">x_list</span><span class="op">$</span><span class="va">proteomics</span><span class="op">)</span></span>
-<span><span class="va">lambda_prot</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/auto_lambda_grid.html">auto_lambda_grid</a></span><span class="op">(</span></span>
+<p>We compute the Proteomics lambda grid on its scaled training matrix
+and fit.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">lambda_prot</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/auto_lambda_grid.html">auto_lambda_grid</a></span><span class="op">(</span></span>
 <span>  <span class="va">proteomics_train_scaled</span>, <span class="va">ool_train</span><span class="op">$</span><span class="va">y</span>,</span>
 <span>  family <span class="op">=</span> <span class="st">"gaussian"</span>, n_lambda <span class="op">=</span> <span class="fl">6</span></span>
 <span><span class="op">)</span></span>
@@ -314,7 +357,7 @@ we compute its lambda grid and fit.</p>
 <h3 id="selected-features-and-stability-paths">4.3 Selected features and stability paths<a class="anchor" aria-label="anchor" href="#selected-features-and-stability-paths"></a>
 </h3>
 <p>The next chunk prints the selected feature names of each omic.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"CyTOF selected feature names:\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; CyTOF selected feature names:</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_feature_names.html">get_feature_names</a></span><span class="op">(</span><span class="va">fit_cytof</span><span class="op">)</span><span class="op">)</span></span>
@@ -335,10 +378,10 @@ twice through different measurement systems.</p>
 high selection frequencies across a moderate penalty range are the most
 convincing. Features that appear only when the penalty is very weak are
 easier to dismiss as opportunistic.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_stabl_path.html">plot_stabl_path</a></span><span class="op">(</span><span class="va">fit_cytof</span>,     title <span class="op">=</span> <span class="st">"CyTOF - stability path"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="stablr-multiomic_files/figure-html/plot-per-omic-1.png" class="r-plt" alt="Stability paths for CyTOF and Proteomics" width="576"></p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_stabl_path.html">plot_stabl_path</a></span><span class="op">(</span><span class="va">fit_prot</span>,      title <span class="op">=</span> <span class="st">"Proteomics - stability path"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="stablr-multiomic_files/figure-html/plot-per-omic-2.png" class="r-plt" alt="Stability paths for CyTOF and Proteomics" width="576"></p>
 </div>
@@ -449,12 +492,12 @@ tie behavior.</p>
 <h3 id="fitting-the-joint-workflow">5.3 Fitting the joint workflow<a class="anchor" aria-label="anchor" href="#fitting-the-joint-workflow"></a>
 </h3>
 <p>We build the per-omic lambda grids from the training data.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Build per-omic lambda grids</span></span>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Build per-omic lambda grids from the scaled training matrices</span></span>
 <span><span class="va">lambda_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>  cytof      <span class="op">=</span> <span class="fu"><a href="../reference/auto_lambda_grid.html">auto_lambda_grid</a></span><span class="op">(</span><span class="va">ool_train</span><span class="op">$</span><span class="va">x_list</span><span class="op">$</span><span class="va">cytof</span>,</span>
+<span>  cytof      <span class="op">=</span> <span class="fu"><a href="../reference/auto_lambda_grid.html">auto_lambda_grid</a></span><span class="op">(</span><span class="va">cytof_train_scaled</span>,</span>
 <span>                                <span class="va">ool_train</span><span class="op">$</span><span class="va">y</span>, family <span class="op">=</span> <span class="st">"gaussian"</span>, n_lambda <span class="op">=</span> <span class="fl">6</span><span class="op">)</span>,</span>
-<span>  proteomics <span class="op">=</span> <span class="fu"><a href="../reference/auto_lambda_grid.html">auto_lambda_grid</a></span><span class="op">(</span><span class="va">ool_train</span><span class="op">$</span><span class="va">x_list</span><span class="op">$</span><span class="va">proteomics</span>,</span>
+<span>  proteomics <span class="op">=</span> <span class="fu"><a href="../reference/auto_lambda_grid.html">auto_lambda_grid</a></span><span class="op">(</span><span class="va">proteomics_train_scaled</span>,</span>
 <span>                                <span class="va">ool_train</span><span class="op">$</span><span class="va">y</span>, family <span class="op">=</span> <span class="st">"gaussian"</span>, n_lambda <span class="op">=</span> <span class="fl">6</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>If you plan cross-validation with <code><a href="../reference/stabl_multiomic_cv.html">stabl_multiomic_cv()</a></code>,
@@ -462,14 +505,21 @@ prefer <code>lambda_grid = "auto"</code> or derive grids from training
 data only. A grid computed on the full dataset leaks mild information
 into the cross-validated estimates. <code>"auto"</code> avoids this. It
 builds each fold’s grid from its training data alone.</p>
-<p>We run the integrated workflow with both fusion strategies
-enabled.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<p>We run the integrated workflow with both fusion strategies enabled.
+Both views enter under the same training-fitted standardisation as in
+Section 4, and the validation matrices are transformed with the stored
+training parameters — so the early-fusion concatenation mixes only
+comparably scaled features, the late-fusion validation predictions are
+computed in the correct feature space, and the per-omic baseline above
+is directly comparable.</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">multi_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stabl_multiomic_train_validate.html">stabl_multiomic_train_validate</a></span><span class="op">(</span></span>
-<span>  x_train_list    <span class="op">=</span> <span class="va">ool_train</span><span class="op">$</span><span class="va">x_list</span>,</span>
+<span>  x_train_list    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>cytof      <span class="op">=</span> <span class="va">cytof_train_scaled</span>,</span>
+<span>                         proteomics <span class="op">=</span> <span class="va">proteomics_train_scaled</span><span class="op">)</span>,</span>
 <span>  y_train         <span class="op">=</span> <span class="va">ool_train</span><span class="op">$</span><span class="va">y</span>,</span>
 <span>  lambda_grid     <span class="op">=</span> <span class="va">lambda_list</span>,</span>
-<span>  x_valid_list    <span class="op">=</span> <span class="va">ool_valid</span><span class="op">$</span><span class="va">x_list</span>,</span>
+<span>  x_valid_list    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>cytof      <span class="op">=</span> <span class="va">cytof_valid_scaled</span>,</span>
+<span>                         proteomics <span class="op">=</span> <span class="va">proteomics_valid_scaled</span><span class="op">)</span>,</span>
 <span>  y_valid         <span class="op">=</span> <span class="va">ool_valid</span><span class="op">$</span><span class="va">y</span>,</span>
 <span>  family          <span class="op">=</span> <span class="st">"gaussian"</span>,</span>
 <span>  n_bootstraps    <span class="op">=</span> <span class="fl">10L</span>,</span>
@@ -488,7 +538,7 @@ enabled.</p>
 <span><span class="co">#&gt;     proteomics: 0</span></span>
 <span><span class="co">#&gt;   Validation data:  yes </span></span>
 <span><span class="co">#&gt;   Early fusion:     yes (12 features selected) </span></span>
-<span><span class="co">#&gt;   Late fusion:      yes (score = 0.0974)</span></span></code></pre></div>
+<span><span class="co">#&gt;   Late fusion:      yes (score = 0.1968)</span></span></code></pre></div>
 <p>The printed summary lists the active branches of the workflow
 together with their selected-feature counts and the late-fusion
 score.</p>
@@ -524,7 +574,7 @@ late-fusion step (if <code>late_fusion = TRUE</code>), containing
 </h3>
 <p>The next chunk prints the per-omic selected feature names from the
 joint pipeline.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Per-omic selected feature names from the joint pipeline</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"CyTOF (from multi-omic pipeline):\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; CyTOF (from multi-omic pipeline):</span></span>
@@ -537,14 +587,16 @@ joint pipeline.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_feature_names.html">get_feature_names</a></span><span class="op">(</span><span class="va">multi_fit</span><span class="op">$</span><span class="va">fits</span><span class="op">$</span><span class="va">proteomics</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; character(0)</span></span></code></pre></div>
 <p>These lists come from the fits within the joint pipeline. Compare
-them with the standalone per-omic results of Section 4.</p>
+them with the standalone per-omic results of Section 4 — both use the
+same training-fitted standardisation, so any difference reflects the
+joint analysis, not the preprocessing.</p>
 </div>
 <div class="section level3">
 <h3 id="early-fusion">6.3 Early fusion<a class="anchor" aria-label="anchor" href="#early-fusion"></a>
 </h3>
 <p>The chunk prints the early-fusion selected feature names when the
 branch is active.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Early fusion: joint selection across all omics simultaneously</span></span>
 <span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NULL.html" class="external-link">is.null</a></span><span class="op">(</span><span class="va">multi_fit</span><span class="op">$</span><span class="va">early_fusion</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Early fusion selected feature names:\n"</span><span class="op">)</span></span>
@@ -566,7 +618,7 @@ a property of the joint question, not a failure of the method.</p>
 <h3 id="late-fusion">6.4 Late fusion<a class="anchor" aria-label="anchor" href="#late-fusion"></a>
 </h3>
 <p>The next chunk inspects the late-fusion validation predictions.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Late fusion: weighted blend learned on training predictions and applied to validation samples</span></span>
 <span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NULL.html" class="external-link">is.null</a></span><span class="op">(</span><span class="va">multi_fit</span><span class="op">$</span><span class="va">late_fusion</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Late fusion validation predictions (first 6):\n"</span><span class="op">)</span></span>
@@ -580,7 +632,7 @@ values for the held-out validation set, one prediction per sample.
 Compare these values with <code>ool_valid$y</code> to assess predictive
 performance. The scatter below makes that comparison direct: points near
 the identity line indicate calibrated held-out predictions.</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lf_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>observed  <span class="op">=</span> <span class="va">ool_valid</span><span class="op">$</span><span class="va">y</span>,</span>
 <span>                    predicted <span class="op">=</span> <span class="va">multi_fit</span><span class="op">$</span><span class="va">late_fusion</span><span class="op">$</span><span class="va">valid_predictions</span><span class="op">)</span></span>
 <span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">lf_df</span>, <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span><span class="va">observed</span>, <span class="va">predicted</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
@@ -591,11 +643,11 @@ the identity line indicate calibrated held-out predictions.</p>
 <span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><img src="stablr-multiomic_files/figure-html/late-fusion-scatter-1.png" class="r-plt" alt="Late-fusion validation predictions versus observed DOS" width="480"></p>
 <p>On these compact build settings the scatter has an honest lesson: the
-blended predictor is nearly constant (the points form a horizontal line
-at the training-mean level). Ten bootstraps and six-lambda grids
-demonstrate the workflow shape, not a competitive prediction rule; run
-hundreds of bootstraps before reading predictive performance from this
-figure.</p>
+blended predictor is exactly constant at the training-mean level — both
+omics return empty selections at ten bootstraps and six-lambda grids, so
+the blend has no feature signal to work with. These settings demonstrate
+the workflow shape, not a competitive prediction rule; run hundreds of
+bootstraps before reading predictive performance from this figure.</p>
 <p>The <code>$weights</code> element records the omic weights chosen by
 the training-prediction stacking objective. A small weight means that a
 view received little weight in this fitted prediction rule. It does not
@@ -606,11 +658,11 @@ mean that the assay is biologically uninformative.</p>
 </h3>
 <p>The next chunk plots the stability paths of the per-omic fits from
 the joint pipeline.</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_stabl_path.html">plot_stabl_path</a></span><span class="op">(</span><span class="va">multi_fit</span><span class="op">$</span><span class="va">fits</span><span class="op">$</span><span class="va">cytof</span>,</span>
 <span>                title <span class="op">=</span> <span class="st">"CyTOF (multi-omic pipeline)"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="stablr-multiomic_files/figure-html/stability-paths-1.png" class="r-plt" alt="CyTOF stability path from multi-omic fit" width="576"></p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_stabl_path.html">plot_stabl_path</a></span><span class="op">(</span><span class="va">multi_fit</span><span class="op">$</span><span class="va">fits</span><span class="op">$</span><span class="va">proteomics</span>,</span>
 <span>                title <span class="op">=</span> <span class="st">"Proteomics (multi-omic pipeline)"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="stablr-multiomic_files/figure-html/stability-paths-2.png" class="r-plt" alt="CyTOF stability path from multi-omic fit" width="576"></p>
@@ -664,7 +716,7 @@ This is useful when you rerun an analysis with more bootstraps or a
 revised grid.</p>
 <p>We export the CyTOF fit from the joint pipeline to a temporary
 directory.</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">out_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"stablr_ool_cytof"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/save_stabl_results.html">save_stabl_results</a></span><span class="op">(</span></span>
