@@ -148,6 +148,15 @@ stabl_replication_profile <- function(x, y, study_labels,
     stop("Need at least three studies for a replication profile.",
          call. = FALSE)
   }
+  # Mirror .validate_study_labels: a 1-sample study otherwise flows into
+  # stabl_fit() on a 1-row matrix and fails deep with a cryptic error.
+  per_study <- table(study_labels)
+  if (any(per_study < 2L)) {
+    stop(sprintf(
+      "Each study needs at least 2 samples; study '%s' has %d.",
+      names(per_study)[per_study < 2L][1L], min(per_study)
+    ), call. = FALSE)
+  }
   if (!is.list(fit_spec)) {
     stop("`fit_spec` must be a named list of stabl_fit() arguments.",
          call. = FALSE)
@@ -176,7 +185,9 @@ stabl_replication_profile <- function(x, y, study_labels,
     effects <- .validate_effects(effects, studies, colnames(x))
   }
   if (is.null(seed)) {
-    seed <- sample.int(.Machine$integer.max, 1L)
+    # Draw within the validated range: .Machine$integer.max itself fails
+    # the max - 1 validation below (p ~ 4.7e-10 per draw).
+    seed <- sample.int(.Machine$integer.max - 1L, 1L)
   }
   seed <- .validate_scalar_integer_like(
     seed, "seed", min = 1L, max = .Machine$integer.max - 1L
@@ -305,7 +316,9 @@ stabl_replication_profile <- function(x, y, study_labels,
          paste(c(bad_feature, bad_study), collapse = ", "),
          call. = FALSE)
   }
-  if (anyDuplicated(paste(effects$feature, effects$study)) > 0L) {
+  # "\r" separator: the default space false-positives on ("a b","c") vs
+  # ("a","b c") when feature/study names contain spaces.
+  if (anyDuplicated(paste(effects$feature, effects$study, sep = "\r")) > 0L) {
     stop("`effects` must not contain duplicated (feature, study) rows.",
          call. = FALSE)
   }
@@ -349,18 +362,26 @@ stabl_replication_profile <- function(x, y, study_labels,
   # features and evaluated on the held-out study. This is a property of
   # the refit downstream model, not of the STABL selection itself. The
   # held-out study never influences the panel or any threshold.
-  df_train <- data.frame(y = y[train], x[train, support, drop = FALSE])
-  df_test <- data.frame(y = y[!train], x[!train, support, drop = FALSE])
+  # Collision-proof response name: a selected feature literally named "y"
+  # would otherwise be silently renamed to "y.1" by data.frame() and
+  # mangled in the refit (review replication#8; mirrors the B4/E14a fix).
+  df_train <- data.frame(x[train, support, drop = FALSE])
+  df_test  <- data.frame(x[!train, support, drop = FALSE])
+  resp <- "..y.."
+  while (resp %in% names(df_train)) resp <- paste0(".", resp)
+  df_train[[resp]] <- unname(y[train])
+  df_test[[resp]]  <- unname(y[!train])
   if (identical(family, "binomial")) {
     # Pin both partitions to the full-data level order so the response
     # coding cannot flip when a level is absent from one partition.
-    df_train$y <- factor(df_train$y, levels = y_levels)
+    df_train[[resp]] <- factor(df_train[[resp]], levels = y_levels)
     fam <- stats::binomial()
   } else {
     fam <- stats::gaussian()
   }
   refit <- tryCatch(
-    stats::glm(y ~ ., data = df_train, family = fam),
+    stats::glm(stats::as.formula(paste(resp, "~ .")),
+               data = df_train, family = fam),
     error = function(e) e
   )
   if (inherits(refit, "error")) {
@@ -387,7 +408,7 @@ stabl_replication_profile <- function(x, y, study_labels,
   pred <- stats::predict(refit, newdata = df_test, type = "response")
   if (identical(family, "binomial")) {
     cls <- as.integer(pred >= 0.5)
-    truth <- as.integer(factor(df_test$y, levels = y_levels)) - 1L
+    truth <- as.integer(factor(df_test[[resp]], levels = y_levels)) - 1L
     tpr <- if (any(truth == 1L)) {
       mean(cls[truth == 1L] == 1L)
     } else {
@@ -401,7 +422,7 @@ stabl_replication_profile <- function(x, y, study_labels,
     metric <- 1 - mean(c(tpr, tnr), na.rm = TRUE)
     metric_name <- "balanced_error_rate"
   } else {
-    metric <- mean((df_test$y - pred)^2)
+    metric <- mean((df_test[[resp]] - pred)^2)
     metric_name <- "mse"
   }
   data.frame(

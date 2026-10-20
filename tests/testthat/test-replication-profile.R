@@ -400,3 +400,48 @@ test_that("held-out metrics restrict to complete rows; all-incomplete studies ar
   expect_true(is.na(row2$metric))
   expect_identical(row2$reason, "incomplete_predictors")
 })
+
+test_that("a 1-sample study is rejected at entry (replication#4 regression)", {
+  d <- .make_rep_data()
+  keep <- !(d$studies == "study1") | seq_along(d$studies) == 1L
+  expect_error(
+    stabl_replication_profile(d$x[keep, ], d$y[keep], d$studies[keep],
+                              fit_spec = fast_spec),
+    "Each study needs at least 2 samples"
+  )
+})
+
+test_that("a selected feature named 'y' flows through the held-out refit (replication#8)", {
+  # Anchor test: the pre-fix glm path was statistically equivalent (the
+  # data.frame mangling "y" -> "y.1" is positional, so predictions were
+  # unaffected); the fix removes the silent name collision.  This pins the
+  # post-fix contract: clean refit, finite metric.
+  set.seed(2)
+  ids <- paste0("s", 1:40)
+  x <- matrix(rnorm(40 * 4), 40, 4,
+              dimnames = list(ids, c("y", "f2", "f3", "f4")))
+  y <- setNames(x[, "y"] * 3 + rnorm(40, sd = 0.5), ids)
+  fit <- stabl_fit(x, y, lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+                   n_bootstraps = 10L,
+                   artificial_type = "random_permutation",
+                   random_state = 1L)
+  expect_true("y" %in% names(which(get_support(fit))))
+  row <- stablr:::.replication_heldout_row(
+    "study2", fit, x, y, train = seq_len(nrow(x)) <= 20, family = "gaussian",
+    y_levels = NULL
+  )
+  expect_true(is.na(row$reason))
+  expect_true(is.finite(row$metric))
+})
+
+test_that("(feature, study) duplicate key is space-safe (replication#9 regression)", {
+  effects <- data.frame(
+    feature  = c("a b", "a"),
+    study    = c("c", "b c"),
+    estimate = c(1, 2), se = c(0.1, 0.2),
+    stringsAsFactors = FALSE
+  )
+  out <- stablr:::.validate_effects(effects, c("c", "b c", "s3"),
+                                    c("a b", "a"))
+  expect_identical(out$feature, c("a b", "a"))
+})

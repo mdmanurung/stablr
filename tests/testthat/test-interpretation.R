@@ -301,3 +301,35 @@ test_that("stabl_interpret rejects missing values in x or y (E11 regression)", {
     "missing"
   )
 })
+
+test_that("single-observation permutation importance is the identity (interp#9 regression)", {
+  # With one observation, permuting a column must change nothing.  Pre-fix,
+  # sample(xp[, j]) on a positive-integer-valued scalar drew from 1:x.
+  set.seed(1)
+  df <- data.frame(a = c(5, 2, 3, 7), b = c(1.5, 2.5, 3.5, 4.5))
+  m <- stats::glm(y ~ ., data = data.frame(y = c(1.1, 2.2, 2.9, 4.1), df))
+  x1 <- as.matrix(df[1, , drop = FALSE])   # a == 5 (positive integer)
+  out <- stablr:::.interpret_permutation_importance(
+    m, x1, y_vec = 1.1, selected = c("a", "b"), family = "gaussian",
+    loss = "squared_error", n_repeats = 20L, random_state = 1L,
+    event_class = NULL
+  )
+  expect_true(all(out$repeats == 0))
+})
+
+test_that("loss is validated against the family at entry (interp#12 regression)", {
+  f <- .make_interp_fit("gaussian")
+  # Bogus loss errors regardless of selection state (pre-fix: validated
+  # lazily, only after a non-empty selection and a successful glm).
+  expect_error(
+    stabl_interpret(f$fit, f$x, f$y, family = "gaussian",
+                    loss = "bogus", n_repeats = 2L, random_state = 1L),
+    "`loss` must be one of"
+  )
+  # gaussian silently treated brier as squared error pre-fix.
+  expect_error(
+    stabl_interpret(f$fit, f$x, f$y, family = "gaussian",
+                    loss = "brier", n_repeats = 2L, random_state = 1L),
+    "`loss` must be one of"
+  )
+})

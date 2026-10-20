@@ -1660,6 +1660,71 @@ check 0E/0W/1N (pre-existing installed-size NOTE; doc 3.8 Mb); all
 12 vignettes rebuild clean.  NEWS.md entries are docs-only and parse-verified with
 utils::news(); the code tree is exactly the gated tree.
 
+**Batch F-2 interpretation/replication edges PR (2026-10-20):**
+implementation-review findings interp#9/#11/#12 + replication-appendix
+#4/#5/#8/#9 fixed with regression tests (second batch of the post-E-triage
+remainder).
+
+- interp#9 (`R/interpretation.R`, `.interpret_permutation_importance`): a
+  fourth `sample()` length-1 pitfall (`xp[, j] <- sample(xp[, j])`) —
+  with a single observation, `sample(x)` draws from `1:x` when the value
+  is a positive integer scalar.  Fixed by index permutation
+  (`xp[sample.int(nrow(xp)), j]`), RNG-identical for n > 1 (same
+  argument as B8).  Low reachability (glm on n = 1 usually fails first).
+- interp#11 (`R/interpretation.R` docs): the `@details` promised
+  evidence rows labelled `post_selection_descriptive` (effects) and
+  `apparent` (importance); the implementation has a single
+  `evidence_type` column with values `post_selection_descriptive` /
+  `cross_validated`.  Delegated decision: align docs to the code; the
+  exported values are unchanged (no user-code breakage).  The
+  `cross_validated` mislabel for held-out assessment is now documented
+  as-is.
+- interp#12 (`R/interpretation.R`, `stabl_interpret`): `loss` was
+  validated lazily inside `.interpret_loss`, reached only when the
+  selection was non-empty and the glm fit succeeded — an empty selection
+  silently accepted `loss = "bogus"`; and `family = "gaussian"` silently
+  treated `loss = "brier"/"log_loss"` as squared error.  `loss` is now
+  validated against the family at entry (gaussian: `"squared_error"`;
+  binomial: `"squared_error"`, `"brier"`, `"log_loss"`).  **Behavior
+  change:** gaussian + brier/log_loss now errors instead of silently
+  computing squared error.
+- replication#4 (`R/replication.R`, `stabl_replication_profile`): no
+  per-study minimum sample size — a 1-sample study flowed into
+  `stabl_fit()` on a 1-row matrix and crashed deep.  Now requires >= 2
+  samples per study at entry (mirrors `.validate_study_labels`).
+- replication#5 (`R/replication.R`): the NULL-seed draw
+  `sample.int(.Machine$integer.max, 1L)` could draw
+  `.Machine$integer.max` (p ~ 4.7e-10), which then fails the max-1
+  validation.  Draw is now from `1:(.Machine$integer.max - 1)`.
+- replication#8 (`R/replication.R`, `.replication_heldout_row`): a
+  selected feature literally named `"y"` collided with the constructed
+  response column in the refit model frame (silently renamed to `y.1`
+  by `data.frame`, mangling the feature).  Fixed with a collision-proof
+  response name (`..y..` while-loop), mirroring the B4/E14a fixes.
+- replication#9 (`R/replication.R`, `.validate_effects`):
+  `anyDuplicated(paste(feature, study))` with the default space
+  separator false-positives on ("a b","c") vs ("a","b c"); the key now
+  uses `sep = "\r"`.
+
+Regression tests, each confirmed to FAIL against the pre-fix code
+(git-stash negative control; the interp#9 RNG-parity assertion is an
+anchor passing both ways — the discriminating assertion uses a
+single-observation integer-valued column): single-observation
+permutation no longer draws out of range (interp#9); bogus loss errors
+even on empty selection, and gaussian + brier errors (interp#12);
+1-sample study errors at entry (repl#4); a `"y"`-named selected feature
+refits cleanly with the coefficient under the feature's own name
+(repl#8); space-containing (feature, study) pairs no longer
+false-positive (repl#9).  repl#5 is a probability-4.7e-10 draw edge —
+pinned by code inspection of the draw bound, not a stochastic test.
+interp#11 is docs-only (no test).
+
+Gates: suite 62 files / 0 failed / 0 errors / 1 skip / 3 warnings (exact
+parity with PR-G — the new tests add no warnings or skips); R CMD
+check 0E/0W/1N (pre-existing installed-size NOTE; doc 3.8 Mb); all
+12 vignettes rebuild clean.  NEWS.md entries are docs-only and parse-verified with
+utils::news(); the code tree is exactly the gated tree.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3

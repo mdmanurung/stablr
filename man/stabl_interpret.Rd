@@ -67,13 +67,15 @@ correlation/redundancy group, and a seeded permutation importance.
 }
 \details{
 \strong{Evidence labels.}  All effects and importances are computed on the data
-supplied as \code{x}/\code{y}.  When that data is the fitting data, every row is
-labelled \code{post_selection_descriptive} (effects) and \code{apparent}
-(importance): the same samples informed both selection and the downstream
-fit, so the quantities are optimistic and carry no inferential meaning.
-Supplying genuinely held-out \code{x}/\code{y} relabels the importance scope, but
-the caller is responsible for that data being untouched by fitting — this
-function cannot verify it.
+supplied as \code{x}/\code{y}.  The evidence table carries a single
+\code{evidence_type} column: with the fitting data (the default) every row is
+labelled \code{post_selection_descriptive} — the same samples informed both
+selection and the downstream fit, so the quantities are optimistic and
+carry no inferential meaning.  With \code{assessment = TRUE} (genuinely
+held-out \code{x}/\code{y}) rows are labelled \code{cross_validated} (a historical
+label for the held-out-assessment scope; the function does not itself
+cross-validate).  The caller is responsible for the assessment data
+being untouched by fitting — this function cannot verify it.
 
 \strong{What each column is.}  \code{stability} is the max-over-lambda selection
 frequency from \code{\link[=get_importances]{get_importances()}}; it is not a coefficient magnitude or a

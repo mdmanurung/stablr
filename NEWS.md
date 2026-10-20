@@ -1,5 +1,30 @@
 # stablr 0.3.0.9000 (development)
 
+## Bug fixes (implementation review, 2026-10-20, batch F-2)
+
+- `stabl_interpret()` permutation importance no longer uses
+  `sample(x)` on a column vector: with a single observation a
+  positive-integer-valued column would draw from `1:x`.  The permutation
+  is now index-based (RNG-identical for n > 1).
+- `stabl_interpret()` now validates `loss` against `family` at entry:
+  an invalid `loss` previously errored only when the selection was
+  non-empty (silently accepted otherwise), and `family = "gaussian"`
+  silently treated `"brier"`/`"log_loss"` as squared error — both now
+  error with the allowed values.
+- The `stabl_interpret()` man page now documents the actual single
+  `evidence_type` column (`post_selection_descriptive` /
+  `cross_validated`) instead of promising per-dimension labels that do
+  not exist; the exported values are unchanged.
+- `stabl_replication_profile()` now requires at least 2 samples per
+  study at entry (a 1-sample study previously crashed deep inside
+  `stabl_fit()`), and the NULL-seed draw can no longer hit
+  `.Machine$integer.max` and fail validation.
+- The replication held-out refit uses a collision-proof response name,
+  so a selected feature literally named `"y"` is no longer silently
+  renamed to `y.1` in the model frame.
+- `.validate_effects()` duplicate (feature, study) detection no longer
+  false-positives on names containing spaces.
+
 ## Bug fixes (implementation review, 2026-10-20, batch F-1)
 
 - `stabl_diagnose()` evidence matching now honours its documented

@@ -21,13 +21,15 @@
 #'
 #' @details
 #' **Evidence labels.**  All effects and importances are computed on the data
-#' supplied as `x`/`y`.  When that data is the fitting data, every row is
-#' labelled `post_selection_descriptive` (effects) and `apparent`
-#' (importance): the same samples informed both selection and the downstream
-#' fit, so the quantities are optimistic and carry no inferential meaning.
-#' Supplying genuinely held-out `x`/`y` relabels the importance scope, but
-#' the caller is responsible for that data being untouched by fitting — this
-#' function cannot verify it.
+#' supplied as `x`/`y`.  The evidence table carries a single
+#' `evidence_type` column: with the fitting data (the default) every row is
+#' labelled `post_selection_descriptive` — the same samples informed both
+#' selection and the downstream fit, so the quantities are optimistic and
+#' carry no inferential meaning.  With `assessment = TRUE` (genuinely
+#' held-out `x`/`y`) rows are labelled `cross_validated` (a historical
+#' label for the held-out-assessment scope; the function does not itself
+#' cross-validate).  The caller is responsible for the assessment data
+#' being untouched by fitting — this function cannot verify it.
 #'
 #' **What each column is.**  `stability` is the max-over-lambda selection
 #' frequency from [get_importances()]; it is not a coefficient magnitude or a
@@ -144,6 +146,21 @@ stabl_interpret <- function(object, x, y, family = c("gaussian", "binomial"),
 
   # ── Permutation importance ───────────────────────────────────────────────
   loss <- loss %||% switch(family, gaussian = "squared_error", binomial = "brier")
+  # Validate eagerly (review interp#12): .interpret_loss is reached only
+  # when the selection is non-empty and the glm fit succeeds, so an empty
+  # selection silently accepted loss = "bogus"; and family = "gaussian"
+  # silently treated "brier"/"log_loss" as squared error.
+  valid_losses <- switch(
+    family,
+    gaussian = "squared_error",
+    binomial = c("squared_error", "brier", "log_loss")
+  )
+  if (!loss %in% valid_losses) {
+    stop(sprintf(
+      "`loss` must be one of %s for family = \"%s\"; got \"%s\".",
+      paste(sprintf('"%s"', valid_losses), collapse = ", "), family, loss
+    ), call. = FALSE)
+  }
   importance <- .interpret_permutation_importance(
     effects$model, x, y_vec, selected, family, loss, n_repeats,
     random_state, event_class
@@ -387,7 +404,10 @@ stabl_interpret <- function(object, x, y, family = c("gaussian", "binomial"),
       for (r in seq_len(n_repeats)) {
         for (j in selected) {
           xp <- xs
-          xp[, j] <- sample(xp[, j])  # one shared permutation per column
+          # Index permutation, not sample(xp[, j]): with one observation a
+          # positive-integer-valued column would draw from 1:x (review
+          # interp#9).  RNG-identical to sample(x) for n > 1.
+          xp[, j] <- xp[sample.int(nrow(xp)), j]  # one shared permutation per column
           rep_mat[r, j] <- loss_fun(y_vec, pred_fun(xp)) - base_loss
         }
       }
