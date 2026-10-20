@@ -10,7 +10,10 @@
 #' @param y_train Named outcome vector for training samples.
 #' @param lambda_grid Either a shared lambda grid (`data.frame` or `"auto"`)
 #'   used for all omics, or a named list mapping each omic name to its own
-#'   lambda grid.
+#'   lambda grid.  When `late_fusion = TRUE`, the same full-training grid is
+#'   used inside the OOF stacking procedure, so a grid computed on the full
+#'   data leaks mild information into the OOF stacking weights; prefer
+#'   `"auto"` or a grid computed from training data only.
 #' @param x_valid_list Optional named list of validation omic tables. When
 #'   supplied, names must match `x_train_list` names.
 #' @param y_valid Optional named outcome vector for validation samples. When
@@ -80,7 +83,13 @@
 #'
 #' @return A named list with class `"stabl_multiomic_fit"` containing:
 #'   \describe{
-#'     \item{`fits`}{Named list of per-omic `stabl_fit` objects.}
+#'     \item{`fits`}{Named list of per-omic `stabl_fit` objects.  When
+#'       `late_fusion = TRUE`, the top-level `fits`, `selected_features`,
+#'       `selected_train`, and `selected_valid` come from the late-fusion
+#'       full refit (its `full_per_omic`, which is stripped from the
+#'       returned `late_fusion` list), not from a separate per-omic pass,
+#'       so they can differ from the `late_fusion = FALSE` result on
+#'       identical input and seed.}
 #'     \item{`selected_features`}{Named list of selected feature names.}
 #'     \item{`selected_train`}{Named list of training matrices restricted to
 #'       selected features (possibly 0-column).}
@@ -101,8 +110,9 @@
 #'       full-stack OOF prediction. Use outer cross-validation
 #'       ([stabl_multiomic_nested_cv()]) for an honest performance estimate.
 #'       `train_predictions` and `score` remain exact 0.1.x compatibility
-#'       aliases for the active mode-specific fields. Multinomial tasks also
-#'       include `levels`, `log_loss`, and classification metrics.}
+#'       aliases for the active mode-specific fields.  `task_type` is always
+#'       present; multinomial tasks also include `levels`, `log_loss`, and
+#'       classification metrics.}
 #'     \item{`cooperative_fusion`}{Present only when
 #'       `cooperative_fusion = TRUE`. A list containing the selected multiview
 #'       fit, chosen `rho` and `lambda`, selected features per view,
@@ -1900,6 +1910,36 @@ stabl_multiomic_stacked <- function(
         }
       }
 
+      # Review M8: a never-observed omic (all-NA column) is masked out of
+      # every row, so the stacking score does not depend on its weight and
+      # the reported "best" weight is an arbitrary runif draw.  Report NA.
+      never_observed <- colSums(is_obs_preds) == 0L
+      if (any(never_observed)) {
+        best_weights[never_observed] <- NA_real_
+        omic_label <- colnames(predictions)
+        omic_label <- if (is.null(omic_label)) {
+          as.character(which(never_observed))
+        } else {
+          omic_label[never_observed]
+        }
+        warning(
+          "Omic(s) ", paste(omic_label, collapse = ", "),
+          " are never observed (all-NA column); their `Associated_weight` ",
+          "is NA because the stacking score does not depend on it.",
+          call. = FALSE
+        )
+      }
+      # Review M8: with fewer than 2 scorable rows the loop never updates;
+      # the degenerate return (score = -Inf, uniform weights, all-NA stacked
+      # predictions) was previously silent.
+      if (sum(complete_idx) < 2L) {
+        warning(
+          "Fewer than 2 prediction rows are scorable; returning a degenerate ",
+          "stack (`score = -Inf`, uniform weights, all-NA stacked predictions).",
+          call. = FALSE
+        )
+      }
+
       weights_df        <- data.frame(Associated_weight = best_weights,
                                       row.names = colnames(predictions))
       preds_df          <- as.data.frame(predictions)
@@ -2087,6 +2127,9 @@ stabl_multiomic_stacked <- function(
 # Used for binary/regression late-fusion; see .weighted_multiclass_probabilities
 # for the analogous multiclass helper.
 .weighted_masked_mean <- function(P, weights, is_obs = !is.na(P)) {
+  # NA weights denote never-observed omics (review M8); treat them as 0 --
+  # a literal NA would poison every row sum (0 * NA is NA).
+  weights[is.na(weights)] <- 0
   w_mat  <- matrix(weights, nrow = nrow(P), ncol = length(weights), byrow = TRUE)
   denom  <- rowSums(is_obs * w_mat)
   num    <- rowSums(ifelse(is_obs, P * w_mat, 0))

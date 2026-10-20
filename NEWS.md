@@ -1,5 +1,28 @@
 # stablr 0.3.0.9000 (development)
 
+## Bug fixes (implementation review, 2026-10-20, batch F-7)
+
+- `stabl_multiomic_stacked()`: a never-observed omic (all-NA column) is
+  masked out of every row, so the stacking score does not depend on its
+  weight and the reported `Associated_weight` was an arbitrary `runif`
+  draw. Such weights are now reported as `NA` with a warning.
+  `.weighted_masked_mean()` treats NA weights as zero (a literal NA would
+  poison every row sum, since `0 * NA` is `NA`).
+- `stabl_multiomic_stacked()` now warns when fewer than 2 prediction rows
+  are scorable — previously the loop never updated and the function
+  silently returned a degenerate stack (`score = -Inf`, uniform weights,
+  all-NA stacked predictions).
+- Late-fusion results (`stabl_multiomic_train_validate(late_fusion =
+  TRUE)`$late_fusion) now carry `task_type` for ALL modes, not just
+  multiclass (return-contract fix).
+- Docs: `stabl_multiomic_train_validate()` `@return` now discloses that
+  with `late_fusion = TRUE` the top-level `fits`/`selected_*` come from
+  the late-fusion full refit (whose `full_per_omic` is stripped from the
+  returned `late_fusion` list) and can differ from the
+  `late_fusion = FALSE` result on identical input and seed; the
+  `lambda_grid` "computed on full data leaks mildly" caveat is extended to
+  the OOF stacking path.
+
 ## Bug fixes (implementation review, 2026-10-20, batch F-6)
 
 - `.study_outcome_summary()` now fails closed on a dimensioned (matrix or

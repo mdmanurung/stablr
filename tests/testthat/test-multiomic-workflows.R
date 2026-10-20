@@ -667,7 +667,7 @@ test_that("late_fusion = TRUE adds late_fusion field with weights and prediction
     lf,
     c(
       "weights", "train_predictions", "valid_predictions", "score",
-      "provenance", "oof_predictions", "oof_score"
+      "provenance", "task_type", "oof_predictions", "oof_score"
     )
   )
   expect_identical(lf$provenance$training_mode, "oof")
@@ -1860,4 +1860,68 @@ test_that("a selected feature named '.y' is not dropped from the downstream mode
   )$model
   expect_true(".y" %in% names(stats::coef(m)))
   expect_equal(unname(stats::coef(m)[[".y"]]), 1.5, tolerance = 0.2)
+})
+
+# ---------------------------------------------------------------------------
+# stabl_multiomic_stacked degenerate-output guards (review M8)
+# ---------------------------------------------------------------------------
+
+test_that("stacking NA-outs weights of never-observed omics (M8 regression)", {
+  ids <- paste0("s", 1:8)
+  preds <- data.frame(
+    a = c(0.1, 0.4, 0.6, 0.9, 0.2, 0.3, 0.7, 0.8),
+    b = rep(NA_real_, 8L),
+    row.names = ids
+  )
+  y <- setNames(c(0, 0, 1, 1, 0, 0, 1, 1), ids)
+  expect_warning(
+    st <- stabl_multiomic_stacked(preds, y, task_type = "binary",
+                                  n_iter = 50L, random_state = 3L),
+    "never observed"
+  )
+  # The all-NA omic's weight is unidentifiable -> NA, not an arbitrary draw.
+  expect_true(is.na(st$weights["b", "Associated_weight"]))
+  expect_true(is.finite(st$weights["a", "Associated_weight"]))
+  # The stacked prediction equals the only observed omic for any weights.
+  expect_equal(unname(st$predictions[["Stacked Gen. Predictions"]]),
+               unname(preds$a))
+})
+
+test_that("stacking warns on fewer than 2 scorable rows (M8 regression)", {
+  ids <- paste0("s", 1:4)
+  preds <- data.frame(
+    a = c(0.2, NA, NA, NA),
+    b = c(0.7, NA, NA, NA),
+    row.names = ids
+  )
+  y <- setNames(c(0, 1, 0, 1), ids)
+  expect_warning(
+    st <- stabl_multiomic_stacked(preds, y, task_type = "binary",
+                                  n_iter = 10L, random_state = 4L),
+    "Fewer than 2"
+  )
+  expect_identical(st$score, -Inf)
+  expect_true(all(is.na(st$predictions[["Stacked Gen. Predictions"]])))
+  expect_equal(st$weights$Associated_weight, c(0.5, 0.5))
+})
+
+test_that("stacking with a single never-observed omic warns both ways (M8 edge)", {
+  preds <- data.frame(b = rep(NA_real_, 4L), row.names = paste0("s", 1:4))
+  y <- setNames(c(0, 1, 0, 1), paste0("s", 1:4))
+  warns <- testthat::capture_warnings(
+    st <- stabl_multiomic_stacked(preds, y, task_type = "binary",
+                                  n_iter = 10L, random_state = 5L)
+  )
+  expect_match(warns, "never observed", all = FALSE)
+  expect_match(warns, "Fewer than 2", all = FALSE)
+  expect_true(is.na(st$weights["b", "Associated_weight"]))
+  expect_identical(st$score, -Inf)
+})
+
+test_that("masked weighted mean treats NA weights as zero (M8 regression)", {
+  P <- matrix(c(0.2, 0.8, NA, NA), 2, 2,
+              dimnames = list(c("s1", "s2"), c("a", "b")))
+  # Omic b is never observed and carries an NA weight; omic a is observed.
+  out <- stablr:::.weighted_masked_mean(P, c(a = 3, b = NA))
+  expect_equal(unname(out), c(0.2, 0.8))
 })

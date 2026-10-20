@@ -1983,6 +1983,58 @@ doc 3.8 Mb); all 12 vignettes rebuild clean.  NEWS.md entries are
 docs-only and parse-verified with utils::news() (42 section entries,
 F-5 + 1); the code tree is exactly the gated tree.
 
+**Batch F-7 multiomic PR (2026-10-20):** implementation-review findings
+M8, M9, M10 (seventh batch of the post-E-triage remainder; completes the
+multiomic appendix).
+
+- M8 (`R/multiomic_workflows.R`, `stabl_multiomic_stacked`): degenerate
+  outputs were silent.  (a) A never-observed omic (all-NA column) is masked
+  out of every row, so the stacking score does not depend on its weight and
+  the reported `Associated_weight` was an arbitrary `runif(0, 10)` draw —
+  now reported as `NA` with a warning naming the omic(s).  (b) With fewer
+  than 2 scorable rows the loop never updated and the function silently
+  returned `score = -Inf` with uniform weights and all-NA stacked
+  predictions — now warns.  Downstream safety: `.weighted_masked_mean()`
+  treats NA weights as zero (a literal NA would poison every row sum —
+  `0 * NA` is `NA` in R, verified); the batch variant needs no guard
+  (candidate weights are never NA).  Note: the "no finite score" branch is
+  UNREACHABLE — `.r_auc_batch` returns 0.5 on single-class subsets and
+  `.r_squared_batch` returns 0 on constant outcomes, so scores are always
+  finite when >= 2 rows are scorable; only the < 2-rows warning is
+  implemented (empirical correction to a naive reading of the review).
+- M9 (`R/multiomic_workflows.R`, docs only): `stabl_multiomic_train_validate`
+  `@return` now discloses that with `late_fusion = TRUE` the top-level
+  `fits`/`selected_features`/`selected_train`/`selected_valid` come from
+  the late-fusion full refit (its `full_per_omic`, stripped from the
+  returned `late_fusion` list), not from a separate per-omic pass, and can
+  differ from the `late_fusion = FALSE` result on identical input and
+  seed; the `lambda_grid` "computed on full data leaks mildly" caveat is
+  extended to the OOF stacking path (the full-training grid is fixed
+  inside the OOF procedure).
+- M10 (`R/late_fusion.R`, `.late_fusion_oof_fit`): return-shape asymmetry —
+  multiclass results carried `task_type` but binary/regression did not.
+  `task_type` is now set for ALL modes (the metrics asymmetry —
+  `levels`/`log_loss`/`train_metrics`/`valid_metrics` multiclass-only —
+  was already roxygen-documented and is unchanged).  One pre-existing
+  contract test pinned the exact `late_fusion` field names and was updated
+  to the new contract (task_type inserted between `provenance` and
+  `oof_predictions`).
+
+Regression tests, each confirmed to FAIL against the pre-fix code
+(git-stash negative control): never-observed omic warns and reports NA
+weight while the stacked prediction equals the observed omic (M8a);
+< 2 scorable rows warns and returns the degenerate stack (M8b); combined
+single-never-observed-omic edge fires both warnings (M8 edge);
+`.weighted_masked_mean` treats NA weights as zero (M8 downstream safety);
+`task_type` present for regression and binary late fusion (M10).  M9 is
+docs-only, disclosed.
+
+Gates: suite 62 files / 0 failed / 0 errors / 1 skip / 3 warnings (exact
+parity with PR-G); R CMD check 0E/0W/1N (pre-existing installed-size NOTE;
+doc 3.8 Mb); all 12 vignettes rebuild clean.  NEWS.md entries are
+docs-only and parse-verified with utils::news() (43 section entries,
+F-6 + 1); the code tree is exactly the gated tree.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3

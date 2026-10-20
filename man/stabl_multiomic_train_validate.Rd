@@ -45,7 +45,10 @@ numeric matrix), each with row names as sample IDs.}
 
 \item{lambda_grid}{Either a shared lambda grid (\code{data.frame} or \code{"auto"})
 used for all omics, or a named list mapping each omic name to its own
-lambda grid.}
+lambda grid.  When \code{late_fusion = TRUE}, the same full-training grid is
+used inside the OOF stacking procedure, so a grid computed on the full
+data leaks mild information into the OOF stacking weights; prefer
+\code{"auto"} or a grid computed from training data only.}
 
 \item{x_valid_list}{Optional named list of validation omic tables. When
 supplied, names must match \code{x_train_list} names.}
@@ -146,7 +149,13 @@ with row names used as sample IDs.}
 \value{
 A named list with class \code{"stabl_multiomic_fit"} containing:
 \describe{
-\item{\code{fits}}{Named list of per-omic \code{stabl_fit} objects.}
+\item{\code{fits}}{Named list of per-omic \code{stabl_fit} objects.  When
+\code{late_fusion = TRUE}, the top-level \code{fits}, \code{selected_features},
+\code{selected_train}, and \code{selected_valid} come from the late-fusion
+full refit (its \code{full_per_omic}, which is stripped from the
+returned \code{late_fusion} list), not from a separate per-omic pass,
+so they can differ from the \code{late_fusion = FALSE} result on
+identical input and seed.}
 \item{\code{selected_features}}{Named list of selected feature names.}
 \item{\code{selected_train}}{Named list of training matrices restricted to
 selected features (possibly 0-column).}
@@ -167,8 +176,9 @@ an optimistic, in-sample-for-the-weight-step statistic and NOT a
 full-stack OOF prediction. Use outer cross-validation
 (\code{\link[=stabl_multiomic_nested_cv]{stabl_multiomic_nested_cv()}}) for an honest performance estimate.
 \code{train_predictions} and \code{score} remain exact 0.1.x compatibility
-aliases for the active mode-specific fields. Multinomial tasks also
-include \code{levels}, \code{log_loss}, and classification metrics.}
+aliases for the active mode-specific fields.  \code{task_type} is always
+present; multinomial tasks also include \code{levels}, \code{log_loss}, and
+classification metrics.}
 \item{\code{cooperative_fusion}}{Present only when
 \code{cooperative_fusion = TRUE}. A list containing the selected multiview
 fit, chosen \code{rho} and \code{lambda}, selected features per view,

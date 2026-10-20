@@ -654,3 +654,30 @@ test_that("F-CV-03 (LF path): recorded full-refit seeds replay the per-omic fits
   )
   expect_identical(replay$stabl_scores_, fit$fits$omic1$stabl_scores_)
 })
+
+test_that("late-fusion results carry task_type for all modes (M10 regression)", {
+  set.seed(2213)
+  ids <- paste0("s", seq_len(18L))
+  x <- matrix(rnorm(18L * 3L), 18L,
+              dimnames = list(ids, paste0("f", 1:3)))
+  y_reg <- setNames(rnorm(18L), ids)
+  fit_reg <- stabl_multiomic_train_validate(
+    list(a = x), y_reg, data.frame(lambda = 0.1),
+    artificial_type = NULL, hard_threshold = 1,
+    n_bootstraps = 2L, sample_fraction = 1,
+    late_fusion = TRUE, late_fusion_nfolds = 3L,
+    n_iter_lf = 10L, random_state = 81L
+  )
+  expect_identical(fit_reg$late_fusion$task_type, "regression")
+
+  y_bin <- setNames(factor(rep(c("control", "event"), 9L),
+                           levels = c("control", "event")), ids)
+  fit_bin <- suppressWarnings(stabl_multiomic_train_validate(
+    list(a = x), y_bin, data.frame(lambda = 0.1), family = "binomial",
+    artificial_type = NULL, hard_threshold = 1,
+    n_bootstraps = 2L, sample_fraction = 1,
+    late_fusion = TRUE, late_fusion_nfolds = 3L,
+    n_iter_lf = 10L, random_state = 82L
+  ))
+  expect_identical(fit_bin$late_fusion$task_type, "binary")
+})

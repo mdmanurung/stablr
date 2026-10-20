@@ -230,8 +230,10 @@
       full_refit = full$diagnostics
     )
   )
+  # Review M10: `task_type` is part of the return contract for every mode,
+  # not just multiclass.
+  result$task_type <- task_type
   if (identical(task_type, "multiclass")) {
-    result$task_type <- "multiclass"
     result$levels <- stacked$levels
     result$log_loss <- stacked$log_loss
     result$train_metrics <- .classification_metrics(
