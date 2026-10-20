@@ -59,6 +59,10 @@ print(x, ...)
 
   Either a shared lambda grid (`data.frame` or `"auto"`) used for all
   omics, or a named list mapping each omic name to its own lambda grid.
+  When `late_fusion = TRUE`, the same full-training grid is used inside
+  the OOF stacking procedure, so a grid computed on the full data leaks
+  mild information into the OOF stacking weights; prefer `"auto"` or a
+  grid computed from training data only.
 
 - x_valid_list:
 
@@ -224,7 +228,12 @@ A named list with class `"stabl_multiomic_fit"` containing:
 
 - `fits`:
 
-  Named list of per-omic `stabl_fit` objects.
+  Named list of per-omic `stabl_fit` objects. When `late_fusion = TRUE`,
+  the top-level `fits`, `selected_features`, `selected_train`, and
+  `selected_valid` come from the late-fusion full refit (its
+  `full_per_omic`, which is stripped from the returned `late_fusion`
+  list), not from a separate per-omic pass, so they can differ from the
+  `late_fusion = FALSE` result on identical input and seed.
 
 - `selected_features`:
 
@@ -260,8 +269,8 @@ A named list with class `"stabl_multiomic_fit"` containing:
   ([`stabl_multiomic_nested_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_nested_cv.md))
   for an honest performance estimate. `train_predictions` and `score`
   remain exact 0.1.x compatibility aliases for the active mode-specific
-  fields. Multinomial tasks also include `levels`, `log_loss`, and
-  classification metrics.
+  fields. `task_type` is always present; multinomial tasks also include
+  `levels`, `log_loss`, and classification metrics.
 
 - `cooperative_fusion`:
 

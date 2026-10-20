@@ -115,7 +115,10 @@ numeric matrix), each with row names as sample IDs.</p></dd>
 <dt id="arg-lambda-grid">lambda_grid<a class="anchor" aria-label="anchor" href="#arg-lambda-grid"></a></dt>
 <dd><p>Either a shared lambda grid (<code>data.frame</code> or <code>"auto"</code>)
 used for all omics, or a named list mapping each omic name to its own
-lambda grid.</p></dd>
+lambda grid.  When <code>late_fusion = TRUE</code>, the same full-training grid is
+used inside the OOF stacking procedure, so a grid computed on the full
+data leaks mild information into the OOF stacking weights; prefer
+<code>"auto"</code> or a grid computed from training data only.</p></dd>
 
 
 <dt id="arg-x-valid-list">x_valid_list<a class="anchor" aria-label="anchor" href="#arg-x-valid-list"></a></dt>
@@ -267,7 +270,13 @@ with row names used as sample IDs.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A named list with class <code>"stabl_multiomic_fit"</code> containing:</p><dl><dt><code>fits</code></dt>
-<dd><p>Named list of per-omic <code>stabl_fit</code> objects.</p></dd>
+<dd><p>Named list of per-omic <code>stabl_fit</code> objects.  When
+<code>late_fusion = TRUE</code>, the top-level <code>fits</code>, <code>selected_features</code>,
+<code>selected_train</code>, and <code>selected_valid</code> come from the late-fusion
+full refit (its <code>full_per_omic</code>, which is stripped from the
+returned <code>late_fusion</code> list), not from a separate per-omic pass,
+so they can differ from the <code>late_fusion = FALSE</code> result on
+identical input and seed.</p></dd>
 
 <dt><code>selected_features</code></dt>
 <dd><p>Named list of selected feature names.</p></dd>
@@ -298,8 +307,9 @@ an optimistic, in-sample-for-the-weight-step statistic and NOT a
 full-stack OOF prediction. Use outer cross-validation
 (<code><a href="stabl_multiomic_nested_cv.html">stabl_multiomic_nested_cv()</a></code>) for an honest performance estimate.
 <code>train_predictions</code> and <code>score</code> remain exact 0.1.x compatibility
-aliases for the active mode-specific fields. Multinomial tasks also
-include <code>levels</code>, <code>log_loss</code>, and classification metrics.</p></dd>
+aliases for the active mode-specific fields.  <code>task_type</code> is always
+present; multinomial tasks also include <code>levels</code>, <code>log_loss</code>, and
+classification metrics.</p></dd>
 
 <dt><code>cooperative_fusion</code></dt>
 <dd><p>Present only when
