@@ -63,6 +63,12 @@ Major functionality of `stablr`:
   toolchain)
 - [Release governance and review
   status](https://github.com/mdmanurung/stablr/blob/main/docs/RELEASE_STATUS.md)
+- [Reproduction
+  compendium](https://github.com/mdmanurung/stablr-reproducibility): the
+  aging case study end to end — raw atlas download (MD5-pinned),
+  donor-table derivation, v1 showcase and v2 benchmark pipelines,
+  committed results, and bit-for-bit verification evidence — bundling
+  the pinned package source as a git submodule
 
 ## Motivation
 

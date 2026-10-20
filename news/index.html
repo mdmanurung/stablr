@@ -54,6 +54,10 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.0.9000" id="stablr-0309000-development">stablr 0.3.0.9000 (development)<a class="anchor" aria-label="anchor" href="#stablr-0309000-development"></a></h2>
 <div class="section level3">
+<h3 id="documentation-reproducibility-pointers-0-3-0-9000">Documentation (2026-10-20, reproducibility pointers)<a class="anchor" aria-label="anchor" href="#documentation-reproducibility-pointers-0-3-0-9000"></a></h3>
+<ul><li>README Resources and <code>benchmarks/README.md</code> now point to the <code>stablr-reproducibility</code> compendium (pinned submodule + MD5-pinned raw atlas + v1/v2 pipeline drivers + committed results + bit-for-bit verification evidence) as the way to re-run the aging case study end to end; the WS-8 raw-file requirement is documented where the benchmark scripts live.</li>
+</ul></div>
+<div class="section level3">
 <h3 id="new-features-single-cell-vignettes-0-3-0-9000">New features (2026-10-20, single-cell vignettes)<a class="anchor" aria-label="anchor" href="#new-features-single-cell-vignettes-0-3-0-9000"></a></h3>
 <ul><li>New vignette <code>stablr-cebmf</code>: STABL selection on cEBMF-denoised single-cell expression (10x Genomics PBMC 3k fixture; the cEBMF fit runs offline with the Python <code>cebmf_torch</code> package and is shown as unevaluated code). Includes a raw-vs-denoised selection comparison and a <code><a href="../reference/stabl_diagnose.html">stabl_diagnose()</a></code> demonstration of why FDP+ calibration is unreliable at tiny feature counts.</li>
 <li>New vignette <code>stablr-metacells</code>: STABL selection on metacell-pooled expression, with a transparent dependency-free greedy kNN metacell partition, majority-label purity QC, and a stratified bootstrap for the class-imbalanced outcome.</li>
