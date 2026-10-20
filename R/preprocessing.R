@@ -102,10 +102,14 @@ stabl_preprocess_fit <- function(x_train,
       xs <- sweep(xs, 2L, params$center$means, "-")
     }
     sds <- apply(xs, 2L, stats::sd, na.rm = TRUE)
+    # Record features whose SD is not estimable from training (all-missing
+    # or non-finite values) so apply can fail closed (review E1); the
+    # information is otherwise destroyed by the zero-SD coercion below.
+    nonestimable <- colnames(xs)[!is.finite(sds)]
     # Guard against zero-SD features (e.g. constant after imputation): use 1
     # so scaling is a no-op rather than a division by zero.
     sds[!is.finite(sds) | sds <= .Machine$double.eps] <- 1
-    params$scale <- list(sds = sds)
+    params$scale <- list(sds = sds, nonestimable = nonestimable)
   }
 
   out <- list(
@@ -197,9 +201,37 @@ stabl_preprocess_apply.stabl_preprocessing <- function(object, x, ...) {
     }
   }
   if ("center" %in% object$transforms) {
+    # Fail closed when training had no usable values for a feature
+    # (all-missing or non-finite): the stored mean is NaN/Inf and sweeping
+    # it would silently emit an all-NA column (review E1), mirroring the
+    # impute_median guard above.
+    bad <- !is.finite(p$center$means)
+    if (any(bad)) {
+      stop(sprintf(
+        paste0(
+          "Feature(s) %s have no finite training values; centering ",
+          "parameters cannot be estimated. Remove or impute them first."
+        ),
+        paste(retained[bad], collapse = ", ")),
+        call. = FALSE)
+    }
     x <- sweep(x, 2L, p$center$means, "-")
   }
   if ("scale" %in% object$transforms) {
+    # Same fail-closed guard for scaling; fit records the non-estimable
+    # features because the zero-SD coercion destroys the NA signal
+    # (review E1).  Objects fitted before this field existed skip the
+    # check (NULL).
+    nonestimable <- p$scale$nonestimable
+    if (length(nonestimable)) {
+      stop(sprintf(
+        paste0(
+          "Feature(s) %s have no finite training values; scale ",
+          "parameters cannot be estimated. Remove or impute them first."
+        ),
+        paste(nonestimable, collapse = ", ")),
+        call. = FALSE)
+    }
     x <- sweep(x, 2L, p$scale$sds, "/")
   }
   x

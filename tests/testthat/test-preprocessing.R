@@ -208,3 +208,18 @@ test_that("duplicate feature names are rejected at fit and apply (B5 regression)
   colnames(x_as_dup)[2L] <- "f1"
   expect_error(stabl_preprocess_apply(pp, x_as_dup), "unique")
 })
+
+test_that("all-missing feature fails closed under center/scale without imputation (E1 regression)", {
+  d <- .make_pp_data()
+  d$x_tr[, 4L] <- NA_real_  # entirely missing in training
+  # Fit succeeds (parameters are stored); apply must fail closed rather
+  # than sweep a NaN mean or a coerced unit SD and silently emit an
+  # all-NA column.  Previously only the impute_median path was guarded.
+  for (tr in list(c("center", "scale"), "center", "scale")) {
+    pp <- stabl_preprocess_fit(d$x_tr, transforms = tr)
+    expect_error(
+      suppressWarnings(stabl_preprocess_apply(pp, d$x_tr)),
+      "no finite training values"
+    )
+  }
+})

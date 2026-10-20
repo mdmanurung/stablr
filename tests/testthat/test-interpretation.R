@@ -283,3 +283,21 @@ test_that("a feature named '.y' is not silently dropped from the effect model", 
   expect_true(is.finite(coef_y))
   expect_equal(unname(coef_y), 1.5, tolerance = 0.2)
 })
+
+test_that("stabl_interpret rejects missing values in x or y (E11 regression)", {
+  # glm would fit on complete cases while the importance loss uses the
+  # full vector, silently producing NA permutation importances.
+  f <- .make_interp_fit("gaussian")
+  y_na <- f$y
+  y_na[3L] <- NA
+  expect_error(
+    stabl_interpret(f$fit, f$x, y_na, family = "gaussian", n_repeats = 2L),
+    "missing"
+  )
+  x_na <- f$x
+  x_na[2L, "f1"] <- NA
+  expect_error(
+    stabl_interpret(f$fit, x_na, f$y, family = "gaussian", n_repeats = 2L),
+    "missing"
+  )
+})

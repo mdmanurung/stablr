@@ -370,6 +370,20 @@ stabl_replication_profile <- function(x, y, study_labels,
       stringsAsFactors = FALSE
     ))
   }
+  # Rows with NA in the outcome or any selected predictor cannot be
+  # scored: predict() yields NA (or drops them, depending on na.action),
+  # which would silently misalign or NA-out the held-out metric
+  # (review E4).  Restrict truth and predictions to complete rows; if no
+  # complete rows remain, record the reason rather than a bogus metric.
+  complete <- stats::complete.cases(df_test)
+  if (!any(complete)) {
+    return(data.frame(
+      study = s, metric = NA_real_, metric_name = NA_character_,
+      n_panel = length(support), reason = "incomplete_predictors",
+      stringsAsFactors = FALSE
+    ))
+  }
+  df_test <- df_test[complete, , drop = FALSE]
   pred <- stats::predict(refit, newdata = df_test, type = "response")
   if (identical(family, "binomial")) {
     cls <- as.integer(pred >= 0.5)

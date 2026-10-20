@@ -363,3 +363,40 @@ test_that("inputs are not modified", {
   expect_identical(d$x, x0)
   expect_identical(d$y, y0)
 })
+
+test_that("held-out metrics restrict to complete rows; all-incomplete studies are explicit (E4 regression)", {
+  # Rows with NA in the outcome or any selected predictor cannot be
+  # scored; previously predict() NAs/row-drops silently misaligned or
+  # NA-ed the held-out metric.
+  d <- .make_rep_data()
+  fit <- stabl_fit(d$x, d$y, lambda_grid = data.frame(lambda = c(0.3, 0.1)),
+                   n_bootstraps = 10L, artificial_type = "random_permutation",
+                   hard_threshold = 0.3, random_state = 4L)
+  support <- names(which(get_support(fit)))
+  expect_true(length(support) >= 1L)
+  train <- d$studies != "study1"
+
+  # Partial missingness: metric is computed on the complete rows only and
+  # matches a manual complete-case refit/predict.
+  x_na <- d$x
+  x_na[which(!train)[1:5], support[1L]] <- NA
+  row <- stablr:::.replication_heldout_row("study1", fit, x_na, d$y,
+                                           train, "gaussian", NULL)
+  df_train <- data.frame(y = d$y[train], d$x[train, support, drop = FALSE])
+  refit <- stats::glm(y ~ ., data = df_train)
+  df_test <- data.frame(y = d$y[!train], x_na[!train, support, drop = FALSE])
+  comp <- stats::complete.cases(df_test)
+  manual <- mean((df_test$y[comp] -
+    stats::predict(refit, newdata = df_test[comp, , drop = FALSE],
+                   type = "response"))^2)
+  expect_equal(row$metric, manual)
+  expect_true(is.na(row$reason))
+
+  # All held-out rows incomplete: explicit reason, no bogus metric.
+  x_all <- d$x
+  x_all[!train, support] <- NA
+  row2 <- stablr:::.replication_heldout_row("study1", fit, x_all, d$y,
+                                            train, "gaussian", NULL)
+  expect_true(is.na(row2$metric))
+  expect_identical(row2$reason, "incomplete_predictors")
+})

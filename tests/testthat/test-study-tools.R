@@ -287,3 +287,22 @@ test_that("grouped CV fails closed on single-class assessment folds", {
   ))
   expect_identical(cv_ok$fold_scheme, "group_disjoint")
 })
+
+test_that("zero-variance partitions with different means give Inf SMD (E9 regression)", {
+  # Both partitions constant: differing constants are a maximal, perfectly
+  # separated shift (true SMD = +-Inf) and must surface in smd_max_abs
+  # rather than be masked as NA and counted as n_zero_sd.
+  x_study <- matrix(5, 4, 2, dimnames = list(NULL, c("a", "b")))
+  x_rest <- matrix(1, 6, 2, dimnames = list(NULL, c("a", "b")))
+  x_rest[, "b"] <- 5  # equal constants: no shift, no variance information
+  smd <- stablr:::.study_block_smd_abs(x_study, x_rest)
+  expect_identical(unname(smd["a"]), Inf)
+  expect_true(is.na(smd["b"]))
+
+  x_list <- list(rna = rbind(x_study, x_rest))
+  shift <- stablr:::.study_feature_shift(
+    x_list, c(rep("s1", 4L), rep("s2", 6L)), c("s1", "s2")
+  )
+  expect_identical(shift$smd_max_abs[shift$study == "s1"], Inf)
+  expect_identical(shift$n_zero_sd[shift$study == "s1"], 1L)  # only "b"
+})

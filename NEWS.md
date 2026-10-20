@@ -1,5 +1,24 @@
 # stablr 0.3.0.9000 (development)
 
+## Bug fixes (implementation review, 2026-10-20, batch E-1)
+
+- `stabl_preprocess_apply()` now fails closed when a feature had no
+  finite training values under `center`/`scale` (previously a NaN mean
+  was stored and apply silently emitted an all-NA column unless
+  `impute_median` was requested).
+- `stabl_multiomic_study_diagnostics()`: a feature that is constant
+  within both a study and its complement but at *different* values (true
+  SMD = ±Inf — a maximal, perfectly separated study shift) now surfaces
+  as `Inf` in `smd_max_abs` instead of being masked as NA and counted in
+  `n_zero_sd`.
+- `stabl_replication_profile()`: held-out metrics are now computed on
+  rows complete in the outcome and selected predictors; a held-out study
+  with no scorable rows gets `reason = "incomplete_predictors"` instead
+  of a silently misaligned or NA metric.
+- `stabl_interpret()` now errors when `x` or `y` contain missing values
+  (previously `glm` na-omitted while the importance loss used the full
+  vector, so all permutation importances were silently NA).
+
 ## Bug fixes (implementation review, 2026-10-19)
 
 - **Critical:** `stabl_null_check(design = "independent")` (the default)

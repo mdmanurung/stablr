@@ -118,6 +118,14 @@ stabl_interpret <- function(object, x, y, family = c("gaussian", "binomial"),
   event_class <- attr(y, "event_class")
   y_vec <- attr(y, "y_numeric")
 
+  # Missing values are not supported: glm would fit on complete cases
+  # while the importance loss is evaluated on the full vector, silently
+  # producing NA permutation importances (review E11).  Fail at entry,
+  # consistent with .classification_metrics.
+  if (anyNA(y_vec) || anyNA(x)) {
+    stop("`x` and `y` must not contain missing values.", call. = FALSE)
+  }
+
   # ── Selection and stability (reuse accessors; semantics unchanged) ───────
   support <- get_support(object)
   importances <- get_importances(object)

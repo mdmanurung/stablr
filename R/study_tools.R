@@ -145,7 +145,13 @@ stabl_multiomic_study_diagnostics <- function(x_list, y, study_labels) {
   sd_rest <- apply(x_rest, 2L, stats::sd)
   pooled_sd <- sqrt((sd_study^2 + sd_rest^2) / 2)
   smd <- (mu_study - mu_rest) / pooled_sd
-  smd[pooled_sd == 0] <- NA_real_
+  # pooled_sd == 0 means both partitions are constant.  If the constants
+  # differ, the true SMD is +-Inf — a maximal, perfectly separated study
+  # shift, exactly what this diagnostic exists to flag — so keep the Inf
+  # from the division (it surfaces in smd_max_abs) instead of masking it
+  # as NA and counting it as n_zero_sd (review E9).  Only 0/0 (equal
+  # constants: no shift, no variance information) is masked.
+  smd[is.nan(smd)] <- NA_real_
   abs(smd)
 }
 

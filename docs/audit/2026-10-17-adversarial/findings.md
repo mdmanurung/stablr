@@ -1398,6 +1398,56 @@ check 0E/0W/1N (pre-existing installed-size NOTE; doc 3.8 Mb); all
 12 vignettes rebuild clean.  NEWS.md is docs-only and parse-verified with
 utils::news(); the code tree is exactly the gated tree.
 
+**Batch E-1 silent-wrongness guards PR (2026-10-20):** implementation-review
+findings E1/E4/E9/E11 fixed with regression tests (first batch of the
+approved four-batch E-triage; embedded decisions E6→error, E9→Inf,
+E14b→error-only approved by the user).
+
+- E1 (`R/preprocessing.R`): fail-closed on all-missing training features
+  existed only for `impute_median`; with the default
+  `c("center","scale")` an all-NA training column stored a NaN mean and
+  apply silently emitted an all-NA column (runtime-verified in the
+  review).  Fixed at apply, mirroring the existing impute guard: center
+  checks `is.finite` on the stored means directly; scale checks a new
+  `nonestimable` field recorded at fit (the zero-SD coercion to 1 —
+  deliberate for constant features — otherwise destroys the NA signal).
+  Fit still succeeds and apply fails, preserving the pinned
+  impute-path test semantics; pre-change fitted objects lack the field
+  and skip the scale check (NULL).
+- E4 (`R/replication.R`, `.replication_heldout_row`): rows with NA in
+  the outcome or any selected predictor cannot be scored, but the metric
+  was computed on the full held-out study — silently NA-ed or misaligned
+  MSE/BER.  Fixed: restrict truth and predictions to
+  `complete.cases(df_test)`; a held-out study with zero scorable rows
+  returns `reason = "incomplete_predictors"` (consistent with the
+  existing `empty_support`/`refit_failed` reasons).
+- E9 (`R/study_tools.R`, `.study_block_smd_abs`): `pooled_sd == 0` with
+  *different* group means is a true ±Inf SMD — a maximal, perfectly
+  separated study shift, exactly what the diagnostic exists to flag —
+  but was masked as NA and counted as `n_zero_sd`.  Fixed per the
+  approved decision: only the 0/0 (equal-constants) case is masked
+  (`is.nan`); ±Inf survives into `smd_max_abs`.
+- E11 (`R/interpretation.R`, `stabl_interpret`): NA in `y`/`x` was not
+  rejected; `glm` na-omits while the importance loss uses the full
+  vector, so all permutation importances were silently NA (inconsistent
+  with `.classification_metrics`, which errors on NA).  Fixed: fail at
+  entry on `anyNA(y_vec) || anyNA(x)`.
+
+Regression tests, each confirmed to FAIL against the pre-fix code
+(git-stash negative control; invariant anchors pass both ways by design):
+apply errors for all-NA features under center/scale with and without
+each transform alone (E1); held-out metric equals a manual complete-case
+refit/predict under partial missingness and all-incomplete studies
+return `incomplete_predictors` (E4); differing-constant partitions give
+`smd_max_abs = Inf` with `n_zero_sd` counting only the equal-constant
+feature (E9); `stabl_interpret` errors on NA in `x` or `y` (E11).
+
+Gates: suite 62 files / 0 failed / 0 errors / 1 skip / 3 warnings (exact
+parity with PR-G — the new tests add no warnings or skips); R CMD
+check 0E/0W/1N (pre-existing installed-size NOTE; doc 3.8 Mb); all
+12 vignettes rebuild clean.  NEWS.md entries are docs-only and parse-verified with
+utils::news(); the code tree is exactly the gated tree.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3
