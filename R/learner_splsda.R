@@ -62,15 +62,24 @@
     n_features <- ncol(x)
     n_lambdas  <- nrow(lambda_grid)
     result <- matrix(FALSE, nrow = n_features, ncol = n_lambdas)
+    # A constant column is degenerate for PLS.  Drop such columns for this
+    # bootstrap's fit and map the mask back so only the dropped columns are
+    # all-FALSE — previously ONE constant column discarded the mask for ALL
+    # features at EVERY grid row (the check was inside the loop but
+    # lambda-invariant), biasing stability frequencies downward when rare
+    # binary features are present (review E7).
+    constant <- apply(x, 2L, function(col) diff(range(col)) == 0)
+    x_fit <- x[, !constant, drop = FALSE]
     for (l in seq_len(n_lambdas)) {
-      # A subsample with a constant column is degenerate for PLS; contribute
-      # an all-FALSE mask for that bootstrap instead of failing the run.
-      if (any(apply(x, 2L, function(col) diff(range(col)) == 0))) next
-      fit <- mixOmics::splsda(x, y_f,
-                              keepX = rep(keepx[l], ncomp), ncomp = ncomp)
+      # An all-constant subsample is degenerate: contribute an all-FALSE
+      # mask instead of failing the run.
+      if (ncol(x_fit) == 0L) next
+      fit <- mixOmics::splsda(x_fit, y_f,
+                              keepX = rep(min(keepx[l], ncol(x_fit)), ncomp),
+                              ncomp = ncomp)
       load <- fit$loadings$X
       if (is.null(dim(load))) next
-      result[, l] <- matrixStats::rowMaxs(abs(as.matrix(load))) >
+      result[!constant, l] <- matrixStats::rowMaxs(abs(as.matrix(load))) >
         bootstrap_threshold
     }
     result

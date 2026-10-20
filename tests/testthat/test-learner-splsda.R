@@ -175,3 +175,22 @@ test_that("splsda_ncomp is honored (ncomp = 1 vs 2)", {
   expect_true(all(m1 <= m2))
   expect_true(sum(m1) <= sum(m2))
 })
+
+test_that("a constant column no longer zeroes the whole bootstrap mask (E7 regression)", {
+  skip_if_not_installed("mixOmics")
+  set.seed(7L)
+  n <- 60L
+  signal <- rnorm(n)
+  x <- cbind(signal     = signal,
+             rare_const = rep(1, n),
+             noise      = rnorm(n))
+  y <- factor(ifelse(signal > 0, 1L, 0L))
+  adapter <- stablr:::.make_splsda_batch_adapter("binomial", ncomp = 1L,
+                                                 bootstrap_threshold = 0)
+  mask <- adapter(x, y, data.frame(keepX = 1L))
+  # Column 2 (constant) is dropped for this fit: all-FALSE.  Column 1
+  # (signal, perfectly separating) must still be selectable — pre-fix the
+  # constant column discarded the mask for ALL features at every grid row.
+  expect_false(any(mask[2L, ]))
+  expect_true(any(mask[1L, ]))
+})

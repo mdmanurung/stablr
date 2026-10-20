@@ -1565,6 +1565,50 @@ check 0E/0W/1N (pre-existing installed-size NOTE; doc 3.8 Mb); all
 12 vignettes rebuild clean.  NEWS.md entries are docs-only and parse-verified with
 utils::news(); the code tree is exactly the gated tree.
 
+**Batch E-4 learner-adapter edges PR (2026-10-20):** implementation-review
+findings E7/E8 fixed (fourth and final batch of the approved E-triage).
+Contrary to the review's caveat, mixOmics, ordinalNet, and ranger ARE
+installed in this environment, so both fixes are test-verified here with
+git-stash negative controls; the E7 test retains
+`skip_if_not_installed("mixOmics")` as good practice for lean
+check environments (e.g. CRAN), but it RAN and was negative-controlled
+in this sandbox.
+
+- E7 (`R/learner_splsda.R`): one constant column in a bootstrap
+  subsample discarded the selection mask for ALL features at EVERY grid
+  row (`if (any(...)) next` inside the lambda loop, with a
+  lambda-invariant condition) — with rare binary features (common in
+  omics) a large fraction of bootstraps contributed all-FALSE, biasing
+  every stability frequency downward (conservative FDP+, real power
+  loss).  Fixed: the constant-column check is hoisted out of the grid
+  loop, constant columns are dropped for that bootstrap's fit, and the
+  mask is mapped back so only the dropped columns are all-FALSE; keepX
+  is clamped to the remaining column count.  An all-constant subsample
+  still contributes an all-FALSE mask (unchanged).
+- E8 (`R/learner_ordinal.R`, `.validate_ordinal_outcome`): the validator
+  checked `length(levels(y))` (declared levels) and never droplevels, so
+  a bootstrap subsample missing a class passed validation and reached
+  ordinalNet with unobserved levels.  Fixed: `droplevels()` + require
+  >= 2 OBSERVED classes, mirroring the splsda adapter
+  (`.as_splsda_factor`).  Full-data fits are unaffected (all levels
+  observed); only degenerate subsamples change behavior.
+
+Regression tests, each confirmed to FAIL against the pre-fix code
+(git-stash negative controls): E7 — a bootstrap subsample with a
+constant column plus a perfectly separating signal: the constant
+column's mask row is all-FALSE (anchor, passes both ways) while the
+signal column remains selectable (discriminating; pre-fix the whole
+mask was FALSE).  E8 — a single-observed-class factor errors with
+"at least two observed classes", and an unobserved extra level is
+droplevels'ed away (both fail pre-fix: declared-levels check passed and
+levels were never dropped).
+
+Gates: suite 62 files / 0 failed / 0 errors / 1 skip / 3 warnings (exact
+parity with PR-G — the new tests add no warnings or skips); R CMD
+check 0E/0W/1N (pre-existing installed-size NOTE; doc 3.8 Mb); all
+12 vignettes rebuild clean.  NEWS.md entries are docs-only and parse-verified with
+utils::news(); the code tree is exactly the gated tree.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3

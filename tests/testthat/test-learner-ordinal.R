@@ -120,3 +120,14 @@ test_that("ordinal learner is exposed through the public interface audit", {
   expect_false("make_ordinal_adapter" %in% audit$interface[audit$kind == "export"])
   expect_true("auto_ordinal_lambda_grid" %in% audit$interface[audit$kind == "export"])
 })
+
+test_that("ordinal outcome validation checks observed classes, not declared levels (E8 regression)", {
+  # A bootstrap subsample missing a class must not reach ordinalNet.
+  y_one <- ordered(rep("low", 5L), levels = c("low", "mid", "high"))
+  expect_error(stablr:::.validate_ordinal_outcome(y_one),
+               "at least two observed classes")
+  # Unobserved extra levels are dropped before the fit.
+  y_two <- ordered(c("low", "low", "high"), levels = c("low", "mid", "high"))
+  out <- stablr:::.validate_ordinal_outcome(y_two)
+  expect_identical(levels(out), c("low", "high"))
+})

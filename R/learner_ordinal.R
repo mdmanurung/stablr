@@ -175,9 +175,14 @@ auto_ordinal_lambda_grid <- function(x, y, n_lambda = 30L, alpha = 1) {
     stop("`y` must not contain NA values for the ordinal learner.",
          call. = FALSE)
   }
-  if (length(levels(y)) < 2L) {
-    stop("`y` must have at least two levels for the ordinal learner.",
-         call. = FALSE)
+  # Check OBSERVED classes, not declared levels: a bootstrap subsample can
+  # miss a class, and ordinalNet's behavior on unobserved levels is
+  # undefined (review E8).  droplevels so the fit sees only observed bands
+  # (mirrors the splsda adapter's .as_splsda_factor).
+  y <- droplevels(y)
+  if (nlevels(y) < 2L) {
+    stop("`y` must have at least two observed classes for the ordinal ",
+         "learner.", call. = FALSE)
   }
   if (!is.ordered(y)) {
     warning(

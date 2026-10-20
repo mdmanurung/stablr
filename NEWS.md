@@ -1,5 +1,18 @@
 # stablr 0.3.0.9000 (development)
 
+## Bug fixes (implementation review, 2026-10-20, batch E-4)
+
+- The sPLS-DA learner no longer discards the selection mask for ALL
+  features when a bootstrap subsample contains one constant column:
+  constant columns are dropped for that bootstrap's fit and the mask is
+  mapped back, so only the dropped columns are all-FALSE.  Previously
+  rare binary features (common in omics) silently biased every stability
+  frequency downward.
+- The ordinal learner now validates OBSERVED classes (with
+  `droplevels()`) instead of declared factor levels, so a bootstrap
+  subsample missing a class fails with a clear error instead of
+  reaching ordinalNet with unobserved levels.
+
 ## Bug fixes (implementation review, 2026-10-20, batch E-3)
 
 - `stabl_multiomic_cv()` now stratifies classification folds on the
