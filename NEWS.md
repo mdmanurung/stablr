@@ -1,5 +1,14 @@
 # stablr 0.3.0.9000 (development)
 
+## Documentation (2026-10-20, reproducibility pointers)
+
+- README Resources and `benchmarks/README.md` now point to the
+  `stablr-reproducibility` compendium (pinned submodule + MD5-pinned raw
+  atlas + v1/v2 pipeline drivers + committed results + bit-for-bit
+  verification evidence) as the way to re-run the aging case study end to
+  end; the WS-8 raw-file requirement is documented where the benchmark
+  scripts live.
+
 ## New features (2026-10-20, single-cell vignettes)
 
 - New vignette `stablr-cebmf`: STABL selection on cEBMF-denoised

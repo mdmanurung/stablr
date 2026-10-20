@@ -2189,6 +2189,39 @@ the parsed text).  Gates: suite 62 files / 0 failed / 0 errors / 1 skip
 / 3 warnings (exact PR-G parity); R CMD check 0E/0W/1N (pre-existing
 installed-size NOTE); all 14 vignettes rebuild clean.
 
+**Reproducibility audit PR (2026-10-20):** user-requested two-repo
+reproducibility audit (stablr + stablr-reproducibility) — "contain all
+necessary information/scripts/data to reproduce analyses".  Package-side
+findings: fixture provenance complete (OOL + PBMC generation scripts with
+checksums; python_parity fixtures carry provenance.json + manifest +
+canonical-generator pointer); the aging vignette inlines its numbers (no
+file reads), so no committed consumer needs the untracked
+benchmarks/ws8_v2 s1 strays (they stay untracked per the standing
+constraint); the one real gap was discoverability — nothing in the package
+pointed to the compendium.  Fixed: README Resources bullet +
+benchmarks/README.md "Reproducing the benchmarks" section (WS-8 raw-file
+requirement documented where the scripts live) + NEWS section (46
+parse-verified section entries).  Compendium-side (separate repo, separate
+commit): closed the self-documented v1 gap with
+`data/derive_donor_tables.R` — the reconstructed derivation rebuilds both
+v1 donor tables from the MD5-pinned raw atlas with the Bad-quality
+exclusion, and its --verify mode proves CONTENT identity (counts 133,305
+rows / 0 mismatches / 0 unmatched; meta 2,609 donors / 0 field mismatches
+/ 0 metadata conflicts); row order is canonical-sorted (the original
+traversal order was not archived; all consumers read order-agnostically —
+disclosed in the script header and data/README.md).  Added the
+pin-vs-current-main map (6aa5a6e is 36 commits behind ee3e5eb; the diff
+touches 20+ R/ files, so code identity does NOT hold and the pin stays
+until the human-gated sealed re-run) with the exact bump + re-run +
+evidence-regeneration procedure; corrected stale version labels (the pin's
+DESCRIPTION is 0.3.0, not 0.3.0.9000 — sessionInfo.txt was already
+accurate).  Verified executably: raw atlas re-download MD5 OK; quick path
+rendered the aging report from committed results at the pin.  The full
+v1/v2 re-run (1-2 h / several hours) remains the human-gated sealed
+checkpoint — disclosed.  Gates: suite 62 files / 0 failed / 0 errors /
+1 skip / 3 warnings (exact PR-G parity); R CMD check 0E/0W/1N
+(pre-existing installed-size NOTE); all 14 vignettes rebuild clean.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3

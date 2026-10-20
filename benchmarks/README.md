@@ -26,3 +26,15 @@ use the package. It is excluded from the source tarball via `.Rbuildignore`.
   with `pkgload::load_all(".")`.
 - Benchmark-local test scripts (e.g. `ws8_v2/test_loco.R`) are experiment
   harnesses, not package tests; they run standalone with `Rscript`.
+
+## Reproducing the benchmarks
+
+Most studies are self-contained (synthetic or bundled inputs). The WS-8 aging
+benchmarks are the exception: they need the ~93 MB raw atlas file
+(`all_cells_metadata.csv.gz`, MD5-pinned), which is not committed to this
+repository. The
+[stablr-reproducibility](https://github.com/mdmanurung/stablr-reproducibility)
+compendium bundles this package as a pinned submodule plus the data download
+script, the donor-table derivation, the v1/v2 pipeline drivers
+(`run_all.sh` and friends), the committed results, and the bit-for-bit
+verification evidence — use it to re-run the aging case study end to end.
