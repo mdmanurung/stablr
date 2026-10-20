@@ -77,6 +77,13 @@ stabl_preprocess_fit <- function(x_train,
     vars <- apply(x_train, 2L, stats::var, na.rm = TRUE)
     keep <- which(is.finite(vars) & vars > zv_tol)
     params$zv <- list(retained = feats[keep])
+    if (length(params$zv$retained) == 0L) {
+      # Otherwise every downstream transform fits on a 0-column matrix and
+      # stabl_fit() fails deep with an opaque error (review L3).
+      stop("The zero-variance filter removed all features (every training ",
+           "variance is <= zv_tol = ", format(zv_tol), "). Relax `zv_tol` ",
+           "or check the data.", call. = FALSE)
+    }
   } else {
     params$zv <- list(retained = feats)
   }

@@ -391,12 +391,14 @@ make_knockoff_features <- function(x, n_injected, random_state = NULL,
 }
 
 # Estimate a positive-definite covariance matrix from x.
-# Falls back to corpcor shrinkage when cov(x) is not PD.
+# Falls back to corpcor eigenvalue clipping when cov(x) is not PD.
 .estimate_pd_sigma <- function(x) {
   Sigma <- cov(x)
   min_eig <- min(eigen(Sigma, symmetric = TRUE, only.values = TRUE)$values)
   if (min_eig > 0) return(Sigma)
-  # Rank-deficient (p > n) or near-singular: use Ledoit-Wolf shrinkage if available
+  # Rank-deficient (p > n) or near-singular: corpcor::make.positive.definite
+  # clips eigenvalues at `tol` (it is NOT Ledoit-Wolf shrinkage as an earlier
+  # comment claimed — review L12); without corpcor, shift the diagonal.
   if (requireNamespace("corpcor", quietly = TRUE)) {
     Sigma <- suppressMessages(
       corpcor::make.positive.definite(Sigma, tol = 1e-3)
@@ -800,6 +802,14 @@ make_artificial_features <- function(x, n_injected, type, random_state = NULL,
   }
   if (anyNA(x) || any(!is.finite(x))) {
     stop("`x` must contain only finite, non-missing values.", call. = FALSE)
+  }
+  if (nrow(x) < 2L) {
+    # make_rp_features() permutes within columns via sample(col); with a
+    # single sample a value >= 1 would be treated as 1:x (the sample()
+    # length-1 pitfall), silently replacing the value (review L6).
+    stop("`x` must have at least 2 rows (samples); artificial-feature ",
+         "generation permutes within columns, which is undefined for a ",
+         "single sample.", call. = FALSE)
   }
   n_injected <- .validate_scalar_integer_like(
     n_injected,

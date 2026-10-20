@@ -261,3 +261,16 @@ test_that("rf retry seed never overflows near the integer max (N1 regression)", 
     expect_true(s >= 1L && s <= .Machine$integer.max - 1L)
   }
 })
+
+test_that("make_ranger_adapter exposes a family pass-through (L11 regression)", {
+  skip_if_not_installed("ranger")
+  expect_identical(formals(stablr:::make_ranger_adapter)$family, "gaussian")
+  adapter <- stablr:::make_ranger_adapter(num_trees = 10L,
+                                          family = "binomial")
+  set.seed(1)
+  x <- matrix(rnorm(60), 20, 3, dimnames = list(NULL, c("a", "b", "c")))
+  y <- factor(rep(c("no", "yes"), 10))
+  mask <- adapter(x, y, data.frame(lambda = 0, threshold = 0))
+  expect_type(mask, "logical")
+  expect_length(mask, 3L)
+})

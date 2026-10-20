@@ -1,5 +1,36 @@
 # stablr 0.3.0.9000 (development)
 
+## Bug fixes (implementation review, 2026-10-20, batch F-4)
+
+- `stabl_preprocess_fit(transforms = "zv")` now fails closed when the
+  zero-variance filter removes ALL features (previously every downstream
+  transform fitted on a 0-column matrix and `stabl_fit()` failed deep).
+- `make_artificial_features()` now requires `nrow(x) >= 2`: with a single
+  sample, `make_rp_features()`'s within-column `sample(col)` would hit the
+  length-1 pitfall and silently replace a value >= 1 with a draw from `1:x`.
+- `auto_splsda_keepx_grid()` no longer advertises `keepX > p` (with `p = 1`
+  the grid spuriously included `keepX = 2`, invalid for mixOmics).
+- Fractional `keepX` values in a sPLS-DA `lambda_grid` now error instead of
+  being silently truncated by `as.integer()`.
+- The MVR knockoff solver now warns when its PSD scaling search finds no
+  feasible factor and returns a degenerate all-zero `S` (behavior inherited
+  from knockpy; previously silent).
+- `make_ranger_adapter()` gains a `family` argument (default `"gaussian"`)
+  passed through to the batch adapter — previously the family could not be
+  set through this factory.
+- Two comment corrections (no behavior change): the MVR degenerate-nudge
+  comment claimed "toward upper bound" for a step that is negative when
+  `s_j > 1/cd`; the PD-covariance fallback comment claimed Ledoit-Wolf
+  shrinkage where corpcor performs eigenvalue clipping.
+- Documentation repairs: the README's eight reference links were relative
+  (`reference/*.html`) and 404'd on the GitHub repo page — they now point
+  at the pkgdown site absolutely; and the hand-written
+  `make_ranger_adapter.Rd` / `make_ordinal_adapter.Rd` (stale since the
+  learner-factory internalization, invisible to roxygen2) were regenerated
+  from source — the staleness both caused a codoc WARNING and broke the
+  pkgdown workflow's missing-topics check, which had left the deployed
+  site stale.
+
 ## Bug fixes (implementation review, 2026-10-20, batch F-3)
 
 - Accessor and input-validation errors are now typed `stablr_error`

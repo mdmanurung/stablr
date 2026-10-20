@@ -56,6 +56,8 @@
 #'
 #' @param num_trees Positive integer; number of trees per forest
 #'   (`ranger`'s `num.trees`).  Default `500L`.
+#' @param family Character scalar; response family passed to the batch
+#'   adapter.  Default `"gaussian"`.
 #'
 #' @return A function with signature
 #'   `function(x, y, lambda_val) -> logical vector of length ncol(x)`
@@ -86,10 +88,11 @@
 #'   cat("selected at sparsest threshold:", sum(mask), "of", ncol(x), "\n")
 #' }
 #' @keywords internal
-make_ranger_adapter <- function(num_trees = 500L) {
+make_ranger_adapter <- function(num_trees = 500L, family = "gaussian") {
   .require_pkg("ranger", "for base_learner = \"rf\"")
   num_trees <- .validate_scalar_integer_like(num_trees, "num_trees", min = 1L)
-  batch_adapter <- .make_ranger_batch_adapter(num_trees = num_trees)
+  batch_adapter <- .make_ranger_batch_adapter(family = family,
+                                              num_trees = num_trees)
 
   function(x, y, lambda_val) {
     batch_adapter(x, y, lambda_val)[, 1L]

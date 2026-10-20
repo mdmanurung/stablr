@@ -14,14 +14,14 @@ utilities. It compiles C++ but has no Python or tidymodels runtime dependency.
 
 Major functionality of `stablr`:
 
-+ [`stabl()`](reference/stabl.html)                     Simple selector: a data.frame in, a plain-language selection out
-+ [`stabl_fit()`](reference/stabl_fit.html)                    Expert interface: full control of lambda grid, bootstrap design, thresholds, and learners
-+ [`compute_fdp_plus()`](reference/compute_fdp_plus.html)               FDP+ thresholding with random-permutation and knockoff artificial features
-+ [`stabl_multiomic_train_validate()`](reference/stabl_multiomic_train_validate.html)  Multi-omic train/validation with early, late, and cooperative fusion
-+ [`stabl_multiomic_nested_cv()`](reference/stabl_multiomic_nested_cv.html)     Outer CV with sample-i.i.d., grouped, or study-disjoint folds
-+ [`stabl_multiomic_scheme_comparison()`](reference/stabl_multiomic_scheme_comparison.html) Compare CV schemes arm-by-arm on held-out error
-+ [`stabl_environment_stability()`](reference/stabl_environment_stability.html) Transportable selections across environments (experimental)
-+ [`jaccard_similarity_matrix()`](reference/jaccard_similarity_matrix.html)    Selection-reproducibility metrics
++ [`stabl()`](https://mdmanurung.github.io/stablr/reference/stabl.html)                     Simple selector: a data.frame in, a plain-language selection out
++ [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.html)                    Expert interface: full control of lambda grid, bootstrap design, thresholds, and learners
++ [`compute_fdp_plus()`](https://mdmanurung.github.io/stablr/reference/compute_fdp_plus.html)               FDP+ thresholding with random-permutation and knockoff artificial features
++ [`stabl_multiomic_train_validate()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_train_validate.html)  Multi-omic train/validation with early, late, and cooperative fusion
++ [`stabl_multiomic_nested_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_nested_cv.html)     Outer CV with sample-i.i.d., grouped, or study-disjoint folds
++ [`stabl_multiomic_scheme_comparison()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_scheme_comparison.html) Compare CV schemes arm-by-arm on held-out error
++ [`stabl_environment_stability()`](https://mdmanurung.github.io/stablr/reference/stabl_environment_stability.html) Transportable selections across environments (experimental)
++ [`jaccard_similarity_matrix()`](https://mdmanurung.github.io/stablr/reference/jaccard_similarity_matrix.html)    Selection-reproducibility metrics
 
 ## Resources
 

@@ -293,3 +293,10 @@ test_that("strict fallback policy: model-X paths also fail closed by default", {
   expect_true(saw_equi_fallback_warning)
   expect_equal(result$artificial_provenance$actual_type, "knockoff_equi")
 })
+
+test_that("single-sample artificial-feature generation fails closed (L6 regression)", {
+  x <- matrix(c(5.3, 2.1, 9.7, 4.2), 1, 4,
+              dimnames = list(NULL, paste0("f", 1:4)))
+  expect_error(make_artificial_features(x, 2L, "random_permutation"),
+               "at least 2 rows")
+})

@@ -41,12 +41,19 @@
   .require_pkg("mixOmics", "for base_learner = \"splsda\"")
   ncomp <- .validate_scalar_integer_like(ncomp, "ncomp", min = 1L)
   function(x, y, lambda_grid) {
-    keepx <- if ("keepX" %in% names(lambda_grid)) {
-      as.integer(lambda_grid[["keepX"]])
+    keepx_raw <- if ("keepX" %in% names(lambda_grid)) {
+      lambda_grid[["keepX"]]
     } else {
-      as.integer(lambda_grid[["lambda"]])  # `lambda` column doubles as keepX
+      lambda_grid[["lambda"]]  # `lambda` column doubles as keepX
     }
-    if (anyNA(keepx) || any(keepx < 1L)) {
+    # as.integer() would silently truncate a fractional keepX (review L13).
+    if (!is.numeric(keepx_raw) || anyNA(keepx_raw) ||
+        any(keepx_raw != floor(keepx_raw))) {
+      stop("`lambda_grid` keepX values must be integer-like (in the `keepX` ",
+           "column or, falling back, in the `lambda` column).", call. = FALSE)
+    }
+    keepx <- as.integer(keepx_raw)
+    if (any(keepx < 1L)) {
       stop("`lambda_grid` rows must carry keepX >= 1 (in the `keepX` column ",
            "or, falling back, in the `lambda` column).", call. = FALSE)
     }
@@ -182,8 +189,11 @@ auto_splsda_keepx_grid <- function(x, n_lambda = 10L) {
   p <- ncol(x)
   lo <- max(1L, as.integer(floor(p / 50)))
   hi <- max(lo + 1L, as.integer(floor(p / 3)))
+  # keepX must not exceed p (mixOmics errors); with p = 1 the unclamped
+  # hi = lo + 1 = 2 advertised an invalid grid row (review L7).
+  hi <- min(hi, p)
   keepx <- unique(as.integer(round(exp(seq(log(lo), log(hi),
                                           length.out = n_lambda)))))
-  keepx <- sort(keepx)
+  keepx <- sort(keepx[keepx <= p])
   data.frame(lambda = keepx, keepX = keepx)
 }

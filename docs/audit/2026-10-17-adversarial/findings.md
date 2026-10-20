@@ -1804,6 +1804,71 @@ covered by the release-hygiene suite and R CMD check.
 Gates: suite 62 files / 0 failed / 0 errors / 1 skip / 3 warnings (exact parity with PR-G); R CMD check 0E/0W/1N (pre-existing installed-size NOTE; doc 3.8 Mb); all 12 vignettes rebuild clean.  NEWS.md entries are docs-only and parse-verified with
 utils::news(); the code tree is exactly the gated tree.
 
+**Batch F-4 learners/preprocessing/artificial/knockoff PR (2026-10-20):**
+implementation-review findings L3, L6, L7, L9, L10, L11, L12, L13 (fourth
+batch of the post-E-triage remainder).
+
+- L3 (`R/preprocessing.R`): `stabl_preprocess_fit(transforms = "zv")` with
+  every training variance <= `zv_tol` retained ZERO features; center/scale/
+  imputation then fitted on a 0-column matrix and `stabl_fit()` failed deep.
+  The fit now stops naming the cause and the remedy (relax `zv_tol`).
+- L6 (`R/artificial_features.R`): `make_rp_features()` permutes within
+  columns via `sample(col)`; with `nrow(x) == 1` a value >= 1 hits the
+  sample() length-1 pitfall and is silently REPLACED by a draw from `1:x`.
+  `make_artificial_features()` now requires `nrow(x) >= 2` at entry (covers
+  all generators; knockoffs are equally undefined on one sample).
+- L7 (`R/learner_splsda.R`): `auto_splsda_keepx_grid()` with `p = 1`
+  produced `hi = lo + 1 = 2 > p`, advertising a keepX mixOmics rejects (the
+  batch adapter clamps at fit time, so the grid row was wrong but harmless
+  in-package).  `hi` is now clamped to `p` and any rounded value > p dropped.
+- L13 (`R/learner_splsda.R`): the sPLS-DA batch adapter coerced keepX with
+  `as.integer()`, silently truncating a fractional grid value (2.5 -> 2).
+  Non-integer-like values now error.
+- L9 (`R/knockoff_mvr.R`): `.scale_until_psd()` binary-searches the largest
+  gamma with `2*Sigma - gamma*S` PSD; when even the smallest probed gamma is
+  infeasible it returned `gamma = 0`, i.e. an all-zero (degenerate) S,
+  silently.  knockpy exhibits the identical return (inherited behavior), so
+  the fix is a warning naming the degeneracy and its likely cause
+  (ill-conditioned covariance), not a behavior change.
+- L10 (`R/knockoff_mvr.R`, comment only): the degenerate-quadratic nudge
+  `(1/cd - s_j) * 0.01` is NEGATIVE when `s_j > 1/cd`; the comment claimed
+  "toward upper bound".  Reworded; behavior verified safe and unchanged.
+- L11 (`R/learner_rf.R`): `make_ranger_adapter()` had no `family` formal and
+  always built the gaussian batch adapter; it now takes
+  `family = "gaussian"` and passes it through.  The main `stabl_fit()` path
+  (which calls the batch adapter directly with the resolved family) is
+  unaffected.
+- L12 (`R/artificial_features.R`, comment only): the PD-covariance fallback
+  comment claimed "Ledoit-Wolf shrinkage"; `corpcor::make.positive.definite`
+  performs eigenvalue clipping.  Reworded.
+
+- Docs repairs (user-reported broken README links): the README's eight
+  `reference/*.html` links were relative, resolving to nonexistent repo
+  paths on the GitHub page (404); they now use absolute
+  https://mdmanurung.github.io/stablr/ URLs (every target verified 200).
+  Investigating the stale deployed site surfaced a pkgdown workflow
+  failure on every push since the learner-factory internalization:
+  `make_ranger_adapter.Rd` (hand-written, "Generated manually ... item
+  D1") and `make_ordinal_adapter.Rd` (no roxygen marker) were invisible
+  to roxygen2 and had drifted from source — both lacked
+  `\keyword{internal}` (pkgdown missing-topics error) and the ranger Rd
+  predated the L11 `family` formal (codoc WARNING, CAUGHT by this
+  batch's first gate run before push).  Both Rd files are now generated
+  from the roxygen source.  The pkgdown workflow deploys on push; the
+  reliability article and the completed reference index go live with
+  this push.
+
+Regression tests, each confirmed to FAIL against the pre-fix code
+(git-stash negative control): zv-removes-all errors at fit (L3);
+single-sample artificial generation errors (L6); `p = 1` grid max keepX
+is 1 (L7); fractional keepX errors (L13); degenerate gamma warns and
+returns 0 (L9); `make_ranger_adapter(family = "binomial")` runs a tiny
+binomial forest (L11 — pre-fix: unused-argument error).  L10 and L12 are
+comment-only, disclosed here; covered by R CMD check.
+
+Gates: suite 62 files / 0 failed / 0 errors / 1 skip / 3 warnings (exact parity with PR-G); R CMD check 0E/0W/1N (pre-existing installed-size NOTE; doc 3.8 Mb); all 12 vignettes rebuild clean.  NOTE: the first gate run on this batch CAUGHT a codoc WARNING (stale make_ranger_adapter.Rd predating the L11 family formal) — fixed by regenerating both stale hand-written Rd files, then re-gated on the final tree.  NEWS.md entries are docs-only and parse-verified with
+utils::news(); the code tree is exactly the gated tree.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3

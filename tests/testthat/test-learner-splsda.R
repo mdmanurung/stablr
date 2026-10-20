@@ -194,3 +194,18 @@ test_that("a constant column no longer zeroes the whole bootstrap mask (E7 regre
   expect_false(any(mask[2L, ]))
   expect_true(any(mask[1L, ]))
 })
+
+test_that("auto_splsda_keepx_grid never advertises keepX > p (L7 regression)", {
+  g1 <- auto_splsda_keepx_grid(matrix(0, 10, 1))
+  expect_true(max(g1$keepX) <= 1L)
+  g2 <- auto_splsda_keepx_grid(matrix(0, 10, 2))
+  expect_true(max(g2$keepX) <= 2L)
+})
+
+test_that("fractional keepX in lambda_grid errors instead of truncating (L13 regression)", {
+  skip_if_not_installed("mixOmics")
+  adapter <- stablr:::.make_splsda_batch_adapter("binomial", 1L, 0)
+  x <- matrix(rnorm(40), 10, 4, dimnames = list(NULL, paste0("f", 1:4)))
+  y <- factor(rep(c("a", "b"), 5))
+  expect_error(adapter(x, y, data.frame(keepX = 2.5)), "integer-like")
+})

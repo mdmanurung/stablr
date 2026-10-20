@@ -158,6 +158,15 @@
     )
     if (feasible) lo <- gamma else hi <- gamma
   }
+  if (lo == 0) {
+    # knockpy exhibits the identical degenerate return (inherited behavior);
+    # surface it instead of silently returning an all-zero S (review L9).
+    warning("MVR knockoff construction found no positive scaling factor ",
+            "keeping 2*Sigma - gamma*S positive definite; the returned S ",
+            "is degenerate (all zeros) and the knockoff features carry no ",
+            "information. The covariance matrix may be severely ",
+            "ill-conditioned.", call. = FALSE)
+  }
   list(S = lo * S, gamma = lo)
 }
 
@@ -238,7 +247,11 @@ solve_mvr <- function(Sigma,
         .solve_mvr_quadratic(cn = cn, cd = cd, sj = S[j_idx, j_idx],
                              smoothing = smoothing),
         warning = function(w) {
-          # Degenerate case: nudge by a small positive amount toward upper bound
+          # Degenerate case: nudge by 1% of the headroom to the feasibility
+          # bound 1/cd.  The nudge is NEGATIVE when s_j already exceeds 1/cd
+          # (a small step back toward feasibility) — an earlier comment
+          # claimed "toward upper bound", which is wrong in that case
+          # (review L10; comment only, behavior unchanged).
           (1 / cd - S[j_idx, j_idx]) * 0.01
         }
       )

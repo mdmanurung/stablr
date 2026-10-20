@@ -223,3 +223,10 @@ test_that("all-missing feature fails closed under center/scale without imputatio
     )
   }
 })
+
+test_that("zv removing ALL features fails closed at fit (L3 regression)", {
+  x <- matrix(rep(1:5, each = 20), 20, 5,
+              dimnames = list(NULL, paste0("f", 1:5)))
+  expect_error(stabl_preprocess_fit(x, transforms = "zv"),
+               "removed all features")
+})

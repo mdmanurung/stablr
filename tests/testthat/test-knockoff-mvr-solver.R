@@ -67,3 +67,12 @@ test_that("seeded MVR solving preserves the caller RNG state", {
 
   expect_identical(.Random.seed, caller_seed)
 })
+
+test_that(".scale_until_psd warns when no feasible gamma exists (L9 regression)", {
+  expect_warning(
+    res <- stablr:::.scale_until_psd(diag(2), diag(1e6, 2),
+                                     tol = 1e-5, num_iter = 10L),
+    "degenerate"
+  )
+  expect_identical(res$gamma, 0)
+})
