@@ -92,6 +92,15 @@ stabl <- function(x, y, family = "gaussian", base_learner = "lasso",
       x[[y]]    <- NULL
       y         <- outcome
     }
+    # A NAMED length-1 string naming a column is almost certainly an
+    # intended selector (the name is incidental); treating it as data
+    # fails deep with a confusing error.  Fail fast with guidance.
+    if (is.character(y) && length(y) == 1L && !is.null(names(y)) &&
+        y %in% colnames(x)) {
+      .abort_stablr("stablr_input_error", paste0("`y` looks like a column selector but is a named string ",
+        "(name: \"", names(y), "\"). Pass an unnamed string, e.g. ",
+        "`y = \"", y, "\"`."))
+    }
     if (!all(vapply(x, function(col) is.numeric(col), logical(1L)))) {
       stop(
         "`x` contains non-numeric columns. Remove identifier, factor, and ",

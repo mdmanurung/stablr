@@ -1,5 +1,38 @@
 # stablr 0.3.0.9000 (development)
 
+## Bug fixes (implementation review, 2026-10-20, batch F-3)
+
+- Accessor and input-validation errors are now typed `stablr_error`
+  conditions (`stablr_accessor_error` / `stablr_input_error`
+  subclasses), consistent with the package's conditions machinery;
+  messages are unchanged.
+- `.check_fitted_stabl()` now also requires `feature_names` to be a
+  character vector matching `nrow(stabl_scores_)` — a malformed object
+  previously made `get_feature_names()` return NULL, masquerading as an
+  empty support.  A stored out-of-range `hard_threshold` is now
+  re-validated on use.
+- `get_cooperative_diagnostics()` on a malformed multiomic CV object
+  now errors informatively (missing columns named) instead of
+  "undefined columns selected".
+- `print.stabl_fit()` no longer crashes when `min_fdr_` is set but
+  `fdr_min_threshold_` is NULL (`round(NULL)` errored); the two lines
+  are guarded separately.
+- `stabl()` now errors with guidance when `y` is a *named* length-1
+  string naming a column of `x` (previously treated as data, failing
+  deep); the column-selector contract is an unnamed string.
+- The ranger learner's seed-retry arithmetic no longer overflows to NA
+  near `.Machine$integer.max` (which crashed ranger on a retry); the
+  retry seed wraps within the valid range and attempt 1 is bit-identical
+  to before.  The internal NULL-seed draw is also bounded to the valid
+  range.
+- `inst/COPYING.cooperative` now discloses all four silent
+  upstream-bug fixes in the vendored cooperative backend (IRLS
+  step-halving warm-residual form, `lower.limits` propagation, the
+  `length(rho)` typo fix, and the `build_predmat` offset crash fix), so
+  future upstream diffs are not misread as regressions.
+- Removed the dead vendored `coef_ordered` generic and its two
+  unregistered, uncalled methods (disclosed in COPYING.cooperative).
+
 ## Bug fixes (implementation review, 2026-10-20, batch F-2)
 
 - `stabl_interpret()` permutation importance no longer uses

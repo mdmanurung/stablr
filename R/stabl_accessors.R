@@ -191,24 +191,21 @@ get_feature_names.stabl_fit <- function(object, new_hard_threshold = NULL) {
 transform_stabl <- function(object, x, new_hard_threshold = NULL) {
   .check_fitted_stabl(object)
   if (!(is.matrix(x) || is.data.frame(x))) {
-    stop("`x` must be a matrix or data.frame.", call. = FALSE)
+    .abort_stablr("stablr_accessor_error", "`x` must be a matrix or data.frame.")
   }
   feature_names <- colnames(x)
   if (is.null(feature_names) || anyNA(feature_names) || any(feature_names == "")) {
-    stop("`x` must have non-empty column names.", call. = FALSE)
+    .abort_stablr("stablr_accessor_error", "`x` must have non-empty column names.")
   }
   if (anyDuplicated(feature_names)) {
-    stop("`x` column names must not contain duplicates.", call. = FALSE)
+    .abort_stablr("stablr_accessor_error", "`x` column names must not contain duplicates.")
   }
 
   selected <- get_feature_names(object, new_hard_threshold = new_hard_threshold)
   missing <- setdiff(selected, feature_names)
   if (length(missing) > 0L) {
-    stop(
-      "`x` is missing selected feature columns: ",
-      paste(missing, collapse = ", "),
-      call. = FALSE
-    )
+    .abort_stablr("stablr_accessor_error", paste0("`x` is missing selected feature columns: ",
+      paste(missing, collapse = ", ")))
   }
 
   x[, selected, drop = FALSE]
@@ -278,10 +275,7 @@ get_cooperative_features.stabl_multiomic_fit <- function(object, view = NULL) {
   }
 
   if (length(view) != 1L || is.na(view) || !(view %in% names(features))) {
-    stop(
-      "`view` must name one of the cooperative-fusion omic views.",
-      call. = FALSE
-    )
+    .abort_stablr("stablr_accessor_error", "`view` must name one of the cooperative-fusion omic views.")
   }
 
   features[[view]]
@@ -352,13 +346,16 @@ get_cooperative_diagnostics.stabl_multiomic_cv <- function(object) {
   cooperative_cols <- grep("^cooperative_", names(diagnostics), value = TRUE)
 
   if (length(cooperative_cols) == 0L) {
-    stop(
-      "No cooperative-fusion diagnostics available; fit with `cooperative_fusion = TRUE`.",
-      call. = FALSE
-    )
+    .abort_stablr("stablr_accessor_error", "No cooperative-fusion diagnostics available; fit with `cooperative_fusion = TRUE`.")
+  }
+  need <- c("fold", "omic", cooperative_cols)
+  missing_cols <- setdiff(need, names(diagnostics))
+  if (length(missing_cols)) {
+    .abort_stablr("stablr_accessor_error", paste0("Malformed `diagnostics`: missing column(s) ",
+      paste(missing_cols, collapse = ", "), "."))
   }
 
-  diagnostics[, c("fold", "omic", cooperative_cols), drop = FALSE]
+  diagnostics[, need, drop = FALSE]
 }
 
 #' Get Per-Feature Importance Scores (Maximum Stability Score)
@@ -454,11 +451,8 @@ get_fdrs <- function(object) {
 get_fdrs.stabl_fit <- function(object) {
   .check_fitted_stabl(object)
   if (is.null(object$FDRs_)) {
-    stop(
-      "Object has no `FDRs_`: FDP+ diagnostics require artificial features; ",
-      "refit with an `artificial_type` (e.g. \"random_permutation\").",
-      call. = FALSE
-    )
+    .abort_stablr("stablr_accessor_error", paste0("Object has no `FDRs_`: FDP+ diagnostics require artificial features; ",
+      "refit with an `artificial_type` (e.g. \"random_permutation\")."))
   }
   fdrs       <- object$FDRs_
   thresholds <- object$fdr_threshold_range
@@ -522,8 +516,12 @@ print.stabl_fit <- function(x, ...) {
       cat("  Features selected: [threshold not yet resolved]\n")
     }
   )
+  # Guard each field separately: min_fdr_ can be non-NULL while
+  # fdr_min_threshold_ is NULL (round(NULL) prints an empty line).
   if (!is.null(x$min_fdr_)) {
     cat("  Min FDP+:        ", round(x$min_fdr_, 4L), "\n")
+  }
+  if (!is.null(x$fdr_min_threshold_)) {
     cat("  FDP+ threshold:  ", round(x$fdr_min_threshold_, 4L), "\n")
   }
   if (!is.null(x$hard_threshold)) {
@@ -592,12 +590,19 @@ print.stabl_multiomic_cv <- function(x, ...) {
 # Resolve the effective threshold for a fitted stabl_fit object.
 # Precedence: new_hard_threshold > object$hard_threshold > object$fdr_min_threshold_.
 # on_missing controls what happens when all three are NULL:
-#   "error"  — stop() with the canonical accessor error message (default)
+#   "error"  — .abort_stablr("stablr_accessor_error", ) with the canonical accessor error message (default)
 #   "null"   — return NULL silently (used when threshold is optional, e.g. plot annotations)
 #   "na"     — return NA_real_ (used in multiomic threshold helpers)
 .resolve_stabl_threshold <- function(object, new_hard_threshold = NULL,
                                      on_missing = c("error", "null", "na")) {
   on_missing <- match.arg(on_missing)
+  # A stored hard_threshold is user-supplied state: re-validate on use so a
+  # hand-built object cannot silently select all/nothing (review api#6).
+  if (!is.null(object$hard_threshold)) {
+    object$hard_threshold <- .validate_proportion(
+      object$hard_threshold, "hard_threshold"
+    )
+  }
   threshold  <- if (!is.null(new_hard_threshold)) {
     new_hard_threshold
   } else if (!is.null(object$hard_threshold)) {
@@ -614,9 +619,7 @@ print.stabl_multiomic_cv <- function(x, ...) {
     on_missing,
     error = stop(
       "No threshold available: fit with `artificial_type` or supply ",
-      "`hard_threshold`.",
-      call. = FALSE
-    ),
+      "`hard_threshold`."),
     null = NULL,
     na   = NA_real_
   )
@@ -624,28 +627,28 @@ print.stabl_multiomic_cv <- function(x, ...) {
 
 .check_fitted_stabl <- function(object) {
   if (is.null(object$stabl_scores_)) {
-    stop(
-      "Object has no `stabl_scores_`: ensure `stabl_fit()` completed.",
-      call. = FALSE
-    )
+    .abort_stablr("stablr_accessor_error", "Object has no `stabl_scores_`: ensure `stabl_fit()` completed.")
+  }
+  # A malformed object with NULL/mismatched feature_names otherwise makes
+  # get_feature_names() return NULL — masquerading as an empty support
+  # (review api#6).
+  if (is.null(object$feature_names) ||
+      !is.character(object$feature_names) ||
+      length(object$feature_names) != nrow(object$stabl_scores_)) {
+    .abort_stablr("stablr_accessor_error", paste0("Object has missing or mismatched `feature_names`: expected ",
+      "one per row of `stabl_scores_`."))
   }
   invisible(NULL)
 }
 
 .check_cooperative_branch <- function(object) {
   if (is.null(object$cooperative_fusion)) {
-    stop(
-      "No cooperative-fusion branch available; fit with `cooperative_fusion = TRUE`.",
-      call. = FALSE
-    )
+    .abort_stablr("stablr_accessor_error", "No cooperative-fusion branch available; fit with `cooperative_fusion = TRUE`.")
   }
 
   if (is.null(object$cooperative_fusion$selected_features) ||
       is.null(object$cooperative_fusion$diagnostics)) {
-    stop(
-      "Malformed cooperative-fusion branch: expected `selected_features` and `diagnostics`.",
-      call. = FALSE
-    )
+    .abort_stablr("stablr_accessor_error", "Malformed cooperative-fusion branch: expected `selected_features` and `diagnostics`.")
   }
 
   object$cooperative_fusion

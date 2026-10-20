@@ -20,6 +20,32 @@ Local modifications:
   native registration/build files were integrated with stablr. Algorithmic
   cooperative-learning code remains derived from multiview 1.0.
 
+  Four silent upstream-bug fixes diverge from byte-parity with multiview
+  1.0 (all verified correct; all unreachable or zero-impact in-package
+  because the backend never exposes `offset`):
+  1. cooperative-multiview.path.R (~:770): in the IRLS step-halving
+     branch the warm-residual update is
+     `w_std * (target - g_eta + g_offset)` — upstream multiview 1.0 has
+     `w_std * (target - g_eta) + g_offset` at the equivalent site while
+     its sibling site (~:659) uses the offset-inside form in both
+     codebases; upstream is internally inconsistent and the vendored
+     copy uses the consistent form.
+  2. cooperative-multiview.path.R (~:683): the warm-started `elnet.fit`
+     call propagates `lower.limits`; upstream drops it on IRLS
+     iterations >= 2.
+  3. cooperative-multiview.R (~:251): `if (length(rho) != 1L || rho < 0)`
+     fixes an upstream typo `if (rho < 0 || length(row) != 1L)` (`row`
+     resolves to `base::row`, so upstream never rejects vector `rho`).
+  4. cooperative-build_predmat.R (~:26): `offset_sub <- offset[which,
+     drop = FALSE]` fixes upstream `offset_sub <- rep(offset_sub[which,
+     drop = FALSE])`, which references `offset_sub` before it exists and
+     crashes on any CV fit with non-NULL offset.
+
+  Additionally, the unexported, unregistered, and uncalled upstream
+  `coef_ordered` generic and its `coef_ordered.multiview` /
+  `coef_ordered.cv.multiview` methods were removed as dead code
+  (2026-10-20, implementation-review batch F-3).
+
 This component is licensed under the GNU General Public License, version 2.
 See https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 

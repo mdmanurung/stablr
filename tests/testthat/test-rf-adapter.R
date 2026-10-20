@@ -252,3 +252,12 @@ test_that("permutation importance retry never returns NaN on tiny subsamples", {
     expect_false(anyNA(imp))
   }
 })
+
+test_that("rf retry seed never overflows near the integer max (N1 regression)", {
+  expect_identical(stablr:::.rf_retry_seed(42L, 1L), 42L)
+  for (att in 1:3) {
+    s <- stablr:::.rf_retry_seed(.Machine$integer.max - 5L, att)
+    expect_false(is.na(s))
+    expect_true(s >= 1L && s <= .Machine$integer.max - 1L)
+  }
+})

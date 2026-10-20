@@ -179,3 +179,62 @@ test_that("C5: stabl_multiomic_cv forwards ... to the fixed late-fusion path", {
   expect_true(all(vapply(cv$fold_results, function(f) !is.null(f$late_fusion),
                          logical(1L))))
 })
+
+test_that(".check_fitted_stabl rejects NULL or mismatched feature_names (api#6 regression)", {
+  fake <- list(
+    stabl_scores_ = matrix(0.5, 3, 2,
+                           dimnames = list(c("a", "b", "c"), NULL)),
+    feature_names = NULL
+  )
+  class(fake) <- "stabl_fit"
+  expect_error(stablr:::.check_fitted_stabl(fake), "feature_names")
+  fake$feature_names <- c("a", "b")  # wrong length
+  expect_error(stablr:::.check_fitted_stabl(fake), "feature_names")
+})
+
+test_that("a stored out-of-range hard_threshold is re-validated on use (api#6 regression)", {
+  fake <- list(
+    stabl_scores_ = matrix(0.5, 3, 2,
+                           dimnames = list(c("a", "b", "c"), NULL)),
+    feature_names = c("a", "b", "c"),
+    hard_threshold = 1.5,
+    fdr_min_threshold_ = NULL
+  )
+  class(fake) <- "stabl_fit"
+  expect_error(stablr:::.resolve_stabl_threshold(fake, NULL),
+               "hard_threshold")
+})
+
+test_that("get_cooperative_diagnostics errors informatively on malformed diagnostics", {
+  fake <- list(diagnostics = data.frame(omic = "a", cooperative_x = 1))
+  class(fake) <- "stabl_multiomic_cv"
+  expect_error(get_cooperative_diagnostics(fake), "missing column")
+})
+
+test_that("print.stabl_fit omits the FDP+ threshold line when it is NULL", {
+  fake <- list(
+    n_features_in_ = 3L,
+    stabl_scores_ = matrix(c(0.9, 0.1, 0.2), 3, 1,
+                           dimnames = list(c("a", "b", "c"), NULL)),
+    feature_names = c("a", "b", "c"),
+    min_fdr_ = 0.1,
+    fdr_min_threshold_ = NULL,
+    hard_threshold = 0.5
+  )
+  class(fake) <- "stabl_fit"
+  out <- capture.output(print(fake))
+  expect_true(any(grepl("Min FDP\\+", out)))
+  expect_false(any(grepl("FDP\\+ threshold:", out)))
+})
+
+test_that("accessor and input-validation errors are typed stablr_error conditions (api#7)", {
+  fake <- list(stabl_scores_ = NULL)
+  class(fake) <- "stabl_fit"
+  cnd <- tryCatch(stablr:::.check_fitted_stabl(fake), error = identity)
+  expect_s3_class(cnd, "stablr_accessor_error")
+  expect_s3_class(cnd, "stablr_error")
+  cnd2 <- tryCatch(validate_sample_alignment(matrix(1:4, 2, 2), 1:2),
+                   error = identity)
+  expect_s3_class(cnd2, "stablr_input_error")
+  expect_s3_class(cnd2, "stablr_error")
+})

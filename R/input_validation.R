@@ -39,45 +39,42 @@
 #' @export
 validate_sample_alignment <- function(x, y, groups = NULL) {
   if (!(is.data.frame(x) || is.matrix(x))) {
-    stop("`x` must be a data.frame or matrix.", call. = FALSE)
+    .abort_stablr("stablr_input_error", "`x` must be a data.frame or matrix.")
   }
 
   sample_ids <- rownames(x)
   if (is.null(sample_ids) || anyNA(sample_ids) || any(sample_ids == "")) {
-    stop("`x` must have non-empty row names used as sample ids.", call. = FALSE)
+    .abort_stablr("stablr_input_error", "`x` must have non-empty row names used as sample ids.")
   }
   .validate_unique_names(sample_ids, "`x` row names")
   .validate_feature_names(x, "`x`")
 
   y_ids <- .outcome_sample_ids(y)
   if (is.null(y_ids)) {
-    stop(
-      "`y` must be a named vector or matrix-like outcome with row names as sample ids.",
-      call. = FALSE
-    )
+    .abort_stablr("stablr_input_error", "`y` must be a named vector or matrix-like outcome with row names as sample ids.")
   }
   .validate_unique_names(y_ids, "`y` sample ids")
 
   if (!setequal(sample_ids, y_ids)) {
-    stop("Sample mismatch between `x` row names and `y` names.", call. = FALSE)
+    .abort_stablr("stablr_input_error", "Sample mismatch between `x` row names and `y` names.")
   }
 
   y_ordered <- .subset_outcome_by_ids(y, sample_ids)
   if (anyNA(y_ordered)) {
-    stop("`y` cannot contain missing sample mappings after alignment.", call. = FALSE)
+    .abort_stablr("stablr_input_error", "`y` cannot contain missing sample mappings after alignment.")
   }
 
   if (!is.null(groups)) {
     if (is.null(names(groups))) {
-      stop("`groups` must be a named vector where names are sample ids.", call. = FALSE)
+      .abort_stablr("stablr_input_error", "`groups` must be a named vector where names are sample ids.")
     }
     .validate_unique_names(names(groups), "`groups` sample ids")
     if (!setequal(sample_ids, names(groups))) {
-      stop("Sample mismatch between `x` row names and `groups` names.", call. = FALSE)
+      .abort_stablr("stablr_input_error", "Sample mismatch between `x` row names and `groups` names.")
     }
     groups_ordered <- groups[sample_ids]
     if (anyNA(groups_ordered)) {
-      stop("`groups` cannot contain missing sample mappings after alignment.", call. = FALSE)
+      .abort_stablr("stablr_input_error", "`groups` cannot contain missing sample mappings after alignment.")
     }
   }
 
@@ -106,7 +103,7 @@ validate_sample_alignment <- function(x, y, groups = NULL) {
   idx <- match(sample_ids, y_ids)
 
   if (anyNA(idx)) {
-    stop("`y` cannot contain missing sample mappings after alignment.", call. = FALSE)
+    .abort_stablr("stablr_input_error", "`y` cannot contain missing sample mappings after alignment.")
   }
 
   if (is.matrix(y) || is.data.frame(y) || inherits(y, "Surv")) {
@@ -160,18 +157,18 @@ validate_sample_alignment <- function(x, y, groups = NULL) {
 #' @export
 validate_multiomic_inputs <- function(x_list, y, groups = NULL) {
   if (!is.list(x_list) || length(x_list) == 0L) {
-    stop("`x_list` must be a non-empty named list.", call. = FALSE)
+    .abort_stablr("stablr_input_error", "`x_list` must be a non-empty named list.")
   }
 
   if (is.null(names(x_list)) || anyNA(names(x_list)) || any(names(x_list) == "")) {
-    stop("`x_list` must have non-empty names for each omic table.", call. = FALSE)
+    .abort_stablr("stablr_input_error", "`x_list` must have non-empty names for each omic table.")
   }
   .validate_unique_names(names(x_list), "omic names")
 
   for (name in names(x_list)) {
     x <- x_list[[name]]
     if (!(is.data.frame(x) || is.matrix(x))) {
-      stop(sprintf("Omic '%s' must be a data.frame or matrix.", name), call. = FALSE)
+      .abort_stablr("stablr_input_error", sprintf("Omic '%s' must be a data.frame or matrix.", name))
     }
     .validate_feature_names(x, sprintf("omic '%s'", name))
     validate_sample_alignment(x = x, y = y, groups = groups)
@@ -180,10 +177,7 @@ validate_multiomic_inputs <- function(x_list, y, groups = NULL) {
   base_ids <- rownames(x_list[[1]])
   for (name in names(x_list)[-1]) {
     if (!identical(base_ids, rownames(x_list[[name]]))) {
-      stop(
-        sprintf("All omic tables must have identical sample order; mismatch at omic '%s'.", name),
-        call. = FALSE
-      )
+      .abort_stablr("stablr_input_error", sprintf("All omic tables must have identical sample order; mismatch at omic '%s'.", name))
     }
   }
 
@@ -205,14 +199,11 @@ validate_multiomic_inputs <- function(x_list, y, groups = NULL) {
   allowed <- .supported_cooperation_type_measures(family)
 
   if (!(type_measure %in% allowed)) {
-    stop(
-      sprintf(
+    .abort_stablr("stablr_input_error", sprintf(
         "`cooperation_type_measure` must be one of %s for family '%s'.",
         paste(sprintf("'%s'", allowed), collapse = ", "),
         family
-      ),
-      call. = FALSE
-    )
+      ))
   }
 
   if (!identical(type_measure, "default")) {
@@ -225,8 +216,7 @@ validate_multiomic_inputs <- function(x_list, y, groups = NULL) {
     binomial = "deviance",
     poisson = "deviance",
     cox = "deviance",
-    stop(sprintf("No default type_measure for unsupported family '%s'.", family),
-         call. = FALSE)
+    .abort_stablr("stablr_input_error", sprintf("No default type_measure for unsupported family '%s'.", family))
   )
 }
 
@@ -243,24 +233,15 @@ validate_multiomic_inputs <- function(x_list, y, groups = NULL) {
   cooperation_selector <- match.arg(cooperation_selector)
 
   if (!.has_cooperative_backend()) {
-    stop(
-      "Cooperative fusion backend is unavailable.",
-      call. = FALSE
-    )
+    .abort_stablr("stablr_input_error", "Cooperative fusion backend is unavailable.")
   }
 
   if (length(x_list) < 2L) {
-    stop(
-      "`cooperative_fusion = TRUE` requires at least two omic views.",
-      call. = FALSE
-    )
+    .abort_stablr("stablr_input_error", "`cooperative_fusion = TRUE` requires at least two omic views.")
   }
 
   if (!(family %in% c("gaussian", "binomial"))) {
-    stop(
-      "`cooperative_fusion = TRUE` currently supports family = 'gaussian' or 'binomial'.",
-      call. = FALSE
-    )
+    .abort_stablr("stablr_input_error", "`cooperative_fusion = TRUE` currently supports family = 'gaussian' or 'binomial'.")
   }
 
   if (is.null(rho)) {
@@ -268,11 +249,11 @@ validate_multiomic_inputs <- function(x_list, y, groups = NULL) {
   }
 
   if (!is.numeric(rho) || length(rho) == 0L || anyNA(rho) || any(!is.finite(rho))) {
-    stop("`rho` must be a non-empty numeric scalar or vector.", call. = FALSE)
+    .abort_stablr("stablr_input_error", "`rho` must be a non-empty numeric scalar or vector.")
   }
 
   if (any(rho < 0)) {
-    stop("`rho` must contain only non-negative values.", call. = FALSE)
+    .abort_stablr("stablr_input_error", "`rho` must contain only non-negative values.")
   }
 
   cooperation_nfolds <- .validate_scalar_integer_like(
@@ -281,22 +262,16 @@ validate_multiomic_inputs <- function(x_list, y, groups = NULL) {
     min = 3L
   )
   if (cooperation_nfolds < 3L) {
-    stop("`cooperation_nfolds` must be greater than or equal to 3.", call. = FALSE)
+    .abort_stablr("stablr_input_error", "`cooperation_nfolds` must be greater than or equal to 3.")
   }
 
   if (identical(cooperative_selection, "validation")) {
     if (is.null(x_valid_list) || is.null(y_valid)) {
-      stop(
-        "`cooperation_selection = 'validation'` requires both `x_valid_list` and `y_valid`.",
-        call. = FALSE
-      )
+      .abort_stablr("stablr_input_error", "`cooperation_selection = 'validation'` requires both `x_valid_list` and `y_valid`.")
     }
 
     if (identical(cooperation_selector, "lambda.1se")) {
-      stop(
-        "`cooperation_selector = 'lambda.1se'` is only available when `cooperation_selection = 'cv'`.",
-        call. = FALSE
-      )
+      .abort_stablr("stablr_input_error", "`cooperation_selector = 'lambda.1se'` is only available when `cooperation_selection = 'cv'`.")
     }
   }
 
@@ -316,7 +291,7 @@ validate_multiomic_inputs <- function(x_list, y, groups = NULL) {
 
 .validate_unique_names <- function(x, what) {
   if (anyDuplicated(x)) {
-    stop(sprintf("%s must not contain duplicate values.", what), call. = FALSE)
+    .abort_stablr("stablr_input_error", sprintf("%s must not contain duplicate values.", what))
   }
   invisible(TRUE)
 }
@@ -327,10 +302,10 @@ validate_multiomic_inputs <- function(x_list, y, groups = NULL) {
     return(invisible(TRUE))
   }
   if (anyNA(feature_names) || any(feature_names == "")) {
-    stop(sprintf("%s feature names must be non-empty.", what), call. = FALSE)
+    .abort_stablr("stablr_input_error", sprintf("%s feature names must be non-empty.", what))
   }
   if (anyDuplicated(feature_names)) {
-    stop(sprintf("%s feature names must not contain duplicates.", what), call. = FALSE)
+    .abort_stablr("stablr_input_error", sprintf("%s feature names must not contain duplicates.", what))
   }
   invisible(TRUE)
 }
@@ -342,13 +317,13 @@ validate_multiomic_inputs <- function(x_list, y, groups = NULL) {
     return(NULL)
   }
   if (!is.numeric(x) || length(x) != 1L || is.na(x) || !is.finite(x)) {
-    stop(sprintf("`%s` must be a finite numeric scalar.", arg), call. = FALSE)
+    .abort_stablr("stablr_input_error", sprintf("`%s` must be a finite numeric scalar.", arg))
   }
   if ((min_open && x <= min) || (!min_open && x < min)) {
-    stop(sprintf("`%s` must be %s %s.", arg, if (min_open) ">" else ">=", min), call. = FALSE)
+    .abort_stablr("stablr_input_error", sprintf("`%s` must be %s %s.", arg, if (min_open) ">" else ">=", min))
   }
   if ((max_open && x >= max) || (!max_open && x > max)) {
-    stop(sprintf("`%s` must be %s %s.", arg, if (max_open) "<" else "<=", max), call. = FALSE)
+    .abort_stablr("stablr_input_error", sprintf("`%s` must be %s %s.", arg, if (max_open) "<" else "<=", max))
   }
   x
 }
@@ -366,7 +341,7 @@ validate_multiomic_inputs <- function(x_list, y, groups = NULL) {
     return(NULL)
   }
   if (x != floor(x)) {
-    stop(sprintf("`%s` must be an integer-like scalar.", arg), call. = FALSE)
+    .abort_stablr("stablr_input_error", sprintf("`%s` must be an integer-like scalar.", arg))
   }
   as.integer(x)
 }

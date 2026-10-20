@@ -165,6 +165,18 @@ auto_rf_threshold_grid <- function(x, y, n_grid = 30L, num_trees = 500L,
 
 # ---- Internal helpers ---------------------------------------------------------
 
+# Overflow-safe retry seed (review N1): `seed + (attempt - 1L) * 104729L` in
+# integer arithmetic overflows to NA near .Machine$integer.max, crashing
+# ranger.  Compute in double and wrap into [1, .Machine$integer.max - 1];
+# attempt 1 is bit-identical to the pre-fix seed, so existing seeded
+# behavior is unchanged (retries only fire on degenerate importance).
+.rf_retry_seed <- function(seed, attempt) {
+  as.integer(
+    (as.numeric(seed) + (attempt - 1) * 104729 - 1) %%
+      (.Machine$integer.max - 1) + 1
+  )
+}
+
 # Fit one ranger forest and return its permutation importance as a named
 # numeric vector of length ncol(x).  ranger requires column names on `x`
 # ("No covariates found" otherwise), so unnamed matrices are named here.
@@ -176,7 +188,9 @@ auto_rf_threshold_grid <- function(x, y, n_grid = 30L, num_trees = 500L,
   # instead, honouring the documented seeding contract; results remain
   # reproducible when the caller has seeded the stream (e.g. via
   # stabl_fit(random_state = ...)).
-  seed <- seed %||% sample.int(.Machine$integer.max, 1L)
+  # Draw within the valid range: .Machine$integer.max itself is rejected by
+  # ranger (same bound as replication.R's seed draw).
+  seed <- seed %||% sample.int(.Machine$integer.max - 1L, 1L)
   x <- as.matrix(x)
   if (is.null(colnames(x))) {
     colnames(x) <- paste0("x", seq_len(ncol(x)))
@@ -194,7 +208,7 @@ auto_rf_threshold_grid <- function(x, y, n_grid = 30L, num_trees = 500L,
       num.trees                 = num_trees,
       importance                = "permutation",
       respect.unordered.factors = TRUE,
-      seed                      = seed + (attempt - 1L) * 104729L
+      seed                      = .rf_retry_seed(seed, attempt)
     )
     importance <- fit$variable.importance
     if (!is.null(importance) && length(importance) == ncol(x) &&

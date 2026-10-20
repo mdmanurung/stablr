@@ -163,3 +163,10 @@ test_that("stabl_fit(groups =) warns once and matches sample_groups =", {
   )
   expect_length(w2, 0L)
 })
+
+test_that("a named length-1 character y naming a column errors with guidance", {
+  set.seed(1)
+  df <- data.frame(a = rnorm(30), b = rnorm(30), out = rnorm(30))
+  rownames(df) <- paste0("s", 1:30)
+  expect_error(stabl(df, c(mycol = "out")), "named string")
+})

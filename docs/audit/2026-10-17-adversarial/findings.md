@@ -1725,6 +1725,85 @@ check 0E/0W/1N (pre-existing installed-size NOTE; doc 3.8 Mb); all
 12 vignettes rebuild clean.  NEWS.md entries are docs-only and parse-verified with
 utils::news(); the code tree is exactly the gated tree.
 
+**Batch F-3 API/accessor + numerical + disclosure PR (2026-10-20):**
+implementation-review findings api#6, api#7, api#14, api#15, the stabl()
+named-y guard, N1, N2, and the dead-vendored-code decision (third batch of
+the post-E-triage remainder; "patch all issues thoroughly" directive —
+the typed-error conversion is INCLUDED, reversing my earlier deferral
+proposal).
+
+- api#7 (`R/stabl_accessors.R`, `R/input_validation.R`): all 41 real
+  `stop(..., call. = FALSE)` sites converted to typed
+  `.abort_stablr("stablr_accessor_error" / "stablr_input_error", ...)`
+  conditions, consistent with the package's conditions machinery.
+  Messages are byte-preserved (two multi-argument `stop()` calls were
+  re-wrapped in `paste0` — `stop("a", "b")` concatenates, and a naive
+  conversion would have bound the second fragment to `call`; both caught
+  by a top-level-comma scan and fixed).  `call = NULL` in
+  `.abort_stablr` is display-equivalent to `call. = FALSE`.
+- api#6 (`R/stabl_accessors.R`): `.check_fitted_stabl` only checked
+  `stabl_scores_` presence — a malformed object with
+  `feature_names = NULL` made `get_feature_names()` return NULL
+  (masquerading as an empty support).  The check now also requires
+  `feature_names` to be a character vector whose length matches
+  `nrow(stabl_scores_)`.  Separately, a stored `hard_threshold` outside
+  (0,1] was never re-validated (only `new_hard_threshold` was);
+  `.resolve_stabl_threshold` now validates the stored value on use.
+- api#14 (`R/stabl_accessors.R`,
+  `get_cooperative_diagnostics.stabl_multiomic_cv`): assumed `fold`/`omic`
+  columns exist; a malformed object errored with "undefined columns
+  selected".  Column presence is now checked with an informative typed
+  error.
+- api#15 (`R/stabl_accessors.R`, `print.stabl_fit`): `min_fdr_` non-NULL
+  with `fdr_min_threshold_` NULL reached `round(NULL, 4L)` — which in
+  this R version ERRORS ("non-numeric argument to mathematical
+  function"), crashing the print method (the review predicted an empty
+  line; empirically it is a crash — noted).  The two lines are now
+  guarded separately.
+- stabl() named-y guard (`R/stabl.R`): a *named* length-1 character `y`
+  naming a column of `x` was treated as data (the selector contract is a
+  plain unnamed string), failing deep with a confusing mismatch error.
+  It now stops at entry naming the problem and the fix.
+- N1 (`R/learner_rf.R`): the ranger seed retry
+  `seed + (attempt - 1L) * 104729L` overflows to NA near
+  `.Machine$integer.max`, crashing ranger.  Extracted to
+  `.rf_retry_seed()`: double-precision arithmetic wrapped into
+  [1, .Machine$integer.max - 1]; attempt 1 is bit-identical to the
+  pre-fix seed (retries only fire on degenerate importance, so existing
+  seeded behavior is unchanged).  The internal NULL-seed draw is also
+  bounded to the valid range (same class as replication#5).
+- N2 (`inst/COPYING.cooperative`): the vendored cooperative backend's
+  four silent, verified-correct upstream-bug fixes are now disclosed
+  (IRLS step-halving warm-residual form at cooperative-multiview.path.R
+  ~:770; `lower.limits` propagation ~:683; `length(rho)` typo fix at
+  cooperative-multiview.R ~:251; `build_predmat` offset crash fix at
+  cooperative-build_predmat.R ~:26), so future upstream diffs are not
+  misread as regressions.  All four are unreachable or zero-impact
+  in-package (the backend never exposes `offset`).
+- Dead vendored code (delegated decision: remove): the `coef_ordered`
+  generic and its two unregistered, uncalled methods removed (140 lines;
+  remaining references are inert upstream comments).  Disclosed in
+  COPYING.cooperative.  **Scope correction vs the review:**
+  `.has_cooperative_backend()` is NOT removed — contrary to the review's
+  "uncalled vestige" note, it is called at input_validation.R and
+  multiomic_workflows.R and is mocked by two tests as the seam for the
+  no-backend guard path.
+
+Regression tests, each confirmed to FAIL against the pre-fix code
+(git-stash negative control): NULL/mismatched `feature_names` rejected
+(api#6a); stored out-of-range `hard_threshold` errors on use (api#6b);
+malformed diagnostics error names the missing columns (api#14); the
+NULL-threshold print completes with the line omitted (api#15 — pre-fix
+it errored); typed-condition classes asserted for both new subclasses
+(api#7); named-y selector errors with guidance; `.rf_retry_seed` is
+overflow-safe near the integer max and bit-identical at attempt 1 (N1 —
+ranger is installed here, and the helper extraction makes the arithmetic
+directly testable).  N2 and the dead-code removal are docs/deletion —
+covered by the release-hygiene suite and R CMD check.
+
+Gates: suite 62 files / 0 failed / 0 errors / 1 skip / 3 warnings (exact parity with PR-G); R CMD check 0E/0W/1N (pre-existing installed-size NOTE; doc 3.8 Mb); all 12 vignettes rebuild clean.  NEWS.md entries are docs-only and parse-verified with
+utils::news(); the code tree is exactly the gated tree.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3
