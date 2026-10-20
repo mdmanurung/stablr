@@ -1869,6 +1869,53 @@ comment-only, disclosed here; covered by R CMD check.
 Gates: suite 62 files / 0 failed / 0 errors / 1 skip / 3 warnings (exact parity with PR-G); R CMD check 0E/0W/1N (pre-existing installed-size NOTE; doc 3.8 Mb); all 12 vignettes rebuild clean.  NOTE: the first gate run on this batch CAUGHT a codoc WARNING (stale make_ranger_adapter.Rd predating the L11 family formal) — fixed by regenerating both stale hand-written Rd files, then re-gated on the final tree.  NEWS.md entries are docs-only and parse-verified with
 utils::news(); the code tree is exactly the gated tree.
 
+**Batch F-5 nested-CV PR (2026-10-20):** implementation-review findings
+C6, C7, C10, C11 (fifth batch of the post-E-triage remainder).
+
+- C6 (`R/nested_cv.R`, `.fit_selected_regressor`): the gaussian downstream
+  regressor's `nfolds = max(3L, min(5L, length(y_train)))` exceeds n when
+  an outer-training split has fewer than 3 samples.  The review predicted
+  empty folds and a NaN `lambda.min`; empirically (this glmnet version)
+  `cv.glmnet` instead ERRORS ("y is constant" from 1-sample in-fold
+  training) and the error escapes the `stablr_numerical_infeasibility`
+  handler — an uncaught crash, verified by direct probe.  n < 3 now routes
+  to the intercept-only fallback.  Latent in-package (stabl_fit fails on
+  such tiny splits first); fail-closed hardening.
+- C7 (`R/nested_cv.R`): `.evaluate_stabl_candidates_inner()` took a
+  `train_ids` formal it never referenced (the inner folds carry their own
+  `train_ids`).  Removed from the signature and the single call site; no
+  test called it directly.
+- C10 (`R/nested_cv.R`, `.make_nested_strata`): numeric `strata` whose
+  quantile breaks collapse to fewer than 2 interior breaks under heavy
+  ties silently became a single `"all"` stratum — stratification disabled
+  with no signal.  Now warns informatively.
+- C11 (test gap): no test exercised `stratified = FALSE` nested CV
+  end-to-end.  Two blocks added: (a) unstratified nested CV under class
+  skew (50/10) completes with the full result structure
+  (random_state = 1; the fragility is real — random_state = 7 draws an
+  infeasible split, which is exactly what block (b) pins); (b) the
+  infeasible draw fails closed with a typed `stablr_bootstrap_infeasible`
+  (subclass of `stablr_error`), not an opaque crash.
+
+Regression tests confirmed to FAIL against the pre-fix code (git-stash
+negative control): C6 (pre-fix uncaught error), C7 (formal present
+pre-fix), C10 (no warning pre-fix).  The two C11 blocks are GAP coverage
+that passes both ways by construction (the completion path is unchanged
+code; the typed error pre-exists) — disclosed honestly.
+
+Gates: suite 62 files / 0 failed / 0 errors / 1 skip / 3 warnings (exact parity with PR-G; the first gate run of this batch caught a 4th warning — the C10 collapse guardrail firing in the gaussian-validated test — pinned with expect_warning at that call site, then re-gated on the final tree); R CMD check 0E/0W/1N (pre-existing installed-size NOTE; doc 3.8 Mb); all 12 vignettes rebuild clean.  NEWS.md entries are docs-only and parse-verified with
+utils::news(); the code tree is exactly the gated tree.
+
+**Warning-budget reconciliation:** the C10 collapse warning fires in the
+pre-existing gaussian-validated test (binary numeric outcome -> quantile
+bins collapse to one stratum).  The warning is correct and intentional;
+it is now pinned with `expect_warning` at that call site, keeping the
+suite at exactly 3 warnings.  Design tension disclosed: a binary numeric
+`strata` could instead be auto-treated as categorical (2-class
+stratification is strictly more informative than the collapsed "all"
+stratum) — deferred as out of review scope (warn-only was the
+recommendation); flagged for the 1.0.0 behavior discussion.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3

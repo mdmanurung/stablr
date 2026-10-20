@@ -522,6 +522,11 @@ stabl_multiomic_nested_cv <- function(
                                      na.rm = TRUE, names = FALSE,
                                      type = 7))
     if (length(breaks) < 3L) {
+      # Heavily tied numeric strata collapse to a single stratum — say so
+      # instead of silently disabling stratification (review C10).
+      warning("Numeric `strata` has fewer than 2 distinct interior quantile ",
+              "breaks (heavily tied values); stratification is effectively ",
+              "disabled.", call. = FALSE)
       out <- factor(rep("all", length(strata)))
     } else {
       out <- cut(as.numeric(strata), breaks = breaks, include.lowest = TRUE,
@@ -853,7 +858,7 @@ stabl_multiomic_nested_cv <- function(
                .Machine$integer.max)
 }
 
-.evaluate_stabl_candidates_inner <- function(x_list, y, train_ids, candidates,
+.evaluate_stabl_candidates_inner <- function(x_list, y, candidates,
                                              inner_folds, lambda_grid, metric,
                                              family, n_bootstraps,
                                              artificial_type, hard_threshold,
@@ -1388,6 +1393,15 @@ stabl_multiomic_nested_cv <- function(
     ))
   }
 
+  if (length(y_train) < 3L) {
+    # cv.glmnet needs nfolds <= n; the max(3L, ...) floor would exceed n
+    # below 3 samples.  Empirically glmnet then errors ("y is constant"
+    # from 1-sample in-fold training) — an UNCAUGHT crash, not the NaN the
+    # review predicted.  Route to the intercept fallback (review C6;
+    # latent — stabl_fit itself fails on such tiny splits first).
+    return(intercept_fallback())
+  }
+
   tryCatch(
     {
       fit <- .with_glmnet_numerical_infeasibility(
@@ -1538,7 +1552,6 @@ stabl_multiomic_nested_cv <- function(
   inner_eval <- .evaluate_stabl_candidates_inner(
     x_list = x_list,
     y = y,
-    train_ids = train_ids,
     candidates = candidates,
     inner_folds = inner_folds,
     lambda_grid = lambda_grid,

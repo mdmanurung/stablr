@@ -475,3 +475,94 @@ test_that("candidate selection fails closed when the metric is all-NA (E3 regres
   summary$r2 <- c(NA_real_, 0.5)
   expect_identical(stablr:::.select_nested_candidate(summary, "r2"), "b")
 })
+
+test_that("tiny outer-training splits route to the intercept fallback (C6 regression)", {
+  set.seed(1)
+  res <- stablr:::.fit_selected_regressor(
+    matrix(rnorm(8), 2, 4), c(1.5, 2.5), matrix(rnorm(4), 1, 4),
+    random_state = 1L
+  )
+  expect_identical(res$fallback, "training_mean")
+  expect_equal(res$predicted, mean(c(1.5, 2.5)))
+})
+
+test_that(".evaluate_stabl_candidates_inner has no dead train_ids formal (C7 regression)", {
+  expect_false("train_ids" %in%
+                 names(formals(stablr:::.evaluate_stabl_candidates_inner)))
+})
+
+test_that("collapsed numeric strata warn instead of silently disabling stratification (C10 regression)", {
+  ids <- paste0("s", 1:20)
+  y <- setNames(factor(rep(c("A", "B"), 10)), ids)
+  tied <- setNames(c(rep(0, 19), 1), ids)
+  expect_warning(
+    out <- stablr:::.make_nested_strata(tied, y, ids),
+    "stratification"
+  )
+  expect_identical(levels(out), "all")
+})
+
+test_that("unstratified nested CV with skewed classes completes gracefully (C11)", {
+  set.seed(1)
+  n <- 60L
+  ids <- paste0("s", seq_len(n))
+  y <- setNames(factor(c(rep("A", 50L), rep("B", 10L))), ids)
+  x <- matrix(rnorm(n * 6L, sd = 0.5), nrow = n,
+              dimnames = list(ids, paste0("f", seq_len(6L))))
+  x[y == "A", 1:2] <- x[y == "A", 1:2] + 1
+
+  # Unstratified folds under skew are genuinely fragile: with this draw the
+  # run is feasible (random_state = 7 is not — pinned by the sibling test).
+  fit <- suppressWarnings(stabl_multiomic_nested_cv(
+    x_list = list(mrna = x),
+    y = y,
+    candidates = list(list(name = "mrna", blocks = "mrna")),
+    lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+    outer_v = 4L,
+    outer_repeats = 1L,
+    inner_v = 3L,
+    stratified = FALSE,
+    metric = "ber",
+    family = "binomial",
+    artificial_type = NULL,
+    hard_threshold = 1e-9,
+    n_bootstraps = 3L,
+    sample_fraction = 1.0,
+    random_state = 1L
+  ))
+
+  expect_s3_class(fit, "stabl_multiomic_nested_cv")
+  expect_length(fit$outer_folds, 4L)
+  expect_equal(nrow(fit$outer_predictions), n)
+  expect_true(is.list(fit$performance))
+})
+
+test_that("unstratified nested CV fails closed with a typed error when a class is bootstrap-infeasible (C11)", {
+  set.seed(1)
+  n <- 36L
+  ids <- paste0("s", seq_len(n))
+  y <- setNames(factor(c(rep("A", 32L), rep("B", 4L))), ids)
+  x <- matrix(rnorm(n * 6L, sd = 0.5), nrow = n,
+              dimnames = list(ids, paste0("f", seq_len(6L))))
+  cnd <- tryCatch(
+    suppressWarnings(stabl_multiomic_nested_cv(
+      x_list = list(mrna = x),
+      y = y,
+      candidates = list(list(name = "mrna", blocks = "mrna")),
+      lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+      outer_v = 4L,
+      inner_v = 3L,
+      stratified = FALSE,
+      metric = "ber",
+      family = "binomial",
+      artificial_type = NULL,
+      hard_threshold = 1e-9,
+      n_bootstraps = 3L,
+      sample_fraction = 1.0,
+      random_state = 7L
+    )),
+    error = identity
+  )
+  expect_s3_class(cnd, "stablr_bootstrap_infeasible")
+  expect_s3_class(cnd, "stablr_error")
+})

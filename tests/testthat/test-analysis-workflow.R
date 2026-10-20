@@ -52,11 +52,17 @@ test_that("validated mode supports gaussian and rejects bad outcomes clearly", {
   # warnings; the suite holds a fixed warning budget).
   d <- .make_binary_data(n = 48L)
   y_num <- setNames(as.numeric(d$y == "B"), names(d$y))
-  val_g <- stabl_analyze(
-    d$x, y_num, family = "gaussian", mode = "validated",
-    lambda_grid = data.frame(lambda = c(0.2, 0.1)),
-    outer_v = 3L, inner_v = 3L, n_bootstraps = 10L,
-    random_state = 4L, n_repeats = 2L
+  # A binary numeric gaussian outcome collapses the quantile strata bins —
+  # the C10 guardrail warning is expected and pinned here so the suite
+  # warning budget stays at 3.
+  expect_warning(
+    val_g <- stabl_analyze(
+      d$x, y_num, family = "gaussian", mode = "validated",
+      lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+      outer_v = 3L, inner_v = 3L, n_bootstraps = 10L,
+      random_state = 4L, n_repeats = 2L
+    ),
+    "stratification is effectively disabled"
   )
   expect_identical(val_g$family, "gaussian")
   expect_true(all(c("mae", "rmse", "r2") %in% names(val_g$performance$pooled)))
