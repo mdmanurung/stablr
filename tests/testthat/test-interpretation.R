@@ -333,3 +333,25 @@ test_that("loss is validated against the family at entry (interp#12 regression)"
     "`loss` must be one of"
   )
 })
+
+test_that("plot.stabl_interpretation builds and errors on empty selection (diag#14)", {
+  skip_if_not_installed("ggplot2")
+  fake <- list(
+    evidence = data.frame(
+      feature = c("a", "b", "c"),
+      stability = c(0.9, 0.4, 0.7),
+      selected = c(TRUE, FALSE, TRUE),
+      stringsAsFactors = FALSE
+    ),
+    family = "gaussian",
+    provenance = list(evaluation_scope = "test", evidence_type = "test",
+                      n_observations = 10L)
+  )
+  class(fake) <- "stabl_interpretation"
+  p <- plot.stabl_interpretation(fake)
+  expect_s3_class(p, "ggplot")
+  expect_no_error(ggplot2::ggplot_build(p))
+  expect_equal(nrow(summary.stabl_interpretation(fake)), 2L)
+  fake$evidence$selected <- FALSE
+  expect_error(plot.stabl_interpretation(fake), "No selected features")
+})

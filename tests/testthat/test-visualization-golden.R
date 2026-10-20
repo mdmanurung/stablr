@@ -306,3 +306,89 @@ test_that("scatterplot_features maps the two requested features", {
   expect_equal(p$labels$x, "Feature value")
   expect_equal(p$labels$y, "Outcome")
 })
+
+# ── review diag#13/#16/#17/#18 ────────────────────────────────────────────────
+
+test_that("plot_fdr_graph marks the stored fdr_min_threshold_ contract (diag#16)", {
+  skip_if_not_installed("ggplot2")
+  fake <- list(
+    stabl_scores_ = matrix(0.5, 3, 2,
+                           dimnames = list(c("a", "b", "c"), NULL)),
+    feature_names = c("a", "b", "c"),
+    hard_threshold = 0.5,
+    fdr_threshold_range = c(0.2, 0.5, 0.8),
+    FDRs_ = c(0.9, 0.1, 0.4),   # curve minimum at grid value 0.5
+    min_fdr_ = 0.1,
+    fdr_min_threshold_ = 0.8,   # stored contract disagrees with the recompute
+    n_features_in_ = 3L
+  )
+  class(fake) <- "stabl_fit"
+  p <- plot_fdr_graph(fake, reference_fdp_plus = NULL)
+  vline <- .built_layer_with(p, "xintercept")
+  expect_equal(unique(vline$xintercept), 0.8)
+})
+
+test_that("boxplot_features jitter is hermetic and deterministic (diag#17)", {
+  skip_if_not_installed("ggplot2")
+  set.seed(1L)
+  x <- matrix(rnorm(40 * 2), 40, 2,
+              dimnames = list(paste0("s", 1:40), c("A", "B")))
+  y <- factor(rep(c("ctrl", "case"), 20))
+  p <- boxplot_features(c("A", "B"), x, y)
+  set.seed(123L)
+  before <- .Random.seed
+  b1 <- ggplot2::ggplot_build(p)$data
+  after <- .Random.seed
+  # expect_true(identical(...)): expect_identical's diff formatting overflows
+  # on the 626-integer .Random.seed vector when the seeds differ.
+  expect_true(identical(before, after))    # global RNG untouched
+  b2 <- ggplot2::ggplot_build(p)$data
+  expect_identical(b1, b2)                 # deterministic across builds
+})
+
+test_that("scatterplot_features skips the smooth for tiny panels (diag#18)", {
+  skip_if_not_installed("ggplot2")
+  x <- matrix(NA_real_, 10, 2,
+              dimnames = list(paste0("s", 1:10), c("A", "B")))
+  x[1:3, "A"] <- c(0.5, 1.5, 2.5)
+  x[, "B"] <- seq_len(10)
+  y <- as.numeric(seq_len(10))
+  warns <- testthat::capture_warnings(
+    p <- scatterplot_features(c("A", "B"), x, y)
+  )
+  expect_match(warns, "fewer than 4", all = FALSE)
+  expect_no_error(suppressWarnings(ggplot2::ggplot_build(p)))
+})
+
+test_that("scatterplot_features with all panels tiny drops the smooth (diag#18 edge)", {
+  skip_if_not_installed("ggplot2")
+  x <- matrix(c(1, 2, 3, 4, 5, 6), 3, 2,
+              dimnames = list(paste0("s", 1:3), c("A", "B")))
+  y <- c(1, 2, 1.5)
+  warns <- testthat::capture_warnings(
+    p <- scatterplot_features(c("A", "B"), x, y)
+  )
+  expect_match(warns, "fewer than 4", all = FALSE)
+  expect_length(p$layers, 1L)   # points only; no smooth layer
+  expect_no_error(ggplot2::ggplot_build(p))
+})
+
+test_that("scatterplot_features rejects non-numeric y (diag#13)", {
+  skip_if_not_installed("ggplot2")
+  x <- matrix(rnorm(20), 10, 2,
+              dimnames = list(paste0("s", 1:10), c("A", "B")))
+  expect_error(
+    scatterplot_features(c("A", "B"), x, factor(rep(c("a", "b"), 5))),
+    "numeric vector of continuous"
+  )
+})
+
+test_that("boxplot/scatterplot error when no requested feature is present (diag#13 anchor)", {
+  skip_if_not_installed("ggplot2")
+  x <- matrix(rnorm(20), 10, 2,
+              dimnames = list(paste0("s", 1:10), c("A", "B")))
+  expect_error(boxplot_features("ZZ", x, factor(rep(c("a", "b"), 5))),
+               "None of the requested")
+  expect_error(scatterplot_features("ZZ", x, rnorm(10)),
+               "None of the requested")
+})

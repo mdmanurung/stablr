@@ -33,11 +33,15 @@
 #'   [get_support()], [get_importances()], [plot_stabl_path()]
 "_PACKAGE"
 
+# ".data" is the rlang data-mask pronoun used inside ggplot2::aes(); rlang
+# stays in Suggests (it arrives with ggplot2), so the pronoun is registered
+# here instead of via importFrom(rlang, .data), which would make rlang a
+# hard namespace dependency (R CMD check ERROR).
 utils::globalVariables(c(
-  "artificial", "FDR", "count", "feature", "fdp_plus", "fpr", "frequency",
-  "kind", "lambda_idx", "multiview.cox.path", "outcome", "panel_size",
-  "precision", "proportion", "real", "realized", "recall", "rep",
-  "reported", "score", "threshold", "tpr", "value"
+  ".data", "artificial", "FDR", "count", "feature", "fdp_plus", "fpr",
+  "frequency", "kind", "lambda_idx", "multiview.cox.path", "outcome",
+  "panel_size", "precision", "proportion", "real", "realized", "recall",
+  "rep", "reported", "score", "threshold", "tpr", "value"
 ))
 
 # Private helper so tests can mock Suggests-package availability.

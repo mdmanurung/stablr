@@ -2035,6 +2035,71 @@ doc 3.8 Mb); all 12 vignettes rebuild clean.  NEWS.md entries are
 docs-only and parse-verified with utils::news() (43 section entries,
 F-6 + 1); the code tree is exactly the gated tree.
 
+**Batch F-8 diagnostics docs/visualization PR (2026-10-20):**
+implementation-review findings diag#13, diag#14, diag#15, diag#16,
+diag#17, diag#18 (eighth batch of the post-E-triage remainder; completes
+the diagnostics appendix).
+
+- diag#16 (`R/visualization.R`, `plot_fdr_graph`): the FDR threshold
+  reference line now marks the stored `fdr_min_threshold_` contract
+  (`object$fdr_min_threshold_ %||% thresh_grid[which.min(FDRs_)]`) —
+  previously it always recomputed the grid minimum, which can disagree
+  with the threshold the fit actually selected.
+- diag#17 (`R/visualization.R`, `boxplot_features`): the jitter is now
+  hermetic and deterministic —
+  `geom_point(position = position_jitter(width = 0.15, height = 0, seed = 1L))`
+  instead of `geom_jitter()`, which drew from the ambient stream at build
+  time and advanced the caller's global `.Random.seed`.  Probe-verified on
+  ggplot2 4.0.3: `geom_jitter(seed=)` is not supported ("Ignoring unknown
+  parameters"), while `position_jitter(seed=)` leaves `.Random.seed`
+  untouched and is reproducible across builds.
+- diag#18 (`R/visualization.R`, `scatterplot_features`): the LOESS smooth
+  is now gated per panel — panels with fewer than 4 complete (x, y)
+  points get no smooth (a warning names them: "Skipping the LOESS smooth
+  for panel(s) with fewer than 4 complete points: ..."); when no panel is
+  smoothable the smooth layer is dropped entirely.  Previously `loess`
+  failed or warned opaquely at ggplot build time on tiny panels.
+- diag#13 (`R/visualization.R`, `boxplot_features` /
+  `scatterplot_features`): the docs contradicted themselves on missing
+  features (`@param` vs behaviour) — now documented as "silently skipped;
+  an error is raised if NONE are present", and the `as.numeric()`
+  coercion of `y` is documented.  `scatterplot_features` also fails
+  closed on a non-numeric `y` (previously a factor `y` was silently
+  coerced to `1..nlevels`, scrambling the scatter).
+- diag#14 (`R/interpretation.R`, docs): `summary.stabl_interpretation()`
+  and `plot.stabl_interpretation()` now carry full roxygen documentation
+  (previously `@export`-only), including the empty-selection error; the
+  plot's `aes()` uses `.data$` pronouns instead of `ev$`.  The pronoun is
+  registered via `utils::globalVariables(".data")` in
+  `R/stablr-package.R`, NOT via `importFrom(rlang, .data)`: rlang is a
+  Suggests dependency (it arrives with ggplot2), and a NAMESPACE import
+  from a Suggested package is an R CMD check ERROR ("Namespace dependency
+  missing from DESCRIPTION Imports/Depends entries") — caught by the
+  first F-8 gate run and corrected.  (`rlang::.data$x` also fails inside
+  `aes()`, probe-verified; the bare pronoun is the correct form.)  Both
+  new Rd topics registered in `_pkgdown.yml`.
+- diag#15 (`R/diagnostics.R`, docs only): `plot.stabl_diagnostics()`'s
+  `which` entry now correctly describes the resample distribution curves
+  as survival curves (1 - ECDF), not ECDFs.
+
+Regression tests, each confirmed to FAIL against the pre-fix code
+(git-stash negative control): stored-threshold vline disagrees with the
+grid recompute (diag#16); jitter advances `.Random.seed` and differs
+across builds (diag#17); tiny-panel smooth skip warns and the all-tiny
+edge drops the smooth layer (diag#18 x2); non-numeric `y` errors
+(diag#13).  The all-missing-feature error (diag#13) and the
+interpretation plot/summary methods (diag#14) pass both ways —
+anchor/gap coverage, disclosed.  The diag#17 seed assertion uses
+`expect_true(identical(...))` because `expect_identical`'s diff
+formatting overflows on the 626-integer `.Random.seed` vector when the
+seeds differ (testthat display artifact, not a code signal).
+
+Gates: suite 62 files / 0 failed / 0 errors / 1 skip / 3 warnings (exact
+parity with PR-G); R CMD check 0E/0W/1N (pre-existing installed-size
+NOTE; doc 3.8 Mb); all 12 vignettes rebuild clean.  NEWS.md entries are
+docs-only and parse-verified with utils::news() (44 section entries,
+F-7 + 1); the code tree is exactly the gated tree.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3

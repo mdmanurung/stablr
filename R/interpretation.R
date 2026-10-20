@@ -450,6 +450,18 @@ print.stabl_interpretation <- function(x, ...) {
   invisible(x)
 }
 
+#' Summarise a STABL Interpretation
+#'
+#' Returns the evidence table restricted to the selected features, ordered
+#' by decreasing stability score.
+#'
+#' @param object A `stabl_interpretation` object from [stabl_interpret()].
+#' @param ... Ignored.
+#'
+#' @return A `data.frame`: the rows of `object$evidence` with
+#'   `selected == TRUE`, ordered by decreasing `stability`.  Zero-row when
+#'   the selection is empty.
+#'
 #' @export
 summary.stabl_interpretation <- function(object, ...) {
   ev <- object$evidence[object$evidence$selected, , drop = FALSE]
@@ -458,6 +470,17 @@ summary.stabl_interpretation <- function(object, ...) {
   ev
 }
 
+#' Plot Selected-Feature Stability
+#'
+#' Point plot of the stability score for each selected feature, ordered
+#' along the y axis.
+#'
+#' @param x A `stabl_interpretation` object from [stabl_interpret()].
+#' @param ... Ignored.
+#'
+#' @return A `ggplot` object.  Raises an error ("No selected features to
+#'   plot.") when the selection is empty.
+#'
 #' @export
 plot.stabl_interpretation <- function(x, ...) {
   .require_ggplot2()
@@ -466,7 +489,8 @@ plot.stabl_interpretation <- function(x, ...) {
     stop("No selected features to plot.", call. = FALSE)
   }
   ev$feature <- factor(ev$feature, levels = ev$feature[order(ev$stability)])
-  ggplot2::ggplot(ev, ggplot2::aes(x = ev$stability, y = ev$feature)) +
+  # Review diag#14: `.data$` pronouns instead of `ev$` inside aes().
+  ggplot2::ggplot(ev, ggplot2::aes(x = .data$stability, y = .data$feature)) +
     ggplot2::geom_point() +
     ggplot2::labs(x = "Stability score", y = NULL,
                   title = "Selected-feature stability") +

@@ -8,13 +8,15 @@ scatterplot_features(features, x, y, title = "Selected Features", ncol = 3L)
 }
 \arguments{
 \item{features}{Character vector of feature names to plot.  Features not
-present as columns in \code{x} are silently skipped.}
+present as columns in \code{x} are silently skipped; an error is raised if
+NONE of them are present.}
 
-\item{x}{Numeric matrix or data frame of predictors.  Column names must
-include all elements of \code{features}.}
+\item{x}{Numeric matrix or data frame of predictors.  Feature values are
+coerced with \code{\link[=as.numeric]{as.numeric()}}.}
 
 \item{y}{Numeric vector of continuous outcome values.  Must have the same
-number of elements as \code{nrow(x)}.}
+number of elements as \code{nrow(x)}.  Non-numeric \code{y} (e.g. a factor, whose
+\code{as.numeric()} coercion silently yields level codes) is rejected.}
 
 \item{title}{Character scalar; plot title.  Default \code{"Selected Features"}.}
 
@@ -22,7 +24,10 @@ number of elements as \code{nrow(x)}.}
 Default 3.}
 }
 \value{
-A \code{ggplot} object with one facet panel per feature.
+A \code{ggplot} object with one facet panel per feature.  The LOESS
+smooth is drawn only for panels with at least 4 complete points (a
+smaller panel cannot support the smooth); skipped panels are announced
+with a warning and show the raw points only.
 }
 \description{
 Produces a ggplot2 figure with one facet per selected feature, showing the

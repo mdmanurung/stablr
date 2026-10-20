@@ -774,8 +774,8 @@ print.stabl_diagnostics <- function(x, ...) {
 #' @param which Character vector of panels to draw: `"fdp_curve"` (FDP+ along
 #'   the threshold range, with the selected cut-off and all minimizing
 #'   thresholds marked), `"threshold_path"` (real vs artificial selection
-#'   counts along the path), and `"score_distributions"` (ECDFs of real and
-#'   artificial per-feature maximum scores).
+#'   counts along the path), and `"score_distributions"` (survival curves,
+#'   i.e. 1 - ECDF, of real and artificial per-feature maximum scores).
 #' @param ... Passed to plotting helpers; currently ignored.
 #'
 #' @return Invisibly, a named list of the drawn `ggplot` objects.

@@ -142,6 +142,8 @@ reference:
   contents:
   - stabl_analyze
   - stabl_interpret
+  - summary.stabl_interpretation
+  - plot.stabl_interpretation
   - stabl_preprocess_fit
   - stabl_preprocess_apply
   - stabl_preprocess_fit_recipes

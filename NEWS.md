@@ -1,5 +1,35 @@
 # stablr 0.3.0.9000 (development)
 
+## Bug fixes (implementation review, 2026-10-20, batch F-8)
+
+- `plot_fdr_graph()`: the FDR threshold reference line now marks the
+  stored `fdr_min_threshold_` contract (falling back to the grid recompute
+  only when the stored value is absent) — previously it always recomputed
+  `thresh_grid[which.min(FDRs_)]`, which can disagree with the threshold
+  the fit actually selected.
+- `boxplot_features()`: the jitter is now hermetic and deterministic —
+  `geom_point(position = position_jitter(width, height, seed = 1L))`
+  instead of `geom_jitter()`, which drew from the ambient stream at build
+  time and advanced the caller's global `.Random.seed`.
+- `scatterplot_features()`: the LOESS smooth is now skipped per panel when
+  a panel has fewer than 4 complete points (with a warning naming the
+  affected panels); previously `loess` failed or warned opaquely at
+  ggplot build time on tiny panels.
+- `scatterplot_features()` now fails closed on a non-numeric `y` —
+  previously a factor `y` was silently coerced with `as.numeric()`
+  (1..nlevels), scrambling the scatter. The `boxplot_features()` /
+  `scatterplot_features()` docs also no longer contradict themselves on
+  missing features: requested features absent from `x` are silently
+  skipped, and an error is raised only when NONE are present.
+- Docs: `summary.stabl_interpretation()` and `plot.stabl_interpretation()`
+  now carry full roxygen documentation (previously `@export`-only),
+  including the empty-selection error; the plot's `aes()` now uses `.data$`
+  pronouns instead of `ev$` (the pronoun is registered with
+  `utils::globalVariables()` so `rlang` stays a soft Suggests dependency).
+- Docs: `plot.stabl_diagnostics()`'s `which` entry for the resample
+  distribution curves now correctly describes them as survival curves
+  (1 - ECDF), not ECDFs.
+
 ## Bug fixes (implementation review, 2026-10-20, batch F-7)
 
 - `stabl_multiomic_stacked()`: a never-observed omic (all-NA column) is

@@ -314,7 +314,11 @@ plot_fdr_graph <- function(object, title = "FDP+ diagnostic",
     optimal_thresh <- 1.0
     opt_label      <- "No threshold selected (minimum FDP+ > 1)"
   } else {
-    optimal_thresh <- thresh_grid[which.min(fdrs)]
+    # Review diag#16: the stored field is the contract.  It is identical to
+    # thresh_grid[which.min(fdrs)] for well-formed fits (compute_fdp_plus
+    # clamps to <= 1); the %||% fallback keeps hand-built objects that lack
+    # the field working.
+    optimal_thresh <- object$fdr_min_threshold_ %||% thresh_grid[which.min(fdrs)]
     opt_label      <- sprintf("Selected threshold (first FDP+ minimum) = %.2f",
                               optimal_thresh)
   }
@@ -530,16 +534,19 @@ plot_prc <- function(y_true, y_preds, show_iso = TRUE, title = "Precision-Recall
 #' selection; complements [scatterplot_features()] for regression tasks.
 #'
 #' @param features Character vector of feature names to plot.  Features not
-#'   present as columns in `x` are silently skipped.
-#' @param x Numeric matrix or data frame of predictors.  Column names must
-#'   include all elements of `features`.
+#'   present as columns in `x` are silently skipped; an error is raised if
+#'   NONE of them are present.
+#' @param x Numeric matrix or data frame of predictors.  Feature values are
+#'   coerced with [as.numeric()].
 #' @param y Factor, character, or integer vector of class labels.  Must have
 #'   the same number of elements as `nrow(x)`.
 #' @param title Character scalar; plot title.  Default `"Selected Features"`.
 #' @param ncol Positive integer; number of facet columns in the grid.
 #'   Default 3.
 #'
-#' @return A `ggplot` object with one facet panel per feature.
+#' @return A `ggplot` object with one facet panel per feature.  The jittered
+#'   points use a fixed position seed, so the figure is deterministic and
+#'   leaves the global RNG untouched.
 #'
 #' @seealso [scatterplot_features()] for regression tasks,
 #'   [save_stabl_results()] which calls this automatically.
@@ -572,7 +579,14 @@ boxplot_features <- function(features, x, y, title = "Selected Features", ncol =
     ggplot2::aes(x = outcome, y = value, fill = outcome)
   ) +
     ggplot2::geom_boxplot(outlier.size = 0.8, alpha = 0.8, width = 0.6) +
-    ggplot2::geom_jitter(width = 0.15, size = 0.5, alpha = 0.5) +
+    # Review diag#17: position_jitter(seed = ...) makes the jitter
+    # deterministic and leaves the global RNG untouched (hermetic-RNG
+    # policy); geom_jitter() without a seed draws from the ambient stream
+    # at build time.
+    ggplot2::geom_point(
+      position = ggplot2::position_jitter(width = 0.15, height = 0, seed = 1L),
+      size = 0.5, alpha = 0.5
+    ) +
     ggplot2::facet_wrap(~ feature, scales = "free_y", ncol = ncol) +
     ggplot2::labs(title = title, x = NULL, y = "Value") +
     ggplot2::theme_minimal(base_size = 10) +
@@ -592,16 +606,21 @@ boxplot_features <- function(features, x, y, title = "Selected Features", ncol =
 #' selection for regression tasks.
 #'
 #' @param features Character vector of feature names to plot.  Features not
-#'   present as columns in `x` are silently skipped.
-#' @param x Numeric matrix or data frame of predictors.  Column names must
-#'   include all elements of `features`.
+#'   present as columns in `x` are silently skipped; an error is raised if
+#'   NONE of them are present.
+#' @param x Numeric matrix or data frame of predictors.  Feature values are
+#'   coerced with [as.numeric()].
 #' @param y Numeric vector of continuous outcome values.  Must have the same
-#'   number of elements as `nrow(x)`.
+#'   number of elements as `nrow(x)`.  Non-numeric `y` (e.g. a factor, whose
+#'   `as.numeric()` coercion silently yields level codes) is rejected.
 #' @param title Character scalar; plot title.  Default `"Selected Features"`.
 #' @param ncol Positive integer; number of facet columns in the grid.
 #'   Default 3.
 #'
-#' @return A `ggplot` object with one facet panel per feature.
+#' @return A `ggplot` object with one facet panel per feature.  The LOESS
+#'   smooth is drawn only for panels with at least 4 complete points (a
+#'   smaller panel cannot support the smooth); skipped panels are announced
+#'   with a warning and show the raw points only.
 #'
 #' @seealso [boxplot_features()] for classification tasks,
 #'   [save_stabl_results()] which calls this automatically.
@@ -625,6 +644,15 @@ scatterplot_features <- function(features, x, y, title = "Selected Features", nc
       nrow(x), length(y)
     ), call. = FALSE)
   }
+  # Review diag#13: as.numeric() on a factor silently yields level codes.
+  if (!is.numeric(y)) {
+    stop(
+      "`y` must be a numeric vector of continuous outcome values; recode ",
+      "factor or character outcomes explicitly (as.numeric() on a factor ",
+      "silently yields level codes).",
+      call. = FALSE
+    )
+  }
   features <- .filter_features(features, x)
 
   y_num <- as.numeric(y)
@@ -638,17 +666,36 @@ scatterplot_features <- function(features, x, y, title = "Selected Features", nc
   })
   df <- do.call(rbind, df_list)
 
-  ggplot2::ggplot(df, ggplot2::aes(x = value, y = outcome)) +
+  p <- ggplot2::ggplot(df, ggplot2::aes(x = value, y = outcome)) +
     ggplot2::geom_point(
       colour = .stablr_colors$noise, alpha = 0.6, size = 1
-    ) +
-    ggplot2::geom_smooth(
+    )
+
+  # Review diag#18: loess needs >= 4 complete points per panel; gate per
+  # panel so one tiny feature no longer breaks (or warns from) the whole
+  # figure.
+  complete_pair <- !is.na(df$value) & !is.na(df$outcome)
+  panel_n <- tapply(complete_pair, df$feature, sum)
+  smoothable <- names(panel_n)[panel_n >= 4L]
+  if (length(smoothable) < length(features)) {
+    warning(
+      "Skipping the LOESS smooth for panel(s) with fewer than 4 complete ",
+      "points: ", paste(setdiff(features, smoothable), collapse = ", "),
+      call. = FALSE
+    )
+  }
+  if (length(smoothable)) {
+    p <- p + ggplot2::geom_smooth(
+      data    = df[df$feature %in% smoothable, , drop = FALSE],
       method  = "loess",
       formula = y ~ x,
       colour  = .stablr_colors$selected,
       se      = TRUE,
       linewidth = 0.9
-    ) +
+    )
+  }
+
+  p +
     ggplot2::facet_wrap(~ feature, scales = "free_x", ncol = ncol) +
     ggplot2::labs(title = title, x = "Feature value", y = "Outcome") +
     ggplot2::theme_minimal(base_size = 10) +

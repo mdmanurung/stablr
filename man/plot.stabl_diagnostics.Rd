@@ -12,8 +12,8 @@
 \item{which}{Character vector of panels to draw: \code{"fdp_curve"} (FDP+ along
 the threshold range, with the selected cut-off and all minimizing
 thresholds marked), \code{"threshold_path"} (real vs artificial selection
-counts along the path), and \code{"score_distributions"} (ECDFs of real and
-artificial per-feature maximum scores).}
+counts along the path), and \code{"score_distributions"} (survival curves,
+i.e. 1 - ECDF, of real and artificial per-feature maximum scores).}
 
 \item{...}{Passed to plotting helpers; currently ignored.}
 }

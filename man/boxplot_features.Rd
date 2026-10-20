@@ -8,10 +8,11 @@ boxplot_features(features, x, y, title = "Selected Features", ncol = 3L)
 }
 \arguments{
 \item{features}{Character vector of feature names to plot.  Features not
-present as columns in \code{x} are silently skipped.}
+present as columns in \code{x} are silently skipped; an error is raised if
+NONE of them are present.}
 
-\item{x}{Numeric matrix or data frame of predictors.  Column names must
-include all elements of \code{features}.}
+\item{x}{Numeric matrix or data frame of predictors.  Feature values are
+coerced with \code{\link[=as.numeric]{as.numeric()}}.}
 
 \item{y}{Factor, character, or integer vector of class labels.  Must have
 the same number of elements as \code{nrow(x)}.}
@@ -22,7 +23,9 @@ the same number of elements as \code{nrow(x)}.}
 Default 3.}
 }
 \value{
-A \code{ggplot} object with one facet panel per feature.
+A \code{ggplot} object with one facet panel per feature.  The jittered
+points use a fixed position seed, so the figure is deterministic and
+leaves the global RNG untouched.
 }
 \description{
 Produces a ggplot2 figure with one facet per selected feature, showing the
