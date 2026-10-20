@@ -48,6 +48,10 @@ navbar:
         href: articles/stablr-cooperative.html
       - text: Environment stability
         href: articles/stablr-environments.html
+      - text: cEBMF-denoised expression
+        href: articles/stablr-cebmf.html
+      - text: Metacell aggregation
+        href: articles/stablr-metacells.html
       - text: "---------"
       - text: Aging case study
         href: articles/stablr-aging-case-study.html
@@ -224,3 +228,9 @@ articles:
   navbar: ~
   contents:
   - stablr-reliability
+
+- title: Single-cell integrations
+  navbar: ~
+  contents:
+  - stablr-cebmf
+  - stablr-metacells

@@ -1,0 +1,26 @@
+{
+  "seed": 20261020,
+  "source_url": "https://cf.10xgenomics.com/samples/cell/pbmc3k/pbmc3k_filtered_gene_bc_matrices.tar.gz",
+  "source_md5": "f76d73bf7a582aaf32b798bcae9574d3",
+  "n_cells": 2700,
+  "n_genes_hvg": 1200,
+  "min_cells_gene_filter": 10,
+  "normalization": "CP10k + log1p",
+  "pca_components": 50,
+  "knn_k": 10,
+  "cluster_method": "Louvain (igraph community_multilevel, resolution 1.0)",
+  "cebmf": {
+    "package": "cebmf_torch",
+    "K": 10,
+    "prior_L": "norm",
+    "prior_F": "norm",
+    "maxit": 50,
+    "device": "cpu"
+  },
+  "versions": {
+    "numpy": "2.1.0",
+    "torch": "2.14.1+cu130",
+    "igraph": "0.11.9",
+    "pandas": "2.3.1"
+  }
+}

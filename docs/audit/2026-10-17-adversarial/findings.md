@@ -2100,6 +2100,84 @@ NOTE; doc 3.8 Mb); all 12 vignettes rebuild clean.  NEWS.md entries are
 docs-only and parse-verified with utils::news() (44 section entries,
 F-7 + 1); the code tree is exactly the gated tree.
 
+**Single-cell vignettes PR (cebmf + metacells) (2026-10-20):**
+user-requested documentation PR — two new full vignettes on
+single-cell-derived feature matrices (10x Genomics PBMC 3k fixture
+set), not a review-finding batch; recorded here per the per-PR
+audit-trail convention.
+
+- `vignettes/stablr-cebmf.Rmd`: STABL selection on cEBMF-denoised
+  expression.  No R cebmf package exists; the cEBMF fit (Python
+  cebmf_torch, K = 10, normal priors, 50 iterations, CPU, seeded) runs
+  OFFLINE and ships as a fixture (`inst/extdata/pbmc3k/pbmc3k_cebmf.rds`);
+  the vignette shows the Python code in unevaluated chunks so the gate
+  stays hermetic.  Live analysis: B-cell cluster vs rest (binomial,
+  top-500 HVGs, 100 bootstraps) recovers the CD79A/CD79B receptor
+  module (5 genes: ANXA1, CD79B, CD79A, C9orf16, GIMAP1) versus 47 on
+  the raw matrix (overlap 3) — reported as an honest contrast, not a
+  ranking.  Section 7 is a `stabl_diagnose()` teaching aside: at
+  p = 10 (factor scores) FDP+ selection is seed-sensitive (seed 42 ->
+  empty, 7 -> 1, 123 -> 2 at 500 bootstraps; FDRs 0.5-1.1) — STABL's
+  error control is built for large p, which is why the primary
+  analysis runs in gene space.
+- `vignettes/stablr-metacells.Rmd`: dependency-free greedy kNN
+  metacell partition (PC1-ordered seeds, 25 cells per metacell, tail
+  merged; 106 metacells), majority-label purity QC >= 60% (15
+  dropped), monocyte-vs-rest binomial with `stratify_bootstrap = TRUE`
+  (19/91 split; unstratified resampling drew glmnet "fewer than 8
+  observations" warnings), 200 bootstraps -> S100A8, TPM3, CD14,
+  MS4A6A, LGALS2.  Pseudoreplication and rare-cell caveats stated.
+- Fixtures (real tool outputs, never fabricated):
+  `data-raw/prepare_pbmc3k_fixtures.py` (10x download, gene filter,
+  CP10k+log1p, 1,200 HVGs, PCA-50, exact kNN k=10, seeded Louvain,
+  seeded cEBMF) + `data-raw/prepare_pbmc3k_fixtures.R` (dgCMatrix
+  assembly + SHA-256 manifest); `run_metadata.json` records every
+  parameter and version; checksums committed to
+  `inst/extdata/pbmc3k/SHA256SUMS` and `data-raw/README.md`.
+
+Two defects caught by this PR's own tests/renders and fixed pre-push:
+
+- Metacell tail-merge bug: `cand[which.min(d[i, which(assigned %in%
+  cand)])]` indexed metacell IDs by position within the
+  assigned-cells vector, returning NA for positions > n_metacells —
+  35 of 39 leftover cells stayed NA and were silently dropped by
+  `factor(assigned)`.  The smoke test caught it
+  (`length(unique(assigned))` was 107, NA counted).  Fixed to
+  `assigned[idx[which.min(d[i, idx])]]`; all 2,689 cells now assigned
+  (sizes 25-32); downstream re-derived: 15 purity drops unchanged,
+  19/72 case split, selection 8 -> 5 genes with the
+  S100A8/CD14/MS4A6A/LGALS2 anchors intact.
+- `boxplot_features()` is internal (internalized in 1.0.0, PR-G): the
+  vignette call rendered fine under `pkgload::load_all()` but fails
+  against the installed package (the R CMD check context).  Caught by
+  rendering against a fresh `R CMD INSTALL`; replaced with the TCGA
+  vignette's plain-ggplot2 precedent.
+
+Also fixed (drive-by, in scope per the patch-all directive): the
+`.sha256_file` helper copied from `data-raw/prepare_ool_data.R`
+preferred `openssl::sha256(file(path))`, which silently hashes only
+the first chunk of a connection for files larger than a few hundred
+bytes (verified against sha256sum and Python hashlib) — the first
+manifest shipped wrong hashes and the new manifest test caught it.
+Both scripts now prefer `sha256sum` with an openssl-via-`readBin()`
+fallback; the committed OOL checksums in `data-raw/README.md` were
+verified correct via sha256sum (the bug only bit the new manifest on
+this machine).
+
+Tests: 5 new blocks in `tests/testthat/test-python-parity-vignette.R`
+(suite stays at 62 files): asset readability, SHA-256 manifest,
+structural consistency (2700 x 1200 dgCMatrix integer counts,
+named-factor labels matching rownames, L 2700 x 10 / F 1200 x 10), and
+the two exact vignette pipelines as marker-anchored smoke tests
+(CD79A/CD79B; S100A8/CD14 — anchors, not exact goldens, disclosed).
+
+Gates: suite 62 files / 0 failed / 0 errors / 1 skip / 3 warnings
+(exact parity with PR-G); R CMD check 0E/0W/1N (pre-existing
+installed-size NOTE); all 14 vignettes rebuild clean (12 -> 14).
+NEWS.md section parse-verified with utils::news() (45 section
+entries, F-8 + 1); pkgdown navbar + new "Single-cell integrations"
+articles group; the code tree is exactly the gated tree.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3

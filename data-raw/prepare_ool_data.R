@@ -16,12 +16,19 @@
 )
 
 .sha256_file <- function(path) {
-  if (requireNamespace("openssl", quietly = TRUE)) {
-    return(as.character(openssl::sha256(file(path))))
-  }
+  # NOTE: openssl::sha256(file(path)) silently hashes only the first chunk
+  # of the connection for files larger than a few hundred bytes (verified
+  # 2026-10-20 against sha256sum and Python hashlib).  Prefer the system
+  # tool; the openssl fallback reads the bytes explicitly with readBin().
   tool <- Sys.which("sha256sum")
-  if (!nzchar(tool)) stop("Need openssl or sha256sum to verify OOL inputs.", call. = FALSE)
-  strsplit(system2(tool, path, stdout = TRUE), "[[:space:]]+")[[1L]][[1L]]
+  if (nzchar(tool)) {
+    return(strsplit(system2(tool, path, stdout = TRUE), "[[:space:]]+")[[1L]][[1L]])
+  }
+  if (requireNamespace("openssl", quietly = TRUE)) {
+    bytes <- readBin(path, "raw", n = file.size(path))
+    return(as.character(openssl::sha256(bytes)))
+  }
+  stop("Need openssl or sha256sum to verify OOL inputs.", call. = FALSE)
 }
 
 prepare_ool_data <- function(inputs, out_dir, verify_hashes = TRUE,

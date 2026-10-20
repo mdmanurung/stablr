@@ -1,5 +1,23 @@
 # stablr 0.3.0.9000 (development)
 
+## New features (2026-10-20, single-cell vignettes)
+
+- New vignette `stablr-cebmf`: STABL selection on cEBMF-denoised
+  single-cell expression (10x Genomics PBMC 3k fixture; the cEBMF fit
+  runs offline with the Python `cebmf_torch` package and is shown as
+  unevaluated code).  Includes a raw-vs-denoised selection comparison
+  and a `stabl_diagnose()` demonstration of why FDP+ calibration is
+  unreliable at tiny feature counts.
+- New vignette `stablr-metacells`: STABL selection on metacell-pooled
+  expression, with a transparent dependency-free greedy kNN metacell
+  partition, majority-label purity QC, and a stratified bootstrap for
+  the class-imbalanced outcome.
+- New bundled fixtures under `inst/extdata/pbmc3k/` (raw HVG counts,
+  Louvain cluster labels, cEBMF factor scores and loadings) with a
+  SHA-256 manifest and provenance metadata; regeneration scripts ship as
+  `data-raw/prepare_pbmc3k_fixtures.py` and
+  `data-raw/prepare_pbmc3k_fixtures.R`.
+
 ## Bug fixes (implementation review, 2026-10-20, batch F-8)
 
 - `plot_fdr_graph()`: the FDR threshold reference line now marks the
