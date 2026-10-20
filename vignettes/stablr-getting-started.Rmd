@@ -180,10 +180,13 @@ The printed accessors show the stability scores, the FDP+ summary, and the
 class of the fitted object, which confirms that a `stabl()` result can be
 treated as a `stabl_fit` object. Read `?stabl_fit` for the full expert
 interface, and the other vignettes for multi-omic workflows, nested
-cross-validation, and environment stability. For what "Python parity" does
-and does not establish, see `vignette("stablr-python-parity")`; for a guide
-to the stability-path and FDP+ diagnostic plots, see
-`vignette("stablr-reading-plots")`.
+cross-validation, and environment stability. For single-cell-derived
+feature matrices, the *Single-cell integrations* articles show the same
+workflow on cEBMF-denoised expression (`vignette("stablr-cebmf")`) and on
+metacell-pooled expression (`vignette("stablr-metacells")`). For what
+"Python parity" does and does not establish, see
+`vignette("stablr-python-parity")`; for a guide to the stability-path and
+FDP+ diagnostic plots, see `vignette("stablr-reading-plots")`.
 
 # 6 Migrating from pre-1.0.0 versions
 

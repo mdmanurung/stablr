@@ -2178,6 +2178,17 @@ NEWS.md section parse-verified with utils::news() (45 section
 entries, F-8 + 1); pkgdown navbar + new "Single-cell integrations"
 articles group; the code tree is exactly the gated tree.
 
+**Getting-started cross-link PR (2026-10-20):** docs-only follow-up to
+the single-cell vignettes PR — the getting-started vignette's
+expert-interface pointer paragraph now cross-links the *Single-cell
+integrations* articles (`vignette("stablr-cebmf")`,
+`vignette("stablr-metacells")`).  NEWS bullet added to the existing
+single-cell section (45 parse-verified section entries, unchanged —
+utils::news() counts sections, not bullets; bullet presence verified in
+the parsed text).  Gates: suite 62 files / 0 failed / 0 errors / 1 skip
+/ 3 warnings (exact PR-G parity); R CMD check 0E/0W/1N (pre-existing
+installed-size NOTE); all 14 vignettes rebuild clean.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3

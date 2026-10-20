@@ -17,6 +17,9 @@
   SHA-256 manifest and provenance metadata; regeneration scripts ship as
   `data-raw/prepare_pbmc3k_fixtures.py` and
   `data-raw/prepare_pbmc3k_fixtures.R`.
+- The getting-started vignette now cross-links the *Single-cell
+  integrations* articles (`stablr-cebmf`, `stablr-metacells`) from its
+  expert-interface pointer paragraph.
 
 ## Bug fixes (implementation review, 2026-10-20, batch F-8)
 
