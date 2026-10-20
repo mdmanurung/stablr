@@ -32,3 +32,10 @@
 
 - [Reliability diagnostics, validation, and final
   models](https://mdmanurung.github.io/stablr/articles/stablr-reliability.md):
+
+### Single-cell integrations
+
+- [Single-cell latent factors: STABL on cEBMF-denoised
+  expression](https://mdmanurung.github.io/stablr/articles/stablr-cebmf.md):
+- [Metacell aggregation: STABL on pooled single-cell
+  expression](https://mdmanurung.github.io/stablr/articles/stablr-metacells.md):

@@ -29,6 +29,8 @@
     <li><a class="dropdown-item" href="../articles/stablr-tcga-nestedcv.html">TCGA nested CV and DIABLO</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-cooperative.html">Cooperative fusion</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-environments.html">Environment stability</a></li>
+    <li><a class="dropdown-item" href="../articles/stablr-cebmf.html">cEBMF-denoised expression</a></li>
+    <li><a class="dropdown-item" href="../articles/stablr-metacells.html">Metacell aggregation</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><a class="dropdown-item" href="../articles/stablr-aging-case-study.html">Aging case study</a></li>
     <li><a class="dropdown-item" href="../articles/stablr-advanced.html">Advanced workflows</a></li>
@@ -51,6 +53,12 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.0.9000" id="stablr-0309000-development">stablr 0.3.0.9000 (development)<a class="anchor" aria-label="anchor" href="#stablr-0309000-development"></a></h2>
+<div class="section level3">
+<h3 id="new-features-single-cell-vignettes-0-3-0-9000">New features (2026-10-20, single-cell vignettes)<a class="anchor" aria-label="anchor" href="#new-features-single-cell-vignettes-0-3-0-9000"></a></h3>
+<ul><li>New vignette <code>stablr-cebmf</code>: STABL selection on cEBMF-denoised single-cell expression (10x Genomics PBMC 3k fixture; the cEBMF fit runs offline with the Python <code>cebmf_torch</code> package and is shown as unevaluated code). Includes a raw-vs-denoised selection comparison and a <code><a href="../reference/stabl_diagnose.html">stabl_diagnose()</a></code> demonstration of why FDP+ calibration is unreliable at tiny feature counts.</li>
+<li>New vignette <code>stablr-metacells</code>: STABL selection on metacell-pooled expression, with a transparent dependency-free greedy kNN metacell partition, majority-label purity QC, and a stratified bootstrap for the class-imbalanced outcome.</li>
+<li>New bundled fixtures under <code>inst/extdata/pbmc3k/</code> (raw HVG counts, Louvain cluster labels, cEBMF factor scores and loadings) with a SHA-256 manifest and provenance metadata; regeneration scripts ship as <code>data-raw/prepare_pbmc3k_fixtures.py</code> and <code>data-raw/prepare_pbmc3k_fixtures.R</code>.</li>
+</ul></div>
 <div class="section level3">
 <h3 id="bug-fixes-implementation-review-batch-f-0-3-0-9000">Bug fixes (implementation review, 2026-10-20, batch F-8)<a class="anchor" aria-label="anchor" href="#bug-fixes-implementation-review-batch-f-0-3-0-9000"></a></h3>
 <ul><li>
