@@ -245,8 +245,13 @@ the class of the fitted object, which confirms that a
 result can be treated as a `stabl_fit` object. Read
 [`?stabl_fit`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
 for the full expert interface, and the other vignettes for multi-omic
-workflows, nested cross-validation, and environment stability. For what
-“Python parity” does and does not establish, see
+workflows, nested cross-validation, and environment stability. For
+single-cell-derived feature matrices, the *Single-cell integrations*
+articles show the same workflow on cEBMF-denoised expression
+([`vignette("stablr-cebmf")`](https://mdmanurung.github.io/stablr/articles/stablr-cebmf.md))
+and on metacell-pooled expression
+([`vignette("stablr-metacells")`](https://mdmanurung.github.io/stablr/articles/stablr-metacells.md)).
+For what “Python parity” does and does not establish, see
 [`vignette("stablr-python-parity")`](https://mdmanurung.github.io/stablr/articles/stablr-python-parity.md);
 for a guide to the stability-path and FDP+ diagnostic plots, see
 [`vignette("stablr-reading-plots")`](https://mdmanurung.github.io/stablr/articles/stablr-reading-plots.md).
