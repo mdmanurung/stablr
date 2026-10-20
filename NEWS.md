@@ -1,5 +1,38 @@
 # stablr 0.3.0.9000 (development)
 
+## Bug fixes (implementation review, 2026-10-20, batch F-6)
+
+- `.study_outcome_summary()` now fails closed on a dimensioned (matrix or
+  data.frame) `y` — previously it passed the `is.numeric()` check and was
+  subset as a flat column-major vector, silently scrambling per-study
+  summaries.
+- `save_stabl_results()` now checks for ggplot2 BEFORE creating the output
+  directory, so a missing backend no longer leaves an empty directory
+  behind.
+- `.lambda_grid_row_labels()` formats mixed-type grids per column (signif
+  for numeric, format otherwise) instead of `as.numeric()` on the whole
+  row, which coerced non-numeric columns to NA with a warning. All-numeric
+  output is unchanged.
+- `stabl_multiomic_scheme_comparison()`: ambiguous calls mixing named
+  reserved formals (`x_list`/`y`/`study_labels`) with enough unnamed
+  positional arguments to shift positional matching now error up front —
+  e.g. `(x, y, sl, y = y2)` silently re-bound the positional `y` to
+  `study_labels` (empirical correction: the review's duplicate-via-`...`
+  scenario is unreachable because R binds exact-named duplicates to the
+  formals first). `x_list`/`y` are also validated before `study_labels`,
+  so a malformed `x_list` errors informatively.
+- `.study_feature_shift()` now counts NA-data SMDs (e.g. an all-missing
+  feature in one partition) separately from the masked 0/0 zero-SD case:
+  new `n_missing` column alongside `n_zero_sd` (additive schema change).
+- `stabl_environment_stability()` validates x/y sample alignment at entry
+  (`validate_sample_alignment()`), so a mismatched `y` errors with
+  "Sample mismatch" instead of failing deep in the per-environment subset.
+- `load_ool_data()` now fails closed on duplicate sample IDs (previously
+  `match()` silently took the first) and on non-numeric feature columns.
+- Docs: `stabl_multiomic_study_split()`'s balance criterion is
+  `factor(as.character(y))`, degenerate for continuous `y` — documented,
+  with a recommendation to pass a categorical (or binned) `y`.
+
 ## Bug fixes (implementation review, 2026-10-20, batch F-5)
 
 - Nested-CV gaussian downstream regressor: outer-training splits with fewer

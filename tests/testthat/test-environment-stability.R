@@ -182,3 +182,15 @@ test_that("D3: runs with the default artificial-feature (FDP+) path", {
   expect_true(is.matrix(res$pairwise_adjusted_similarity))
   expect_true(all(is.finite(res$pairwise_adjusted_similarity)))
 })
+
+test_that("stabl_environment_stability validates x/y alignment up front (A13 regression)", {
+  set.seed(1)
+  ids <- paste0("s", 1:12)
+  x <- matrix(rnorm(36), 12, 3, dimnames = list(ids, paste0("f", 1:3)))
+  y <- setNames(factor(rep(c("A", "B"), 6)), paste0("WRONG", 1:12))
+  env <- setNames(rep(c("e1", "e2"), each = 6), ids)
+  expect_error(
+    stabl_environment_stability(x, y, env),
+    "Sample mismatch"
+  )
+})

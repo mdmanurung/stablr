@@ -791,3 +791,29 @@ test_that(".binary_probability_metrics rejects NA truth", {
     "must not contain NA"
   )
 })
+
+test_that("save_stabl_results validates ggplot2 before creating the directory (A8 regression)", {
+  fake <- list(
+    stabl_scores_ = matrix(0.5, 3, 2, dimnames = list(c("a", "b", "c"), NULL)),
+    feature_names = c("a", "b", "c"),
+    hard_threshold = 0.5,
+    fdr_min_threshold_ = NULL,
+    min_fdr_ = NULL,
+    n_features_in_ = 3L
+  )
+  class(fake) <- "stabl_fit"
+  p <- file.path(tempdir(), "a8_should_not_exist")
+  on.exit(unlink(p, recursive = TRUE), add = TRUE)
+  testthat::with_mocked_bindings(
+    .require_ggplot2 = function() stop("no ggplot2"),
+    expect_error(save_stabl_results(fake, p), "no ggplot2")
+  )
+  expect_false(dir.exists(p))
+})
+
+test_that(".lambda_grid_row_labels formats mixed-type grids without NA coercion (A9 regression)", {
+  g <- data.frame(lambda = c(0.1, 0.2), grp = c("a", "b"),
+                  stringsAsFactors = FALSE)
+  expect_no_warning(lab <- stablr:::.lambda_grid_row_labels(g))
+  expect_identical(lab, c("lambda=0.1, grp=a", "lambda=0.2, grp=b"))
+})

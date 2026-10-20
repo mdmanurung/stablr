@@ -306,3 +306,65 @@ test_that("zero-variance partitions with different means give Inf SMD (E9 regres
   expect_identical(shift$smd_max_abs[shift$study == "s1"], Inf)
   expect_identical(shift$n_zero_sd[shift$study == "s1"], 1L)  # only "b"
 })
+
+test_that(".study_outcome_summary fails closed on matrix-like y (A5 regression)", {
+  y <- matrix(rnorm(6), 6, 1, dimnames = list(paste0("s", 1:6), "out"))
+  expect_error(
+    stablr:::.study_outcome_summary(y, rep(c("A", "B"), each = 3), c("A", "B")),
+    "vector or factor"
+  )
+})
+
+test_that("scheme_comparison rejects ambiguous mixed named/positional calls (A10 regression)", {
+  set.seed(1)
+  ids <- paste0("s", 1:12)
+  x <- matrix(rnorm(36), 12, 3, dimnames = list(ids, paste0("f", 1:3)))
+  y <- setNames(factor(rep(c("A", "B"), 6)), ids)
+  sl <- setNames(rep(c("st1", "st2"), each = 6), ids)
+  # (x, y, sl, y = y2): the named `y` wins the formal and the positional `y`
+  # would silently re-bind to `study_labels` without the guard (review A10).
+  expect_error(
+    stabl_multiomic_scheme_comparison(list(m = x), y, sl, y = y),
+    "Ambiguous call"
+  )
+  # A fully named duplicate still errors at match time, before the body runs.
+  expect_error(
+    stabl_multiomic_scheme_comparison(
+      x_list = list(m = x), y = y, study_labels = sl, y = y
+    ),
+    "matched by multiple"
+  )
+  # Unambiguous mixed calls are unaffected: unnamed args before the first
+  # named reserved formal bind exactly as written.
+  expect_error(
+    stabl_multiomic_scheme_comparison(list(m = x), y, study_labels = NULL),
+    "`study_labels` is required"
+  )
+})
+
+test_that("scheme_comparison validates x_list before study_labels (A10 regression)", {
+  ids <- paste0("s", 1:12)
+  y <- setNames(factor(rep(c("A", "B"), 6)), ids)
+  sl <- setNames(rep(c("st1", "st2"), each = 6), ids)
+  # Pre-fix this errored opaquely via rownames(x_list[[1]]) on an empty list.
+  expect_error(
+    stabl_multiomic_scheme_comparison(list(), y, sl),
+    "`x_list` must be a non-empty named list"
+  )
+})
+
+test_that(".study_feature_shift counts NA-data SMDs separately from zero-SD (A12 regression)", {
+  ids <- paste0("s", 1:6)
+  x <- matrix(c(5, 5, 5, 5, 5, 5,        # f1: constant everywhere -> 0/0
+                NA, NA, NA, 1, 2, 3,     # f2: all-missing in study A
+                1, 2, 3, 2, 3, 4),       # f3: ordinary
+              6, 3, dimnames = list(ids, paste0("f", 1:3)))
+  shift <- stablr:::.study_feature_shift(
+    list(b = x),
+    setNames(rep(c("A", "B"), each = 3), ids),
+    c("A", "B")
+  )
+  row_a <- shift[shift$study == "A", ]
+  expect_equal(row_a$n_zero_sd, 1)
+  expect_equal(row_a$n_missing, 1)
+})

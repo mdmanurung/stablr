@@ -1916,6 +1916,73 @@ stratification is strictly more informative than the collapsed "all"
 stratum) — deferred as out of review scope (warn-only was the
 recommendation); flagged for the 1.0.0 behavior discussion.
 
+**Batch F-6 study/environment/data/exports PR (2026-10-20):**
+implementation-review findings A5, A8, A9, A10, A11, A12, A13, A16 (sixth
+batch of the post-E-triage remainder).
+
+- A5 (`R/study_tools.R`, `.study_outcome_summary`): a matrix/data.frame `y`
+  passed `is.numeric(y)` and was subset as a FLAT (column-major) vector,
+  silently scrambling per-study summaries.  Now fails closed on any
+  dimensioned `y`.
+- A8 (`R/exports.R`, `save_stabl_results`): the output directory was
+  created BEFORE the ggplot2 check, so a missing backend left an empty
+  directory behind.  `.require_ggplot2()` now runs first.
+- A9 (`R/exports.R`, `.lambda_grid_row_labels`): `as.numeric()` on a
+  mixed-type grid row coerced the whole row to character and warned to NA.
+  Labels are now formatted per column (signif for numeric, format
+  otherwise); all-numeric output is unchanged.
+- A10 (`R/study_tools.R`, `stabl_multiomic_scheme_comparison`): EMPIRICAL
+  CORRECTION to the review — an exact-named repeat of a reserved formal
+  (`x_list`/`y`/`study_labels`) never reaches `...`: R binds it to the
+  formal or errors at match time ("formal argument matched by multiple
+  actual arguments"), so the review's "cryptic do.call error" scenario is
+  not reachable through ordinary calls.  The reachable hazard is worse: a
+  SILENT positional shift — `(x, y, sl, y = y2)` binds the named `y2` to
+  `y` and silently re-binds the positional `y` to `study_labels`
+  (probe-verified).  Fixed three ways: (1) a `match.call()` guard rejects
+  ambiguous calls that mix named reserved formals with enough unnamed
+  arguments to shift positional matching; (2) `x_list`/`y` are validated
+  via `validate_multiomic_inputs()` BEFORE `.validate_study_labels()`, so
+  a malformed `x_list` no longer errors opaquely via
+  `rownames(x_list[[1]])`; (3) the original `...` screening is kept as
+  defense-in-depth with a corrected comment.
+- A11 (`R/study_tools.R`, docs only): `stabl_multiomic_study_split`'s
+  balance criterion is `factor(as.character(y))` — degenerate for
+  continuous `y` (every value its own class).  Documented; recommend a
+  categorical (or binned) `y`.  man/stabl_multiomic_study_split.Rd
+  regenerated via roxygen2 (only that file changed).
+- A12 (`R/study_tools.R`, `.study_feature_shift`): NA SMDs were counted in
+  `n_zero_sd`, conflating the masked 0/0 case (both partitions constant
+  and equal) with NA data (e.g. an all-missing feature in one partition).
+  The output now counts them separately as `n_zero_sd` and a new
+  `n_missing` column (additive schema change).
+- A13 (`R/environment_stability.R`): `stabl_environment_stability` never
+  validated x/y sample alignment up front; a mismatched `y` failed deep in
+  the per-environment subset with "`y` cannot contain missing sample
+  mappings".  `validate_sample_alignment(x, y)` now runs at entry, so the
+  error names the actual problem ("Sample mismatch between `x` row names
+  and `y` names").
+- A16 (`R/data_helpers.R`, `load_ool_data`): no duplicate-ID check
+  (`match()` would silently take the first) and no numeric validation of
+  feature columns.  Both now fail closed.
+
+Regression tests, each confirmed to FAIL against the pre-fix code
+(git-stash negative control): matrix-y rejected (A5); ggplot2 checked
+before dir creation via a mocked `.require_ggplot2` (A8); mixed-type grid
+labels warn-free and correct (A9); ambiguous mixed named/positional call
+rejected with "Ambiguous call" while fully named duplicates still error
+at match time and unambiguous mixed calls are unaffected (A10);
+empty-`x_list` errors informatively before `study_labels` validation
+(A10); n_zero_sd/n_missing separation on a hand-built fixture (A12);
+up-front "Sample mismatch" (A13); duplicate-ID and non-numeric-column
+rejection via mocked `read.csv` (A16).  A11 is docs-only, disclosed.
+
+Gates: suite 62 files / 0 failed / 0 errors / 1 skip / 3 warnings (exact
+parity with PR-G); R CMD check 0E/0W/1N (pre-existing installed-size NOTE;
+doc 3.8 Mb); all 12 vignettes rebuild clean.  NEWS.md entries are
+docs-only and parse-verified with utils::news() (42 section entries,
+F-5 + 1); the code tree is exactly the gated tree.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3

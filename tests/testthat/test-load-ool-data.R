@@ -52,3 +52,20 @@ test_that("E1: load_ool_data valid split loads without error and is non-empty", 
 test_that("E1: load_ool_data rejects invalid split argument", {
   expect_error(load_ool_data(split = "test"), regexp = "arg")
 })
+
+test_that("load_ool_data fails closed on duplicate sample IDs (A16 regression)", {
+  dup_df <- data.frame(id = c("a", "a", "b"), f1 = 1:3)
+  testthat::with_mocked_bindings(
+    read.csv = function(...) dup_df,
+    expect_error(load_ool_data("train"), "Duplicate sample IDs")
+  )
+})
+
+test_that("load_ool_data fails closed on non-numeric feature columns (A16 regression)", {
+  bad_df <- data.frame(id = c("a", "b"), f1 = c("x", "y"),
+                       stringsAsFactors = FALSE)
+  testthat::with_mocked_bindings(
+    read.csv = function(...) bad_df,
+    expect_error(load_ool_data("train"), "Non-numeric")
+  )
+})

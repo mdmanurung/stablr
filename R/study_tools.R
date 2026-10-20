@@ -71,6 +71,12 @@ stabl_multiomic_study_diagnostics <- function(x_list, y, study_labels) {
 }
 
 .study_outcome_summary <- function(y, study_of_sample, studies) {
+  if (!is.null(dim(y))) {
+    # A matrix/data.frame y would be subset below as a FLAT (column-major)
+    # vector, silently scrambling values (review A5).
+    stop("`y` must be a vector or factor, not a matrix or data.frame.",
+         call. = FALSE)
+  }
   if (is.numeric(y)) {
     rows <- lapply(studies, function(s) {
       values <- y[study_of_sample == s]
@@ -118,9 +124,19 @@ stabl_multiomic_study_diagnostics <- function(x_list, y, study_labels) {
     for (s in studies) {
       idx_study <- which(study_of_sample == s)
       idx_rest <- which(study_of_sample != s)
-      smd_abs <- .study_block_smd_abs(x[idx_study, , drop = FALSE],
-                                      x[idx_rest, , drop = FALSE])
-      zero_sd <- length(smd_abs) - length(stats::na.omit(smd_abs))
+      xs <- x[idx_study, , drop = FALSE]
+      xr <- x[idx_rest, , drop = FALSE]
+      smd_abs <- .study_block_smd_abs(xs, xr)
+      # A12: NA SMDs conflate two distinct cases — the masked 0/0 (both
+      # partitions constant AND equal: no variance information) and NA data
+      # (e.g. an all-missing feature in one partition).  Count them
+      # separately instead of lumping both into n_zero_sd.
+      pooled_sd <- sqrt((apply(xs, 2L, stats::sd)^2 +
+                           apply(xr, 2L, stats::sd)^2) / 2)
+      mu_diff <- colMeans(xs) - colMeans(xr)
+      n_zero <- sum(!is.na(pooled_sd) & pooled_sd == 0 &
+                      !is.na(mu_diff) & mu_diff == 0)
+      n_missing <- sum(is.na(smd_abs)) - n_zero
       smd_abs <- stats::na.omit(smd_abs)
       k <- k + 1L
       rows[[k]] <- data.frame(
@@ -130,7 +146,8 @@ stabl_multiomic_study_diagnostics <- function(x_list, y, study_labels) {
         smd_mean_abs = if (length(smd_abs)) mean(smd_abs) else NA_real_,
         smd_p95_abs = if (length(smd_abs)) stats::quantile(smd_abs, 0.95, names = FALSE) else NA_real_,
         smd_max_abs = if (length(smd_abs)) max(smd_abs) else NA_real_,
-        n_zero_sd = zero_sd,
+        n_zero_sd = n_zero,
+        n_missing = n_missing,
         stringsAsFactors = FALSE
       )
     }
@@ -166,6 +183,12 @@ stabl_multiomic_study_diagnostics <- function(x_list, y, study_labels) {
 #'
 #' `prop_train` is a target, not a guarantee: study granularity governs the
 #' achievable split, and extreme values can fail the fail-closed checks below.
+#'
+#' For a continuous `y` the balance criterion is computed on
+#' `factor(as.character(y))` — every distinct value becomes its own class —
+#' so the stratification term is degenerate; supply a categorical `y` (or
+#' bin a continuous one) for the balance criterion to be meaningful
+#' (review A11).
 #'
 #' @param x_list Named list of omic matrices or data frames with identical
 #'   sample row names.
@@ -405,15 +428,49 @@ stabl_multiomic_study_split <- function(x_list, y, study_labels,
 #' cmp$ber_gap
 #' @export
 stabl_multiomic_scheme_comparison <- function(x_list, y, study_labels, ...) {
+  # Review A10 (empirically corrected): an exact-named repeat of a reserved
+  # formal never reaches `...` -- R binds it to the formal or errors at match
+  # time.  The reachable hazard is a silent positional shift: in
+  # (x, y, sl, y = y2) the named `y` wins the formal and the positional `y`
+  # silently re-binds to `study_labels`.  Reject calls that mix named
+  # reserved formals with enough unnamed arguments to shift positional
+  # matching onto a different formal than the caller wrote.
+  mc_names <- names(as.list(match.call()))[-1L]
+  reserved <- c("x_list", "y", "study_labels")
+  named_reserved <- intersect(mc_names, reserved)
+  n_unnamed <- sum(!nzchar(mc_names))
+  if (length(named_reserved) &&
+      any(match(named_reserved, reserved) <= n_unnamed)) {
+    stop(
+      "Ambiguous call: named argument(s) ",
+      paste(sprintf("`%s`", named_reserved), collapse = ", "),
+      " combined with unnamed positional arguments can silently re-bind ",
+      "`x_list`/`y`/`study_labels`; name all three explicitly.",
+      call. = FALSE
+    )
+  }
   if (is.null(study_labels)) {
     stop(
       "`study_labels` is required: the comparison needs a study-disjoint arm.",
       call. = FALSE
     )
   }
+  # Validate `x_list`/`y` before `study_labels` so a malformed omic list
+  # errors informatively instead of via `rownames(x_list[[1]])` (review A10).
+  validate_multiomic_inputs(x_list = x_list, y = y)
   .validate_study_labels(study_labels, rownames(x_list[[1L]]))
 
-  call_args <- c(list(x_list = x_list, y = y), list(...))
+  dots <- list(...)
+  clash <- intersect(names(dots), c("x_list", "y", "study_labels"))
+  if (length(clash)) {
+    # Unreachable through ordinary calls (exact-named duplicates bind to the
+    # formals first); kept as defense-in-depth for programmatically
+    # constructed calls (review A10).
+    stop("`...` may not contain reserved argument(s) set by the ",
+         "comparison itself: ", paste(clash, collapse = ", "),
+         call. = FALSE)
+  }
+  call_args <- c(list(x_list = x_list, y = y), dots)
   sample_iid <- do.call(
     stabl_multiomic_nested_cv,
     c(call_args, list(study_labels = NULL))

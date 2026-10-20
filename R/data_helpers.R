@@ -52,6 +52,19 @@ load_ool_data <- function(split = c("train", "valid")) {
   prot_ids  <- prot_df[[1]]
   dos_ids   <- dos_df[[1]]
 
+  # Fail closed on duplicate IDs (match() below would silently take the
+  # first) and non-numeric feature columns (review A16).
+  if (anyDuplicated(cytof_ids) || anyDuplicated(prot_ids) ||
+      anyDuplicated(dos_ids)) {
+    stop("Duplicate sample IDs found in at least one OOL data file.",
+         call. = FALSE)
+  }
+  if (!all(vapply(cytof_df[, -1L, drop = FALSE], is.numeric, logical(1L))) ||
+      !all(vapply(prot_df[, -1L, drop = FALSE], is.numeric, logical(1L)))) {
+    stop("Non-numeric feature column found in an OOL data file.",
+         call. = FALSE)
+  }
+
   # Align to common sample IDs (intersection)
   common_ids <- Reduce(intersect, list(cytof_ids, prot_ids, dos_ids))
   if (length(common_ids) == 0L) {

@@ -153,6 +153,10 @@ save_stabl_results <- function(
   }
   task_type <- match.arg(task_type, c("binary", "multiclass", "regression"))
 
+  # Validate the plotting backend BEFORE creating anything on disk, so a
+  # missing ggplot2 does not leave an empty directory behind (review A8).
+  .require_ggplot2()
+
   # Create output directory (fail if exists and override = FALSE)
   if (dir.exists(path) && !override) {
     stop(
@@ -162,8 +166,6 @@ save_stabl_results <- function(
     )
   }
   dir.create(path, recursive = TRUE, showWarnings = FALSE)
-
-  .require_ggplot2()
 
   # 1. CSV exports
   export_stabl_to_csv(object, path)
@@ -245,8 +247,11 @@ rowMaxs <- function(m) {
 # Build readable column labels from the lambda grid (one label per row)
 .lambda_grid_row_labels <- function(lambda_grid) {
   if (nrow(lambda_grid) == 0L) return(character(0L))
-  apply(lambda_grid, 1L, function(row) {
-    pairs <- paste0(names(row), "=", signif(as.numeric(row), 4L))
-    paste(pairs, collapse = ", ")
-  })
+  # Format per column: as.numeric() on a mixed-type row coerces the whole
+  # row to character first and warns to NA (review A9).
+  formatted <- Map(function(col, nm) {
+    vals <- if (is.numeric(col)) signif(col, 4L) else format(col)
+    paste0(nm, "=", vals)
+  }, lambda_grid, names(lambda_grid))
+  do.call(paste, c(unname(formatted), sep = ", "))
 }

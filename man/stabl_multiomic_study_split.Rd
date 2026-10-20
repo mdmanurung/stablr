@@ -48,6 +48,12 @@ sides; a seeded shuffle fixes the order of size ties.
 \details{
 \code{prop_train} is a target, not a guarantee: study granularity governs the
 achievable split, and extreme values can fail the fail-closed checks below.
+
+For a continuous \code{y} the balance criterion is computed on
+\code{factor(as.character(y))} — every distinct value becomes its own class —
+so the stratification term is degenerate; supply a categorical \code{y} (or
+bin a continuous one) for the balance criterion to be meaningful
+(review A11).
 }
 \examples{
 set.seed(6L)

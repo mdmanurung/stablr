@@ -142,6 +142,9 @@ stabl_environment_stability <- function(x,
     )
   }
   n_samples <- nrow(x)
+  # Fail closed on x/y sample-ID mismatch up front; otherwise the
+  # per-environment .subset_outcome_by_ids() fails deep (review A13).
+  validate_sample_alignment(x, y)
   env_factor <- .validate_environment_labels(environments, n_samples)
   env_levels <- levels(env_factor)
 
