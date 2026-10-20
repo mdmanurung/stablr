@@ -291,6 +291,24 @@ stabl_multiomic_nested_cv <- function(
     if (isTRUE(stratified) && min(table(strata_labels)) < max(outer_v, inner_v)) {
       stop("Each stratum must have at least `max(outer_v, inner_v)` samples.", call. = FALSE)
     }
+    if (isTRUE(stratified)) {
+      # Inner folds are built on each outer-TRAINING split, not on the full
+      # data: the rarest stratum contributes as few as m - ceiling(m /
+      # outer_v) samples there, so the full-data check above still passes
+      # configurations that crash mid-run in .make_stratified_folds
+      # (review E2; repro: 5/class with outer_v = inner_v = 5).
+      m <- min(table(strata_labels))
+      if (m - ceiling(m / outer_v) < inner_v) {
+        stop(sprintf(
+          paste0(
+            "Each stratum must have at least `inner_v` samples within ",
+            "every outer-training split: with outer_v = %d, the rarest ",
+            "stratum (%d samples) contributes as few as %d < inner_v = %d."
+          ),
+          outer_v, m, m - ceiling(m / outer_v), inner_v
+        ), call. = FALSE)
+      }
+    }
     fold_scheme <- "sample_iid"
     outer_folds <- .make_repeated_cv_folds(
       y = strata_labels,
@@ -918,6 +936,29 @@ stabl_multiomic_nested_cv <- function(
 }
 
 .select_nested_candidate <- function(summary, metric) {
+  # Fail closed when every candidate is NA on the selection metric:
+  # which.max/which.min would return NA and the caller would index
+  # candidates[[NA]] with an opaque subscript error (review E3; e.g. R^2
+  # is undefined for a constant gaussian outcome).  Partial NA columns
+  # keep the documented behavior: which.* skips NA, first non-NA wins.
+  metric_col <- switch(metric,
+    accuracy = "accuracy",
+    r2 = "r2",
+    mae = "mae",
+    rmse = "rmse",
+    "balanced_error_rate"
+  )
+  if (all(is.na(summary[[metric_col]]))) {
+    stop(sprintf(
+      paste0(
+        "All candidates have NA `%s`: the selection metric could not be ",
+        "computed for any candidate (e.g. R^2 is undefined for a ",
+        "constant outcome). Choose a different `selection_metric` or ",
+        "check the outcome."
+      ),
+      metric_col
+    ), call. = FALSE)
+  }
   # Ties: first-index wins (documented).
   if (metric == "accuracy") {
     return(summary$candidate[which.max(summary$accuracy)])

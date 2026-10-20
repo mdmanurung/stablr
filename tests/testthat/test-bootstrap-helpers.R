@@ -297,3 +297,39 @@ test_that("D2: .stratified_group_bootstrap_indices replace=FALSE exact order (ch
                                                       replace = FALSE)
   expect_identical(idx, c(1L, 7L, 3L, 8L, 2L, 10L, 6L, 9L))
 })
+
+test_that("stratified bootstrap never returns indices outside the drawn stratum (B8 regression)", {
+  # sample(x, k) on a length-1 pool draws from 1:x instead of repeating x.
+  # Stratum B is a single row (index 3); with replace = TRUE its three
+  # draws (count 3 of 9) must all be exactly row 3.
+  set.seed(1L)
+  idx <- stablr:::.stratified_bootstrap_indices(
+    c("A", "A", "B"), n_subsamples = 9L, replace = TRUE
+  )
+  expect_length(idx, 9L)
+  expect_true(all(idx %in% 1:3))
+  expect_identical(sum(idx == 3L), 3L)
+})
+
+test_that("zero-size bootstrap requests fail fast with the real cause (E13 regression)", {
+  y <- setNames(c(1, -1), c("s1", "s2"))
+  # Exported samplers: n_subsamples = 0 is rejected at entry instead of
+  # exhausting the diversity guard's redraws with a class-balance message.
+  expect_error(
+    sample_bootstrap_indices(y, n_subsamples = 0L),
+    "n_subsamples"
+  )
+  expect_error(
+    group_bootstrap_indices(y, groups = c("g1", "g2"), n_subsamples = 0L),
+    "n_subsamples"
+  )
+  # stabl_fit: floor(sample_fraction * n) == 0 names sample_fraction.
+  x <- matrix(rnorm(4), 2, 2, dimnames = list(c("s1", "s2"), c("f1", "f2")))
+  expect_error(
+    stabl_fit(x, y, sample_fraction = 0.1, n_bootstraps = 2L,
+              lambda_grid = data.frame(lambda = 0.1),
+              artificial_type = NULL, hard_threshold = 0.5,
+              random_state = 1L),
+    "n_subsamples = 0"
+  )
+})

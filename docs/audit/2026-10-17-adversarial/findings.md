@@ -1448,6 +1448,62 @@ check 0E/0W/1N (pre-existing installed-size NOTE; doc 3.8 Mb); all
 12 vignettes rebuild clean.  NEWS.md entries are docs-only and parse-verified with
 utils::news(); the code tree is exactly the gated tree.
 
+**Batch E-2 fail-closed edges PR (2026-10-20):** implementation-review
+findings B8/E13/E2/E3/E12 fixed with regression tests (second batch of
+the approved four-batch E-triage; absorbs the remaining item from review
+§7 fix-order item 4).
+
+- B8 (`R/bootstrap_helpers.R`): the classic `sample(x, 1)` length-1
+  pitfall in the stratified samplers.  In `.stratified_bootstrap_indices`
+  the per-stratum draw on a single-member stratum sampled from `1:x`
+  instead of returning that member's row — wrong-stratum indices in the
+  bootstrap (e.g. a rare-class sample replaced by an arbitrary row).
+  Fixed with index-then-subset (`pool[sample.int(...)]`) at the
+  per-stratum draw and at the final shuffles of both
+  `.stratified_bootstrap_indices` and `.stratified_group_bootstrap_indices`
+  (the shuffle sites are the same one-line pattern; their length-1 case
+  is not independently observable from outside, so the regression test
+  pins the per-stratum draw).  RNG streams are bit-identical to before
+  for all non-degenerate (pool size >= 2) cases.
+- E13 (`R/stabl_fit.R`, `R/bootstrap_helpers.R`):
+  `floor(sample_fraction * n) == 0` (e.g. n = 2, sample_fraction = 0.1)
+  was unguarded; the run failed only after the diversity guard exhausted
+  its redraws, with a message blaming class balance.  `stabl_fit` now
+  fails fast naming `sample_fraction` and `n_subsamples = 0`; the
+  exported `sample_bootstrap_indices()` / `group_bootstrap_indices()`
+  validate `n_subsamples >= 1` via `.validate_scalar_integer_like`.
+- E2 (`R/nested_cv.R`): the front-door stratification guard checked
+  full-data stratum counts, but inner folds are built on outer-*training*
+  splits — 5 samples/class with `outer_v = inner_v = 5` passed the guard
+  then crashed mid-run (review-verified repro).  Added a second guard:
+  the rarest stratum must contribute at least `inner_v` samples to every
+  outer-training split (`m - ceiling(m / outer_v) >= inner_v`).  The
+  original guard (and its pinned message) is unchanged.
+- E3 (`R/nested_cv.R`, `.select_nested_candidate`): an all-NA selection
+  metric (e.g. `r2` with a constant gaussian outcome) made `which.max`
+  return NA and crashed with an opaque subscript error.  Now fails
+  closed with an informative message naming the metric; partial-NA
+  columns keep the documented first-non-NA-wins behavior.
+- E12 (`R/visualization.R`, `plot_stabl_path`): single-lambda grids
+  rendered an empty path (`geom_line` drops singleton groups).  Point
+  layers are added for the artificial/noise/selected series when the
+  grid has one row, honouring the single-point-path contract.
+
+Regression tests, each confirmed to FAIL against the pre-fix code
+(git-stash negative control; invariant anchors pass both ways by
+design): single-member-stratum draws return exactly that row (B8);
+zero-size requests error at entry in all three entry points (E13);
+5/class with `outer_v = inner_v = 5` errors at the front door with the
+outer-training-split message (E2); all-NA metric errors informatively
+while partial-NA still selects the first non-NA candidate (E3);
+single-lambda path plots contain point layers (E12).
+
+Gates: suite 62 files / 0 failed / 0 errors / 1 skip / 3 warnings (exact
+parity with PR-G — the new tests add no warnings or skips); R CMD
+check 0E/0W/1N (pre-existing installed-size NOTE; doc 3.8 Mb); all
+12 vignettes rebuild clean.  NEWS.md entries are docs-only and parse-verified with
+utils::news(); the code tree is exactly the gated tree.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3

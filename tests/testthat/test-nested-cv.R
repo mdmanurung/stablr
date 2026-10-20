@@ -438,3 +438,40 @@ test_that("return_probabilities fails clearly for multiclass outcomes", {
     "binary"
   )
 })
+
+test_that("stratification guard accounts for outer-training splits (E2 regression)", {
+  # 5 samples/class with outer_v = inner_v = 5 passes the full-data guard
+  # but each outer-training split holds only 4/class, so inner-fold
+  # construction would crash mid-run; the front-door guard must fire first.
+  ids <- paste0("s", seq_len(10L))
+  x <- matrix(rnorm(10L * 3L), nrow = 10L,
+              dimnames = list(ids, paste0("f", seq_len(3L))))
+  y <- setNames(factor(rep(c("A", "B"), each = 5L)), ids)
+  expect_error(
+    stabl_multiomic_nested_cv(
+      x_list = list(mrna = x),
+      y = y,
+      outer_v = 5L,
+      inner_v = 5L,
+      n_bootstraps = 2L,
+      artificial_type = NULL,
+      hard_threshold = 0.1
+    ),
+    "outer-training split"
+  )
+})
+
+test_that("candidate selection fails closed when the metric is all-NA (E3 regression)", {
+  summary <- data.frame(
+    candidate = c("a", "b"), r2 = c(NA_real_, NA_real_),
+    balanced_error_rate = c(0.2, 0.3), stringsAsFactors = FALSE
+  )
+  expect_error(
+    stablr:::.select_nested_candidate(summary, "r2"),
+    "All candidates have NA"
+  )
+  # Partial NA keeps the documented behavior: which.* skips NA, first
+  # non-NA wins.
+  summary$r2 <- c(NA_real_, 0.5)
+  expect_identical(stablr:::.select_nested_candidate(summary, "r2"), "b")
+})

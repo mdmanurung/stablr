@@ -1,5 +1,26 @@
 # stablr 0.3.0.9000 (development)
 
+## Bug fixes (implementation review, 2026-10-20, batch E-2)
+
+- `stabl_fit()` now fails fast when `sample_fraction` implies
+  `n_subsamples = 0` (previously surfaced only after the diversity
+  guard's redraws with a message blaming class balance);
+  `sample_bootstrap_indices()` and `group_bootstrap_indices()` validate
+  `n_subsamples >= 1`.
+- Stratified bootstrap samplers no longer hit R's `sample(x, 1)`
+  length-1 pitfall: a single-member stratum's draws could come from
+  `1:x` instead of being that member's row (wrong-stratum indices).
+  All shuffles now use index-then-subset via `sample.int`.
+- `stabl_multiomic_nested_cv()`'s stratification guard now accounts for
+  inner folds being built on outer-*training* splits: configurations
+  such as 5 samples/class with `outer_v = inner_v = 5` are rejected at
+  entry instead of crashing mid-run.
+- Nested-CV candidate selection now fails closed with an informative
+  error when every candidate is NA on the selection metric (e.g. R^2
+  with a constant outcome) instead of an opaque subscript error.
+- `plot_stabl_path()` renders single-lambda grids as points (previously
+  `geom_line` dropped the singleton groups, leaving an empty path).
+
 ## Bug fixes (implementation review, 2026-10-20, batch E-1)
 
 - `stabl_preprocess_apply()` now fails closed when a feature had no

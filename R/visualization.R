@@ -105,6 +105,10 @@ plot_stabl_path <- function(object, new_hard_threshold = NULL,
   lam_grid <- lam_grid[ord, , drop = FALSE]
 
   lambda_vals <- unname(lam_grid$lambda)
+  # Single-lambda grids: every feature group has one point and geom_line
+  # draws nothing, leaving an empty path; add point layers so the path is
+  # visible (review E12).
+  single_lambda <- length(lambda_vals) == 1L
   df_real <- .scores_to_long_df(feat_names, scores, lambda_vals, lam_grid,
                                  has_alpha, selected = support)
 
@@ -129,6 +133,15 @@ plot_stabl_path <- function(object, new_hard_threshold = NULL,
       linewidth = 0.4,
       linetype = "dotted"
     )
+    if (single_lambda) {
+      p <- p + ggplot2::geom_point(
+        data    = df_art,
+        mapping = ggplot2::aes(x = lambda_idx, y = score, group = feature),
+        colour  = .stablr_colors$artificial,
+        alpha   = 0.4,
+        size    = 1.5
+      )
+    }
   }
 
   # Noise features
@@ -141,6 +154,15 @@ plot_stabl_path <- function(object, new_hard_threshold = NULL,
       alpha   = 0.8,
       linewidth = 0.5
     )
+    if (single_lambda) {
+      p <- p + ggplot2::geom_point(
+        data    = df_noise,
+        mapping = ggplot2::aes(x = lambda_idx, y = score, group = feature),
+        colour  = .stablr_colors$noise,
+        alpha   = 0.8,
+        size    = 1.5
+      )
+    }
   }
 
   # Selected features (on top)
@@ -153,6 +175,14 @@ plot_stabl_path <- function(object, new_hard_threshold = NULL,
       alpha   = 1,
       linewidth = 1
     )
+    if (single_lambda) {
+      p <- p + ggplot2::geom_point(
+        data    = df_sel,
+        mapping = ggplot2::aes(x = lambda_idx, y = score, group = feature),
+        colour  = .stablr_colors$selected,
+        size    = 2
+      )
+    }
   }
 
   # Threshold line

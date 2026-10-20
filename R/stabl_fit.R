@@ -433,6 +433,16 @@ stabl_fit <- function(
 
   n_total_features <- ncol(x_fit)
   n_subsamples     <- as.integer(floor(sample_fraction * n_samples))
+  # Fail fast with the real cause: n_subsamples = 0 would otherwise surface
+  # only after the diversity guard exhausts its redraws, with a message
+  # blaming class balance (review E13).
+  if (n_subsamples < 1L) {
+    stop(
+      "`sample_fraction` (= ", sample_fraction, ") implies n_subsamples = 0 ",
+      "for n = ", n_samples, " samples. Increase `sample_fraction`.",
+      call. = FALSE
+    )
+  }
   modeled_classes <- .modeled_class_levels(y, family)
 
   # Fix 7: reject impossible configuration before entering bootstrap

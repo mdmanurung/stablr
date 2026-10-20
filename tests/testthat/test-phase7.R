@@ -753,3 +753,21 @@ test_that("plotting and export helpers reject invalid scalar arguments", {
   expect_error(save_stabl_results(fit_no_art, path, x = x, y = y_num, override = c(TRUE, FALSE)), "override")
   expect_error(save_stabl_results(fit_no_art, path, x = x, y = y_num, override = 1), "override")
 })
+
+test_that("plot_stabl_path renders single-lambda grids as points (E12 regression)", {
+  skip_if_not_installed("ggplot2")
+  # geom_line draws nothing for singleton groups, so a one-row lambda grid
+  # used to produce an empty path; point layers keep it visible.
+  set.seed(7L)
+  x <- matrix(rnorm(40 * 4), 40, 4,
+              dimnames = list(paste0("s", 1:40), paste0("f", 1:4)))
+  y <- setNames(x[, 1] + rnorm(40), rownames(x))
+  fit <- stabl_fit(x, y, lambda_grid = data.frame(lambda = 0.1),
+                   n_bootstraps = 5L, artificial_type = NULL,
+                   hard_threshold = 0.5, random_state = 7L)
+  p <- plot_stabl_path(fit)
+  has_points <- any(vapply(p$layers,
+                           function(l) inherits(l$geom, "GeomPoint"),
+                           logical(1)))
+  expect_true(has_points)
+})

@@ -89,6 +89,8 @@ sample_bootstrap_indices <- function(
   }
 
   n <- length(y)
+  n_subsamples <- .validate_scalar_integer_like(n_subsamples, "n_subsamples",
+                                                min = 1L)
   if (!replace && n_subsamples > n) {
     stop("`n_subsamples` cannot exceed sample size when replace = FALSE.", call. = FALSE)
   }
@@ -229,6 +231,8 @@ group_bootstrap_indices <- function(y, groups, n_subsamples, replace = FALSE,
   }
 
   n <- length(y)
+  n_subsamples <- .validate_scalar_integer_like(n_subsamples, "n_subsamples",
+                                                min = 1L)
   if (!replace && n_subsamples > n) {
     stop("`n_subsamples` cannot exceed sample size when replace = FALSE.", call. = FALSE)
   }
@@ -478,11 +482,15 @@ group_bootstrap_indices <- function(y, groups, n_subsamples, replace = FALSE,
 
   idx <- unlist(
     lapply(names(counts), function(stratum) {
-      sample(idx_by_stratum[[stratum]], size = counts[[stratum]], replace = replace)
+      # Index-then-subset: sample(x, 1) on a length-1 stratum would draw
+      # from 1:x instead of returning x (review B8).
+      pool <- idx_by_stratum[[stratum]]
+      pool[sample.int(length(pool), size = counts[[stratum]], replace = replace)]
     }),
     use.names = FALSE
   )
-  sample(idx, length(idx), replace = FALSE)
+  # Index-then-subset shuffle (review B8: sample(x, 1) length-1 pitfall).
+  idx[sample.int(length(idx))]
 }
 
 .unstratified_group_bootstrap_indices <- function(groups, group_levels,
@@ -554,5 +562,6 @@ group_bootstrap_indices <- function(y, groups, n_subsamples, replace = FALSE,
   sampled_idx <- unlist(outer_chunks, use.names = FALSE)
   if (!replace) sampled_idx <- unique(sampled_idx)
 
-  sample(sampled_idx, length(sampled_idx), replace = FALSE)
+  # Index-then-subset shuffle (review B8: sample(x, 1) length-1 pitfall).
+  sampled_idx[sample.int(length(sampled_idx))]
 }
