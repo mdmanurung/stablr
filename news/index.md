@@ -2,6 +2,25 @@
 
 ## stablr 0.3.0.9000 (development)
 
+### Bug fixes (implementation review, 2026-10-20, batch F-5)
+
+- Nested-CV gaussian downstream regressor: outer-training splits with
+  fewer than 3 samples now route to the intercept-only fallback instead
+  of crashing in `cv.glmnet` (the `max(3L, ...)` nfolds floor exceeded
+  n; empirically glmnet errors uncaught — “y is constant” from 1-sample
+  in-fold training — rather than returning the NaN the review
+  predicted). Latent: `stabl_fit` itself fails on such tiny splits
+  first.
+- `.evaluate_stabl_candidates_inner()` loses its dead `train_ids` formal
+  (never referenced; the inner folds carry their own `train_ids`).
+- Numeric `strata` whose quantile breaks collapse under heavy ties now
+  warn that stratification is effectively disabled (previously silent).
+- New test coverage: unstratified (`stratified = FALSE`) nested CV is
+  now exercised end-to-end under class skew — both the feasible
+  completion path and the typed `stablr_bootstrap_infeasible`
+  fail-closed error when an unstratified draw leaves a class
+  bootstrap-infeasible.
+
 ### Bug fixes (implementation review, 2026-10-20, batch F-4)
 
 - `stabl_preprocess_fit(transforms = "zv")` now fails closed when the
