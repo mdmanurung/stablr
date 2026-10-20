@@ -52,7 +52,20 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.0.9000" id="stablr-0309000-development">stablr 0.3.0.9000 (development)<a class="anchor" aria-label="anchor" href="#stablr-0309000-development"></a></h2>
 <div class="section level3">
-<h3 id="bug-fixes-implementation-review-batch-f-0-3-0-9000">Bug fixes (implementation review, 2026-10-20, batch F-7)<a class="anchor" aria-label="anchor" href="#bug-fixes-implementation-review-batch-f-0-3-0-9000"></a></h3>
+<h3 id="bug-fixes-implementation-review-batch-f-0-3-0-9000">Bug fixes (implementation review, 2026-10-20, batch F-8)<a class="anchor" aria-label="anchor" href="#bug-fixes-implementation-review-batch-f-0-3-0-9000"></a></h3>
+<ul><li>
+<code><a href="../reference/plot_fdr_graph.html">plot_fdr_graph()</a></code>: the FDR threshold reference line now marks the stored <code>fdr_min_threshold_</code> contract (falling back to the grid recompute only when the stored value is absent) — previously it always recomputed <code>thresh_grid[which.min(FDRs_)]</code>, which can disagree with the threshold the fit actually selected.</li>
+<li>
+<code><a href="../reference/boxplot_features.html">boxplot_features()</a></code>: the jitter is now hermetic and deterministic — <code>geom_point(position = position_jitter(width, height, seed = 1L))</code> instead of <code><a href="https://ggplot2.tidyverse.org/reference/geom_jitter.html" class="external-link">geom_jitter()</a></code>, which drew from the ambient stream at build time and advanced the caller’s global <code>.Random.seed</code>.</li>
+<li>
+<code><a href="../reference/scatterplot_features.html">scatterplot_features()</a></code>: the LOESS smooth is now skipped per panel when a panel has fewer than 4 complete points (with a warning naming the affected panels); previously <code>loess</code> failed or warned opaquely at ggplot build time on tiny panels.</li>
+<li>
+<code><a href="../reference/scatterplot_features.html">scatterplot_features()</a></code> now fails closed on a non-numeric <code>y</code> — previously a factor <code>y</code> was silently coerced with <code><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric()</a></code> (1..nlevels), scrambling the scatter. The <code><a href="../reference/boxplot_features.html">boxplot_features()</a></code> / <code><a href="../reference/scatterplot_features.html">scatterplot_features()</a></code> docs also no longer contradict themselves on missing features: requested features absent from <code>x</code> are silently skipped, and an error is raised only when NONE are present.</li>
+<li>Docs: <code><a href="../reference/summary.stabl_interpretation.html">summary.stabl_interpretation()</a></code> and <code><a href="../reference/plot.stabl_interpretation.html">plot.stabl_interpretation()</a></code> now carry full roxygen documentation (previously <code>@export</code>-only), including the empty-selection error; the plot’s <code><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes()</a></code> now uses <code>.data$</code> pronouns instead of <code>ev$</code> (the pronoun is registered with <code><a href="https://rdrr.io/r/utils/globalVariables.html" class="external-link">utils::globalVariables()</a></code> so <code>rlang</code> stays a soft Suggests dependency).</li>
+<li>Docs: <code><a href="../reference/plot.stabl_diagnostics.html">plot.stabl_diagnostics()</a></code>’s <code>which</code> entry for the resample distribution curves now correctly describes them as survival curves (1 - ECDF), not ECDFs.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-implementation-review-batch-f-0-3-0-9000-1">Bug fixes (implementation review, 2026-10-20, batch F-7)<a class="anchor" aria-label="anchor" href="#bug-fixes-implementation-review-batch-f-0-3-0-9000-1"></a></h3>
 <ul><li>
 <code><a href="../reference/stabl_multiomic_stacked.html">stabl_multiomic_stacked()</a></code>: a never-observed omic (all-NA column) is masked out of every row, so the stacking score does not depend on its weight and the reported <code>Associated_weight</code> was an arbitrary <code>runif</code> draw. Such weights are now reported as <code>NA</code> with a warning. <code>.weighted_masked_mean()</code> treats NA weights as zero (a literal NA would poison every row sum, since <code>0 * NA</code> is <code>NA</code>).</li>
 <li>
@@ -61,7 +74,7 @@
 <li>Docs: <code><a href="../reference/stabl_multiomic_train_validate.html">stabl_multiomic_train_validate()</a></code> <code>@return</code> now discloses that with <code>late_fusion = TRUE</code> the top-level <code>fits</code>/<code>selected_*</code> come from the late-fusion full refit (whose <code>full_per_omic</code> is stripped from the returned <code>late_fusion</code> list) and can differ from the <code>late_fusion = FALSE</code> result on identical input and seed; the <code>lambda_grid</code> “computed on full data leaks mildly” caveat is extended to the OOF stacking path.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="bug-fixes-implementation-review-batch-f-0-3-0-9000-1">Bug fixes (implementation review, 2026-10-20, batch F-6)<a class="anchor" aria-label="anchor" href="#bug-fixes-implementation-review-batch-f-0-3-0-9000-1"></a></h3>
+<h3 id="bug-fixes-implementation-review-batch-f-0-3-0-9000-2">Bug fixes (implementation review, 2026-10-20, batch F-6)<a class="anchor" aria-label="anchor" href="#bug-fixes-implementation-review-batch-f-0-3-0-9000-2"></a></h3>
 <ul><li>
 <code>.study_outcome_summary()</code> now fails closed on a dimensioned (matrix or data.frame) <code>y</code> — previously it passed the <code><a href="https://rdrr.io/r/base/numeric.html" class="external-link">is.numeric()</a></code> check and was subset as a flat column-major vector, silently scrambling per-study summaries.</li>
 <li>
@@ -79,7 +92,7 @@
 <li>Docs: <code><a href="../reference/stabl_multiomic_study_split.html">stabl_multiomic_study_split()</a></code>’s balance criterion is <code>factor(as.character(y))</code>, degenerate for continuous <code>y</code> — documented, with a recommendation to pass a categorical (or binned) <code>y</code>.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="bug-fixes-implementation-review-batch-f-0-3-0-9000-2">Bug fixes (implementation review, 2026-10-20, batch F-5)<a class="anchor" aria-label="anchor" href="#bug-fixes-implementation-review-batch-f-0-3-0-9000-2"></a></h3>
+<h3 id="bug-fixes-implementation-review-batch-f-0-3-0-9000-3">Bug fixes (implementation review, 2026-10-20, batch F-5)<a class="anchor" aria-label="anchor" href="#bug-fixes-implementation-review-batch-f-0-3-0-9000-3"></a></h3>
 <ul><li>Nested-CV gaussian downstream regressor: outer-training splits with fewer than 3 samples now route to the intercept-only fallback instead of crashing in <code>cv.glmnet</code> (the <code>max(3L, ...)</code> nfolds floor exceeded n; empirically glmnet errors uncaught — “y is constant” from 1-sample in-fold training — rather than returning the NaN the review predicted). Latent: <code>stabl_fit</code> itself fails on such tiny splits first.</li>
 <li>
 <code>.evaluate_stabl_candidates_inner()</code> loses its dead <code>train_ids</code> formal (never referenced; the inner folds carry their own <code>train_ids</code>).</li>
@@ -87,7 +100,7 @@
 <li>New test coverage: unstratified (<code>stratified = FALSE</code>) nested CV is now exercised end-to-end under class skew — both the feasible completion path and the typed <code>stablr_bootstrap_infeasible</code> fail-closed error when an unstratified draw leaves a class bootstrap-infeasible.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="bug-fixes-implementation-review-batch-f-0-3-0-9000-3">Bug fixes (implementation review, 2026-10-20, batch F-4)<a class="anchor" aria-label="anchor" href="#bug-fixes-implementation-review-batch-f-0-3-0-9000-3"></a></h3>
+<h3 id="bug-fixes-implementation-review-batch-f-0-3-0-9000-4">Bug fixes (implementation review, 2026-10-20, batch F-4)<a class="anchor" aria-label="anchor" href="#bug-fixes-implementation-review-batch-f-0-3-0-9000-4"></a></h3>
 <ul><li>
 <code>stabl_preprocess_fit(transforms = "zv")</code> now fails closed when the zero-variance filter removes ALL features (previously every downstream transform fitted on a 0-column matrix and <code><a href="../reference/stabl_fit.html">stabl_fit()</a></code> failed deep).</li>
 <li>
@@ -102,7 +115,7 @@
 <li>Documentation repairs: the README’s eight reference links were relative (<code>reference/*.html</code>) and 404’d on the GitHub repo page — they now point at the pkgdown site absolutely; and the hand-written <code>make_ranger_adapter.Rd</code> / <code>make_ordinal_adapter.Rd</code> (stale since the learner-factory internalization, invisible to roxygen2) were regenerated from source — the staleness both caused a codoc WARNING and broke the pkgdown workflow’s missing-topics check, which had left the deployed site stale.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="bug-fixes-implementation-review-batch-f-0-3-0-9000-4">Bug fixes (implementation review, 2026-10-20, batch F-3)<a class="anchor" aria-label="anchor" href="#bug-fixes-implementation-review-batch-f-0-3-0-9000-4"></a></h3>
+<h3 id="bug-fixes-implementation-review-batch-f-0-3-0-9000-5">Bug fixes (implementation review, 2026-10-20, batch F-3)<a class="anchor" aria-label="anchor" href="#bug-fixes-implementation-review-batch-f-0-3-0-9000-5"></a></h3>
 <ul><li>Accessor and input-validation errors are now typed <code>stablr_error</code> conditions (<code>stablr_accessor_error</code> / <code>stablr_input_error</code> subclasses), consistent with the package’s conditions machinery; messages are unchanged.</li>
 <li>
 <code>.check_fitted_stabl()</code> now also requires <code>feature_names</code> to be a character vector matching <code>nrow(stabl_scores_)</code> — a malformed object previously made <code><a href="../reference/get_feature_names.html">get_feature_names()</a></code> return NULL, masquerading as an empty support. A stored out-of-range <code>hard_threshold</code> is now re-validated on use.</li>
@@ -118,7 +131,7 @@
 <li>Removed the dead vendored <code>coef_ordered</code> generic and its two unregistered, uncalled methods (disclosed in COPYING.cooperative).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="bug-fixes-implementation-review-batch-f-0-3-0-9000-5">Bug fixes (implementation review, 2026-10-20, batch F-2)<a class="anchor" aria-label="anchor" href="#bug-fixes-implementation-review-batch-f-0-3-0-9000-5"></a></h3>
+<h3 id="bug-fixes-implementation-review-batch-f-0-3-0-9000-6">Bug fixes (implementation review, 2026-10-20, batch F-2)<a class="anchor" aria-label="anchor" href="#bug-fixes-implementation-review-batch-f-0-3-0-9000-6"></a></h3>
 <ul><li>
 <code><a href="../reference/stabl_interpret.html">stabl_interpret()</a></code> permutation importance no longer uses <code>sample(x)</code> on a column vector: with a single observation a positive-integer-valued column would draw from <code>1:x</code>. The permutation is now index-based (RNG-identical for n &gt; 1).</li>
 <li>
@@ -131,7 +144,7 @@
 <code>.validate_effects()</code> duplicate (feature, study) detection no longer false-positives on names containing spaces.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="bug-fixes-implementation-review-batch-f-0-3-0-9000-6">Bug fixes (implementation review, 2026-10-20, batch F-1)<a class="anchor" aria-label="anchor" href="#bug-fixes-implementation-review-batch-f-0-3-0-9000-6"></a></h3>
+<h3 id="bug-fixes-implementation-review-batch-f-0-3-0-9000-7">Bug fixes (implementation review, 2026-10-20, batch F-1)<a class="anchor" aria-label="anchor" href="#bug-fixes-implementation-review-batch-f-0-3-0-9000-7"></a></h3>
 <ul><li>
 <code><a href="../reference/stabl_diagnose.html">stabl_diagnose()</a></code> evidence matching now honours its documented contract for fits with unknown metadata: a NULL dimension matches only “any” rows instead of collapsing the evidence table to zero rows (latent defensive-path logic error).</li>
 <li>Two <code>assumption_notes</code> (“no threshold available” and “boundary minimum”) are now single strings; they were split mid-sentence into two vector elements by a stray <code><a href="https://rdrr.io/r/base/c.html" class="external-link">c()</a></code>.</li>

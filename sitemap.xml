@@ -60,6 +60,7 @@
 <url><loc>https://mdmanurung.github.io/stablr/reference/plot.stabl.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/plot.stabl_diagnostics.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/plot.stabl_fit.html</loc></url>
+<url><loc>https://mdmanurung.github.io/stablr/reference/plot.stabl_interpretation.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/plot.stabl_null_validation.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/plot_fdr_graph.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/plot_prc.html</loc></url>
@@ -96,6 +97,7 @@
 <url><loc>https://mdmanurung.github.io/stablr/reference/stablr-package.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/summary.stabl.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/summary.stabl_fit.html</loc></url>
+<url><loc>https://mdmanurung.github.io/stablr/reference/summary.stabl_interpretation.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/tpr_similarity.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/transform_stabl.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/validate_multiomic_inputs.html</loc></url>

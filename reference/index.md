@@ -139,6 +139,10 @@ and fold-safe preprocessing.
   : STABL analysis with an explicit evidence mode
 - [`stabl_interpret()`](https://mdmanurung.github.io/stablr/reference/stabl_interpret.md)
   : Interpret a fitted STABL selection
+- [`summary(`*`<stabl_interpretation>`*`)`](https://mdmanurung.github.io/stablr/reference/summary.stabl_interpretation.md)
+  : Summarise a STABL Interpretation
+- [`plot(`*`<stabl_interpretation>`*`)`](https://mdmanurung.github.io/stablr/reference/plot.stabl_interpretation.md)
+  : Plot Selected-Feature Stability
 - [`stabl_preprocess_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_preprocess_fit.md)
   : Fit a fold-safe preprocessing transform on training data
 - [`stabl_preprocess_apply()`](https://mdmanurung.github.io/stablr/reference/stabl_preprocess_apply.md)

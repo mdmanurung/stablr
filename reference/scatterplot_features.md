@@ -17,17 +17,20 @@ scatterplot_features(features, x, y, title = "Selected Features", ncol = 3L)
 - features:
 
   Character vector of feature names to plot. Features not present as
-  columns in `x` are silently skipped.
+  columns in `x` are silently skipped; an error is raised if NONE of
+  them are present.
 
 - x:
 
-  Numeric matrix or data frame of predictors. Column names must include
-  all elements of `features`.
+  Numeric matrix or data frame of predictors. Feature values are coerced
+  with [`as.numeric()`](https://rdrr.io/r/base/numeric.html).
 
 - y:
 
   Numeric vector of continuous outcome values. Must have the same number
-  of elements as `nrow(x)`.
+  of elements as `nrow(x)`. Non-numeric `y` (e.g. a factor, whose
+  [`as.numeric()`](https://rdrr.io/r/base/numeric.html) coercion
+  silently yields level codes) is rejected.
 
 - title:
 
@@ -39,7 +42,10 @@ scatterplot_features(features, x, y, title = "Selected Features", ncol = 3L)
 
 ## Value
 
-A `ggplot` object with one facet panel per feature.
+A `ggplot` object with one facet panel per feature. The LOESS smooth is
+drawn only for panels with at least 4 complete points (a smaller panel
+cannot support the smooth); skipped panels are announced with a warning
+and show the raw points only.
 
 ## See also
 

@@ -77,17 +77,19 @@ selection for regression tasks.</p>
 
 <dl><dt id="arg-features">features<a class="anchor" aria-label="anchor" href="#arg-features"></a></dt>
 <dd><p>Character vector of feature names to plot.  Features not
-present as columns in <code>x</code> are silently skipped.</p></dd>
+present as columns in <code>x</code> are silently skipped; an error is raised if
+NONE of them are present.</p></dd>
 
 
 <dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
-<dd><p>Numeric matrix or data frame of predictors.  Column names must
-include all elements of <code>features</code>.</p></dd>
+<dd><p>Numeric matrix or data frame of predictors.  Feature values are
+coerced with <code><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric()</a></code>.</p></dd>
 
 
 <dt id="arg-y">y<a class="anchor" aria-label="anchor" href="#arg-y"></a></dt>
 <dd><p>Numeric vector of continuous outcome values.  Must have the same
-number of elements as <code>nrow(x)</code>.</p></dd>
+number of elements as <code>nrow(x)</code>.  Non-numeric <code>y</code> (e.g. a factor, whose
+<code><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric()</a></code> coercion silently yields level codes) is rejected.</p></dd>
 
 
 <dt id="arg-title">title<a class="anchor" aria-label="anchor" href="#arg-title"></a></dt>
@@ -101,7 +103,10 @@ Default 3.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A <code>ggplot</code> object with one facet panel per feature.</p>
+    <p>A <code>ggplot</code> object with one facet panel per feature.  The LOESS
+smooth is drawn only for panels with at least 4 complete points (a
+smaller panel cannot support the smooth); skipped panels are announced
+with a warning and show the raw points only.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

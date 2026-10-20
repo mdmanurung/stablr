@@ -18,12 +18,13 @@ boxplot_features(features, x, y, title = "Selected Features", ncol = 3L)
 - features:
 
   Character vector of feature names to plot. Features not present as
-  columns in `x` are silently skipped.
+  columns in `x` are silently skipped; an error is raised if NONE of
+  them are present.
 
 - x:
 
-  Numeric matrix or data frame of predictors. Column names must include
-  all elements of `features`.
+  Numeric matrix or data frame of predictors. Feature values are coerced
+  with [`as.numeric()`](https://rdrr.io/r/base/numeric.html).
 
 - y:
 
@@ -40,7 +41,9 @@ boxplot_features(features, x, y, title = "Selected Features", ncol = 3L)
 
 ## Value
 
-A `ggplot` object with one facet panel per feature.
+A `ggplot` object with one facet panel per feature. The jittered points
+use a fixed position seed, so the figure is deterministic and leaves the
+global RNG untouched.
 
 ## See also
 
