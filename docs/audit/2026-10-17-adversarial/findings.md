@@ -2222,6 +2222,66 @@ checkpoint — disclosed.  Gates: suite 62 files / 0 failed / 0 errors /
 1 skip / 3 warnings (exact PR-G parity); R CMD check 0E/0W/1N
 (pre-existing installed-size NOTE); all 14 vignettes rebuild clean.
 
+**Functional verification audit PR (2026-10-21):** user-requested
+end-to-end functional audit — "ensure that every function works and that
+together all functions work nicely and seamlessly".  Method: (A) registry
+deepening — all 54 exports are directly called (`name(`) in their
+registry-listed evidence files, all 43 S3 methods are registered and
+callable via `getS3method`, 0 missing evidence files; (B) covr
+line-coverage baseline 87.18% (covr tally basis; R-source only — the
+vendored C++ backend is covered behaviorally by the multiview-parity
+fixtures and compiled-boundary-regression tests; gcov collection fails on
+the vendored translation unit, so C++ instrumentation is disabled and
+disclosed); (C) an integration-chain matrix over 14 user-facing chains
+found 2 chains with only piecewise (no single-file end-to-end) evidence:
+study tools (`stabl_multiomic_study_split` -> `stabl_multiomic_train_validate`
+-> `stabl_multiomic_study_diagnostics`) and artificial features
+(`make_artificial_features` -> bootstrap scoring -> `compute_fdp_plus`);
+(D) 17 zero-coverage functions classified — 11 are vendored
+multiview-1.0 utilities that no stablr call path reaches (`auc`,
+`auc.mat`, `cv.elnet`, `mvglmnet.fit`, `pen_function`, `process_exclude`,
+`collapse_named_lists`, `reshape_x_to_xlist`, `to_nvar_index`,
+`to_xlist_index`, `select_matrix_list_columns`; kept for upstream file
+parity as a documented exception, with the parity fixtures locking every
+vendored path stablr actually exercises) and 6 were genuinely reachable
+gaps.  Gaps closed with `test-functional-audit.R` (22 blocks / 119
+expectations): both chains end to end (the FDP+ test hand-checks the
+formula at t = 0.5 and asserts planted-signal separation at the
+min-FDP+ threshold — FDP+ has a +1 numerator, so its attainable floor is
+1/n_real, never 0, and the test asserts the floor); the unexported
+cooperative `"validation"` selection branch retained for characterization
+tests (F-CV-04) exercised end to end for binomial deviance/auc/class and
+gaussian mae, with poisson deviance verified directly against a
+dpois-based computation and the public family fence asserted explicitly;
+multinomial late fusion with a validation split
+(`.apply_multiclass_stack_weights` was unreachable by the existing
+train-only multinomial test); `family.cv.multiview`/`plot.multiview` S3
+methods executed for the first time; `sample_bootstrap_indices`
+`class_weights` happy path + error branches; ordinal-learner error
+branches; second-pass branches in bootstrap_helpers (strata
+coercion/validation/allocation edges, id-matched subsetting),
+learner_adapters (sparse-group-lasso validation, multinomial one-vs-rest,
+alpha batching), and the coefficient helpers (list-coef rowMaxs,
+near-lambda tolerance matching).  Two test-authoring defects caught and
+fixed during iteration (both probe artifacts, not package bugs):
+`noise_col_indices` is the SOURCE-column map, not augmented-matrix
+positions — the artificial block is the last `n_injected` columns,
+matching `stabl_fit.R`'s `art_rows`; and the study split is
+study-DISJOINT, so the chain test asserts disjointness, not overlap.  One
+contract-test generalization, disclosed: `test-public-interface-audit.R`
+now splits evidence fields on `;` so the registry can record multiple
+evidence files per interface (single-file fields unchanged); the registry
+records `test-functional-audit.R` for the 8 interfaces it newly
+evidences.  Coverage after: 88.90% covr tally basis (baseline 87.18%);
+effective excluding the vendored-dead exception list 91.00% covr basis /
+90.12% expression basis (expression-basis baseline 87.71%); functions at
+0%: 17 -> 11 (exactly the exception list); files <80%: 16 -> 13 (all
+vendored backend).  Chain matrix: 14/14 chains end-to-end.  NEWS: Tests
+section (45 parse-verified section entries).  Gates: suite 63 files /
+0 failed / 0 errors / 1 skip / 3 warnings (exact PR-G parity); R CMD
+check 0E/0W/1N (pre-existing installed-size NOTE); all 14 vignettes
+rebuild clean.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3

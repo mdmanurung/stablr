@@ -1,5 +1,29 @@
 # stablr 0.3.0.9000 (development)
 
+## Tests (2026-10-21, functional verification audit)
+
+- New test file `test-functional-audit.R` closes the gaps found by the
+  covr line-coverage baseline (87.2%) and the integration-chain matrix:
+  - end-to-end chains previously covered only piecewise: study tools
+    (`stabl_multiomic_study_split()` -> `stabl_multiomic_train_validate()`
+    -> `stabl_multiomic_study_diagnostics()`) and artificial features
+    (`make_artificial_features()` -> bootstrap scoring ->
+    `compute_fdp_plus()`, with a hand-checked FDP+ formula and a
+    planted-signal separation check);
+  - the unexported cooperative `"validation"` selection branch retained
+    for characterization tests (F-CV-04): binomial deviance/auc/class and
+    gaussian mae exercised end to end through the internal path, poisson
+    deviance verified directly against a dpois-based computation with the
+    public family fence asserted explicitly;
+  - multinomial late fusion with a validation split
+    (`.apply_multiclass_stack_weights()`);
+  - registered S3 methods never executed before:
+    `family.cv.multiview()` and `plot.multiview()`;
+  - `sample_bootstrap_indices()` `class_weights` happy path and error
+    branches, and ordinal-learner error branches.
+- `inst/release/public-interface-audit.csv` records the new evidence file
+  for the eight interfaces it covers.
+
 ## Documentation (2026-10-20, reproducibility pointers)
 
 - README Resources and `benchmarks/README.md` now point to the

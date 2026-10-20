@@ -47,10 +47,12 @@ test_that("audited interfaces have code documentation examples and tests", {
   expect_true(all(file.exists(file.path(root, audit$implementation))))
   expect_true(all(file.exists(file.path(root, audit$documentation))))
 
-  evidence_files <- unique(c(
+  evidence_fields <- unique(c(
     audit$valid_evidence,
     audit$invalid_evidence[!startsWith(audit$invalid_evidence, "not_applicable")]
   ))
+  # an evidence field may list several test files separated by ";"
+  evidence_files <- unique(unlist(strsplit(evidence_fields, ";", fixed = TRUE)))
   expect_true(all(file.exists(file.path(root, "tests", "testthat", evidence_files))))
 
   exports <- audit[audit$kind == "export", , drop = FALSE]
