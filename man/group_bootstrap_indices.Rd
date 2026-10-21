@@ -83,8 +83,8 @@ until a class-diverse sample is obtained.
 # 3 groups with 4 samples each; binary outcome
 y      <- c(0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1)
 groups <- rep(c("G1", "G2", "G3"), each = 4L)
-idx    <- group_bootstrap_indices(y, groups, n_subsamples = 8L,
-                                  random_state = 1L)
+idx    <- stablr:::group_bootstrap_indices(y, groups, n_subsamples = 8L,
+                                           random_state = 1L)
 table(groups[idx])  # whole groups only; count >= 8
 }
 \seealso{
@@ -92,3 +92,4 @@ table(groups[idx])  # whole groups only; count >= 8
 \code{\link[=stabl_fit]{stabl_fit()}} which calls this sampler automatically when \code{groups} is
 supplied.
 }
+\keyword{internal}

@@ -198,8 +198,12 @@ The 1.0.0 contract removes the pre-0.3.0 compatibility names outright
 canonical names — `get_feature_names()`, `stabl_multiomic_stacked()`,
 `jaccard_similarity_matrix()`, `adjusted_similarity_pairwise()`,
 `adjusted_similarity_summary()`, `pearson_similarity_pairwise()`,
-`pearson_similarity_summary()`, `sample_bootstrap_indices()` — and see
+`pearson_similarity_summary()` — and see
 `NEWS.md` and `docs/MIGRATION_0.3_TO_1.0.md` for the full mapping.
+Bootstrap index generation (the `classic_bootstrap_indices()` replacement)
+is internal machinery; control resampling through `stabl_fit()`'s
+`n_bootstraps`, `stratify_bootstrap`, `bootstrap_strata`, and
+`sample_groups` arguments.
 
 The 1.0.0 contract also removes a small set of legacy behaviors (Phase 13
 PR-A): the `explore`/`n_explore` arguments of `stabl_fit()` (an empty

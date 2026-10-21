@@ -372,8 +372,8 @@ stabl_finalize <- function(development_result, x, y, preprocessing = NULL,
 #'                  family = "gaussian", n_bootstraps = 20L, random_state = 2L)
 #' final <- stabl_finalize(fit, x, y, random_state = 2L)
 #' req <- final$required_columns
-#' validate_newdata_schema(final, x[1:3, rev(req)])  # order does not matter
-#' @export
+#' stablr:::validate_newdata_schema(final, x[1:3, rev(req)])  # order does not matter
+#' @keywords internal
 validate_newdata_schema <- function(object, newdata,
                                     extra_columns = c("error", "drop")) {
   if (!inherits(object, "stabl_predictor")) {

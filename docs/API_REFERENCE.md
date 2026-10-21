@@ -58,21 +58,22 @@ Learners are selected by name via the `base_learner` argument of
 `stabl_fit()` (`"lasso"`, `"elastic_net"`, `"adaptive_lasso"`,
 `"sparse_group_lasso"`, `"rf"`, `"ordinal"`, `"splsda"`). The fitting path
 uses internal batch adapters; the former single-row factory functions were
-internalized in 1.0.0. Grid helpers `auto_lambda_grid()`,
-`auto_rf_threshold_grid()`, `auto_ordinal_lambda_grid()`, and
-`auto_splsda_keepx_grid()` remain exported. The experimental oblique random
+internalized in 1.0.0. `auto_lambda_grid()` is the single exported grid
+helper; the learner-specific grids (`auto_rf_threshold_grid()`,
+`auto_ordinal_lambda_grid()`, `auto_splsda_keepx_grid()`) are internal
+machinery behind `lambda_grid = "auto"`. The experimental oblique random
 forest (`"oblique_rf"`) was retired in 1.0.0 (see
 `docs/MIGRATION_0.3_TO_1.0.md`).
 
 ## Artificial Features
 
-- `make_artificial_features()` dispatches artificial-feature generation.
-
-The per-type constructors (`make_rp_features()`, `make_knockoff_features()`,
-`make_knockoff_equi_features()`, `make_knockoff_mvr_features()`) are
-internal machinery behind the `artificial_type` argument of the fit
-functions; select the construction by string (table below) rather than
-calling factories directly.
+- Artificial-feature generation is internal machinery behind the
+  `artificial_type` argument of the fit functions
+  (`make_artificial_features()` and the per-type constructors
+  `make_rp_features()`, `make_knockoff_features()`,
+  `make_knockoff_equi_features()`, `make_knockoff_mvr_features()` are not
+  exported); select the construction by string (table below) rather than
+  calling factories directly.
 
 Supported `artificial_type` values in fit functions are:
 
@@ -86,10 +87,12 @@ Supported `artificial_type` values in fit functions are:
 
 ## Input Validation and Bootstrapping
 
-- `validate_sample_alignment()` validates single-matrix sample alignment.
-- `validate_multiomic_inputs()` validates named multi-omic input lists.
-- `sample_bootstrap_indices()` draws ordinary bootstrap/subsample indices.
-- `group_bootstrap_indices()` draws group-aware bootstrap/subsample indices.
+Input validation and bootstrap index generation are internal machinery
+invoked by the fit functions (`validate_sample_alignment()`,
+`validate_multiomic_inputs()`, `sample_bootstrap_indices()`,
+`group_bootstrap_indices()` are not exported). Users control resampling
+through the `stabl_fit()` arguments `n_bootstraps`, `stratify_bootstrap`,
+`bootstrap_strata`, and `sample_groups`.
 
 Current validation rules are strict and name based:
 
@@ -259,14 +262,10 @@ training observations are serialized.
 
 Predicts from a portable final model. `type` defaults to `"response"`;
 binomial models also support `"class"` and `"probability"` (with the
-stored event-class mapping). New data is validated against the stored
-schema: missing, renamed, or duplicated columns always error; extra
-columns error unless `extra_columns = "drop"`.
-
-### `validate_newdata_schema()`
-
-The standalone schema checker used by `predict.stabl_predictor()`;
-returns the validated column mapping or errors with an explicit reason.
+stored event-class mapping). New data is validated internally against the
+stored schema (`validate_newdata_schema()` is not exported): missing,
+renamed, or duplicated columns always error; extra columns error unless
+`extra_columns = "drop"`.
 
 ## Cooperative Fusion
 

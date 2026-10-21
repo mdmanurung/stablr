@@ -56,14 +56,16 @@
 #' @examples
 #' set.seed(42L)
 #' y <- c(rep(0, 15), rep(1, 15))  # balanced binary outcome
-#' idx <- sample_bootstrap_indices(y, n_subsamples = 20L, random_state = 1L)
+#' idx <- stablr:::sample_bootstrap_indices(y, n_subsamples = 20L,
+#'                                          random_state = 1L)
 #' table(y[idx])  # class distribution in the bootstrap
 #'
 #' # Stratified sampling preserves class proportions
-#' idx_str <- sample_bootstrap_indices(y, n_subsamples = 20L,
-#'                                      stratify = TRUE, random_state = 1L)
+#' idx_str <- stablr:::sample_bootstrap_indices(y, n_subsamples = 20L,
+#'                                              stratify = TRUE,
+#'                                              random_state = 1L)
 #' table(y[idx_str])
-#' @export
+#' @keywords internal
 sample_bootstrap_indices <- function(
   y,
   n_subsamples,
@@ -205,10 +207,10 @@ sample_bootstrap_indices <- function(
 #' # 3 groups with 4 samples each; binary outcome
 #' y      <- c(0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1)
 #' groups <- rep(c("G1", "G2", "G3"), each = 4L)
-#' idx    <- group_bootstrap_indices(y, groups, n_subsamples = 8L,
-#'                                   random_state = 1L)
+#' idx    <- stablr:::group_bootstrap_indices(y, groups, n_subsamples = 8L,
+#'                                            random_state = 1L)
 #' table(groups[idx])  # whole groups only; count >= 8
-#' @export
+#' @keywords internal
 group_bootstrap_indices <- function(y, groups, n_subsamples, replace = FALSE,
                                     stratify = FALSE, strata = NULL,
                                     random_state = NULL, seed = NULL) {

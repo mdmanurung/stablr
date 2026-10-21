@@ -81,8 +81,8 @@
 #'   x <- matrix(rnorm(200L), 20L, 10L,
 #'               dimnames = list(NULL, paste0("f", 1:10)))
 #'   y <- x[, 1] * x[, 2] + rnorm(20L)
-#'   grid  <- auto_rf_threshold_grid(x, y, n_grid = 5L, num_trees = 100L,
-#'                                   seed = 1L)
+#'   grid  <- stablr:::auto_rf_threshold_grid(x, y, n_grid = 5L,
+#'                                            num_trees = 100L, seed = 1L)
 #'   adapter <- stablr:::make_ranger_adapter(num_trees = 100L)
 #'   mask <- adapter(x, y, grid[1L, , drop = FALSE])
 #'   cat("selected at sparsest threshold:", sum(mask), "of", ncol(x), "\n")
@@ -141,11 +141,11 @@ make_ranger_adapter <- function(num_trees = 500L, family = "gaussian") {
 #'   x <- matrix(rnorm(200L), 20L, 10L,
 #'               dimnames = list(NULL, paste0("f", 1:10)))
 #'   y <- x[, 1] * x[, 2] + rnorm(20L)
-#'   grid <- auto_rf_threshold_grid(x, y, n_grid = 5L, num_trees = 100L,
-#'                                  seed = 1L)
+#'   grid <- stablr:::auto_rf_threshold_grid(x, y, n_grid = 5L,
+#'                                           num_trees = 100L, seed = 1L)
 #'   head(grid)
 #' }
-#' @export
+#' @keywords internal
 auto_rf_threshold_grid <- function(x, y, n_grid = 30L, num_trees = 500L,
                                    seed = NULL) {
   .require_pkg("ranger", "for base_learner = \"rf\"")

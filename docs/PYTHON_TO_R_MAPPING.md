@@ -23,18 +23,18 @@ parity reviews and migration work explicit.
 ## Utility Contracts
 
 - `classic_bootstrap(...)`
-  - Implemented: `sample_bootstrap_indices(...)`
+  - Implemented (internal, not exported): `sample_bootstrap_indices(...)`
     (`classic_bootstrap_indices()` was removed in 1.0.0)
 
 - `group_bootstrap(...)`
-  - Implemented: `group_bootstrap_indices(...)`
+  - Implemented (internal, not exported): `group_bootstrap_indices(...)`
 
 - strict index/alignment assumptions (implicit in Python pipelines)
-  - Implemented: `validate_sample_alignment(...)` and `validate_multiomic_inputs(...)`
+  - Implemented (internal, not exported): `validate_sample_alignment(...)` and `validate_multiomic_inputs(...)`
 
 ## Implemented R Extensions
 
-- Artificial feature generation: `make_artificial_features()`,
+- Artificial feature generation (internal, not exported): `make_artificial_features()`,
   `make_rp_features()`, `make_knockoff_features()`,
   `make_knockoff_equi_features()`, `make_knockoff_mvr_features()`
 - FDP+ thresholding: `compute_fdp_plus()`

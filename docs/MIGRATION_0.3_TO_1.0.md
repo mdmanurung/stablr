@@ -15,7 +15,7 @@ execution of archived scripts.
 
 | Removed (errors in 1.0.0) | Use instead |
 |---|---|
-| `classic_bootstrap_indices(...)` | `sample_bootstrap_indices(...)` |
+| `classic_bootstrap_indices(...)` | internal; use `stabl_fit(..., stratify_bootstrap = ..., bootstrap_strata = ...)` |
 | `get_feature_names_out(object, ...)` | `get_feature_names(object, ...)` |
 | `jaccard_matrix(list_of_lists, ...)` | `jaccard_similarity_matrix(list_of_lists, ...)` |
 | `adjusted_similarity_values(list_of_lists, n)` | `adjusted_similarity_pairwise(list_of_lists, n)` |
@@ -50,9 +50,10 @@ exported:
 **Migration:** pass the learner by name — `stabl_fit(x, y, lambda_grid =
 ..., base_learner = "rf")` (one of `"lasso"`, `"elastic_net"`,
 `"adaptive_lasso"`, `"sparse_group_lasso"`, `"rf"`, `"ordinal"`,
-`"splsda"`). The grid helpers `auto_lambda_grid()`,
-`auto_rf_threshold_grid()`, `auto_ordinal_lambda_grid()`, and
-`auto_splsda_keepx_grid()` remain exported. The factory implementations
+`"splsda"`). `auto_lambda_grid()` is the single exported grid helper; the
+learner-specific grids (`auto_rf_threshold_grid()`,
+`auto_ordinal_lambda_grid()`, `auto_splsda_keepx_grid()`) are internal
+machinery behind `lambda_grid = "auto"`. The factory implementations
 remain in the package namespace for the test suite; a validated
 `stabl_register_learner()`-style extension contract may return in a future
 version.
@@ -98,7 +99,7 @@ reproducible; they are simply no longer part of the public API.
 - Validated analysis supports `family = "gaussian"` end to end
   (MAE/RMSE/R² on held-out folds).
 - `stabl_finalize()` + `predict()` produce a portable `stabl_predictor`
-  with new-data schema validation (`validate_newdata_schema()`).
+  with internal new-data schema validation.
 
 A machine-readable record of every removed symbol, its replacement, and its
 reverse-dependency scan lives in `inst/release/removal-ledger.csv`.

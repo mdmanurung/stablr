@@ -9,9 +9,7 @@ get_cooperative_features,export,,,multiomic,R/stabl_accessors.R,man/get_cooperat
 get_importances,export,,,selection,R/stabl_accessors.R,man/get_importances.Rd,running,test-stabl-fit.R,test-stabl-fit.R,accessor_contract
 get_stabl_scores,export,,,selection,R/stabl_accessors.R,man/get_stabl_scores.Rd,running,test-accessor-roundtrip.R,test-accessor-roundtrip.R,accessor_contract
 get_support,export,,,selection,R/stabl_accessors.R,man/get_support.Rd,running,test-stabl-fit.R,test-stabl-fit.R,accessor_contract
-group_bootstrap_indices,export,,,bootstrap,R/bootstrap_helpers.R,man/group_bootstrap_indices.Rd,running,test-bootstrap-helpers.R,test-bootstrap-helpers.R,core_contract
 jaccard_similarity,export,,,metric,R/metrics.R,man/jaccard_similarity.Rd,running,test-phase7.R,not_applicable-total-set-function,utility_contract
-make_artificial_features,export,,,selection,R/artificial_features.R,man/make_artificial_features.Rd,running,test-artificial-feature-provenance.R;test-functional-audit.R,test-artificial-feature-provenance.R,core_contract
 pearson_similarity,export,,,metric,R/metrics.R,man/pearson_similarity.Rd,running,test-phase7.R,not_applicable-total-set-function,utility_contract
 plot_fdr_graph,export,,,visualization,R/visualization.R,man/plot_fdr_graph.Rd,runnable_donttest,test-phase7.R,test-phase7.R,utility_contract
 plot_stabl_path,export,,,visualization,R/visualization.R,man/plot_stabl_path.Rd,running,test-phase7.R,test-phase7.R,utility_contract
@@ -21,8 +19,6 @@ stabl_multiomic_cv,export,,,multiomic,R/multiomic_workflows.R,man/stabl_multiomi
 stabl_multiomic_nested_cv,export,,,multiomic,R/nested_cv.R,man/stabl_multiomic_nested_cv.Rd,running,test-nested-cv.R,test-input-validation.R,core_contract
 stabl_multiomic_train_validate,export,,,multiomic,R/multiomic_workflows.R,man/stabl_multiomic_train_validate.Rd,running,test-multiomic-workflows.R;test-functional-audit.R,test-input-validation.R,core_contract
 transform_stabl,export,,,selection,R/stabl_accessors.R,man/transform_stabl.Rd,running,test-accessor-roundtrip.R,test-accessor-roundtrip.R,accessor_contract
-validate_multiomic_inputs,export,,,multiomic,R/input_validation.R,man/validate_multiomic_inputs.Rd,running,test-input-validation.R,test-input-validation.R,core_contract
-validate_sample_alignment,export,,,selection,R/input_validation.R,man/validate_sample_alignment.Rd,running,test-input-validation.R,test-input-validation.R,core_contract
 coef.cv.multiview,s3,coef,cv.multiview,multiomic,R/cooperative-cv.multiview.R,vignettes/stablr-cooperative.Rmd,workflow_integration,test-multiomic-workflows.R,not_applicable-parity-locked,vendored_parity
 coef.multiview,s3,coef,multiview,multiomic,R/cooperative-multiview.R,vignettes/stablr-cooperative.Rmd,workflow_integration,test-coef-batch-ongrid.R,not_applicable-parity-locked,vendored_parity
 family.cv.multiview,s3,family,cv.multiview,multiomic,R/cooperative-family.multiview.R,vignettes/stablr-cooperative.Rmd,workflow_integration,test-multiomic-workflows.R;test-functional-audit.R,not_applicable-parity-locked,vendored_parity
@@ -53,9 +49,6 @@ stabl_environment_stability,export,,,workflow,R/environment_stability.R,man/stab
 get_min_scores,export,,,workflow,R/environment_stability.R,man/get_min_scores.Rd,running,test-environment-stability.R,not_applicable-total-set-function,accessor_contract
 get_min_scores.stabl_env_stability,s3,get_min_scores,stabl_env_stability,workflow,R/environment_stability.R,man/get_min_scores.Rd,running,test-environment-stability.R,not_applicable-method,accessor_contract
 print.stabl_env_stability,s3,print,stabl_env_stability,workflow,R/environment_stability.R,man/print.stabl_env_stability.Rd,running,test-environment-stability.R,not_applicable-print-method,accessor_contract
-auto_rf_threshold_grid,export,,,selection,R/learner_rf.R,man/auto_rf_threshold_grid.Rd,runnable_donttest,test-rf-adapter.R,test-rf-adapter.R,core_contract
-auto_ordinal_lambda_grid,export,,,selection,R/learner_ordinal.R,man/auto_ordinal_lambda_grid.Rd,runnable_donttest,test-learner-ordinal.R,test-learner-ordinal.R,core_contract
-auto_splsda_keepx_grid,export,,,selection,R/learner_splsda.R,man/auto_splsda_keepx_grid.Rd,runnable_donttest,test-learner-splsda.R,test-learner-splsda.R,core_contract
 stabl,export,,,selection,R/stabl.R,man/stabl.Rd,running,test-stabl-wrapper.R,test-stabl-wrapper.R,core_contract
 get_feature_names,export,,,selection,R/stabl_accessors.R,man/get_feature_names.Rd,running,test-accessor-roundtrip.R,test-validation-edges.R,accessor_contract
 jaccard_similarity_matrix,export,,,metric,R/metrics.R,man/jaccard_similarity_matrix.Rd,running,test-phase7.R,test-phase7.R,utility_contract
@@ -63,7 +56,6 @@ adjusted_similarity_pairwise,export,,,metric,R/metrics.R,man/adjusted_similarity
 adjusted_similarity_summary,export,,,metric,R/metrics.R,man/adjusted_similarity_summary.Rd,running,test-phase7.R,test-phase7.R,utility_contract
 pearson_similarity_pairwise,export,,,metric,R/metrics.R,man/pearson_similarity_pairwise.Rd,running,test-phase7.R,test-phase7.R,utility_contract
 pearson_similarity_summary,export,,,metric,R/metrics.R,man/pearson_similarity_summary.Rd,running,test-phase7.R,test-phase7.R,utility_contract
-sample_bootstrap_indices,export,,,bootstrap,R/bootstrap_helpers.R,man/sample_bootstrap_indices.Rd,running,test-bootstrap-helpers.R;test-functional-audit.R,test-bootstrap-helpers.R,core_contract
 stabl_multiomic_stacked,export,,,multiomic,R/multiomic_workflows.R,man/stabl_multiomic_stacked.Rd,running,test-late-fusion-oof.R,test-scientific-defects.R,core_contract
 print.stabl,s3,print,stabl,selection,R/stabl.R,man/print.stabl.Rd,running_workflow,test-stabl-wrapper.R,not_applicable-print-method,accessor_contract
 summary.stabl,s3,summary,stabl,selection,R/stabl.R,man/summary.stabl.Rd,running,test-stabl-wrapper.R,not_applicable-method,accessor_contract
@@ -93,6 +85,5 @@ plot.stabl_null_validation,s3,plot,stabl_null_validation,visualization,R/null_va
 stabl_replication_profile,export,,,validation,R/replication.R,man/stabl_replication_profile.Rd,running,test-replication-profile.R,test-replication-profile.R,core_contract
 print.stabl_replication_profile,s3,print,stabl_replication_profile,validation,R/replication.R,man/print.stabl_replication_profile.Rd,running,test-replication-profile.R,not_applicable-print-method,accessor_contract
 stabl_finalize,export,,,deployment,R/finalize.R,man/stabl_finalize.Rd,running,test-finalize.R,test-finalize.R,core_contract
-validate_newdata_schema,export,,,deployment,R/finalize.R,man/validate_newdata_schema.Rd,running,test-finalize.R,test-finalize.R,core_contract
 predict.stabl_predictor,s3,predict,stabl_predictor,deployment,R/finalize.R,man/stabl_finalize.Rd,running,test-finalize.R,not_applicable-method,accessor_contract
 print.stabl_predictor,s3,print,stabl_predictor,deployment,R/finalize.R,man/stabl_finalize.Rd,running,test-finalize.R,not_applicable-print-method,accessor_contract

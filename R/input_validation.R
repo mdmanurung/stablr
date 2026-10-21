@@ -32,11 +32,11 @@
 #'   dimnames = list(paste0("s", 1:4), paste0("f", 1:3))
 #' )
 #' y <- setNames(c(0, 1, 0, 1), c("s3", "s1", "s4", "s2"))
-#' validate_sample_alignment(x, y)
-#' try(validate_sample_alignment(x, setNames(y, paste0("v", 1:4))))
+#' stablr:::validate_sample_alignment(x, y)
+#' try(stablr:::validate_sample_alignment(x, setNames(y, paste0("v", 1:4))))
 #'
 #' @seealso [validate_multiomic_inputs()] for multi-omic list inputs.
-#' @export
+#' @keywords internal
 validate_sample_alignment <- function(x, y, groups = NULL) {
   if (!(is.data.frame(x) || is.matrix(x))) {
     .abort_stablr("stablr_input_error", "`x` must be a data.frame or matrix.")
@@ -149,12 +149,12 @@ validate_sample_alignment <- function(x, y, groups = NULL) {
 #'   protein = matrix(1:8, 4, 2, dimnames = list(ids, paste0("p", 1:2)))
 #' )
 #' y <- setNames(c(0, 1, 0, 1), ids)
-#' validate_multiomic_inputs(x_list, y)
-#' try(validate_multiomic_inputs(x_list[c("rna", "rna")], y))
+#' stablr:::validate_multiomic_inputs(x_list, y)
+#' try(stablr:::validate_multiomic_inputs(x_list[c("rna", "rna")], y))
 #'
 #' @seealso [validate_sample_alignment()] for single-omic inputs,
 #'   [stabl_multiomic_train_validate()] which calls this automatically.
-#' @export
+#' @keywords internal
 validate_multiomic_inputs <- function(x_list, y, groups = NULL) {
   if (!is.list(x_list) || length(x_list) == 0L) {
     .abort_stablr("stablr_input_error", "`x_list` must be a non-empty named list.")

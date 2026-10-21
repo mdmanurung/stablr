@@ -31,9 +31,10 @@ column (the column \code{\link[=stabl_fit]{stabl_fit()}} requires) and a dedicat
 (which \code{\link[=make_splsda_adapter]{make_splsda_adapter()}} reads preferentially).
 }
 \examples{
-grid <- auto_splsda_keepx_grid(matrix(0, 10, 150), n_lambda = 8)
+grid <- stablr:::auto_splsda_keepx_grid(matrix(0, 10, 150), n_lambda = 8)
 grid
 }
 \seealso{
 \code{\link[=make_splsda_adapter]{make_splsda_adapter()}}, \code{\link[=auto_lambda_grid]{auto_lambda_grid()}}
 }
+\keyword{internal}

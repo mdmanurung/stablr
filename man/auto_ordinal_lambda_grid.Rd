@@ -33,7 +33,7 @@ if (requireNamespace("ordinalNet", quietly = TRUE)) {
   eta <- x[, 1] - 0.5 * x[, 2]
   y   <- cut(eta + rnorm(40L, sd = 0.5), breaks = 4,
              labels = paste0("L", 1:4), ordered_result = TRUE)
-  grid <- auto_ordinal_lambda_grid(x, y, n_lambda = 5L)
+  grid <- stablr:::auto_ordinal_lambda_grid(x, y, n_lambda = 5L)
   head(grid)
 }
 }
@@ -42,3 +42,4 @@ if (requireNamespace("ordinalNet", quietly = TRUE)) {
 \code{\link[=auto_lambda_grid]{auto_lambda_grid()}},
 \code{\link[=stabl_fit]{stabl_fit()}}
 }
+\keyword{internal}

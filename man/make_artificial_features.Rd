@@ -111,15 +111,16 @@ x <- matrix(
   rnorm(20 * 4), 20, 4,
   dimnames = list(paste0("s", 1:20), paste0("f", 1:4))
 )
-generated <- make_artificial_features(
+generated <- stablr:::make_artificial_features(
   x, n_injected = 2L, type = "random_permutation", random_state = 1L
 )
 dim(generated$x_augmented)
 generated$artificial_provenance$actual_type
-try(make_artificial_features(x, 0L, "random_permutation"))
+try(stablr:::make_artificial_features(x, 0L, "random_permutation"))
 
 }
 \seealso{
 \code{\link[=compute_fdp_plus]{compute_fdp_plus()}} which consumes the artificial-feature scores,
 \code{\link[=stabl_fit]{stabl_fit()}} which calls this function automatically.
 }
+\keyword{internal}

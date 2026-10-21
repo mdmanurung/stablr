@@ -84,17 +84,6 @@ reference:
   - auto_lambda_grid
   - compute_fdp_plus
 
-- title: Learner Grid Helpers
-  desc: Data-driven threshold/lambda grid constructors for the non-glmnet
-    base learners. The random forest is calibrated within a measured scope
-    (WS-2); the ordinal learner is experimental (WS-9); sPLS-DA is
-    experimental and binomial-only. Learner factories are internal; select
-    learners via the `base_learner` argument of `stabl_fit()`.
-  contents:
-  - auto_rf_threshold_grid
-  - auto_ordinal_lambda_grid
-  - auto_splsda_keepx_grid
-
 - title: Environment Stability
   desc: ICP-inspired transportability workflow across environments (batches,
     cohorts, sites); promoted with a documented scope after the WS-5
@@ -103,18 +92,6 @@ reference:
   - stabl_environment_stability
   - get_min_scores
   - print.stabl_env_stability
-
-- title: Artificial Features
-  desc: Decoy-feature generation for FDP+ calibration.
-  contents:
-  - make_artificial_features
-
-- title: Input Validation and Bootstrapping
-  contents:
-  - validate_sample_alignment
-  - validate_multiomic_inputs
-  - sample_bootstrap_indices
-  - group_bootstrap_indices
 
 - title: Accessors
   contents:
@@ -170,7 +147,6 @@ reference:
   - stabl_finalize
   - print.stabl_predictor
   - predict.stabl_predictor
-  - validate_newdata_schema
 
 - title: Visualization
   contents:

@@ -2282,6 +2282,57 @@ section (45 parse-verified section entries).  Gates: suite 63 files /
 check 0E/0W/1N (pre-existing installed-size NOTE); all 14 vignettes
 rebuild clean.
 
+**API-streamlining PR-A (2026-10-21, Phase 14):** user-requested API
+streamlining in the mixOmics style — "the package is a bit too
+overwhelming — too many functions ... borrow mixOmics' way of
+streamlining".  Method: full export inventory (54 exports / 43 S3 via
+the shipped registry), vignette/README call-site census, and a
+mixOmics-pattern comparison (few noun fit-functions + verb generics;
+machinery stays source-only).  Nine exported functions internalized —
+implementations, tests, and `\keyword{internal}` man pages with
+`stablr:::` examples retained; reachable as `stablr:::name`; zero
+behavior change: input validation (`validate_sample_alignment`,
+`validate_multiomic_inputs`, `validate_newdata_schema` — called
+automatically by `stabl_fit()`, the `stabl_multiomic_*()` workflows,
+and `predict.stabl_predictor()` respectively), artificial-feature
+dispatch (`make_artificial_features` — behind the `artificial_type`
+argument of the fit functions), learner-specific grid helpers
+(`auto_rf_threshold_grid`, `auto_ordinal_lambda_grid`,
+`auto_splsda_keepx_grid` — `auto_lambda_grid()` stays the single public
+grid helper and `lambda_grid = "auto"` covers the other learners
+internally), and bootstrap index generators
+(`sample_bootstrap_indices`, `group_bootstrap_indices` — resampling is
+user-controlled through `stabl_fit()`'s `n_bootstraps` /
+`stratify_bootstrap` / `bootstrap_strata` / `sample_groups` arguments).
+Call-site sweep: no `stablr::` double-colon callers anywhere in the
+repository; the only executable vignette call (the
+`group_bootstrap_indices` draw inspection in `stablr-advanced`) inlined
+to plain base R; the getting-started migration prose repointed from
+`sample_bootstrap_indices()` to the `stabl_fit()` resampling arguments;
+`docs/API_REFERENCE.md`, `docs/MIGRATION_0.3_TO_1.0.md`,
+`docs/PYTHON_TO_R_MAPPING.md`, and the mint-comparison benchmark script
+updated; `_pkgdown.yml` drops the Learner Grid Helpers / Artificial
+Features / Input Validation and Bootstrapping sections (reference index
+now matches the 45 exports).  Deliberate reversal, disclosed: Phase 13
+PR-G kept the learner grid helpers exported; the usage census (0–2
+vignette calls each, all prose-only) now favours hiding them.  One
+contract-test expectation flipped, disclosed: `test-learner-ordinal.R`
+now asserts `auto_ordinal_lambda_grid` is NOT in the export registry
+(the `make_ordinal_adapter` internalization assertion is unchanged).
+`test-public-interface-audit.R` hardcoded count 54L -> 45L; registry
+97 -> 88 rows (45 exports / 43 S3); `inst/release/removal-ledger.csv`
+gains 9 internalization rows.  One gate-caught defect fixed pre-push:
+the PR-G internal adapter examples (`make_ordinal_adapter`,
+`make_ranger_adapter`) called the grid helpers unprefixed — legal while
+the helpers were exported, an R CMD check examples ERROR once hidden;
+both examples now use `stablr:::`.  (A stale 2026-10-12 stablr install
+in the machine's default library was also found shadowing example
+probes with pre-rename signatures and was removed; the gate itself was
+never affected — R CMD check is hermetic.)  Gates: suite 63 files /
+0 failed / 0 errors / 1 skip / 3 warnings (exact PR-G parity); R CMD
+check 0E/0W/1N (pre-existing installed-size NOTE); all 14 vignettes
+rebuild clean.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3

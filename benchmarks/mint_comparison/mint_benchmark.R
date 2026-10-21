@@ -76,9 +76,10 @@ splsda_stabl_fit <- function(x, y01, artificial = c("RP", "KE"), seed,
                              n_boot = N_BOOT_WRAP) {
   artificial <- match.arg(artificial)
   n <- nrow(x); p <- ncol(x)
-  # Use stablr's own exported artificial-feature machinery (same generators the
-  # package uses internally): RP = column-permuted competitors, KE = equi knockoffs.
-  art <- make_artificial_features(
+  # Use stablr's own artificial-feature machinery (same generators the
+  # package uses internally; internal since Phase 14 PR-A):
+  # RP = column-permuted competitors, KE = equi knockoffs.
+  art <- stablr:::make_artificial_features(
     x, p, if (artificial == "RP") "random_permutation" else "knockoff_equi",
     random_state = seed + 900L, knockoff_fallback = "stop")
   x_aug <- art$x_augmented

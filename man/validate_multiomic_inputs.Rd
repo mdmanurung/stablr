@@ -42,11 +42,12 @@ x_list <- list(
   protein = matrix(1:8, 4, 2, dimnames = list(ids, paste0("p", 1:2)))
 )
 y <- setNames(c(0, 1, 0, 1), ids)
-validate_multiomic_inputs(x_list, y)
-try(validate_multiomic_inputs(x_list[c("rna", "rna")], y))
+stablr:::validate_multiomic_inputs(x_list, y)
+try(stablr:::validate_multiomic_inputs(x_list[c("rna", "rna")], y))
 
 }
 \seealso{
 \code{\link[=validate_sample_alignment]{validate_sample_alignment()}} for single-omic inputs,
 \code{\link[=stabl_multiomic_train_validate]{stabl_multiomic_train_validate()}} which calls this automatically.
 }
+\keyword{internal}

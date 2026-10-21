@@ -39,9 +39,9 @@ The introductory and multi-omic vignettes describe the core Gaussian and binomia
 |-------|-----------|
 | Survival STABL | `stabl_fit(family = "cox")` |
 | Multinomial classification | `stabl_fit(family = "multinomial")` |
-| sPLS-DA classification | `base_learner = "splsda"`, `auto_splsda_keepx_grid()` |
+| sPLS-DA classification | `base_learner = "splsda"` |
 | Artificial features | `artificial_type = "random_permutation"`, `"knockoff"`, `"knockoff_equi"`, `"knockoff_mvr"`, or `NULL` |
-| Grouped bootstrap | `groups`, `group_bootstrap_indices()` |
+| Grouped bootstrap | `sample_groups` argument of `stabl_fit()` |
 | Reproducibility metrics | `jaccard_similarity()`, `adjusted_similarity()` |
 | Disk export | `export_stabl_to_csv()`, `save_stabl_results()` |
 | Outer multi-omic CV | `stabl_multiomic_cv()` |
@@ -146,7 +146,7 @@ The printed vector contains the features selected by the multinomial fit. Becaus
 
 For binary classification, an sPLS-DA base learner is also available
 (`base_learner = "splsda"`, backed by `mixOmics`). The lambda grid becomes a
-`keepX` grid: `auto_splsda_keepx_grid()` derives a default one, and
+`keepX` grid: `lambda_grid = "auto"` derives a default one internally, and
 `splsda_ncomp` sets the number of components. On the package's learner
 benchmark this pairing is the best-calibrated classification option
 (Section 7.3 of the introduction vignette).
@@ -232,8 +232,10 @@ x_grp <- matrix(
 )
 y_grp <- setNames(rnorm(n) + 0.5 * x_grp[, 1], ids)
 
-# Inspect one grouped draw (whole subjects only)
-idx <- group_bootstrap_indices(y_grp, groups = groups, n_subsamples = 24L, seed = 1L)
+# Inspect one grouped draw (whole subjects only) — this is what
+# sample_groups does internally for every bootstrap resample
+boot_subjects <- sample(unique(groups), 6L)
+idx <- which(groups %in% boot_subjects)
 unique(groups[idx])
 
 lambda_grp <- auto_lambda_grid(x_grp, y_grp, family = "gaussian", n_lambda = 6)

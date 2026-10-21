@@ -63,7 +63,7 @@
 #'   eta <- x[, 1] - 0.5 * x[, 2]
 #'   y   <- cut(eta + rnorm(40L, sd = 0.5), breaks = 4,
 #'              labels = paste0("L", 1:4), ordered_result = TRUE)
-#'   grid   <- auto_ordinal_lambda_grid(x, y, n_lambda = 5L)
+#'   grid   <- stablr:::auto_ordinal_lambda_grid(x, y, n_lambda = 5L)
 #'   adapter <- stablr:::make_ordinal_adapter()
 #'   mask <- adapter(x, y, grid[1L, , drop = FALSE])
 #'   cat("selected at sparsest lambda:", sum(mask), "of", ncol(x), "\n")
@@ -121,10 +121,10 @@ make_ordinal_adapter <- function(alpha = 1) {
 #'   eta <- x[, 1] - 0.5 * x[, 2]
 #'   y   <- cut(eta + rnorm(40L, sd = 0.5), breaks = 4,
 #'              labels = paste0("L", 1:4), ordered_result = TRUE)
-#'   grid <- auto_ordinal_lambda_grid(x, y, n_lambda = 5L)
+#'   grid <- stablr:::auto_ordinal_lambda_grid(x, y, n_lambda = 5L)
 #'   head(grid)
 #' }
-#' @export
+#' @keywords internal
 auto_ordinal_lambda_grid <- function(x, y, n_lambda = 30L, alpha = 1) {
   .require_pkg("ordinalNet", "for base_learner = \"ordinal\"")
   n_lambda <- .validate_scalar_integer_like(n_lambda, "n_lambda", min = 1L)

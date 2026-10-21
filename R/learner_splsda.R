@@ -177,9 +177,9 @@ make_splsda_adapter <- function(family              = "binomial",
 #' @seealso [make_splsda_adapter()], [auto_lambda_grid()]
 #'
 #' @examples
-#' grid <- auto_splsda_keepx_grid(matrix(0, 10, 150), n_lambda = 8)
+#' grid <- stablr:::auto_splsda_keepx_grid(matrix(0, 10, 150), n_lambda = 8)
 #' grid
-#' @export
+#' @keywords internal
 auto_splsda_keepx_grid <- function(x, n_lambda = 10L) {
   if (!is.matrix(x) && !is.data.frame(x)) {
     stop("`x` must be a matrix or data.frame.", call. = FALSE)
