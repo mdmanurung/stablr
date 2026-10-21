@@ -19,16 +19,12 @@
 <url><loc>https://mdmanurung.github.io/stablr/authors.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/index.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/news/index.html</loc></url>
-<url><loc>https://mdmanurung.github.io/stablr/reference/adjusted_similarity.html</loc></url>
-<url><loc>https://mdmanurung.github.io/stablr/reference/adjusted_similarity_pairwise.html</loc></url>
-<url><loc>https://mdmanurung.github.io/stablr/reference/adjusted_similarity_summary.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/auto_lambda_grid.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/auto_ordinal_lambda_grid.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/auto_rf_threshold_grid.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/auto_splsda_keepx_grid.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/boxplot_features.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/compute_fdp_plus.html</loc></url>
-<url><loc>https://mdmanurung.github.io/stablr/reference/export_stabl_to_csv.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/fdr_similarity.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/fscore_similarity.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/get_cooperative_diagnostics.html</loc></url>
@@ -42,8 +38,6 @@
 <url><loc>https://mdmanurung.github.io/stablr/reference/get_support.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/group_bootstrap_indices.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/index.html</loc></url>
-<url><loc>https://mdmanurung.github.io/stablr/reference/jaccard_similarity.html</loc></url>
-<url><loc>https://mdmanurung.github.io/stablr/reference/jaccard_similarity_matrix.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/load_ool_data.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/make_adaptive_lasso_adapter.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/make_artificial_features.html</loc></url>
@@ -56,9 +50,6 @@
 <url><loc>https://mdmanurung.github.io/stablr/reference/make_rp_features.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/make_sgl_adapter.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/make_splsda_adapter.html</loc></url>
-<url><loc>https://mdmanurung.github.io/stablr/reference/pearson_similarity.html</loc></url>
-<url><loc>https://mdmanurung.github.io/stablr/reference/pearson_similarity_pairwise.html</loc></url>
-<url><loc>https://mdmanurung.github.io/stablr/reference/pearson_similarity_summary.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/plot.stabl.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/plot.stabl_diagnostics.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/plot.stabl_fit.html</loc></url>
@@ -94,8 +85,9 @@
 <url><loc>https://mdmanurung.github.io/stablr/reference/stabl_null_check.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/stabl_preprocess_apply.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/stabl_preprocess_fit.html</loc></url>
-<url><loc>https://mdmanurung.github.io/stablr/reference/stabl_preprocess_fit_recipes.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/stabl_replication_profile.html</loc></url>
+<url><loc>https://mdmanurung.github.io/stablr/reference/stabl_similarity.html</loc></url>
+<url><loc>https://mdmanurung.github.io/stablr/reference/stabl_similarity_summary.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/stablr-package.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/summary.stabl.html</loc></url>
 <url><loc>https://mdmanurung.github.io/stablr/reference/summary.stabl_fit.html</loc></url>

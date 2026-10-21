@@ -77,7 +77,7 @@ guarantee.
 
 [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md),
 [`get_importances()`](https://mdmanurung.github.io/stablr/reference/get_importances.md),
-[`adjusted_similarity()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity.md).
+[`stabl_similarity()`](https://mdmanurung.github.io/stablr/reference/stabl_similarity.md).
 
 ## Examples
 

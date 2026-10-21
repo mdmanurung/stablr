@@ -83,8 +83,6 @@ transportability benchmark (min-aggregation is the calibrated read).
   : Stacked Generalization Over Per-Omic Predictions
 - [`stabl_multiomic_study_diagnostics()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_study_diagnostics.md)
   : Per-Study Batch Diagnostics for Multi-Omic STABL Inputs
-- [`stabl_multiomic_study_split()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_study_split.md)
-  : Study-Disjoint Train/Validation Split
 - [`stabl_multiomic_scheme_comparison()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_scheme_comparison.md)
   : Compare Sample-I.I.D. and Study-Disjoint Nested CV
 - [`stabl_multiomic_selection_stability()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_selection_stability.md)
@@ -102,6 +100,7 @@ and fold-safe preprocessing.
   [`summary(`*`<stabl_analysis>`*`)`](https://mdmanurung.github.io/stablr/reference/stabl_analyze.md)
   : STABL analysis with an explicit evidence mode
 - [`stabl_interpret()`](https://mdmanurung.github.io/stablr/reference/stabl_interpret.md)
+  [`print(`*`<stabl_interpretation>`*`)`](https://mdmanurung.github.io/stablr/reference/stabl_interpret.md)
   : Interpret a fitted STABL selection
 - [`summary(`*`<stabl_interpretation>`*`)`](https://mdmanurung.github.io/stablr/reference/summary.stabl_interpretation.md)
   : Summarise a STABL Interpretation
@@ -111,8 +110,6 @@ and fold-safe preprocessing.
   : Fit a fold-safe preprocessing transform on training data
 - [`stabl_preprocess_apply()`](https://mdmanurung.github.io/stablr/reference/stabl_preprocess_apply.md)
   : Apply a fitted preprocessing transform
-- [`stabl_preprocess_fit_recipes()`](https://mdmanurung.github.io/stablr/reference/stabl_preprocess_fit_recipes.md)
-  : Fit a preprocessing transform from a recipes recipe
 
 ## Reliability and Final Models
 
@@ -165,26 +162,19 @@ S3 summary and print methods for fitted STABL objects.
 
 ## Export
 
-- [`export_stabl_to_csv()`](https://mdmanurung.github.io/stablr/reference/export_stabl_to_csv.md)
-  : Export STABL Stability Scores to CSV
+Single entry point for persisting results — CSV tables only (what =
+“csv”) or the full results bundle (default what = “all”).
+
 - [`save_stabl_results()`](https://mdmanurung.github.io/stablr/reference/save_stabl_results.md)
-  : Save All STABL Results to Disk
+  : Save STABL Results to Disk
 
 ## Selection Similarity Metrics
 
-- [`jaccard_similarity()`](https://mdmanurung.github.io/stablr/reference/jaccard_similarity.md)
-  : Jaccard Similarity Between Two Feature Sets
-- [`jaccard_similarity_matrix()`](https://mdmanurung.github.io/stablr/reference/jaccard_similarity_matrix.md)
-  : Pairwise Jaccard Matrix from a List of Feature Sets
-- [`adjusted_similarity()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity.md)
-  : Adjusted Similarity Between Two Feature Sets
-- [`adjusted_similarity_pairwise()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity_pairwise.md)
-  : Upper-Triangle Adjusted Similarity Values
-- [`adjusted_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity_summary.md)
-  : Summary Statistic of Adjusted Similarity Values
-- [`pearson_similarity()`](https://mdmanurung.github.io/stablr/reference/pearson_similarity.md)
-  : Pearson-Corrected Similarity Between Two Feature Sets
-- [`pearson_similarity_pairwise()`](https://mdmanurung.github.io/stablr/reference/pearson_similarity_pairwise.md)
-  : Upper-Triangle Pearson Similarity Values
-- [`pearson_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/pearson_similarity_summary.md)
-  : Summary Statistic of Pearson Similarity Values
+Reproducibility of selected feature sets across runs — one pairwise verb
+with three methods, plus a one-number summary. The eight 0.3.0
+similarity names were removed ahead of 1.0.0.
+
+- [`stabl_similarity()`](https://mdmanurung.github.io/stablr/reference/stabl_similarity.md)
+  : Similarity Between Feature Sets
+- [`stabl_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/stabl_similarity_summary.md)
+  : Summary Statistic of Pairwise Similarity Values

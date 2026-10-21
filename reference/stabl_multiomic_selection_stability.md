@@ -30,7 +30,7 @@ matrix with e.g. `stats::heatmap(result$similarity_matrix)`.
 
 ## See also
 
-[`jaccard_similarity_matrix()`](https://mdmanurung.github.io/stablr/reference/jaccard_similarity_matrix.md)
+[`stabl_similarity()`](https://mdmanurung.github.io/stablr/reference/stabl_similarity.md)
 for the underlying metric and
 [`stabl_multiomic_nested_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_nested_cv.md)
 for the study-disjoint scheme.

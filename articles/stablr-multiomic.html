@@ -112,7 +112,8 @@
 </ul>
 </li>
 <li>7 Exporting results</li>
-<li>8 Next steps</li>
+<li>8 Study-diagnostics utilities</li>
+<li>9 Next steps</li>
 </ul>
 </div>
 <div class="section level2">
@@ -743,7 +744,79 @@ directory.</p>
 and the selected-feature table.</p>
 </div>
 <div class="section level2">
-<h2 id="next-steps">8 Next steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
+<h2 id="study-diagnostics-utilities">8 Study-diagnostics utilities<a class="anchor" aria-label="anchor" href="#study-diagnostics-utilities"></a>
+</h2>
+<p>Two utilities support <strong>multi-study</strong> analyses, where
+samples come from several cohorts, sites, or batches. Both take a
+<code>study_labels</code> vector assigning each sample to a study; we
+illustrate on a small synthetic example (48 samples, 6 studies) so the
+section runs quickly.</p>
+<p><code><a href="../reference/stabl_multiomic_study_diagnostics.html">stabl_multiomic_study_diagnostics()</a></code> quantifies how
+heterogeneous the studies are — per-study sample counts and outcome
+composition, plus per-feature shift statistics (standardized mean
+differences) within each omic block:</p>
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">5L</span><span class="op">)</span></span>
+<span><span class="va">ids</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"s"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">48</span><span class="op">)</span></span>
+<span><span class="va">y_bin</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/setNames.html" class="external-link">setNames</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"B"</span><span class="op">)</span>, times <span class="op">=</span> <span class="fl">24L</span><span class="op">)</span><span class="op">)</span>, <span class="va">ids</span><span class="op">)</span></span>
+<span><span class="va">x_syn</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">48</span> <span class="op">*</span> <span class="fl">5</span>, sd <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span>, <span class="fl">48</span>, <span class="fl">5</span>,</span>
+<span>                dimnames <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">ids</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"g"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">x_syn</span><span class="op">[</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">2</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">x_syn</span><span class="op">[</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">2</span><span class="op">]</span> <span class="op">+</span> <span class="fl">1.2</span> <span class="op">*</span> <span class="op">(</span><span class="va">y_bin</span> <span class="op">==</span> <span class="st">"A"</span><span class="op">)</span></span>
+<span><span class="va">study_labels</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/setNames.html" class="external-link">setNames</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"study"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">6</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">8L</span><span class="op">)</span>, <span class="va">ids</span><span class="op">)</span></span>
+<span><span class="co"># study1 carries a location shift on the first two features</span></span>
+<span><span class="va">x_syn</span><span class="op">[</span><span class="va">study_labels</span> <span class="op">==</span> <span class="st">"study1"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">2</span><span class="op">]</span> <span class="op">&lt;-</span></span>
+<span>  <span class="va">x_syn</span><span class="op">[</span><span class="va">study_labels</span> <span class="op">==</span> <span class="st">"study1"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">2</span><span class="op">]</span> <span class="op">+</span> <span class="fl">2</span></span>
+<span></span>
+<span><span class="va">diag</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stabl_multiomic_study_diagnostics.html">stabl_multiomic_study_diagnostics</a></span><span class="op">(</span></span>
+<span>  x_list <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>rna <span class="op">=</span> <span class="va">x_syn</span><span class="op">)</span>, y <span class="op">=</span> <span class="va">y_bin</span>, study_labels <span class="op">=</span> <span class="va">study_labels</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">diag</span><span class="op">$</span><span class="va">study_summary</span></span>
+<span><span class="co">#&gt;    study n_samples n_A prop_A n_B prop_B</span></span>
+<span><span class="co">#&gt; 1 study1         8   4    0.5   4    0.5</span></span>
+<span><span class="co">#&gt; 2 study2         8   4    0.5   4    0.5</span></span>
+<span><span class="co">#&gt; 3 study3         8   4    0.5   4    0.5</span></span>
+<span><span class="co">#&gt; 4 study4         8   4    0.5   4    0.5</span></span>
+<span><span class="co">#&gt; 5 study5         8   4    0.5   4    0.5</span></span>
+<span><span class="co">#&gt; 6 study6         8   4    0.5   4    0.5</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">diag</span><span class="op">$</span><span class="va">feature_shift</span><span class="op">)</span></span>
+<span><span class="co">#&gt;    study block n_features smd_mean_abs smd_p95_abs smd_max_abs n_zero_sd</span></span>
+<span><span class="co">#&gt; 1 study1   rna          5    1.0300411   2.3363861   2.3391505         0</span></span>
+<span><span class="co">#&gt; 2 study2   rna          5    0.3111927   0.5945413   0.6438848         0</span></span>
+<span><span class="co">#&gt; 3 study3   rna          5    0.3446637   0.7979960   0.9124471         0</span></span>
+<span><span class="co">#&gt; 4 study4   rna          5    0.3850354   0.6719484   0.7020338         0</span></span>
+<span><span class="co">#&gt; 5 study5   rna          5    0.5699744   1.0666451   1.1818023         0</span></span>
+<span><span class="co">#&gt; 6 study6   rna          5    0.2564184   0.3565248   0.3586200         0</span></span>
+<span><span class="co">#&gt;   n_missing</span></span>
+<span><span class="co">#&gt; 1         0</span></span>
+<span><span class="co">#&gt; 2         0</span></span>
+<span><span class="co">#&gt; 3         0</span></span>
+<span><span class="co">#&gt; 4         0</span></span>
+<span><span class="co">#&gt; 5         0</span></span>
+<span><span class="co">#&gt; 6         0</span></span></code></pre></div>
+<p><code><a href="../reference/stabl_multiomic_selection_stability.html">stabl_multiomic_selection_stability()</a></code> measures how
+consistent feature selection is across the study-disjoint folds of a
+nested cross-validation run — the transportability read on whether the
+same features survive when entire studies are held out:</p>
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">nested</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings</a></span><span class="op">(</span><span class="fu"><a href="../reference/stabl_multiomic_nested_cv.html">stabl_multiomic_nested_cv</a></span><span class="op">(</span></span>
+<span>  x_list <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>rna <span class="op">=</span> <span class="va">x_syn</span><span class="op">)</span>, y <span class="op">=</span> <span class="va">y_bin</span>, study_labels <span class="op">=</span> <span class="va">study_labels</span>,</span>
+<span>  candidates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>name <span class="op">=</span> <span class="st">"rna"</span>, blocks <span class="op">=</span> <span class="st">"rna"</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  lambda_grid <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>lambda <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.2</span>, <span class="fl">0.1</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  outer_v <span class="op">=</span> <span class="fl">2L</span>, inner_v <span class="op">=</span> <span class="fl">2L</span>, n_bootstraps <span class="op">=</span> <span class="fl">10L</span>,</span>
+<span>  artificial_type <span class="op">=</span> <span class="cn">NULL</span>, hard_threshold <span class="op">=</span> <span class="fl">1e-9</span>,</span>
+<span>  sample_fraction <span class="op">=</span> <span class="fl">1</span>, random_state <span class="op">=</span> <span class="fl">7L</span></span>
+<span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">stab</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stabl_multiomic_selection_stability.html">stabl_multiomic_selection_stability</a></span><span class="op">(</span><span class="va">nested</span><span class="op">)</span></span>
+<span><span class="va">stab</span><span class="op">$</span><span class="va">mean_pairwise_similarity</span></span>
+<span><span class="co">#&gt; [1] 0.3333333</span></span></code></pre></div>
+<p>Both functions work with any <code>x_list</code> / <code>y</code> /
+<code>study_labels</code> triple; the study-disjoint validation schemes
+themselves are controlled through the <code>study_labels</code>
+arguments of <code><a href="../reference/stabl_multiomic_nested_cv.html">stabl_multiomic_nested_cv()</a></code> and
+<code><a href="../reference/stabl_multiomic_scheme_comparison.html">stabl_multiomic_scheme_comparison()</a></code>.</p>
+</div>
+<div class="section level2">
+<h2 id="next-steps">9 Next steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
 </h2>
 <ul>
 <li>Use <code><a href="../reference/stabl_multiomic_cv.html">stabl_multiomic_cv()</a></code> for a fully cross-validated

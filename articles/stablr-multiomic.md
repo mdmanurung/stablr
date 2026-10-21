@@ -20,7 +20,8 @@
   - 6.4 Late fusion
   - 6.5 Stability paths
 - 7 Exporting results
-- 8 Next steps
+- 8 Study-diagnostics utilities
+- 9 Next steps
 
 ## 1 Introduction
 
@@ -620,7 +621,87 @@ list.files(out_dir, recursive = TRUE)
 The file listing shows the exported score tables, the stability path,
 and the selected-feature table.
 
-## 8 Next steps
+## 8 Study-diagnostics utilities
+
+Two utilities support **multi-study** analyses, where samples come from
+several cohorts, sites, or batches. Both take a `study_labels` vector
+assigning each sample to a study; we illustrate on a small synthetic
+example (48 samples, 6 studies) so the section runs quickly.
+
+[`stabl_multiomic_study_diagnostics()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_study_diagnostics.md)
+quantifies how heterogeneous the studies are — per-study sample counts
+and outcome composition, plus per-feature shift statistics (standardized
+mean differences) within each omic block:
+
+``` r
+
+set.seed(5L)
+ids <- paste0("s", 1:48)
+y_bin <- setNames(factor(rep(c("A", "B"), times = 24L)), ids)
+x_syn <- matrix(rnorm(48 * 5, sd = 0.5), 48, 5,
+                dimnames = list(ids, paste0("g", 1:5)))
+x_syn[, 1:2] <- x_syn[, 1:2] + 1.2 * (y_bin == "A")
+study_labels <- setNames(rep(paste0("study", 1:6), each = 8L), ids)
+# study1 carries a location shift on the first two features
+x_syn[study_labels == "study1", 1:2] <-
+  x_syn[study_labels == "study1", 1:2] + 2
+
+diag <- stabl_multiomic_study_diagnostics(
+  x_list = list(rna = x_syn), y = y_bin, study_labels = study_labels
+)
+diag$study_summary
+#>    study n_samples n_A prop_A n_B prop_B
+#> 1 study1         8   4    0.5   4    0.5
+#> 2 study2         8   4    0.5   4    0.5
+#> 3 study3         8   4    0.5   4    0.5
+#> 4 study4         8   4    0.5   4    0.5
+#> 5 study5         8   4    0.5   4    0.5
+#> 6 study6         8   4    0.5   4    0.5
+head(diag$feature_shift)
+#>    study block n_features smd_mean_abs smd_p95_abs smd_max_abs n_zero_sd
+#> 1 study1   rna          5    1.0300411   2.3363861   2.3391505         0
+#> 2 study2   rna          5    0.3111927   0.5945413   0.6438848         0
+#> 3 study3   rna          5    0.3446637   0.7979960   0.9124471         0
+#> 4 study4   rna          5    0.3850354   0.6719484   0.7020338         0
+#> 5 study5   rna          5    0.5699744   1.0666451   1.1818023         0
+#> 6 study6   rna          5    0.2564184   0.3565248   0.3586200         0
+#>   n_missing
+#> 1         0
+#> 2         0
+#> 3         0
+#> 4         0
+#> 5         0
+#> 6         0
+```
+
+[`stabl_multiomic_selection_stability()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_selection_stability.md)
+measures how consistent feature selection is across the study-disjoint
+folds of a nested cross-validation run — the transportability read on
+whether the same features survive when entire studies are held out:
+
+``` r
+
+nested <- suppressWarnings(stabl_multiomic_nested_cv(
+  x_list = list(rna = x_syn), y = y_bin, study_labels = study_labels,
+  candidates = list(list(name = "rna", blocks = "rna")),
+  lambda_grid = data.frame(lambda = c(0.2, 0.1)),
+  outer_v = 2L, inner_v = 2L, n_bootstraps = 10L,
+  artificial_type = NULL, hard_threshold = 1e-9,
+  sample_fraction = 1, random_state = 7L
+))
+stab <- stabl_multiomic_selection_stability(nested)
+stab$mean_pairwise_similarity
+#> [1] 0.3333333
+```
+
+Both functions work with any `x_list` / `y` / `study_labels` triple; the
+study-disjoint validation schemes themselves are controlled through the
+`study_labels` arguments of
+[`stabl_multiomic_nested_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_nested_cv.md)
+and
+[`stabl_multiomic_scheme_comparison()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_scheme_comparison.md).
+
+## 9 Next steps
 
 - Use
   [`stabl_multiomic_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_cv.md)

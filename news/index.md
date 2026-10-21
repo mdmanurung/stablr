@@ -46,6 +46,127 @@
 - Existing code that calls the nine functions directly keeps working via
   `stablr:::`; no behavior changes.
 
+### API changes (2026-10-21, Phase 14 PR-B: redundant families merged)
+
+- Three redundant function families are merged into single entry points
+  in the mixOmics style of a small verb-based API. The ten historical
+  names remain exported as deprecated shims — one
+  [`.Deprecated()`](https://rdrr.io/r/base/Deprecated.html) warning per
+  call, legacy argument names mapped silently — and will be removed in
+  1.0.0. The shims are excluded from the pkgdown reference index; their
+  man pages remain reachable via
+  [`?name`](https://rdrr.io/r/base/name.html).
+- Similarity (8 -\> 2):
+  [`stabl_similarity()`](https://mdmanurung.github.io/stablr/reference/stabl_similarity.md)
+  unifies scalar and pairwise similarity with `method = "jaccard"`
+  (default), `"adjusted"`, or `"pearson"`: two vectors give a scalar, a
+  list of sets gives the flat row-major upper-triangle vector (Python
+  convention), and `as_matrix = TRUE` returns the full symmetric matrix
+  (`remove_diag = TRUE` drops the diagonal row-wise).
+  [`stabl_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/stabl_similarity_summary.md)
+  reduces pairwise values to a median/mean statistic with a spread
+  measure. The shims `jaccard_similarity()`,
+  `jaccard_similarity_matrix()`, `adjusted_similarity()`,
+  `adjusted_similarity_pairwise()`, `adjusted_similarity_summary()`,
+  `pearson_similarity()`, `pearson_similarity_pairwise()`, and
+  `pearson_similarity_summary()` forward to the two new functions. One
+  deliberate change: the matrix diagonal for `method = "adjusted"` is
+  now the honest computed self-similarity (1 - k/d for a set of size k
+  \<= d/2) instead of a forced 1; the jaccard and pearson diagonals
+  remain 1.
+- Export (2 -\> 1):
+  [`save_stabl_results()`](https://mdmanurung.github.io/stablr/reference/save_stabl_results.md)
+  gains `what = c("all", "csv")`; `what = "csv"` writes only the score
+  tables and requires neither `x`/`y` nor ggplot2 (the previous
+  `export_stabl_to_csv()` semantics, including lenient reuse of an
+  existing directory). `export_stabl_to_csv()` is a deprecated shim.
+- Preprocessing (2 -\> 1):
+  [`stabl_preprocess_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_preprocess_fit.md)
+  now accepts an unprepped
+  [`recipes::recipe`](https://recipes.tidymodels.org/reference/recipe.html)
+  as `transforms` directly (prepped on training data only);
+  `stabl_preprocess_fit_recipes()` is a deprecated shim.
+- The public export count rises from 45 to 47 (the two new canonical
+  similarity functions); the pkgdown reference index lists 37 exported
+  functions with the ten shims quarantined.
+  `inst/release/public-interface-audit.csv`, `_pkgdown.yml`,
+  `docs/API_REFERENCE.md`, `docs/MIGRATION_0.3_TO_1.0.md`,
+  `docs/PYTHON_TO_R_MAPPING.md`, the README, and the affected vignettes
+  are updated to match; the new `test-api-shims.R` pins the
+  deprecation-plus-forwarding contract of all ten shims, and the
+  legacy-argument mapping tests live in `test-api-deprecation.R`.
+
+### API changes (2026-10-21, Phase 14 PR-C: S3 and multi-omic audit)
+
+- The streamlining audit was extended to the 43 registered S3 methods
+  and the eight exported `stabl_multiomic_*` functions. All 43 S3
+  registrations are required for dispatch and every class is still live,
+  so no S3 method could be removed or hidden; the reference index
+  already lists only the 18 methods that have their own pages, with the
+  accessor methods documented on their generic/class pages (the mixOmics
+  verb pattern). One genuine gap is fixed:
+  [`print.stabl_interpretation()`](https://mdmanurung.github.io/stablr/reference/stabl_interpret.md)
+  was undocumented and is now aliased on the
+  [`stabl_interpret()`](https://mdmanurung.github.io/stablr/reference/stabl_interpret.md)
+  help page.
+- [`stabl_multiomic_study_split()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_study_split.md)
+  is internalized — study-disjoint splitting is subsumed by the
+  `study_labels` arguments of
+  [`stabl_multiomic_nested_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_nested_cv.md)
+  and
+  [`stabl_multiomic_scheme_comparison()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_scheme_comparison.md)
+  (the PR-A machinery precedent). The implementation, tests, and a
+  `\keyword{internal}` man page with a `stablr:::` example are retained;
+  existing code keeps working via
+  `stablr:::stabl_multiomic_study_split`.
+- [`stabl_multiomic_train_validate()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_train_validate.md)
+  and
+  [`stabl_multiomic_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_cv.md)
+  stay separate: a merge into one function with a validation-mode
+  argument was considered and rejected (they are the two most-used
+  multi-omic entry points, and the shared accessor verbs already provide
+  the streamlined pattern).
+- The public export count drops from 47 to 46.
+  `inst/release/public-interface-audit.csv`,
+  `inst/release/removal-ledger.csv`, and `_pkgdown.yml` are updated to
+  match.
+
+### API changes (2026-10-21, Phase 14 PR-D: the 1.0.0 API cut)
+
+- The ten deprecated shims whose removal was announced for 1.0.0 are now
+  removed: the eight 0.3.0 similarity names (`jaccard_similarity()`,
+  `jaccard_similarity_matrix()`, `adjusted_similarity()`,
+  `adjusted_similarity_pairwise()`, `adjusted_similarity_summary()`,
+  `pearson_similarity()`, `pearson_similarity_pairwise()`,
+  `pearson_similarity_summary()`), `export_stabl_to_csv()`, and
+  `stabl_preprocess_fit_recipes()`. This is a breaking change: 0.3.0
+  code calling these names now fails with “could not find function”. Use
+  the canonical entry points instead –
+  [`stabl_similarity()`](https://mdmanurung.github.io/stablr/reference/stabl_similarity.md)
+  /
+  [`stabl_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/stabl_similarity_summary.md)
+  for selection similarity, `save_stabl_results(what = "csv")` for CSV
+  export, and
+  [`stabl_preprocess_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_preprocess_fit.md)
+  (which accepts a
+  [`recipes::recipe`](https://recipes.tidymodels.org/reference/recipe.html)
+  directly) for preprocessing; the full name mapping is in
+  `docs/MIGRATION_0.3_TO_1.0.md`.
+- The two zero-documentation multi-omic diagnostics,
+  [`stabl_multiomic_study_diagnostics()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_study_diagnostics.md)
+  and
+  [`stabl_multiomic_selection_stability()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_selection_stability.md),
+  stay exported and are now demonstrated in a new “Study-diagnostics
+  utilities” section of the multi-omic vignette.
+- The public export count drops from 46 to 36 – the final 1.0.0 API
+  surface (36 exported functions plus 43 registered S3 methods).
+  `inst/release/public-interface-audit.csv` (79 rows),
+  `inst/release/removal-ledger.csv` (the ten shim rows flip to
+  `removed`), `NAMESPACE`, `_pkgdown.yml`, the migration, API-reference,
+  and Python-mapping docs, and the getting-started vignette are updated
+  to match; `test-api-shims.R` is removed and the shim legacy-argument
+  tests in `test-api-deprecation.R` are retired with the shims.
+
 ### Tests (2026-10-21, functional verification audit)
 
 - New test file `test-functional-audit.R` closes the gaps found by the
@@ -359,14 +480,11 @@
 - The FDP+ minima diagnostic no longer crashes on hand-built fixtures
   whose `min_fdr` is not exactly an element of `FDRs`; it reports zero
   minima instead (real fits were never affected).
-- [`adjusted_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity_summary.md)
-  and
-  [`pearson_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/pearson_similarity_summary.md)
-  now error when fewer than two sets are supplied (previously returned
+- `adjusted_similarity_summary()` and `pearson_similarity_summary()` now
+  error when fewer than two sets are supplied (previously returned
   NA/NaN silently).
-- [`jaccard_similarity_matrix()`](https://mdmanurung.github.io/stablr/reference/jaccard_similarity_matrix.md)
-  errors informatively on empty input (previously a cryptic `seq_len`
-  coercion error).
+- `jaccard_similarity_matrix()` errors informatively on empty input
+  (previously a cryptic `seq_len` coercion error).
 - Binary probability metrics (brier/log_loss/AUROC internals) now reject
   NA truth values, consistent with the classification-metrics path.
 
@@ -492,16 +610,11 @@
   [`sample_bootstrap_indices()`](https://mdmanurung.github.io/stablr/reference/sample_bootstrap_indices.md);
   `get_feature_names_out()` -\>
   [`get_feature_names()`](https://mdmanurung.github.io/stablr/reference/get_feature_names.md);
-  `jaccard_matrix()` -\>
-  [`jaccard_similarity_matrix()`](https://mdmanurung.github.io/stablr/reference/jaccard_similarity_matrix.md);
-  `adjusted_similarity_values()` -\>
-  [`adjusted_similarity_pairwise()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity_pairwise.md);
-  `adjusted_similarity_measure()` -\>
-  [`adjusted_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity_summary.md);
-  `pearson_similarity_values()` -\>
-  [`pearson_similarity_pairwise()`](https://mdmanurung.github.io/stablr/reference/pearson_similarity_pairwise.md);
-  `pearson_similarity_measure()` -\>
-  [`pearson_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/pearson_similarity_summary.md);
+  `jaccard_matrix()` -\> `jaccard_similarity_matrix()`;
+  `adjusted_similarity_values()` -\> `adjusted_similarity_pairwise()`;
+  `adjusted_similarity_measure()` -\> `adjusted_similarity_summary()`;
+  `pearson_similarity_values()` -\> `pearson_similarity_pairwise()`;
+  `pearson_similarity_measure()` -\> `pearson_similarity_summary()`;
   `stacked_multi_omic()` -\>
   [`stabl_multiomic_stacked()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_stacked.md).
 - The duplicate beginner generics `support()` and `feature_names()` (and
@@ -671,8 +784,7 @@
 - All nine vignettes audited against the current API and re-rendered.
   Replaced 25 deprecated `get_feature_names_out()` calls with
   [`get_feature_names()`](https://mdmanurung.github.io/stablr/reference/get_feature_names.md),
-  `jaccard_matrix()` with
-  [`jaccard_similarity_matrix()`](https://mdmanurung.github.io/stablr/reference/jaccard_similarity_matrix.md),
+  `jaccard_matrix()` with `jaccard_similarity_matrix()`,
   `adjusted_similarity(nb_total_elements=)` with `n_universe=`, and
   deprecated `groups=` arguments to
   [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)
@@ -1056,11 +1168,11 @@ the new name. Positional calls are unaffected.
 | `stabl_fit(groups =)` | `stabl_fit(sample_groups =)` | `groups` collided with `feature_groups`; sample- vs feature-grouping is now unambiguous |
 | `get_feature_names_out()` | [`get_feature_names()`](https://mdmanurung.github.io/stablr/reference/get_feature_names.md) | drops the sklearn-ism; reads naturally in R |
 | `stacked_multi_omic()` | [`stabl_multiomic_stacked()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_stacked.md) | joins the `stabl_multiomic_*` family and fixes the multi_omic/multiomic casing split |
-| `jaccard_matrix()` | [`jaccard_similarity_matrix()`](https://mdmanurung.github.io/stablr/reference/jaccard_similarity_matrix.md) | states what the matrix contains |
-| `adjusted_similarity_values()` | [`adjusted_similarity_pairwise()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity_pairwise.md) | the triplet now reads pair / all-pairs matrix / summary consistently |
-| `adjusted_similarity_measure()` | [`adjusted_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity_summary.md) | as above |
-| `pearson_similarity_values()` | [`pearson_similarity_pairwise()`](https://mdmanurung.github.io/stablr/reference/pearson_similarity_pairwise.md) | as above |
-| `pearson_similarity_measure()` | [`pearson_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/pearson_similarity_summary.md) | as above |
+| `jaccard_matrix()` | `jaccard_similarity_matrix()` | states what the matrix contains |
+| `adjusted_similarity_values()` | `adjusted_similarity_pairwise()` | the triplet now reads pair / all-pairs matrix / summary consistently |
+| `adjusted_similarity_measure()` | `adjusted_similarity_summary()` | as above |
+| `pearson_similarity_values()` | `pearson_similarity_pairwise()` | as above |
+| `pearson_similarity_measure()` | `pearson_similarity_summary()` | as above |
 | `classic_bootstrap_indices()` | [`sample_bootstrap_indices()`](https://mdmanurung.github.io/stablr/reference/sample_bootstrap_indices.md) | states what is resampled (samples, not features or groups) |
 | `pearson_similarity_pairwise(d =)` / `_summary(d =)` | `nb_total_elements =` | aligns the element-count argument with the adjusted-similarity family (`d =` still accepted with a deprecation warning) |
 
@@ -1262,13 +1374,10 @@ today.
   now take `random_state`; `seed` still works but warns, and will be
   removed in the following minor release. The helpers no longer clobber
   the global RNG state (`withr` promoted from Suggests to Imports).
-- **Similarity-metric argument renames:**
-  [`adjusted_similarity()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity.md)
-  and
-  [`pearson_similarity()`](https://mdmanurung.github.io/stablr/reference/pearson_similarity.md)
-  (and their `_values`/`_measure` variants) rename their arguments to
-  `set1`/`set2`/`n_universe`; old names keep working through deprecation
-  shims.
+- **Similarity-metric argument renames:** `adjusted_similarity()` and
+  `pearson_similarity()` (and their `_values`/`_measure` variants)
+  rename their arguments to `set1`/`set2`/`n_universe`; old names keep
+  working through deprecation shims.
 - **New accessors:**
   [`get_fdrs()`](https://mdmanurung.github.io/stablr/reference/get_fdrs.md)
   and

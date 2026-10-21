@@ -49,8 +49,9 @@ pooled SD are excluded from the summaries and counted in `n_zero_sd`.
 
 [`stabl_multiomic_nested_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_nested_cv.md)
 for study-disjoint cross-validation and
-[`stabl_multiomic_study_split()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_study_split.md)
-for a study-disjoint train/validation split.
+[`stabl_multiomic_scheme_comparison()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_scheme_comparison.md)
+for comparing study-disjoint validation schemes (both take
+`study_labels` directly).
 
 ## Examples
 

@@ -266,13 +266,16 @@ The 1.0.0 contract removes the pre-0.3.0 compatibility names outright
 the canonical names —
 [`get_feature_names()`](https://mdmanurung.github.io/stablr/reference/get_feature_names.md),
 [`stabl_multiomic_stacked()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_stacked.md),
-[`jaccard_similarity_matrix()`](https://mdmanurung.github.io/stablr/reference/jaccard_similarity_matrix.md),
-[`adjusted_similarity_pairwise()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity_pairwise.md),
-[`adjusted_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity_summary.md),
-[`pearson_similarity_pairwise()`](https://mdmanurung.github.io/stablr/reference/pearson_similarity_pairwise.md),
-[`pearson_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/pearson_similarity_summary.md)
+[`stabl_similarity()`](https://mdmanurung.github.io/stablr/reference/stabl_similarity.md),
+[`stabl_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/stabl_similarity_summary.md)
 — and see `NEWS.md` and `docs/MIGRATION_0.3_TO_1.0.md` for the full
-mapping. Bootstrap index generation (the `classic_bootstrap_indices()`
+mapping. The 0.3.0 similarity names (`jaccard_similarity()`,
+`jaccard_similarity_matrix()`, `adjusted_similarity()`, and relatives)
+were removed ahead of 1.0.0; use
+[`stabl_similarity()`](https://mdmanurung.github.io/stablr/reference/stabl_similarity.md)
+/
+[`stabl_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/stabl_similarity_summary.md).
+Bootstrap index generation (the `classic_bootstrap_indices()`
 replacement) is internal machinery; control resampling through
 [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)’s
 `n_bootstraps`, `stratify_bootstrap`, `bootstrap_strata`, and

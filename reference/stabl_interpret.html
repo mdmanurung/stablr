@@ -83,7 +83,10 @@ correlation/redundancy group, and a seeded permutation importance.</p>
 <span>  random_state <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  event_class <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for class 'stabl_interpretation'</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -174,6 +177,12 @@ selected features only and are conditional, descriptive associations.
 increase in loss when the feature is permuted (positive = helpful);
 negative values are retained.</p>
     </div>
+    <div class="section level2">
+    <h2 id="functions">Functions<a class="anchor" aria-label="anchor" href="#functions"></a></h2>
+
+<ul><li><p><code>print(stabl_interpretation)</code>: Print a concise summary of a
+<code>stabl_interpretation</code> object; invisibly returns <code>x</code>.</p></li>
+</ul></div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>

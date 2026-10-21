@@ -32,7 +32,7 @@ Major functionality of `stablr`:
   Compare CV schemes arm-by-arm on held-out error
 - [`stabl_environment_stability()`](https://mdmanurung.github.io/stablr/reference/stabl_environment_stability.html)
   Transportable selections across environments (experimental)
-- [`jaccard_similarity_matrix()`](https://mdmanurung.github.io/stablr/reference/jaccard_similarity_matrix.html)
+- [`stabl_similarity()`](https://mdmanurung.github.io/stablr/reference/stabl_similarity.html)
      Selection-reproducibility metrics
 
 ## Resources

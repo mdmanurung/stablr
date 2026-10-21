@@ -25,6 +25,9 @@ stabl_interpret(
   event_class = NULL,
   ...
 )
+
+# S3 method for class 'stabl_interpretation'
+print(x, ...)
 ```
 
 ## Arguments
@@ -114,6 +117,11 @@ selected features only and are conditional, descriptive associations.
 `correlation_group` is a reproducible high-\|correlation\| cluster; it
 is increase in loss when the feature is permuted (positive = helpful);
 negative values are retained.
+
+## Functions
+
+- `print(stabl_interpretation)`: Print a concise summary of a
+  `stabl_interpretation` object; invisibly returns `x`.
 
 ## Examples
 

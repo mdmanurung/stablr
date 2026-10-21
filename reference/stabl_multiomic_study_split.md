@@ -79,7 +79,7 @@ ids <- paste0("s", 1:12)
 y <- setNames(factor(rep(c("A", "B"), times = 6L)), ids)
 x <- matrix(rnorm(12 * 4), 12, 4, dimnames = list(ids, paste0("g", 1:4)))
 study_labels <- setNames(rep(paste0("study", 1:3), each = 4L), ids)
-split <- stabl_multiomic_study_split(
+split <- stablr:::stabl_multiomic_study_split(
   x_list = list(rna = x), y = y, study_labels = study_labels,
   prop_train = 2 / 3, random_state = 6L
 )

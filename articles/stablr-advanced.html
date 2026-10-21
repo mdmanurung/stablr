@@ -145,16 +145,13 @@ listed in the table below.</p>
 <tr class="even">
 <td>Reproducibility metrics</td>
 <td>
-<code><a href="../reference/jaccard_similarity.html">jaccard_similarity()</a></code>,
-<code><a href="../reference/adjusted_similarity.html">adjusted_similarity()</a></code>
+<code><a href="../reference/stabl_similarity.html">stabl_similarity()</a></code>,
+<code><a href="../reference/stabl_similarity_summary.html">stabl_similarity_summary()</a></code>
 </td>
 </tr>
 <tr class="odd">
 <td>Disk export</td>
-<td>
-<code><a href="../reference/export_stabl_to_csv.html">export_stabl_to_csv()</a></code>,
-<code><a href="../reference/save_stabl_results.html">save_stabl_results()</a></code>
-</td>
+<td><code><a href="../reference/save_stabl_results.html">save_stabl_results()</a></code></td>
 </tr>
 <tr class="even">
 <td>Outer multi-omic CV</td>
@@ -468,15 +465,15 @@ pairwise similarity matrix across four seeds is computed afterwards.</p>
 <span><span class="va">sel_a</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_feature_names.html">get_feature_names</a></span><span class="op">(</span><span class="va">fit_a</span><span class="op">)</span></span>
 <span><span class="va">sel_b</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_feature_names.html">get_feature_names</a></span><span class="op">(</span><span class="va">fit_b</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/jaccard_similarity.html">jaccard_similarity</a></span><span class="op">(</span><span class="va">sel_a</span>, <span class="va">sel_b</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/stabl_similarity.html">stabl_similarity</a></span><span class="op">(</span><span class="va">sel_a</span>, <span class="va">sel_b</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 1</span></span>
-<span><span class="fu"><a href="../reference/adjusted_similarity.html">adjusted_similarity</a></span><span class="op">(</span><span class="va">sel_a</span>, <span class="va">sel_b</span>, n_universe <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">x_grp</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/stabl_similarity.html">stabl_similarity</a></span><span class="op">(</span><span class="va">sel_a</span>, <span class="va">sel_b</span>, method <span class="op">=</span> <span class="st">"adjusted"</span>, n_universe <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">x_grp</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 0</span></span>
 <span></span>
 <span><span class="co"># Pairwise matrix across several seeds</span></span>
 <span><span class="va">fits</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fl">11</span><span class="op">:</span><span class="fl">14</span>, <span class="va">run_once</span><span class="op">)</span></span>
 <span><span class="va">sels</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">fits</span>, <span class="va">get_feature_names</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/jaccard_similarity_matrix.html">jaccard_similarity_matrix</a></span><span class="op">(</span><span class="va">sels</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/stabl_similarity.html">stabl_similarity</a></span><span class="op">(</span><span class="va">sels</span>, method <span class="op">=</span> <span class="st">"jaccard"</span>, as_matrix <span class="op">=</span> <span class="cn">TRUE</span>, remove_diag <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="co">#&gt;      [,1] [,2] [,3]</span></span>
 <span><span class="co">#&gt; [1,]    1    1    1</span></span>
 <span><span class="co">#&gt; [2,]    1    1    1</span></span>
@@ -492,7 +489,7 @@ robust to the random state.</p>
 <code class="sourceCode R"><span><span class="co"># Keep the full square matrix (remove_diag = FALSE) so both axes carry the</span></span>
 <span><span class="co"># seed labels; as.table() on the diagonal-removed matrix would mislabel the</span></span>
 <span><span class="co"># second axis with row indices instead of seed ids.</span></span>
-<span><span class="va">jm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/jaccard_similarity_matrix.html">jaccard_similarity_matrix</a></span><span class="op">(</span><span class="va">sels</span>, remove_diag <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="va">jm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stabl_similarity.html">stabl_similarity</a></span><span class="op">(</span><span class="va">sels</span>, method <span class="op">=</span> <span class="st">"jaccard"</span>, as_matrix <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/dimnames.html" class="external-link">dimnames</a></span><span class="op">(</span><span class="va">jm</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>seed_a <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="fl">11</span><span class="op">:</span><span class="fl">14</span><span class="op">)</span>, seed_b <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="fl">11</span><span class="op">:</span><span class="fl">14</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">jm_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">as.table</a></span><span class="op">(</span><span class="va">jm</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">jm_df</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"seed_a"</span>, <span class="st">"seed_b"</span>, <span class="st">"jaccard"</span><span class="op">)</span></span>
@@ -510,10 +507,11 @@ robust to the random state.</p>
 <div class="section level2">
 <h2 id="exporting-results-to-disk">7 Exporting results to disk<a class="anchor" aria-label="anchor" href="#exporting-results-to-disk"></a>
 </h2>
-<p><code><a href="../reference/export_stabl_to_csv.html">export_stabl_to_csv()</a></code> writes stability-score tables for
-a single-omic fit. <code><a href="../reference/save_stabl_results.html">save_stabl_results()</a></code> bundles scores,
-diagnostics, selected-feature tables, and feature-distribution figures
-for a full analysis folder. It writes <code>STABL scores.csv</code>,
+<p><code><a href="../reference/save_stabl_results.html">save_stabl_results()</a></code> with <code>what = "csv"</code>
+writes stability-score tables for a single-omic fit. With the default
+<code>what = "all"</code> it bundles scores, diagnostics,
+selected-feature tables, and feature-distribution figures for a full
+analysis folder. It writes <code>STABL scores.csv</code>,
 <code>Max STABL scores.csv</code>, <code>FDR Graph.&lt;fmt&gt;</code>,
 <code>Stability Path.&lt;fmt&gt;</code>,
 <code>Selected Features/Selected features.csv</code>, and
@@ -526,7 +524,7 @@ bundle to a temporary directory.</p>
 <span><span class="va">tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="st">"stablr_export"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">tmp</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/export_stabl_to_csv.html">export_stabl_to_csv</a></span><span class="op">(</span><span class="va">fit_grp</span>, path <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">tmp</span>, <span class="st">"grp"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/save_stabl_results.html">save_stabl_results</a></span><span class="op">(</span><span class="va">fit_grp</span>, path <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">tmp</span>, <span class="st">"grp"</span><span class="op">)</span>, what <span class="op">=</span> <span class="st">"csv"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.files</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">tmp</span>, <span class="st">"grp"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/save_stabl_results.html">save_stabl_results</a></span><span class="op">(</span></span>

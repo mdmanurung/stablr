@@ -335,18 +335,19 @@ stability-path and FDP+ diagnostic plots, see
 <code>pearson_similarity_measure()</code>,
 <code>classic_bootstrap_indices()</code>); calling them now raises an
 error. Use the canonical names — <code><a href="../reference/get_feature_names.html">get_feature_names()</a></code>,
-<code><a href="../reference/stabl_multiomic_stacked.html">stabl_multiomic_stacked()</a></code>,
-<code><a href="../reference/jaccard_similarity_matrix.html">jaccard_similarity_matrix()</a></code>,
-<code><a href="../reference/adjusted_similarity_pairwise.html">adjusted_similarity_pairwise()</a></code>,
-<code><a href="../reference/adjusted_similarity_summary.html">adjusted_similarity_summary()</a></code>,
-<code><a href="../reference/pearson_similarity_pairwise.html">pearson_similarity_pairwise()</a></code>,
-<code><a href="../reference/pearson_similarity_summary.html">pearson_similarity_summary()</a></code> — and see <code>NEWS.md</code>
-and <code>docs/MIGRATION_0.3_TO_1.0.md</code> for the full mapping.
-Bootstrap index generation (the <code>classic_bootstrap_indices()</code>
-replacement) is internal machinery; control resampling through
-<code><a href="../reference/stabl_fit.html">stabl_fit()</a></code>’s <code>n_bootstraps</code>,
-<code>stratify_bootstrap</code>, <code>bootstrap_strata</code>, and
-<code>sample_groups</code> arguments.</p>
+<code><a href="../reference/stabl_multiomic_stacked.html">stabl_multiomic_stacked()</a></code>, <code><a href="../reference/stabl_similarity.html">stabl_similarity()</a></code>,
+<code><a href="../reference/stabl_similarity_summary.html">stabl_similarity_summary()</a></code> — and see <code>NEWS.md</code>
+and <code>docs/MIGRATION_0.3_TO_1.0.md</code> for the full mapping. The
+0.3.0 similarity names (<code>jaccard_similarity()</code>,
+<code>jaccard_similarity_matrix()</code>,
+<code>adjusted_similarity()</code>, and relatives) were removed ahead of
+1.0.0; use <code><a href="../reference/stabl_similarity.html">stabl_similarity()</a></code> /
+<code><a href="../reference/stabl_similarity_summary.html">stabl_similarity_summary()</a></code>. Bootstrap index generation (the
+<code>classic_bootstrap_indices()</code> replacement) is internal
+machinery; control resampling through <code><a href="../reference/stabl_fit.html">stabl_fit()</a></code>’s
+<code>n_bootstraps</code>, <code>stratify_bootstrap</code>,
+<code>bootstrap_strata</code>, and <code>sample_groups</code>
+arguments.</p>
 <p>The 1.0.0 contract also removes a small set of legacy behaviors
 (Phase 13 PR-A): the <code>explore</code>/<code>n_explore</code>
 arguments of <code><a href="../reference/stabl_fit.html">stabl_fit()</a></code> (an empty selection now stays

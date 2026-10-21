@@ -282,13 +282,6 @@
 
         <dt>
 
-          <code><a href="stabl_multiomic_study_split.html">stabl_multiomic_study_split()</a></code>
-
-        </dt>
-        <dd>Study-Disjoint Train/Validation Split</dd>
-
-        <dt>
-
           <code><a href="stabl_multiomic_scheme_comparison.html">stabl_multiomic_scheme_comparison()</a></code>
 
         </dt>
@@ -326,7 +319,7 @@
 
         <dt>
 
-          <code><a href="stabl_interpret.html">stabl_interpret()</a></code>
+          <code><a href="stabl_interpret.html">stabl_interpret()</a></code> <code><a href="stabl_interpret.html">print(<i>&lt;stabl_interpretation&gt;</i>)</a></code>
 
         </dt>
         <dd>Interpret a fitted STABL selection</dd>
@@ -358,13 +351,6 @@
 
         </dt>
         <dd>Apply a fitted preprocessing transform</dd>
-
-        <dt>
-
-          <code><a href="stabl_preprocess_fit_recipes.html">stabl_preprocess_fit_recipes()</a></code>
-
-        </dt>
-        <dd>Fit a preprocessing transform from a recipes recipe</dd>
       </dl></div><div class="section level2">
       <h2 id="reliability-and-final-models">Reliability and Final Models<a class="anchor" aria-label="anchor" href="#reliability-and-final-models"></a></h2>
 
@@ -495,7 +481,7 @@
       </dl></div><div class="section level2">
       <h2 id="export">Export<a class="anchor" aria-label="anchor" href="#export"></a></h2>
 
-
+      <div class="section-desc"><p>Single entry point for persisting results — CSV tables only (what = “csv”) or the full results bundle (default what = “all”).</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -503,22 +489,15 @@
 
 
       <dl><dt>
-
-          <code><a href="export_stabl_to_csv.html">export_stabl_to_csv()</a></code>
-
-        </dt>
-        <dd>Export STABL Stability Scores to CSV</dd>
-
-        <dt>
 
           <code><a href="save_stabl_results.html">save_stabl_results()</a></code>
 
         </dt>
-        <dd>Save All STABL Results to Disk</dd>
+        <dd>Save STABL Results to Disk</dd>
       </dl></div><div class="section level2">
       <h2 id="selection-similarity-metrics">Selection Similarity Metrics<a class="anchor" aria-label="anchor" href="#selection-similarity-metrics"></a></h2>
 
-
+      <div class="section-desc"><p>Reproducibility of selected feature sets across runs — one pairwise verb with three methods, plus a one-number summary. The eight 0.3.0 similarity names were removed ahead of 1.0.0.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -527,59 +506,17 @@
 
       <dl><dt>
 
-          <code><a href="jaccard_similarity.html">jaccard_similarity()</a></code>
+          <code><a href="stabl_similarity.html">stabl_similarity()</a></code>
 
         </dt>
-        <dd>Jaccard Similarity Between Two Feature Sets</dd>
+        <dd>Similarity Between Feature Sets</dd>
 
         <dt>
 
-          <code><a href="jaccard_similarity_matrix.html">jaccard_similarity_matrix()</a></code>
+          <code><a href="stabl_similarity_summary.html">stabl_similarity_summary()</a></code>
 
         </dt>
-        <dd>Pairwise Jaccard Matrix from a List of Feature Sets</dd>
-
-        <dt>
-
-          <code><a href="adjusted_similarity.html">adjusted_similarity()</a></code>
-
-        </dt>
-        <dd>Adjusted Similarity Between Two Feature Sets</dd>
-
-        <dt>
-
-          <code><a href="adjusted_similarity_pairwise.html">adjusted_similarity_pairwise()</a></code>
-
-        </dt>
-        <dd>Upper-Triangle Adjusted Similarity Values</dd>
-
-        <dt>
-
-          <code><a href="adjusted_similarity_summary.html">adjusted_similarity_summary()</a></code>
-
-        </dt>
-        <dd>Summary Statistic of Adjusted Similarity Values</dd>
-
-        <dt>
-
-          <code><a href="pearson_similarity.html">pearson_similarity()</a></code>
-
-        </dt>
-        <dd>Pearson-Corrected Similarity Between Two Feature Sets</dd>
-
-        <dt>
-
-          <code><a href="pearson_similarity_pairwise.html">pearson_similarity_pairwise()</a></code>
-
-        </dt>
-        <dd>Upper-Triangle Pearson Similarity Values</dd>
-
-        <dt>
-
-          <code><a href="pearson_similarity_summary.html">pearson_similarity_summary()</a></code>
-
-        </dt>
-        <dd>Summary Statistic of Pearson Similarity Values</dd>
+        <dd>Summary Statistic of Pairwise Similarity Values</dd>
       </dl></div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

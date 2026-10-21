@@ -360,8 +360,8 @@ as follows.
 ``` r
 
 tcga_out_dir <- file.path(tempdir(), "stablr_tcga_results")
-export_stabl_to_csv(multi_fit$fits$mrna,  path = file.path(tcga_out_dir, "mrna"))
-export_stabl_to_csv(multi_fit$fits$mirna, path = file.path(tcga_out_dir, "mirna"))
+save_stabl_results(multi_fit$fits$mrna,  path = file.path(tcga_out_dir, "mrna"),  what = "csv")
+save_stabl_results(multi_fit$fits$mirna, path = file.path(tcga_out_dir, "mirna"), what = "csv")
 list.files(tcga_out_dir, recursive = TRUE)
 ```
 

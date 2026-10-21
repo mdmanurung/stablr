@@ -29,8 +29,8 @@ table below.
 | sPLS-DA classification | `base_learner = "splsda"` |
 | Artificial features | `artificial_type = "random_permutation"`, `"knockoff"`, `"knockoff_equi"`, `"knockoff_mvr"`, or `NULL` |
 | Grouped bootstrap | `sample_groups` argument of [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md) |
-| Reproducibility metrics | [`jaccard_similarity()`](https://mdmanurung.github.io/stablr/reference/jaccard_similarity.md), [`adjusted_similarity()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity.md) |
-| Disk export | [`export_stabl_to_csv()`](https://mdmanurung.github.io/stablr/reference/export_stabl_to_csv.md), [`save_stabl_results()`](https://mdmanurung.github.io/stablr/reference/save_stabl_results.md) |
+| Reproducibility metrics | [`stabl_similarity()`](https://mdmanurung.github.io/stablr/reference/stabl_similarity.md), [`stabl_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/stabl_similarity_summary.md) |
+| Disk export | [`save_stabl_results()`](https://mdmanurung.github.io/stablr/reference/save_stabl_results.md) |
 | Outer multi-omic CV | [`stabl_multiomic_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_cv.md) |
 | Cooperative diagnostics | [`get_cooperative_features()`](https://mdmanurung.github.io/stablr/reference/get_cooperative_features.md), [`plot()`](https://rdrr.io/r/graphics/plot.default.html) on native fits |
 | Biomarker interpretation | [`stabl_interpret()`](https://mdmanurung.github.io/stablr/reference/stabl_interpret.md) |
@@ -363,15 +363,15 @@ fit_b <- run_once(22L)
 sel_a <- get_feature_names(fit_a)
 sel_b <- get_feature_names(fit_b)
 
-jaccard_similarity(sel_a, sel_b)
+stabl_similarity(sel_a, sel_b)
 #> [1] 1
-adjusted_similarity(sel_a, sel_b, n_universe = ncol(x_grp))
+stabl_similarity(sel_a, sel_b, method = "adjusted", n_universe = ncol(x_grp))
 #> [1] 0
 
 # Pairwise matrix across several seeds
 fits <- lapply(11:14, run_once)
 sels <- lapply(fits, get_feature_names)
-jaccard_similarity_matrix(sels)
+stabl_similarity(sels, method = "jaccard", as_matrix = TRUE, remove_diag = TRUE)
 #>      [,1] [,2] [,3]
 #> [1,]    1    1    1
 #> [2,]    1    1    1
@@ -392,7 +392,7 @@ The same matrix is easier to compare as a heatmap.
 # Keep the full square matrix (remove_diag = FALSE) so both axes carry the
 # seed labels; as.table() on the diagonal-removed matrix would mislabel the
 # second axis with row indices instead of seed ids.
-jm <- jaccard_similarity_matrix(sels, remove_diag = FALSE)
+jm <- stabl_similarity(sels, method = "jaccard", as_matrix = TRUE)
 dimnames(jm) <- list(seed_a = as.character(11:14), seed_b = as.character(11:14))
 jm_df <- as.data.frame(as.table(jm))
 names(jm_df) <- c("seed_a", "seed_b", "jaccard")
@@ -412,13 +412,13 @@ seeds](stablr-advanced_files/figure-html/jaccard-heatmap-1.png)
 
 ## 7 Exporting results to disk
 
-[`export_stabl_to_csv()`](https://mdmanurung.github.io/stablr/reference/export_stabl_to_csv.md)
-writes stability-score tables for a single-omic fit.
 [`save_stabl_results()`](https://mdmanurung.github.io/stablr/reference/save_stabl_results.md)
-bundles scores, diagnostics, selected-feature tables, and
-feature-distribution figures for a full analysis folder. It writes
-`STABL scores.csv`, `Max STABL scores.csv`, `FDR Graph.<fmt>`,
-`Stability Path.<fmt>`, `Selected Features/Selected features.csv`, and
+with `what = "csv"` writes stability-score tables for a single-omic fit.
+With the default `what = "all"` it bundles scores, diagnostics,
+selected-feature tables, and feature-distribution figures for a full
+analysis folder. It writes `STABL scores.csv`, `Max STABL scores.csv`,
+`FDR Graph.<fmt>`, `Stability Path.<fmt>`,
+`Selected Features/Selected features.csv`, and
 `Selected Features/Feature distributions.<fmt>` when the relevant
 diagnostics and selected features are available.
 
@@ -431,7 +431,7 @@ bundle to a temporary directory.
 tmp <- tempfile("stablr_export")
 dir.create(tmp)
 
-export_stabl_to_csv(fit_grp, path = file.path(tmp, "grp"))
+save_stabl_results(fit_grp, path = file.path(tmp, "grp"), what = "csv")
 list.files(file.path(tmp, "grp"))
 
 save_stabl_results(

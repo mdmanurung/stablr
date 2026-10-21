@@ -164,7 +164,8 @@ A practical reporting pattern follows. Rank features by
 not export. The `pairwise_adjusted_similarity` matrix additionally
 summarises agreement between the *selected sets* of any two
 environments. The agreement is chance-corrected via
-[`adjusted_similarity()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity.md).
+[`stabl_similarity()`](https://mdmanurung.github.io/stablr/reference/stabl_similarity.md)
+with `method = "adjusted"`.
 
 Two practical notes:
 
