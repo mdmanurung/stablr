@@ -112,7 +112,6 @@ reference:
   - stabl_multiomic_nested_cv
   - stabl_multiomic_stacked
   - stabl_multiomic_study_diagnostics
-  - stabl_multiomic_study_split
   - stabl_multiomic_scheme_comparison
   - stabl_multiomic_selection_stability
   - load_ool_data

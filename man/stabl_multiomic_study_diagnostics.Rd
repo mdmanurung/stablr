@@ -53,6 +53,7 @@ diag$feature_shift
 }
 \seealso{
 \code{\link[=stabl_multiomic_nested_cv]{stabl_multiomic_nested_cv()}} for study-disjoint
-cross-validation and \code{\link[=stabl_multiomic_study_split]{stabl_multiomic_study_split()}} for a
-study-disjoint train/validation split.
+cross-validation and \code{\link[=stabl_multiomic_scheme_comparison]{stabl_multiomic_scheme_comparison()}} for
+comparing study-disjoint validation schemes (both take
+\code{study_labels} directly).
 }

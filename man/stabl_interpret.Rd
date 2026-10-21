@@ -2,6 +2,7 @@
 % Please edit documentation in R/interpretation.R
 \name{stabl_interpret}
 \alias{stabl_interpret}
+\alias{print.stabl_interpretation}
 \title{Interpret a fitted STABL selection}
 \usage{
 stabl_interpret(
@@ -18,6 +19,8 @@ stabl_interpret(
   event_class = NULL,
   ...
 )
+
+\method{print}{stabl_interpretation}(x, ...)
 }
 \arguments{
 \item{object}{A fitted \code{"stabl_fit"} or \code{"stabl"} object.}
@@ -86,6 +89,12 @@ selected features only and are conditional, descriptive associations.
 increase in loss when the feature is permuted (positive = helpful);
 negative values are retained.
 }
+\section{Functions}{
+\itemize{
+\item \code{print(stabl_interpretation)}: Print a concise summary of a
+\code{stabl_interpretation} object; invisibly returns \code{x}.
+
+}}
 \examples{
 set.seed(1L)
 x <- matrix(rnorm(60 * 8), 60, 8,

@@ -38,8 +38,9 @@
 #'   `smd_p95_abs`, `smd_max_abs`, and `n_zero_sd`).
 #'
 #' @seealso [stabl_multiomic_nested_cv()] for study-disjoint
-#'   cross-validation and [stabl_multiomic_study_split()] for a
-#'   study-disjoint train/validation split.
+#'   cross-validation and [stabl_multiomic_scheme_comparison()] for
+#'   comparing study-disjoint validation schemes (both take
+#'   `study_labels` directly).
 #'
 #' @examples
 #' set.seed(5L)
@@ -213,12 +214,12 @@ stabl_multiomic_study_diagnostics <- function(x_list, y, study_labels) {
 #' y <- setNames(factor(rep(c("A", "B"), times = 6L)), ids)
 #' x <- matrix(rnorm(12 * 4), 12, 4, dimnames = list(ids, paste0("g", 1:4)))
 #' study_labels <- setNames(rep(paste0("study", 1:3), each = 4L), ids)
-#' split <- stabl_multiomic_study_split(
+#' split <- stablr:::stabl_multiomic_study_split(
 #'   x_list = list(rna = x), y = y, study_labels = study_labels,
 #'   prop_train = 2 / 3, random_state = 6L
 #' )
 #' split$study_assignment
-#' @export
+#' @keywords internal
 stabl_multiomic_study_split <- function(x_list, y, study_labels,
                                         prop_train = 0.75,
                                         stratified = TRUE,

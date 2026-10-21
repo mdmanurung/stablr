@@ -2382,6 +2382,57 @@ arg mapping.  Gates: suite 64 files / 0 failed / 0 errors / 1 skip /
 3 warnings (exact PR-G parity); R CMD check 0E/0W/1N (pre-existing
 installed-size NOTE); all 14 vignettes rebuild clean.
 
+**API-streamlining PR-C (2026-10-21, Phase 14):** third streamlining
+pass — the audit was extended to the 43 registered S3 methods and the
+eight exported `stabl_multiomic_*` functions.  S3 audit conclusion: no
+method can be removed or unexported (S3 dispatch requires registration;
+every registered class is still produced — verified across `stabl`,
+`stabl_fit`, `stabl_predictor`, `stabl_diagnostics`,
+`stabl_null_validation`, `stabl_replication_profile`,
+`stabl_interpretation`, `stabl_analysis`, `stabl_preprocessing`,
+`stabl_preprocessing_recipes`, `stabl_env_stability`,
+`stabl_multiomic_fit/cv/nested_cv`, and the vendored cooperative fork
+classes `multiview`/`cv.multiview`/`glmnetfit`/`warmfit`), and the
+reference-index visibility is already consistent — the 18 methods with
+their own man pages are listed, the accessor methods are aliases on
+their indexed generic/class pages (the mixOmics verb pattern: document
+the verb, not each method), and the 7 multiview methods are vendored
+machinery, intentionally unlisted.  One genuine gap fixed:
+`print.stabl_interpretation` had no `\alias` on any man page and is now
+documented via `@describeIn` on the `stabl_interpret()` page.
+Considered and rejected: merging the ten exported accessor generics
+into fewer verbs (mixOmics itself keeps separate verbs — selectVar,
+plotVar, plotLoadings — and the generics are the user-facing API).
+Multiomic family: usage census (vignettes/README/docs) —
+`stabl_multiomic_train_validate` 19, `stabl_multiomic_cv` 15,
+`stabl_multiomic_nested_cv` 5, `stabl_multiomic_stacked` 4,
+`stabl_multiomic_scheme_comparison` 2, and zero for
+`stabl_multiomic_study_diagnostics`, `stabl_multiomic_study_split`,
+`stabl_multiomic_selection_stability` (all three tested; no internal
+callers).  Decisions (user-delegated): keep
+`stabl_multiomic_train_validate` and `stabl_multiomic_cv` separate — a
+merge into one `stabl_multiomic(validation = ...)` was considered and
+rejected (the two most-used multi-omic entry points, 34 doc call sites
+combined; different return classes already unified behind the shared
+accessor verbs; mixOmics keeps per-workflow fit functions); hide
+`stabl_multiomic_study_split` under the PR-A machinery precedent
+(study-disjoint splitting is subsumed by the `study_labels` arguments
+of `stabl_multiomic_nested_cv()` and
+`stabl_multiomic_scheme_comparison()`; implementation, tests, and a
+`\keyword{internal}` man page with a `stablr:::` example retained;
+reachable as `stablr:::stabl_multiomic_study_split`; zero behavior
+change); keep the two zero-doc diagnostics exported (end-user analysis
+outputs, not machinery; under-documentation recorded as a follow-up
+recommendation).  47 -> 46 exports; registry 90 -> 89 rows;
+`inst/release/removal-ledger.csv` gains 1 internalization row;
+`_pkgdown.yml` Multi-Omic Workflows drops to 8 entries (reference index
+55 = 36 exports + 18 S3 + package page); the one cross-link to the
+hidden function (from `stabl_multiomic_study_diagnostics()`'s seealso)
+repointed to the `study_labels` arguments.  Gates: suite 64 files /
+0 failed / 0 errors / 1 skip / 3 warnings (exact PR-G parity); R CMD
+check 0E/0W/1N (pre-existing installed-size NOTE); all 14 vignettes
+rebuild clean.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3

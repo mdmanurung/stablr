@@ -438,6 +438,8 @@ stabl_interpret <- function(object, x, y, family = c("gaussian", "binomial"),
 
 # ── S3 methods ───────────────────────────────────────────────────────────────
 
+#' @describeIn stabl_interpret Print a concise summary of a
+#'   `stabl_interpretation` object; invisibly returns `x`.
 #' @export
 print.stabl_interpretation <- function(x, ...) {
   ev <- x$evidence

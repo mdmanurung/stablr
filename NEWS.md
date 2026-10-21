@@ -71,6 +71,32 @@
   deprecation-plus-forwarding contract of all ten shims, and the
   legacy-argument mapping tests live in `test-api-deprecation.R`.
 
+## API changes (2026-10-21, Phase 14 PR-C: S3 and multi-omic audit)
+
+- The streamlining audit was extended to the 43 registered S3 methods and
+  the eight exported `stabl_multiomic_*` functions.  All 43 S3
+  registrations are required for dispatch and every class is still live,
+  so no S3 method could be removed or hidden; the reference index already
+  lists only the 18 methods that have their own pages, with the accessor
+  methods documented on their generic/class pages (the mixOmics verb
+  pattern).  One genuine gap is fixed: `print.stabl_interpretation()` was
+  undocumented and is now aliased on the `stabl_interpret()` help page.
+- `stabl_multiomic_study_split()` is internalized — study-disjoint
+  splitting is subsumed by the `study_labels` arguments of
+  `stabl_multiomic_nested_cv()` and `stabl_multiomic_scheme_comparison()`
+  (the PR-A machinery precedent).  The implementation, tests, and a
+  `\keyword{internal}` man page with a `stablr:::` example are retained;
+  existing code keeps working via `stablr:::stabl_multiomic_study_split`.
+- `stabl_multiomic_train_validate()` and `stabl_multiomic_cv()` stay
+  separate: a merge into one function with a validation-mode argument was
+  considered and rejected (they are the two most-used multi-omic entry
+  points, and the shared accessor verbs already provide the streamlined
+  pattern).
+- The public export count drops from 47 to 46.
+  `inst/release/public-interface-audit.csv`,
+  `inst/release/removal-ledger.csv`, and `_pkgdown.yml` are updated to
+  match.
+
 ## Tests (2026-10-21, functional verification audit)
 
 - New test file `test-functional-audit.R` closes the gaps found by the
