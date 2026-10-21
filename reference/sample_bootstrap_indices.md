@@ -107,15 +107,17 @@ which calls this sampler automatically.
 ``` r
 set.seed(42L)
 y <- c(rep(0, 15), rep(1, 15))  # balanced binary outcome
-idx <- sample_bootstrap_indices(y, n_subsamples = 20L, random_state = 1L)
+idx <- stablr:::sample_bootstrap_indices(y, n_subsamples = 20L,
+                                         random_state = 1L)
 table(y[idx])  # class distribution in the bootstrap
 #> 
 #>  0  1 
 #> 11  9 
 
 # Stratified sampling preserves class proportions
-idx_str <- sample_bootstrap_indices(y, n_subsamples = 20L,
-                                     stratify = TRUE, random_state = 1L)
+idx_str <- stablr:::sample_bootstrap_indices(y, n_subsamples = 20L,
+                                             stratify = TRUE,
+                                             random_state = 1L)
 table(y[idx_str])
 #> 
 #>  0  1 

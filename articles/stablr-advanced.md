@@ -26,9 +26,9 @@ table below.
 |----|----|
 | Survival STABL | `stabl_fit(family = "cox")` |
 | Multinomial classification | `stabl_fit(family = "multinomial")` |
-| sPLS-DA classification | `base_learner = "splsda"`, [`auto_splsda_keepx_grid()`](https://mdmanurung.github.io/stablr/reference/auto_splsda_keepx_grid.md) |
+| sPLS-DA classification | `base_learner = "splsda"` |
 | Artificial features | `artificial_type = "random_permutation"`, `"knockoff"`, `"knockoff_equi"`, `"knockoff_mvr"`, or `NULL` |
-| Grouped bootstrap | `groups`, [`group_bootstrap_indices()`](https://mdmanurung.github.io/stablr/reference/group_bootstrap_indices.md) |
+| Grouped bootstrap | `sample_groups` argument of [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md) |
 | Reproducibility metrics | [`jaccard_similarity()`](https://mdmanurung.github.io/stablr/reference/jaccard_similarity.md), [`adjusted_similarity()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity.md) |
 | Disk export | [`export_stabl_to_csv()`](https://mdmanurung.github.io/stablr/reference/export_stabl_to_csv.md), [`save_stabl_results()`](https://mdmanurung.github.io/stablr/reference/save_stabl_results.md) |
 | Outer multi-omic CV | [`stabl_multiomic_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_cv.md) |
@@ -193,10 +193,9 @@ is expected to appear among the selections.
 
 For binary classification, an sPLS-DA base learner is also available
 (`base_learner = "splsda"`, backed by `mixOmics`). The lambda grid
-becomes a `keepX` grid:
-[`auto_splsda_keepx_grid()`](https://mdmanurung.github.io/stablr/reference/auto_splsda_keepx_grid.md)
-derives a default one, and `splsda_ncomp` sets the number of components.
-On the package’s learner benchmark this pairing is the best-calibrated
+becomes a `keepX` grid: `lambda_grid = "auto"` derives a default one
+internally, and `splsda_ncomp` sets the number of components. On the
+package’s learner benchmark this pairing is the best-calibrated
 classification option (Section 7.3 of the introduction vignette).
 
 ``` r
@@ -292,11 +291,12 @@ x_grp <- matrix(
 )
 y_grp <- setNames(rnorm(n) + 0.5 * x_grp[, 1], ids)
 
-# Inspect one grouped draw (whole subjects only)
-idx <- group_bootstrap_indices(y_grp, groups = groups, n_subsamples = 24L, seed = 1L)
-#> Warning: `seed` is deprecated; use `random_state` instead.
+# Inspect one grouped draw (whole subjects only) — this is what
+# sample_groups does internally for every bootstrap resample
+boot_subjects <- sample(unique(groups), 6L)
+idx <- which(groups %in% boot_subjects)
 unique(groups[idx])
-#> [1] "subj9"  "subj4"  "subj8"  "subj1"  "subj3"  "subj10"
+#> [1] "subj2"  "subj7"  "subj8"  "subj10" "subj11" "subj12"
 
 lambda_grp <- auto_lambda_grid(x_grp, y_grp, family = "gaussian", n_lambda = 6)
 
@@ -490,31 +490,31 @@ cv_fit <- stabl_multiomic_cv(
 head(cv_fit$diagnostics)
 #>          fold   omic n_selected threshold max_score cooperative_rho
 #> Fold1.1 Fold1 omic_a          0      1.00         1               0
-#> Fold1.2 Fold1 omic_b          8      0.94         1               0
+#> Fold1.2 Fold1 omic_b          0      1.00         1               0
 #> Fold2.1 Fold2 omic_a          0      1.00         1               0
-#> Fold2.2 Fold2 omic_b          0      1.00         1               0
+#> Fold2.2 Fold2 omic_b          8      0.94         1               0
 #> Fold3.1 Fold3 omic_a          0      1.00         1               0
 #> Fold3.2 Fold3 omic_b          0      1.00         1               0
 #>         cooperative_lambda cooperative_selection cooperative_selector
-#> Fold1.1         0.09022668                    cv           lambda.min
-#> Fold1.2         0.09022668                    cv           lambda.min
-#> Fold2.1         0.07014816                    cv           lambda.min
-#> Fold2.2         0.07014816                    cv           lambda.min
-#> Fold3.1         0.03556890                    cv           lambda.min
-#> Fold3.2         0.03556890                    cv           lambda.min
+#> Fold1.1         0.07744803                    cv           lambda.min
+#> Fold1.2         0.07744803                    cv           lambda.min
+#> Fold2.1         0.05416204                    cv           lambda.min
+#> Fold2.2         0.05416204                    cv           lambda.min
+#> Fold3.1         0.01833088                    cv           lambda.min
+#> Fold3.2         0.01833088                    cv           lambda.min
 #>         cooperative_type_measure cooperative_score cooperative_prediction_type
-#> Fold1.1                      mse         0.1544728                        link
-#> Fold1.2                      mse         0.1544728                        link
-#> Fold2.1                      mse         0.1550795                        link
-#> Fold2.2                      mse         0.1550795                        link
-#> Fold3.1                      mse         0.1116380                        link
-#> Fold3.2                      mse         0.1116380                        link
+#> Fold1.1                      mse        0.08370089                        link
+#> Fold1.2                      mse        0.08370089                        link
+#> Fold2.1                      mse        0.11357912                        link
+#> Fold2.2                      mse        0.11357912                        link
+#> Fold3.1                      mse        0.10843899                        link
+#> Fold3.2                      mse        0.10843899                        link
 #>         cooperative_n_selected
 #> Fold1.1                      1
 #> Fold1.2                      1
-#> Fold2.1                      3
-#> Fold2.2                      3
-#> Fold3.1                      5
+#> Fold2.1                      1
+#> Fold2.2                      5
+#> Fold3.1                      6
 #> Fold3.2                      5
 if (!is.null(cv_fit$fold_results[[1]]$cooperative_fusion)) {
   get_cooperative_features(cv_fit$fold_results[[1]])

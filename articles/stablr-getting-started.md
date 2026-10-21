@@ -270,10 +270,13 @@ the canonical names —
 [`adjusted_similarity_pairwise()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity_pairwise.md),
 [`adjusted_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/adjusted_similarity_summary.md),
 [`pearson_similarity_pairwise()`](https://mdmanurung.github.io/stablr/reference/pearson_similarity_pairwise.md),
-[`pearson_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/pearson_similarity_summary.md),
-[`sample_bootstrap_indices()`](https://mdmanurung.github.io/stablr/reference/sample_bootstrap_indices.md)
+[`pearson_similarity_summary()`](https://mdmanurung.github.io/stablr/reference/pearson_similarity_summary.md)
 — and see `NEWS.md` and `docs/MIGRATION_0.3_TO_1.0.md` for the full
-mapping.
+mapping. Bootstrap index generation (the `classic_bootstrap_indices()`
+replacement) is internal machinery; control resampling through
+[`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)’s
+`n_bootstraps`, `stratify_bootstrap`, `bootstrap_strata`, and
+`sample_groups` arguments.
 
 The 1.0.0 contract also removes a small set of legacy behaviors (Phase
 13 PR-A): the `explore`/`n_explore` arguments of

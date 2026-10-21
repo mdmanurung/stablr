@@ -47,7 +47,7 @@ reads preferentially).
 ## Examples
 
 ``` r
-grid <- auto_splsda_keepx_grid(matrix(0, 10, 150), n_lambda = 8)
+grid <- stablr:::auto_splsda_keepx_grid(matrix(0, 10, 150), n_lambda = 8)
 grid
 #>   lambda keepX
 #> 1      3     3

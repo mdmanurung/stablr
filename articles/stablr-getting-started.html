@@ -340,9 +340,13 @@ error. Use the canonical names — <code><a href="../reference/get_feature_names
 <code><a href="../reference/adjusted_similarity_pairwise.html">adjusted_similarity_pairwise()</a></code>,
 <code><a href="../reference/adjusted_similarity_summary.html">adjusted_similarity_summary()</a></code>,
 <code><a href="../reference/pearson_similarity_pairwise.html">pearson_similarity_pairwise()</a></code>,
-<code><a href="../reference/pearson_similarity_summary.html">pearson_similarity_summary()</a></code>,
-<code><a href="../reference/sample_bootstrap_indices.html">sample_bootstrap_indices()</a></code> — and see <code>NEWS.md</code>
-and <code>docs/MIGRATION_0.3_TO_1.0.md</code> for the full mapping.</p>
+<code><a href="../reference/pearson_similarity_summary.html">pearson_similarity_summary()</a></code> — and see <code>NEWS.md</code>
+and <code>docs/MIGRATION_0.3_TO_1.0.md</code> for the full mapping.
+Bootstrap index generation (the <code>classic_bootstrap_indices()</code>
+replacement) is internal machinery; control resampling through
+<code><a href="../reference/stabl_fit.html">stabl_fit()</a></code>’s <code>n_bootstraps</code>,
+<code>stratify_bootstrap</code>, <code>bootstrap_strata</code>, and
+<code>sample_groups</code> arguments.</p>
 <p>The 1.0.0 contract also removes a small set of legacy behaviors
 (Phase 13 PR-A): the <code>explore</code>/<code>n_explore</code>
 arguments of <code><a href="../reference/stabl_fit.html">stabl_fit()</a></code> (an empty selection now stays

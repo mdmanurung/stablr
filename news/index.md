@@ -2,6 +2,50 @@
 
 ## stablr 0.3.0.9000 (development)
 
+### API changes (2026-10-21, Phase 14 PR-A: internal machinery hidden)
+
+- Nine exported functions are internalized — they remain in the package
+  namespace (reachable as `stablr:::name`, with `\keyword{internal}` man
+  pages retained) but no longer appear on the public reference page, in
+  the mixOmics style of keeping machinery behind a small set of fit
+  functions and verb generics:
+  - input validation:
+    [`validate_sample_alignment()`](https://mdmanurung.github.io/stablr/reference/validate_sample_alignment.md),
+    [`validate_multiomic_inputs()`](https://mdmanurung.github.io/stablr/reference/validate_multiomic_inputs.md),
+    [`validate_newdata_schema()`](https://mdmanurung.github.io/stablr/reference/validate_newdata_schema.md)
+    — called automatically by
+    [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md),
+    the `stabl_multiomic_*()` workflows, and
+    [`predict.stabl_predictor()`](https://mdmanurung.github.io/stablr/reference/stabl_finalize.md)
+    respectively;
+  - artificial features:
+    [`make_artificial_features()`](https://mdmanurung.github.io/stablr/reference/make_artificial_features.md)
+    — dispatched by the `artificial_type` argument of the fit functions;
+  - learner-specific grid helpers:
+    [`auto_rf_threshold_grid()`](https://mdmanurung.github.io/stablr/reference/auto_rf_threshold_grid.md),
+    [`auto_ordinal_lambda_grid()`](https://mdmanurung.github.io/stablr/reference/auto_ordinal_lambda_grid.md),
+    [`auto_splsda_keepx_grid()`](https://mdmanurung.github.io/stablr/reference/auto_splsda_keepx_grid.md)
+    —
+    [`auto_lambda_grid()`](https://mdmanurung.github.io/stablr/reference/auto_lambda_grid.md)
+    stays exported as the single public grid helper, and
+    `lambda_grid = "auto"` covers the other learners internally;
+  - bootstrap index generators:
+    [`sample_bootstrap_indices()`](https://mdmanurung.github.io/stablr/reference/sample_bootstrap_indices.md),
+    [`group_bootstrap_indices()`](https://mdmanurung.github.io/stablr/reference/group_bootstrap_indices.md)
+    — resampling is controlled through
+    [`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md)’s
+    `n_bootstraps`, `stratify_bootstrap`, `bootstrap_strata`, and
+    `sample_groups` arguments.
+- The public export count drops from 54 to 45.
+  `inst/release/public-interface-audit.csv` and `_pkgdown.yml` are
+  updated to match; `docs/API_REFERENCE.md`,
+  `docs/MIGRATION_0.3_TO_1.0.md`, and `docs/PYTHON_TO_R_MAPPING.md`
+  record the new internal status; the grouped-bootstrap demonstration in
+  [`vignette("stablr-advanced")`](https://mdmanurung.github.io/stablr/articles/stablr-advanced.md)
+  is inlined to plain base R.
+- Existing code that calls the nine functions directly keeps working via
+  `stablr:::`; no behavior changes.
+
 ### Tests (2026-10-21, functional verification audit)
 
 - New test file `test-functional-audit.R` closes the gaps found by the

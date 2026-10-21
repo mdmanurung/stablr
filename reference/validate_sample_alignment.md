@@ -63,7 +63,7 @@ x <- matrix(
   dimnames = list(paste0("s", 1:4), paste0("f", 1:3))
 )
 y <- setNames(c(0, 1, 0, 1), c("s3", "s1", "s4", "s2"))
-validate_sample_alignment(x, y)
-try(validate_sample_alignment(x, setNames(y, paste0("v", 1:4))))
+stablr:::validate_sample_alignment(x, y)
+try(stablr:::validate_sample_alignment(x, setNames(y, paste0("v", 1:4))))
 #> Error : Sample mismatch between `x` row names and `y` names.
 ```

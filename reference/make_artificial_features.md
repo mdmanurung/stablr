@@ -153,13 +153,13 @@ x <- matrix(
   rnorm(20 * 4), 20, 4,
   dimnames = list(paste0("s", 1:20), paste0("f", 1:4))
 )
-generated <- make_artificial_features(
+generated <- stablr:::make_artificial_features(
   x, n_injected = 2L, type = "random_permutation", random_state = 1L
 )
 dim(generated$x_augmented)
 #> [1] 20  6
 generated$artificial_provenance$actual_type
 #> [1] "random_permutation"
-try(make_artificial_features(x, 0L, "random_permutation"))
+try(stablr:::make_artificial_features(x, 0L, "random_permutation"))
 #> Error : `n_injected` must be >= 1.
 ```

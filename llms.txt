@@ -259,24 +259,6 @@ interface).
 - [`compute_fdp_plus()`](https://mdmanurung.github.io/stablr/reference/compute_fdp_plus.md)
   : Compute FDP+ (False Discovery Proportion Upper Bound)
 
-## Learner Grid Helpers
-
-Data-driven threshold/lambda grid constructors for the non-glmnet base
-learners. The random forest is calibrated within a measured scope
-(WS-2); the ordinal learner is experimental (WS-9); sPLS-DA is
-experimental and binomial-only. Learner factories are internal; select
-learners via the `base_learner` argument of
-[`stabl_fit()`](https://mdmanurung.github.io/stablr/reference/stabl_fit.md).
-
-- [`auto_rf_threshold_grid()`](https://mdmanurung.github.io/stablr/reference/auto_rf_threshold_grid.md)
-  : Auto-Generate an Importance-Threshold Grid for Random-Forest STABL
-  (Experimental)
-- [`auto_ordinal_lambda_grid()`](https://mdmanurung.github.io/stablr/reference/auto_ordinal_lambda_grid.md)
-  : Build a Data-Driven Lambda Grid for the Ordinal Learner
-  (Experimental)
-- [`auto_splsda_keepx_grid()`](https://mdmanurung.github.io/stablr/reference/auto_splsda_keepx_grid.md)
-  : Build an Automatic keepX Grid for the sPLS-DA Learner
-
 ## Environment Stability
 
 ICP-inspired transportability workflow across environments (batches,
@@ -290,24 +272,6 @@ transportability benchmark (min-aggregation is the calibrated read).
   : Get Minimum-Across-Environment Stability Scores
 - [`print(`*`<stabl_env_stability>`*`)`](https://mdmanurung.github.io/stablr/reference/print.stabl_env_stability.md)
   : Print an Environment-Stability Analysis
-
-## Artificial Features
-
-Decoy-feature generation for FDP+ calibration.
-
-- [`make_artificial_features()`](https://mdmanurung.github.io/stablr/reference/make_artificial_features.md)
-  : Dispatcher for Artificial Feature Generation
-
-## Input Validation and Bootstrapping
-
-- [`validate_sample_alignment()`](https://mdmanurung.github.io/stablr/reference/validate_sample_alignment.md)
-  : Validate Sample Alignment Across Inputs
-- [`validate_multiomic_inputs()`](https://mdmanurung.github.io/stablr/reference/validate_multiomic_inputs.md)
-  : Validate Multi-Omic Input Contract
-- [`sample_bootstrap_indices()`](https://mdmanurung.github.io/stablr/reference/sample_bootstrap_indices.md)
-  : Classic Bootstrap Sampler Indices
-- [`group_bootstrap_indices()`](https://mdmanurung.github.io/stablr/reference/group_bootstrap_indices.md)
-  : Group-Aware Bootstrap Sampler Indices
 
 ## Accessors
 
@@ -384,37 +348,24 @@ stablr-reliability article for a guided tour).
 
 - [`stabl_diagnose()`](https://mdmanurung.github.io/stablr/reference/stabl_diagnose.md)
   : Diagnose selection reliability of a fitted STABL object
-
 - [`print(`*`<stabl_diagnostics>`*`)`](https://mdmanurung.github.io/stablr/reference/print.stabl_diagnostics.md)
   : Print STABL Selection Diagnostics
-
 - [`plot(`*`<stabl_diagnostics>`*`)`](https://mdmanurung.github.io/stablr/reference/plot.stabl_diagnostics.md)
   : Plot STABL selection diagnostics
-
 - [`stabl_null_check()`](https://mdmanurung.github.io/stablr/reference/stabl_null_check.md)
   : Outcome-Null Calibration Check for STABL
-
 - [`print(`*`<stabl_null_validation>`*`)`](https://mdmanurung.github.io/stablr/reference/print.stabl_null_validation.md)
   : Print an Outcome-Null Validation Summary
-
 - [`plot(`*`<stabl_null_validation>`*`)`](https://mdmanurung.github.io/stablr/reference/plot.stabl_null_validation.md)
   : Plot Outcome-Null Validation Results
-
 - [`stabl_replication_profile()`](https://mdmanurung.github.io/stablr/reference/stabl_replication_profile.md)
   : Cohort Replication and Heterogeneity Profile
-
 - [`print(`*`<stabl_replication_profile>`*`)`](https://mdmanurung.github.io/stablr/reference/print.stabl_replication_profile.md)
   : Print a Cohort Replication Profile
-
 - [`stabl_finalize()`](https://mdmanurung.github.io/stablr/reference/stabl_finalize.md)
   [`predict(`*`<stabl_predictor>`*`)`](https://mdmanurung.github.io/stablr/reference/stabl_finalize.md)
   [`print(`*`<stabl_predictor>`*`)`](https://mdmanurung.github.io/stablr/reference/stabl_finalize.md)
   : Finalize a STABL selection into a portable predictive model
-
-- [`validate_newdata_schema()`](https://mdmanurung.github.io/stablr/reference/validate_newdata_schema.md)
-  :
-
-  Validate new data against a `"stabl_predictor"` schema
 
 ## Visualization
 

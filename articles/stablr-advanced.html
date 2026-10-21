@@ -126,10 +126,7 @@ listed in the table below.</p>
 </tr>
 <tr class="odd">
 <td>sPLS-DA classification</td>
-<td>
-<code>base_learner = "splsda"</code>,
-<code><a href="../reference/auto_splsda_keepx_grid.html">auto_splsda_keepx_grid()</a></code>
-</td>
+<td><code>base_learner = "splsda"</code></td>
 </tr>
 <tr class="even">
 <td>Artificial features</td>
@@ -142,7 +139,7 @@ listed in the table below.</p>
 <tr class="odd">
 <td>Grouped bootstrap</td>
 <td>
-<code>groups</code>, <code><a href="../reference/group_bootstrap_indices.html">group_bootstrap_indices()</a></code>
+<code>sample_groups</code> argument of <code><a href="../reference/stabl_fit.html">stabl_fit()</a></code>
 </td>
 </tr>
 <tr class="even">
@@ -314,7 +311,7 @@ that feature is expected to appear among the selections.</p>
 <p>For binary classification, an sPLS-DA base learner is also available
 (<code>base_learner = "splsda"</code>, backed by <code>mixOmics</code>).
 The lambda grid becomes a <code>keepX</code> grid:
-<code><a href="../reference/auto_splsda_keepx_grid.html">auto_splsda_keepx_grid()</a></code> derives a default one, and
+<code>lambda_grid = "auto"</code> derives a default one internally, and
 <code>splsda_ncomp</code> sets the number of components. On the
 package’s learner benchmark this pairing is the best-calibrated
 classification option (Section 7.3 of the introduction vignette).</p>
@@ -405,11 +402,12 @@ model.</p>
 <span><span class="op">)</span></span>
 <span><span class="va">y_grp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/setNames.html" class="external-link">setNames</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span> <span class="op">+</span> <span class="fl">0.5</span> <span class="op">*</span> <span class="va">x_grp</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span>, <span class="va">ids</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Inspect one grouped draw (whole subjects only)</span></span>
-<span><span class="va">idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/group_bootstrap_indices.html">group_bootstrap_indices</a></span><span class="op">(</span><span class="va">y_grp</span>, groups <span class="op">=</span> <span class="va">groups</span>, n_subsamples <span class="op">=</span> <span class="fl">24L</span>, seed <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: `seed` is deprecated; use `random_state` instead.</span></span>
+<span><span class="co"># Inspect one grouped draw (whole subjects only) — this is what</span></span>
+<span><span class="co"># sample_groups does internally for every bootstrap resample</span></span>
+<span><span class="va">boot_subjects</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">groups</span><span class="op">)</span>, <span class="fl">6L</span><span class="op">)</span></span>
+<span><span class="va">idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="va">groups</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">boot_subjects</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">groups</span><span class="op">[</span><span class="va">idx</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "subj9"  "subj4"  "subj8"  "subj1"  "subj3"  "subj10"</span></span>
+<span><span class="co">#&gt; [1] "subj2"  "subj7"  "subj8"  "subj10" "subj11" "subj12"</span></span>
 <span></span>
 <span><span class="va">lambda_grp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/auto_lambda_grid.html">auto_lambda_grid</a></span><span class="op">(</span><span class="va">x_grp</span>, <span class="va">y_grp</span>, family <span class="op">=</span> <span class="st">"gaussian"</span>, n_lambda <span class="op">=</span> <span class="fl">6</span><span class="op">)</span></span>
 <span></span>
@@ -582,31 +580,31 @@ is specified as follows.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">cv_fit</span><span class="op">$</span><span class="va">diagnostics</span><span class="op">)</span></span>
 <span><span class="co">#&gt;          fold   omic n_selected threshold max_score cooperative_rho</span></span>
 <span><span class="co">#&gt; Fold1.1 Fold1 omic_a          0      1.00         1               0</span></span>
-<span><span class="co">#&gt; Fold1.2 Fold1 omic_b          8      0.94         1               0</span></span>
+<span><span class="co">#&gt; Fold1.2 Fold1 omic_b          0      1.00         1               0</span></span>
 <span><span class="co">#&gt; Fold2.1 Fold2 omic_a          0      1.00         1               0</span></span>
-<span><span class="co">#&gt; Fold2.2 Fold2 omic_b          0      1.00         1               0</span></span>
+<span><span class="co">#&gt; Fold2.2 Fold2 omic_b          8      0.94         1               0</span></span>
 <span><span class="co">#&gt; Fold3.1 Fold3 omic_a          0      1.00         1               0</span></span>
 <span><span class="co">#&gt; Fold3.2 Fold3 omic_b          0      1.00         1               0</span></span>
 <span><span class="co">#&gt;         cooperative_lambda cooperative_selection cooperative_selector</span></span>
-<span><span class="co">#&gt; Fold1.1         0.09022668                    cv           lambda.min</span></span>
-<span><span class="co">#&gt; Fold1.2         0.09022668                    cv           lambda.min</span></span>
-<span><span class="co">#&gt; Fold2.1         0.07014816                    cv           lambda.min</span></span>
-<span><span class="co">#&gt; Fold2.2         0.07014816                    cv           lambda.min</span></span>
-<span><span class="co">#&gt; Fold3.1         0.03556890                    cv           lambda.min</span></span>
-<span><span class="co">#&gt; Fold3.2         0.03556890                    cv           lambda.min</span></span>
+<span><span class="co">#&gt; Fold1.1         0.07744803                    cv           lambda.min</span></span>
+<span><span class="co">#&gt; Fold1.2         0.07744803                    cv           lambda.min</span></span>
+<span><span class="co">#&gt; Fold2.1         0.05416204                    cv           lambda.min</span></span>
+<span><span class="co">#&gt; Fold2.2         0.05416204                    cv           lambda.min</span></span>
+<span><span class="co">#&gt; Fold3.1         0.01833088                    cv           lambda.min</span></span>
+<span><span class="co">#&gt; Fold3.2         0.01833088                    cv           lambda.min</span></span>
 <span><span class="co">#&gt;         cooperative_type_measure cooperative_score cooperative_prediction_type</span></span>
-<span><span class="co">#&gt; Fold1.1                      mse         0.1544728                        link</span></span>
-<span><span class="co">#&gt; Fold1.2                      mse         0.1544728                        link</span></span>
-<span><span class="co">#&gt; Fold2.1                      mse         0.1550795                        link</span></span>
-<span><span class="co">#&gt; Fold2.2                      mse         0.1550795                        link</span></span>
-<span><span class="co">#&gt; Fold3.1                      mse         0.1116380                        link</span></span>
-<span><span class="co">#&gt; Fold3.2                      mse         0.1116380                        link</span></span>
+<span><span class="co">#&gt; Fold1.1                      mse        0.08370089                        link</span></span>
+<span><span class="co">#&gt; Fold1.2                      mse        0.08370089                        link</span></span>
+<span><span class="co">#&gt; Fold2.1                      mse        0.11357912                        link</span></span>
+<span><span class="co">#&gt; Fold2.2                      mse        0.11357912                        link</span></span>
+<span><span class="co">#&gt; Fold3.1                      mse        0.10843899                        link</span></span>
+<span><span class="co">#&gt; Fold3.2                      mse        0.10843899                        link</span></span>
 <span><span class="co">#&gt;         cooperative_n_selected</span></span>
 <span><span class="co">#&gt; Fold1.1                      1</span></span>
 <span><span class="co">#&gt; Fold1.2                      1</span></span>
-<span><span class="co">#&gt; Fold2.1                      3</span></span>
-<span><span class="co">#&gt; Fold2.2                      3</span></span>
-<span><span class="co">#&gt; Fold3.1                      5</span></span>
+<span><span class="co">#&gt; Fold2.1                      1</span></span>
+<span><span class="co">#&gt; Fold2.2                      5</span></span>
+<span><span class="co">#&gt; Fold3.1                      6</span></span>
 <span><span class="co">#&gt; Fold3.2                      5</span></span>
 <span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NULL.html" class="external-link">is.null</a></span><span class="op">(</span><span class="va">cv_fit</span><span class="op">$</span><span class="va">fold_results</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="va">cooperative_fusion</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="../reference/get_cooperative_features.html">get_cooperative_features</a></span><span class="op">(</span><span class="va">cv_fit</span><span class="op">$</span><span class="va">fold_results</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>

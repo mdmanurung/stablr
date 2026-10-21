@@ -49,7 +49,7 @@ fit <- stabl_fit(x, y, lambda_grid = data.frame(lambda = c(0.3, 0.2, 0.1)),
                  family = "gaussian", n_bootstraps = 20L, random_state = 2L)
 final <- stabl_finalize(fit, x, y, random_state = 2L)
 req <- final$required_columns
-validate_newdata_schema(final, x[1:3, rev(req)])  # order does not matter
+stablr:::validate_newdata_schema(final, x[1:3, rev(req)])  # order does not matter
 #>            f1         f2
 #> s1 -0.8969145 -1.7882422
 #> s2  0.1848492  2.0312425

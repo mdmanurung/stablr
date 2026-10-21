@@ -55,7 +55,7 @@ if (requireNamespace("ranger", quietly = TRUE)) {
   x <- matrix(rnorm(60 * 6), 60, 6,
               dimnames = list(paste0("s", 1:60), paste0("f", 1:6)))
   y <- setNames(x[, 1] * x[, 2] * 0.5 + rnorm(60, sd = 0.3), rownames(x))
-  grid <- auto_rf_threshold_grid(x, y, n_grid = 5L, num_trees = 100L, seed = 1L)
+  grid <- stablr:::auto_rf_threshold_grid(x, y, n_grid = 5L, num_trees = 100L, seed = 1L)
   grid
 }
 #>        lambda   threshold
