@@ -188,7 +188,7 @@ test_that("recipes path requires the recipes package and preps on training", {
   rec <- recipes::recipe(~ ., data = as.data.frame(d$x_tr)) |>
     recipes::step_center(recipes::all_predictors()) |>
     recipes::step_scale(recipes::all_predictors())
-  pp <- stabl_preprocess_fit_recipes(rec, d$x_tr)
+  pp <- stabl_preprocess_fit(d$x_tr, transforms = rec)
   expect_s3_class(pp, "stabl_preprocessing_recipes")
   xt <- stabl_preprocess_apply(pp, d$x_tr)
   expect_equal(colMeans(xt), setNames(rep(0, 5), colnames(xt)),

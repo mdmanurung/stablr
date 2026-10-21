@@ -1,14 +1,28 @@
 # exports.R — CSV/disk export helpers for fitted STABL objects
 # R port of export_stabl_to_csv() and save_stabl_results() from stabl/stabl.py
+#
+# save_stabl_results() is the single user-facing entry point: `what = "all"`
+# writes the full result set (CSV tables + plots), `what = "csv"` writes only
+# the CSV tables.  The historical export_stabl_to_csv() name is retained as a
+# deprecated shim; it will be removed in version 1.0.0.
 
-#' Export STABL Stability Scores to CSV
+#' Save STABL Results to Disk
 #'
-#' Writes the full stability-score matrix, the per-feature maximum stability
-#' scores, and (when artificial features were used) the corresponding
-#' artificial-feature scores to CSV files in the directory specified by
-#' `path`.
+#' Writes STABL result artefacts into a single output directory.  With the
+#' default `what = "all"` this is the complete set — stability scores, the
+#' list of selected features, the FDR diagnostic graph, the stability path
+#' plot, and per-feature distribution plots — and is the recommended way to
+#' persist and share results from a single [stabl_fit()] call.  With
+#' `what = "csv"` only the tabular CSV exports are written.
 #'
-#' Files written:
+#' With `what = "all"` the function orchestrates several lower-level helpers:
+#' the CSV export engine for tabular data, [plot_fdr_graph()] and
+#' [plot_stabl_path()] for diagnostic plots, and [boxplot_features()] or
+#' [scatterplot_features()] for per-feature distribution visualisations.
+#' All graphics are saved using `ggplot2::ggsave()` in the format specified
+#' by `figure_fmt`.
+#'
+#' CSV files written (both modes):
 #' - `STABL scores.csv` — full p x L stability score matrix.
 #' - `Max STABL scores.csv` — per-feature maximum stability score, sorted
 #'   descending.
@@ -18,89 +32,16 @@
 #' - `Max STABL artificial scores.csv` — artificial max scores, sorted
 #'   descending (only when artificial features were used).
 #'
-#' @param object A fitted `"stabl_fit"` object from [stabl_fit()].
-#' @param path Character string; path to an existing (or to-be-created)
-#'   directory.
-#'
-#' @return Invisibly returns `path` (as a normalized string).
-#'
-#' @examples
-#' \donttest{
-#' set.seed(1L)
-#' x <- matrix(rnorm(40 * 6), 40, 6,
-#'              dimnames = list(paste0("s", 1:40), paste0("f", 1:6)))
-#' y <- setNames(rnorm(40), rownames(x))
-#' fit <- stabl_fit(x, y,
-#'                  lambda_grid  = data.frame(lambda = c(0.3, 0.1, 0.05)),
-#'                  n_bootstraps = 6L, hard_threshold = 0.3, random_state = 1L)
-#' out_dir <- file.path(tempdir(), "stabl_csv_export")
-#' export_stabl_to_csv(fit, out_dir)
-#' list.files(out_dir)
-#' }
-#' @export
-export_stabl_to_csv <- function(object, path) {
-  .check_fitted_stabl(object)
-  path <- .validate_nonempty_scalar_character(path, "path")
-  dir.create(path, recursive = TRUE, showWarnings = FALSE)
-
-  feat_names <- object$feature_names
-
-  # Build column labels from the lambda grid rows
-  col_labels <- .lambda_grid_row_labels(object$fitted_lambda_grid)
-
-  # Full stability score matrix
-  scores_df <- as.data.frame(object$stabl_scores_)
-  rownames(scores_df) <- feat_names
-  colnames(scores_df) <- col_labels
-  utils::write.csv(scores_df, file = file.path(path, "STABL scores.csv"))
-
-  # Max stability scores per feature (sorted descending)
-  .write_max_scores_csv(rowMaxs(object$stabl_scores_), feat_names, path,
-                        "Max STABL scores.csv")
-
-  # Artificial feature scores (only when present)
-  if (!is.null(object$stabl_scores_artificial_)) {
-    art_scores <- object$stabl_scores_artificial_
-    n_art      <- nrow(art_scores)
-    art_names  <- paste0("artificial.", seq_len(n_art))
-
-    art_df <- as.data.frame(art_scores)
-    rownames(art_df) <- art_names
-    colnames(art_df) <- col_labels
-    utils::write.csv(art_df,
-                     file = file.path(path, "STABL artificial scores.csv"))
-
-    .write_max_scores_csv(rowMaxs(art_scores), art_names, path,
-                          "Max STABL artificial scores.csv")
-  }
-
-  invisible(normalizePath(path))
-}
-
-#' Save All STABL Results to Disk
-#'
-#' Writes a complete set of STABL result artefacts — stability scores, the
-#' list of selected features, the FDR diagnostic graph, the stability path
-#' plot, and per-feature distribution plots — into a single output directory.
-#' This is the recommended way to persist and share results from a single
-#' [stabl_fit()] call.
-#'
-#' The function orchestrates several lower-level helpers:
-#' [export_stabl_to_csv()] for tabular data, [plot_fdr_graph()] and
-#' [plot_stabl_path()] for diagnostic plots, and [boxplot_features()] or
-#' [scatterplot_features()] for per-feature distribution visualisations.
-#' All graphics are saved using `ggplot2::ggsave()` in the format specified
-#' by `figure_fmt`.
-#'
 #' @param object A fitted `"stabl_fit"` object returned by [stabl_fit()].
 #' @param path Character string; path to the output directory.  Created
-#'   recursively if it does not already exist.  Raises an error if the
-#'   directory exists and `override = FALSE`.
+#'   recursively if it does not already exist.  When `what = "all"`, raises
+#'   an error if the directory exists and `override = FALSE`; when
+#'   `what = "csv"`, an existing directory is reused without error.
 #' @param x Numeric matrix of predictors used to fit `object`.  Required
-#'   for per-feature distribution plots; must contain at least the selected
-#'   feature columns.
+#'   when `what = "all"` (for per-feature distribution plots); must contain
+#'   at least the selected feature columns.  Ignored when `what = "csv"`.
 #' @param y Outcome vector, factor, or `survival::Surv` object used to fit
-#'   `object`.  Required for per-feature distribution plots.
+#'   `object`.  Required when `what = "all"`; ignored when `what = "csv"`.
 #' @param figure_fmt Character; graphics device extension used when saving
 #'   plots.  Common choices: `"pdf"` (default, publication quality),
 #'   `"png"`, `"svg"`.
@@ -112,22 +53,32 @@ export_stabl_to_csv <- function(object, path) {
 #'   grouped boxplots for classification, LOESS scatter for regression.
 #' @param override Logical; if `TRUE`, an existing directory with the same
 #'   path is accepted and its contents may be overwritten.  Default `FALSE`.
+#'   Only used when `what = "all"`.
+#' @param what Character; `"all"` (default) for the complete result set
+#'   including plots, or `"csv"` for the CSV tables only.  The `"csv"` mode
+#'   requires neither `x`/`y` nor a ggplot2 installation.
 #'
 #' @return Invisibly returns `path` as a normalised absolute string.
 #'
-#' @seealso [export_stabl_to_csv()] for the CSV-only variant,
-#'   [plot_stabl_path()], [plot_fdr_graph()]
+#' @seealso [plot_stabl_path()], [plot_fdr_graph()], [boxplot_features()]
 #'
 #' @examples
 #' \donttest{
+#' set.seed(1L)
+#' x <- matrix(rnorm(40 * 6), 40, 6,
+#'              dimnames = list(paste0("s", 1:40), paste0("f", 1:6)))
+#' y <- setNames(rnorm(40), rownames(x))
+#' fit <- stabl_fit(x, y,
+#'                  lambda_grid  = data.frame(lambda = c(0.3, 0.1, 0.05)),
+#'                  n_bootstraps = 6L, hard_threshold = 0.3, random_state = 1L)
+#'
+#' # CSV tables only (no ggplot2 required)
+#' out_csv <- file.path(tempdir(), "stabl_csv_export")
+#' save_stabl_results(fit, out_csv, what = "csv")
+#' list.files(out_csv)
+#'
+#' # Complete result set
 #' if (requireNamespace("ggplot2", quietly = TRUE)) {
-#'   set.seed(1L)
-#'   x <- matrix(rnorm(40 * 6), 40, 6,
-#'                dimnames = list(paste0("s", 1:40), paste0("f", 1:6)))
-#'   y <- setNames(rnorm(40), rownames(x))
-#'   fit <- stabl_fit(x, y,
-#'                    lambda_grid  = data.frame(lambda = c(0.3, 0.1, 0.05)),
-#'                    n_bootstraps = 6L, hard_threshold = 0.3, random_state = 1L)
 #'   out_dir <- file.path(tempdir(), "stabl_results")
 #'   save_stabl_results(fit, out_dir, x = x, y = y,
 #'                      task_type = "regression", figure_fmt = "png")
@@ -138,13 +89,23 @@ export_stabl_to_csv <- function(object, path) {
 save_stabl_results <- function(
     object,
     path,
-    x,
-    y,
+    x                   = NULL,
+    y                   = NULL,
     figure_fmt          = "pdf",
     new_hard_threshold  = NULL,
     task_type           = "binary",
-    override            = FALSE
+    override            = FALSE,
+    what                = c("all", "csv")
 ) {
+  what <- match.arg(what)
+
+  # CSV-only mode: lenient semantics (no ggplot2 requirement, existing
+  # directories reused, x/y not needed).  Returns before any validation that
+  # only matters for the plotting path.
+  if (what == "csv") {
+    return(.export_stabl_to_csv(object, path))
+  }
+
   .check_fitted_stabl(object)
   path <- .validate_nonempty_scalar_character(path, "path")
   figure_fmt <- .validate_nonempty_scalar_character(figure_fmt, "figure_fmt")
@@ -157,6 +118,13 @@ save_stabl_results <- function(
   # missing ggplot2 does not leave an empty directory behind (review A8).
   .require_ggplot2()
 
+  # Per-feature distribution plots need the original data (checked before
+  # any directory creation for the same reason as the ggplot2 check above).
+  if (is.null(x) || is.null(y)) {
+    stop("`x` and `y` are required when `what = \"all\"`.",
+         call. = FALSE)
+  }
+
   # Create output directory (fail if exists and override = FALSE)
   if (dir.exists(path) && !override) {
     stop(
@@ -168,7 +136,7 @@ save_stabl_results <- function(
   dir.create(path, recursive = TRUE, showWarnings = FALSE)
 
   # 1. CSV exports
-  export_stabl_to_csv(object, path)
+  .export_stabl_to_csv(object, path)
 
   # 2. FDR graph (only when artificial features were used)
   if (!is.null(object$artificial_type) && !is.null(object$FDRs_)) {
@@ -226,7 +194,87 @@ save_stabl_results <- function(
   invisible(normalizePath(path))
 }
 
+# ── Deprecated shims (removal slated for 1.0.0) ──────────────────────────────
+
+#' Export STABL Stability Scores to CSV (Deprecated)
+#'
+#' `export_stabl_to_csv()` is deprecated and will be removed in stablr 1.0.0.
+#' Use [save_stabl_results()] with `what = "csv"` instead:
+#' `save_stabl_results(object, path, what = "csv")`.
+#'
+#' @param object A fitted `"stabl_fit"` object from [stabl_fit()].
+#' @param path Character string; path to an existing (or to-be-created)
+#'   directory.
+#'
+#' @return Invisibly returns `path` (as a normalized string).
+#'
+#' @seealso [save_stabl_results()]
+#'
+#' @examples
+#' \donttest{
+#' set.seed(1L)
+#' x <- matrix(rnorm(40 * 6), 40, 6,
+#'              dimnames = list(paste0("s", 1:40), paste0("f", 1:6)))
+#' y <- setNames(rnorm(40), rownames(x))
+#' fit <- stabl_fit(x, y,
+#'                  lambda_grid  = data.frame(lambda = c(0.3, 0.1, 0.05)),
+#'                  n_bootstraps = 6L, hard_threshold = 0.3, random_state = 1L)
+#' # Deprecated shim — equivalent canonical call:
+#' save_stabl_results(fit, file.path(tempdir(), "stabl_csv_export"),
+#'                    what = "csv")
+#' }
+#' @export
+export_stabl_to_csv <- function(object, path) {
+  .Deprecated(msg = paste0(
+    "'export_stabl_to_csv' is deprecated and will be removed in stablr 1.0.0.\n",
+    "Use 'save_stabl_results(object, path, what = \"csv\")' instead."
+  ))
+  .export_stabl_to_csv(object, path)
+}
+
 # ── Internal helpers ──────────────────────────────────────────────────────────
+
+# CSV export engine behind save_stabl_results(what = "csv") and the
+# deprecated export_stabl_to_csv() shim.  Lenient by design: creates the
+# output directory recursively and never errors on an existing one.
+.export_stabl_to_csv <- function(object, path) {
+  .check_fitted_stabl(object)
+  path <- .validate_nonempty_scalar_character(path, "path")
+  dir.create(path, recursive = TRUE, showWarnings = FALSE)
+
+  feat_names <- object$feature_names
+
+  # Build column labels from the lambda grid rows
+  col_labels <- .lambda_grid_row_labels(object$fitted_lambda_grid)
+
+  # Full stability score matrix
+  scores_df <- as.data.frame(object$stabl_scores_)
+  rownames(scores_df) <- feat_names
+  colnames(scores_df) <- col_labels
+  utils::write.csv(scores_df, file = file.path(path, "STABL scores.csv"))
+
+  # Max stability scores per feature (sorted descending)
+  .write_max_scores_csv(rowMaxs(object$stabl_scores_), feat_names, path,
+                        "Max STABL scores.csv")
+
+  # Artificial feature scores (only when present)
+  if (!is.null(object$stabl_scores_artificial_)) {
+    art_scores <- object$stabl_scores_artificial_
+    n_art      <- nrow(art_scores)
+    art_names  <- paste0("artificial.", seq_len(n_art))
+
+    art_df <- as.data.frame(art_scores)
+    rownames(art_df) <- art_names
+    colnames(art_df) <- col_labels
+    utils::write.csv(art_df,
+                     file = file.path(path, "STABL artificial scores.csv"))
+
+    .write_max_scores_csv(rowMaxs(art_scores), art_names, path,
+                          "Max STABL artificial scores.csv")
+  }
+
+  invisible(normalizePath(path))
+}
 
 # Build, sort-descending, and write a max-scores CSV.
 .write_max_scores_csv <- function(scores, feat_names, path, filename) {

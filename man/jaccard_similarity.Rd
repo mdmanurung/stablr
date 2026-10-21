@@ -2,7 +2,7 @@
 % Please edit documentation in R/metrics.R
 \name{jaccard_similarity}
 \alias{jaccard_similarity}
-\title{Jaccard Similarity Between Two Feature Sets}
+\title{Jaccard Similarity Between Two Feature Sets (Deprecated)}
 \usage{
 jaccard_similarity(list1, list2)
 }
@@ -12,30 +12,17 @@ jaccard_similarity(list1, list2)
 \item{list2}{Character or integer vector of selected feature identifiers.}
 }
 \value{
-Numeric scalar in \eqn{[0, 1]}.  A value of 1 means the two sets
-are identical; 0 means they share no features.
+Numeric scalar in \eqn{[0, 1]}; see \code{\link[=stabl_similarity]{stabl_similarity()}}.
 }
 \description{
-Measures the overlap between two sets of selected features as a simple
-fraction of shared features out of all features that appeared in either
-set.  This is the most interpretable pairwise similarity when no prior
-expectation of set sizes exists.
-}
-\details{
-Use Jaccard when you want a quick, easy-to-explain measure.  Prefer
-\code{\link[=adjusted_similarity]{adjusted_similarity()}} or \code{\link[=pearson_similarity]{pearson_similarity()}} when comparing across
-runs that select very different numbers of features, because Jaccard does
-not correct for the chance overlap expected between small or large sets.
-
-When both sets are empty the function returns 0 (convention matching the
-Python implementation).
+\code{jaccard_similarity()} is deprecated and will be removed in stablr 1.0.0.
+Use \code{\link[=stabl_similarity]{stabl_similarity()}} instead:
+\code{stabl_similarity(list1, list2, method = "jaccard")}.
 }
 \examples{
-jaccard_similarity(c("A", "B", "C"), c("B", "C", "D"))  # 0.5
-jaccard_similarity(c("A", "B"),      c("A", "B"))        # 1
-jaccard_similarity(character(0),     character(0))       # 0 (both empty)
+# Deprecated shim — equivalent canonical call:
+stabl_similarity(c("A", "B", "C"), c("B", "C", "D"), method = "jaccard")
 }
 \seealso{
-\code{\link[=jaccard_similarity_matrix]{jaccard_similarity_matrix()}} for computing all pairwise Jaccard similarities
-at once.
+\code{\link[=stabl_similarity]{stabl_similarity()}}
 }

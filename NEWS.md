@@ -30,6 +30,47 @@
 - Existing code that calls the nine functions directly keeps working via
   `stablr:::`; no behavior changes.
 
+## API changes (2026-10-21, Phase 14 PR-B: redundant families merged)
+
+- Three redundant function families are merged into single entry points in
+  the mixOmics style of a small verb-based API.  The ten historical names
+  remain exported as deprecated shims — one `.Deprecated()` warning per
+  call, legacy argument names mapped silently — and will be removed in
+  1.0.0.  The shims are excluded from the pkgdown reference index; their
+  man pages remain reachable via `?name`.
+- Similarity (8 -> 2): `stabl_similarity()` unifies scalar and pairwise
+  similarity with `method = "jaccard"` (default), `"adjusted"`, or
+  `"pearson"`: two vectors give a scalar, a list of sets gives the flat
+  row-major upper-triangle vector (Python convention), and
+  `as_matrix = TRUE` returns the full symmetric matrix (`remove_diag = TRUE`
+  drops the diagonal row-wise).  `stabl_similarity_summary()` reduces
+  pairwise values to a median/mean statistic with a spread measure.  The
+  shims `jaccard_similarity()`, `jaccard_similarity_matrix()`,
+  `adjusted_similarity()`, `adjusted_similarity_pairwise()`,
+  `adjusted_similarity_summary()`, `pearson_similarity()`,
+  `pearson_similarity_pairwise()`, and `pearson_similarity_summary()`
+  forward to the two new functions.  One deliberate change: the matrix
+  diagonal for `method = "adjusted"` is now the honest computed
+  self-similarity (1 - k/d for a set of size k <= d/2) instead of a forced
+  1; the jaccard and pearson diagonals remain 1.
+- Export (2 -> 1): `save_stabl_results()` gains `what = c("all", "csv")`;
+  `what = "csv"` writes only the score tables and requires neither `x`/`y`
+  nor ggplot2 (the previous `export_stabl_to_csv()` semantics, including
+  lenient reuse of an existing directory).  `export_stabl_to_csv()` is a
+  deprecated shim.
+- Preprocessing (2 -> 1): `stabl_preprocess_fit()` now accepts an unprepped
+  `recipes::recipe` as `transforms` directly (prepped on training data
+  only); `stabl_preprocess_fit_recipes()` is a deprecated shim.
+- The public export count rises from 45 to 47 (the two new canonical
+  similarity functions); the pkgdown reference index lists 37 exported
+  functions with the ten shims quarantined.
+  `inst/release/public-interface-audit.csv`, `_pkgdown.yml`,
+  `docs/API_REFERENCE.md`, `docs/MIGRATION_0.3_TO_1.0.md`,
+  `docs/PYTHON_TO_R_MAPPING.md`, the README, and the affected vignettes are
+  updated to match; the new `test-api-shims.R` pins the
+  deprecation-plus-forwarding contract of all ten shims, and the
+  legacy-argument mapping tests live in `test-api-deprecation.R`.
+
 ## Tests (2026-10-21, functional verification audit)
 
 - New test file `test-functional-audit.R` closes the gaps found by the

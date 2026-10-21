@@ -15,17 +15,21 @@ stabl_preprocess_fit(
 \item{x_train}{Numeric training matrix (samples × features) with column
 names.}
 
-\item{transforms}{Character vector naming the transforms to fit.
-Supported: \code{"zv"} (zero-variance filter), \code{"impute_median"} (median
-imputation), \code{"center"}, \code{"scale"}.  Transforms are always applied in
-the fixed order \code{"zv"} -> \code{"impute_median"} -> \code{"center"} -> \code{"scale"},
-regardless of the order in \code{transforms}.  \code{NULL} or \code{character(0)} fits
-an identity transform that leaves input unchanged.}
+\item{transforms}{Character vector naming the transforms to fit, or an
+unprepped \code{recipes::recipe} object (requires the \code{recipes} package, in
+\code{Suggests}).  Supported character values: \code{"zv"} (zero-variance
+filter), \code{"impute_median"} (median imputation), \code{"center"}, \code{"scale"}.
+Transforms are always applied in the fixed order \code{"zv"} ->
+\code{"impute_median"} -> \code{"center"} -> \code{"scale"}, regardless of the order
+in \code{transforms}.  \code{NULL} or \code{character(0)} fits an identity transform
+that leaves input unchanged.}
 
 \item{zv_tol}{Non-negative numeric; a feature whose training variance is
-\verb{<= zv_tol} is removed by \code{"zv"}.}
+\verb{<= zv_tol} is removed by \code{"zv"}.  Ignored when \code{transforms} is a
+recipe.}
 
-\item{...}{Reserved for future use.}
+\item{...}{Passed to \code{\link[recipes:prep]{recipes::prep()}} when \code{transforms} is a recipe;
+reserved for future use otherwise.}
 }
 \value{
 A \code{"stabl_preprocessing"} object recording the fitted parameters,
@@ -34,11 +38,20 @@ the retained feature names, and the feature mapping.
 \description{
 Learns preprocessing parameters from a training matrix only.  The result
 is a \code{"stabl_preprocessing"} object that \code{\link[=stabl_preprocess_apply]{stabl_preprocess_apply()}} applies
-to training or assessment data without refitting.
+to training or assessment data without refitting.  When \code{transforms} is an
+unprepped \code{recipes::recipe}, the recipe is prepped on the training data
+only (wrapping \code{\link[recipes:prep]{recipes::prep()}}).
 }
 \examples{
 x <- matrix(rnorm(40 * 5), 40, 5,
             dimnames = list(paste0("s", 1:40), paste0("f", 1:5)))
 pp <- stabl_preprocess_fit(x, transforms = c("center", "scale"))
 xt <- stabl_preprocess_apply(pp, x)
+
+if (requireNamespace("recipes", quietly = TRUE)) {
+  rec <- recipes::recipe(~ ., data = as.data.frame(x))
+  rec <- recipes::step_center(rec, recipes::all_predictors())
+  pp_rec <- stabl_preprocess_fit(x, transforms = rec)
+  xt_rec <- stabl_preprocess_apply(pp_rec, x)
+}
 }

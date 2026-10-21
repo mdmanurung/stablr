@@ -45,6 +45,8 @@ parity reviews and migration work explicit.
   (`stacked_multi_omic()` was removed in 1.0.0)
 - Cooperative multi-view fusion: built into `stabl_multiomic_train_validate()`
   and `stabl_multiomic_cv()` for gaussian and binomial outcomes
-- Export helpers: `export_stabl_to_csv()`, `save_stabl_results()`
-- Reproducibility metrics: Jaccard, adjusted similarity, Pearson similarity
-  (the FDR/TPR/F-score benchmark helpers are internal in 1.0.0)
+- Export helper: `save_stabl_results()` (`what = "csv"` writes only the
+  score tables; `export_stabl_to_csv()` is a deprecated shim until 1.0.0)
+- Reproducibility metrics: `stabl_similarity()` and
+  `stabl_similarity_summary()` with `method = "jaccard"`, `"adjusted"`, or
+  `"pearson"` (the FDR/TPR/F-score benchmark helpers are internal in 1.0.0)

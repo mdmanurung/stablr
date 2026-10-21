@@ -530,7 +530,7 @@ stabl_multiomic_scheme_comparison <- function(x_list, y, study_labels, ...) {
 #'   of per-fold signature sizes), `n_repeats`, and `fold_scheme`. Render the
 #'   matrix with e.g. `stats::heatmap(result$similarity_matrix)`.
 #'
-#' @seealso [jaccard_similarity_matrix()] for the underlying metric and
+#' @seealso [stabl_similarity()] for the underlying metric and
 #'   [stabl_multiomic_nested_cv()] for the study-disjoint scheme.
 #'
 #' @examples
@@ -580,7 +580,7 @@ stabl_multiomic_selection_stability <- function(object) {
   })
   names(fold_sets) <- fold_order
 
-  mat <- jaccard_similarity_matrix(fold_sets, remove_diag = FALSE)
+  mat <- stabl_similarity(fold_sets, method = "jaccard", as_matrix = TRUE)
   dimnames(mat) <- list(fold_order, fold_order)
   offdiag <- mat[lower.tri(mat)]
 

@@ -212,8 +212,8 @@ directions, correlation groups) for an exploratory analysis.
 
 - `stabl_preprocess_fit()` / `stabl_preprocess_apply()` fit and apply
   fold-safe preprocessing so nothing learned on held-out data leaks into
-  training.
-- `stabl_preprocess_fit_recipes()` bridges to a `recipes` workflow.
+  training. `stabl_preprocess_fit()` also accepts an unprepared
+  `recipes::recipe` as `transforms`, bridging to a `recipes` workflow.
 
 ## Environment Stability
 
@@ -299,9 +299,31 @@ internal implementations when writing report plots.
 
 ## Export
 
-### `export_stabl_to_csv(object, path)`
+### `save_stabl_results()`
 
-Writes STABL score matrices and max-score tables:
+```r
+save_stabl_results(
+  object, path, x = NULL, y = NULL,
+  figure_fmt = "pdf",
+  new_hard_threshold = NULL,
+  task_type = "binary",
+  override = FALSE,
+  what = c("all", "csv")
+)
+```
+
+With the default `what = "all"`, writes score tables, selected-feature
+tables, diagnostic plots, and feature-distribution plots for one
+`stabl_fit` object.  `x` and `y` are required in this mode for feature
+distribution plots.  `task_type` is one of `"binary"`, `"multiclass"`, or
+`"regression"`.  Set `override = TRUE` to reuse an existing output
+directory.
+
+With `what = "csv"`, writes only the score tables below and requires
+neither `x`/`y` nor ggplot2; an existing directory is reused without
+error.
+
+Score tables (both modes):
 
 | File | When written |
 |---|---|
@@ -310,42 +332,31 @@ Writes STABL score matrices and max-score tables:
 | `STABL artificial scores.csv` | When artificial features were used. |
 | `Max STABL artificial scores.csv` | When artificial features were used. |
 
-### `save_stabl_results()`
-
-```r
-save_stabl_results(
-  object, path, x, y,
-  figure_fmt = "pdf",
-  new_hard_threshold = NULL,
-  task_type = "binary",
-  override = FALSE
-)
-```
-
-Writes score tables, selected-feature tables, diagnostic plots, and
-feature-distribution plots for one `stabl_fit` object. `x` and `y` are required
-for feature distribution plots. `task_type` is one of `"binary"`,
-`"multiclass"`, or `"regression"`. Set `override = TRUE` to reuse an
-existing output directory.
-
-Main output artifacts:
+Additional artifacts with `what = "all"`:
 
 | File | When written |
 |---|---|
-| `STABL scores.csv` | Always. |
-| `Max STABL scores.csv` | Always. |
 | `FDR Graph.<fmt>` | When artificial features and FDP diagnostics are present. |
 | `Stability Path.<fmt>` | Always. |
 | `Selected Features/Selected features.csv` | Always. |
 | `Selected Features/Feature distributions.<fmt>` | When at least one feature is selected. |
 
+`export_stabl_to_csv()` remains as a deprecated shim for
+`save_stabl_results(what = "csv")` until 1.0.0.
+
 ## Selection Similarity Metrics
 
-- `jaccard_similarity()` and `jaccard_similarity_matrix()`
-- `adjusted_similarity()`, `adjusted_similarity_pairwise()`, and
-  `adjusted_similarity_summary()`
-- `pearson_similarity()`, `pearson_similarity_pairwise()`, and
-  `pearson_similarity_summary()`
+- `stabl_similarity()` computes scalar or pairwise similarities between
+  selected-feature sets, with `method = "jaccard"` (default), `"adjusted"`,
+  or `"pearson"`; `as_matrix = TRUE` returns the full pairwise matrix.
+- `stabl_similarity_summary()` reduces pairwise values to a single
+  median/mean statistic with a spread measure.
+
+The eight 0.3.0 names (`jaccard_similarity()`,
+`jaccard_similarity_matrix()`, `adjusted_similarity()`,
+`adjusted_similarity_pairwise()`, `adjusted_similarity_summary()`,
+`pearson_similarity()`, `pearson_similarity_pairwise()`, and
+`pearson_similarity_summary()`) remain as deprecated shims until 1.0.0.
 
 The realized-performance benchmark helpers `fdr_similarity()`,
 `tpr_similarity()`, and `fscore_similarity()` were internalized in 1.0.0

@@ -92,15 +92,15 @@
 #'     \item{`environments`}{Character vector of the environment levels used,
 #'       in fit order.}
 #'     \item{`pairwise_adjusted_similarity`}{Environment × environment matrix
-#'       of chance-corrected agreement ([adjusted_similarity()]) between the
-#'       features selected in each pair of environments (diagonal = 1 by
-#'       definition), or `NULL` when no stability threshold can be resolved
-#'       for the fits.}
+#'       of chance-corrected agreement ([stabl_similarity()] with
+#'       `method = "adjusted"`) between the features selected in each pair of
+#'       environments (diagonal = 1 by definition), or `NULL` when no
+#'       stability threshold can be resolved for the fits.}
 #'     \item{`call`}{The call that produced this object.}
 #'   }
 #'
 #' @seealso [stabl_fit()], [get_importances()], [get_min_scores()],
-#'   [adjusted_similarity()], [auto_lambda_grid()]
+#'   [stabl_similarity()], [auto_lambda_grid()]
 #'
 #' @references
 #' Peters, J., Bühlmann, P., & Meinshausen, N. (2016). Causal inference by
@@ -284,7 +284,7 @@ stabl_environment_stability <- function(x,
   env_factor
 }
 
-# Pairwise chance-corrected agreement (adjusted_similarity) between the
+# Pairwise chance-corrected agreement (adjusted similarity) between the
 # features selected in each pair of environments. Returns NULL when no
 # threshold can be resolved for the fits (no artificial features and no hard
 # threshold anywhere), rather than failing the whole workflow.
@@ -307,9 +307,10 @@ stabl_environment_stability <- function(x,
   for (i in seq_len(k)) {
     sim[i, i] <- 1 # trivial self-agreement
     for (j in seq_len(k)[-i]) {
-      sim[i, j] <- adjusted_similarity(
+      sim[i, j] <- stabl_similarity(
         supports[[i]],
         supports[[j]],
+        method = "adjusted",
         n_universe = n_features
       )
     }

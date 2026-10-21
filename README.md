@@ -21,7 +21,7 @@ Major functionality of `stablr`:
 + [`stabl_multiomic_nested_cv()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_nested_cv.html)     Outer CV with sample-i.i.d., grouped, or study-disjoint folds
 + [`stabl_multiomic_scheme_comparison()`](https://mdmanurung.github.io/stablr/reference/stabl_multiomic_scheme_comparison.html) Compare CV schemes arm-by-arm on held-out error
 + [`stabl_environment_stability()`](https://mdmanurung.github.io/stablr/reference/stabl_environment_stability.html) Transportable selections across environments (experimental)
-+ [`jaccard_similarity_matrix()`](https://mdmanurung.github.io/stablr/reference/jaccard_similarity_matrix.html)    Selection-reproducibility metrics
++ [`stabl_similarity()`](https://mdmanurung.github.io/stablr/reference/stabl_similarity.html)    Selection-reproducibility metrics
 
 ## Resources
 

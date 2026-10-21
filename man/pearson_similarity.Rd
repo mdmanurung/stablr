@@ -2,7 +2,7 @@
 % Please edit documentation in R/metrics.R
 \name{pearson_similarity}
 \alias{pearson_similarity}
-\title{Pearson-Corrected Similarity Between Two Feature Sets}
+\title{Pearson-Corrected Similarity Between Two Feature Sets (Deprecated)}
 \usage{
 pearson_similarity(
   set1 = NULL,
@@ -20,47 +20,25 @@ pearson_similarity(
 
 \item{n_universe}{Integer; total number of candidate features in the universe.}
 
-\item{list_i}{Deprecated; use \code{set1} instead.  If supplied by name, a
-deprecation warning is emitted and the value is used as \code{set1} when the
-latter is \code{NULL}.  It will be removed in a future release.}
+\item{list_i}{Legacy name for \code{set1}; mapped silently.}
 
-\item{list_j}{Deprecated; use \code{set2} instead.  If supplied by name, a
-deprecation warning is emitted and the value is used as \code{set2} when the
-latter is \code{NULL}.  It will be removed in a future release.}
+\item{list_j}{Legacy name for \code{set2}; mapped silently.}
 
-\item{d}{Deprecated; use \code{n_universe} instead.  If supplied by name, a
-deprecation warning is emitted and the value is used as \code{n_universe} when
-the latter is \code{NULL}.  It will be removed in a future release.}
+\item{d}{Legacy name for \code{n_universe}; mapped silently.}
 }
 \value{
-Numeric scalar.  Positive values indicate more overlap than chance;
-the maximum is exactly 1 for identical non-degenerate sets (the
-statistic is the phi coefficient).
+Numeric scalar; see \code{\link[=stabl_similarity]{stabl_similarity()}}.
 }
 \description{
-Computes a Pearson-correlation-inspired similarity that corrects for
-expected random intersection.  This is a second chance-correction approach
-(alongside \code{\link[=adjusted_similarity]{adjusted_similarity()}}) that normalises by the geometric mean
-of the within-set variances under independent Bernoulli sampling.
-}
-\details{
-The formula is:
-\deqn{S_{\text{Pearson}}(A, B) =
-  \frac{r - k_i k_j / d}{d \cdot \upsilon_i \upsilon_j}}
-where \eqn{r = |A \cap B|}, \eqn{k_i = |A_i|}, \eqn{d} is the universe
-size, and \eqn{\upsilon_i = \sqrt{\pi_i (1 - \pi_i)}} with
-\eqn{\pi_i = k_i / d}.
-
-Edge cases: returns 1 when both sets are empty or both equal the universe;
-returns 0 when one set is empty or equals the universe.
+\code{pearson_similarity()} is deprecated and will be removed in stablr 1.0.0.
+Use \code{\link[=stabl_similarity]{stabl_similarity()}} instead:
+\code{stabl_similarity(set1, set2, method = "pearson", n_universe = n_universe)}.
 }
 \examples{
-pearson_similarity(c("f1","f2","f3"), c("f2","f3","f4"), n_universe = 10L)
-pearson_similarity(c("f1","f2"),      c("f1","f2"),      n_universe = 10L) # exactly 1
-pearson_similarity(character(0),      c("f1","f2"),      n_universe = 10L) # 0
+# Deprecated shim — equivalent canonical call:
+stabl_similarity(c("f1", "f2", "f3"), c("f2", "f3", "f4"),
+                 method = "pearson", n_universe = 10L)
 }
 \seealso{
-\code{\link[=pearson_similarity_pairwise]{pearson_similarity_pairwise()}} for computing all pairwise values at
-once, \code{\link[=pearson_similarity_summary]{pearson_similarity_summary()}} for a summary statistic,
-\code{\link[=adjusted_similarity]{adjusted_similarity()}} for an alternative chance-correction.
+\code{\link[=stabl_similarity]{stabl_similarity()}}
 }

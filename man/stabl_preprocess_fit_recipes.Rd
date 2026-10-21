@@ -2,12 +2,12 @@
 % Please edit documentation in R/preprocessing.R
 \name{stabl_preprocess_fit_recipes}
 \alias{stabl_preprocess_fit_recipes}
-\title{Fit a preprocessing transform from a recipes recipe}
+\title{Fit a preprocessing transform from a recipes recipe (Deprecated)}
 \usage{
 stabl_preprocess_fit_recipes(recipe, x_train, ...)
 }
 \arguments{
-\item{recipe}{A \code{recipes::recipe()} object.}
+\item{recipe}{A \code{recipes::recipe()} object (unprepped).}
 
 \item{x_train}{Training data frame or matrix.}
 
@@ -18,8 +18,10 @@ A \code{"stabl_preprocessing_recipes"} object wrapping the prepped
 recipe.
 }
 \description{
-Wraps \code{\link[recipes:prep]{recipes::prep()}} on training data only.  Requires the \code{recipes}
-package (in \code{Suggests}, not \code{Imports}).
+\code{stabl_preprocess_fit_recipes()} is deprecated and will be removed in
+stablr 1.0.0.  Use \code{\link[=stabl_preprocess_fit]{stabl_preprocess_fit()}} instead, which accepts an
+unprepped recipe directly:
+\code{stabl_preprocess_fit(x_train, transforms = recipe)}.
 }
 \examples{
 if (requireNamespace("recipes", quietly = TRUE)) {
@@ -27,7 +29,11 @@ if (requireNamespace("recipes", quietly = TRUE)) {
               dimnames = list(paste0("s", 1:40), paste0("f", 1:4)))
   rec <- recipes::recipe(~ ., data = as.data.frame(x))
   rec <- recipes::step_center(rec, recipes::all_predictors())
-  pp <- stabl_preprocess_fit_recipes(rec, x)
+  # Deprecated shim — equivalent canonical call:
+  pp <- stabl_preprocess_fit(x, transforms = rec)
   xt <- stabl_preprocess_apply(pp, x)
 }
+}
+\seealso{
+\code{\link[=stabl_preprocess_fit]{stabl_preprocess_fit()}}, \code{\link[=stabl_preprocess_apply]{stabl_preprocess_apply()}}
 }

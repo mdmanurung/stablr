@@ -3,171 +3,193 @@
 #
 # These functions compare lists of selected features across repeat runs of
 # STABL (or any other feature-selection method) to assess reproducibility.
-# Three families of similarity are provided:
-#   - Jaccard: set-overlap fraction, no correction for chance.
-#   - Adjusted: chance-corrected overlap (analogous to Cohen's kappa for sets).
-#   - Pearson: correlation-inspired chance correction, normalized by set size.
+# The user-facing entry points are two functions, in the mixOmics style of a
+# small verb-based API:
+#   - stabl_similarity():         scalar or pairwise similarity under one of
+#                                 three methods (Jaccard, adjusted, Pearson);
+#   - stabl_similarity_summary(): one-number summary of pairwise similarity.
+# The eight historical function names (jaccard_similarity,
+# jaccard_similarity_matrix, adjusted_similarity, adjusted_similarity_pairwise,
+# adjusted_similarity_summary, pearson_similarity, pearson_similarity_pairwise,
+# pearson_similarity_summary) are retained as deprecated shims forwarding to
+# the two entry points above; they will be removed in version 1.0.0.
 # For simulation benchmarks where a ground-truth feature set is known, the
 # file also provides FDR, TPR, and F-score functions.
 
-# ── Jaccard ──────────────────────────────────────────────────────────────────
+# ── Similarity: unified interface ────────────────────────────────────────────
 
-#' Jaccard Similarity Between Two Feature Sets
+#' Similarity Between Feature Sets
 #'
-#' Measures the overlap between two sets of selected features as a simple
-#' fraction of shared features out of all features that appeared in either
-#' set.  This is the most interpretable pairwise similarity when no prior
-#' expectation of set sizes exists.
+#' Computes the similarity between two sets of selected features, or between
+#' all pairs of sets in a list, using one of three methods.  Use this to
+#' assess the reproducibility of STABL (or any other feature-selection
+#' method) across cross-validation folds or repeated runs.
 #'
-#' Use Jaccard when you want a quick, easy-to-explain measure.  Prefer
-#' [adjusted_similarity()] or [pearson_similarity()] when comparing across
-#' runs that select very different numbers of features, because Jaccard does
-#' not correct for the chance overlap expected between small or large sets.
+#' Three methods are available:
+#' \describe{
+#'   \item{`"jaccard"` (default)}{Set-overlap fraction
+#'     \eqn{|A \cap B| / |A \cup B|}.  The most interpretable measure; it
+#'     does not correct for the chance overlap expected between small or
+#'     large sets.  When both sets are empty the value is 0 (convention
+#'     matching the Python implementation).}
+#'   \item{`"adjusted"`}{Chance-corrected overlap, analogous to Cohen's
+#'     kappa for sets:
+#'     \deqn{S_{\text{adj}}(A, B) =
+#'       \frac{r - \mathbb{E}[r]}{\min(k_1, k_2) - \max(0, k_1 + k_2 - d)}}
+#'     where \eqn{r = |A \cap B|}, \eqn{k_i = |A_i|}, \eqn{d =}
+#'     `n_universe`, and \eqn{\mathbb{E}[r] = k_1 k_2 / d}.  Returns 0 when
+#'     either set is empty or equals the full universe.}
+#'   \item{`"pearson"`}{Pearson-correlation-inspired chance correction (the
+#'     phi coefficient):
+#'     \deqn{S_{\text{Pearson}}(A, B) =
+#'       \frac{r - k_i k_j / d}{d \cdot \upsilon_i \upsilon_j}}
+#'     with \eqn{\upsilon_i = \sqrt{\pi_i (1 - \pi_i)}} and
+#'     \eqn{\pi_i = k_i / d}.  Returns 1 when both sets are empty or both
+#'     equal the universe; 0 when exactly one of them is.}
+#' }
 #'
-#' When both sets are empty the function returns 0 (convention matching the
-#' Python implementation).
+#' @param x Either a character/integer vector of selected feature
+#'   identifiers (then `y` must also be supplied and the result is a single
+#'   scalar), or a list of such vectors, one per STABL run (then `y` must be
+#'   `NULL` and all pairwise similarities are computed).
+#' @param y `NULL` (default) or a character/integer vector of selected
+#'   feature identifiers.  Supply `y` for scalar mode, or a list as `x` for
+#'   pairwise mode — not both.
+#' @param method Character; one of `"jaccard"` (default), `"adjusted"`, or
+#'   `"pearson"`.
+#' @param n_universe Integer; total number of candidate features in the
+#'   universe (i.e. the number of columns in the original predictor matrix).
+#'   Required for `method = "adjusted"` and `method = "pearson"`; ignored
+#'   for `method = "jaccard"`.
+#' @param as_matrix Logical; pairwise mode only.  If `FALSE` (default),
+#'   returns the \eqn{N (N - 1) / 2} off-diagonal upper-triangle values as a
+#'   flat vector in row-major order (matching the Python convention).  If
+#'   `TRUE`, returns the full symmetric \eqn{N \times N} matrix.
+#' @param remove_diag Logical; only used when `as_matrix = TRUE`.  If `TRUE`
+#'   the self-similarity diagonal is removed row-wise, yielding an
+#'   \eqn{N \times (N - 1)} matrix in which row \eqn{i} contains the
+#'   similarities of run \eqn{i} with every other run.
 #'
-#' @param list1 Character or integer vector of selected feature identifiers.
-#' @param list2 Character or integer vector of selected feature identifiers.
+#' @return In scalar mode, a numeric scalar.  In pairwise mode with
+#'   `as_matrix = FALSE`, a numeric vector of length \eqn{N (N - 1) / 2}.
+#'   In pairwise mode with `as_matrix = TRUE`, a numeric matrix of dimension
+#'   \eqn{N \times N} (or \eqn{N \times (N - 1)} when `remove_diag = TRUE`).
 #'
-#' @return Numeric scalar in \eqn{[0, 1]}.  A value of 1 means the two sets
-#'   are identical; 0 means they share no features.
+#'   The matrix diagonal holds the self-similarity of each set: exactly 1
+#'   for `"jaccard"` and `"pearson"`, and the computed self-value for
+#'   `"adjusted"` (\eqn{1 - k / d} for a set of size \eqn{k \le d / 2}),
+#'   which is below 1 by construction because the measure is
+#'   chance-corrected.
 #'
-#' @seealso [jaccard_similarity_matrix()] for computing all pairwise Jaccard similarities
-#'   at once.
+#' @seealso [stabl_similarity_summary()] for reducing pairwise values to a
+#'   single location statistic.
 #'
 #' @examples
-#' jaccard_similarity(c("A", "B", "C"), c("B", "C", "D"))  # 0.5
-#' jaccard_similarity(c("A", "B"),      c("A", "B"))        # 1
-#' jaccard_similarity(character(0),     character(0))       # 0 (both empty)
+#' # Scalar mode: two sets
+#' stabl_similarity(c("A", "B", "C"), c("B", "C", "D"))                # 0.5
+#' stabl_similarity(c("f1", "f2", "f3"), c("f2", "f3", "f4"),
+#'                  method = "adjusted", n_universe = 10L)
+#'
+#' # Pairwise mode: a list of sets, one per run
+#' sets <- list(c("f1", "f2", "f3"), c("f2", "f3", "f4"), c("f1", "f3", "f5"))
+#' stabl_similarity(sets)                                        # flat vector
+#' stabl_similarity(sets, as_matrix = TRUE)                      # 3 x 3
+#' stabl_similarity(sets, as_matrix = TRUE, remove_diag = TRUE)  # 3 x 2
+#' stabl_similarity(sets, method = "adjusted", n_universe = 10L)
 #' @export
-jaccard_similarity <- function(list1, list2) {
-  s1 <- unique(list1)
-  s2 <- unique(list2)
+stabl_similarity <- function(x, y = NULL,
+                             method = c("jaccard", "adjusted", "pearson"),
+                             n_universe = NULL,
+                             as_matrix = FALSE,
+                             remove_diag = FALSE) {
+  method <- match.arg(method)
+  if (method %in% c("adjusted", "pearson") && is.null(n_universe)) {
+    stop("argument \"n_universe\" is missing, with no default", call. = FALSE)
+  }
+  if (is.list(x) && is.null(y)) {
+    if (!as_matrix) {
+      return(.pairwise_upper_triangle(
+        x, .similarity_scalar_fn(method, n_universe)
+      ))
+    }
+    return(.similarity_matrix(x, method, n_universe, remove_diag = remove_diag))
+  }
+  if (!is.list(x) && !is.null(y)) {
+    return(.similarity_scalar_fn(method, n_universe)(x, y))
+  }
+  stop(
+    "Supply either two feature sets (`x` and `y` as vectors) for a single ",
+    "similarity value, or a list of feature sets as `x` (with `y = NULL`) ",
+    "for all pairwise values.",
+    call. = FALSE
+  )
+}
+
+#' Summary Statistic of Pairwise Similarity Values
+#'
+#' Computes all pairwise similarities between the feature sets in `x` (via
+#' [stabl_similarity()]) and reduces them to a single location statistic
+#' with an associated spread measure.  Useful for reporting a single
+#' reproducibility number per STABL configuration in benchmarking tables.
+#'
+#' @param x A list of character/integer vectors, one per STABL run.
+#' @param method Character; one of `"jaccard"` (default), `"adjusted"`, or
+#'   `"pearson"`.  See [stabl_similarity()] for method descriptions.
+#' @param n_universe Integer; total number of candidate features in the
+#'   universe.  Required for `method = "adjusted"` and
+#'   `method = "pearson"`; ignored for `method = "jaccard"`.
+#' @param stat Character; `"median"` (default, robust to outliers) or
+#'   `"mean"`.
+#'
+#' @return A named list with two elements:
+#'   \describe{
+#'     \item{`statistic`}{The median (or mean) of the pairwise similarity
+#'       values.}
+#'     \item{`err`}{For `"median"`: the 25th and 75th percentile vector
+#'       (IQR bounds).  For `"mean"`: the root-mean-squared deviation
+#'       (RMSD / population SD).}
+#'   }
+#'
+#' @seealso [stabl_similarity()]
+#'
+#' @examples
+#' sets <- list(c("f1", "f2", "f3"), c("f2", "f3", "f4"), c("f1", "f3", "f5"))
+#' stabl_similarity_summary(sets)
+#' stabl_similarity_summary(sets, method = "adjusted", n_universe = 10L)
+#' stabl_similarity_summary(sets, method = "pearson", n_universe = 10L,
+#'                          stat = "mean")
+#' @export
+stabl_similarity_summary <- function(x,
+                                     method = c("jaccard", "adjusted", "pearson"),
+                                     n_universe = NULL,
+                                     stat = c("median", "mean")) {
+  method <- match.arg(method)
+  stat   <- match.arg(stat)
+  if (method %in% c("adjusted", "pearson") && is.null(n_universe)) {
+    stop("argument \"n_universe\" is missing, with no default", call. = FALSE)
+  }
+  if (length(x) < 2L) {
+    stop("`x` must contain at least two sets to summarize pairwise ",
+         "similarity.", call. = FALSE)
+  }
+  vals <- .pairwise_upper_triangle(x, .similarity_scalar_fn(method, n_universe))
+  .similarity_summary(vals, stat)
+}
+
+# ── Internal similarity engines ───────────────────────────────────────────────
+
+# Scalar Jaccard overlap between two sets (0 when both are empty).
+.jaccard_scalar <- function(set1, set2) {
+  s1 <- unique(set1)
+  s2 <- unique(set2)
   inter <- length(intersect(s1, s2))
   union_size <- length(s1) + length(s2) - inter
   if (inter == 0L && union_size == 0L) return(0)
   inter / union_size
 }
 
-#' Pairwise Jaccard Matrix from a List of Feature Sets
-#'
-#' Computes all N\eqn{\times}N pairwise Jaccard similarities in one call.
-#' Useful for visualising the reproducibility of STABL across multiple
-#' cross-validation folds or repeated runs: a boxplot of the off-diagonal
-#' values summarises how consistently the same features are selected.
-#'
-#' By default the self-similarity diagonal (always 1) is removed, so the
-#' returned matrix has \eqn{N \times (N - 1)} columns and each row contains
-#' the \eqn{N - 1} similarities of run \eqn{i} with every other run.
-#'
-#' @param list_of_lists A list of character/integer vectors, one per STABL run
-#'   (e.g. one per cross-validation fold).
-#' @param remove_diag Logical; if `TRUE` (default) the diagonal column
-#'   (self-similarity = 1) is removed from the output.
-#'
-#' @return Numeric matrix of dimension N\eqn{\times}N (or N\eqn{\times}(N-1)
-#'   when `remove_diag = TRUE`).  Row/column order matches `list_of_lists`.
-#'
-#' @seealso [jaccard_similarity()], [adjusted_similarity_pairwise()],
-#'   [pearson_similarity_pairwise()]
-#'
-#' @examples
-#' sets <- list(c("A","B","C"), c("B","C","D"), c("A","C","E"))
-#' jaccard_similarity_matrix(sets)           # 3 x 2 (diagonal removed)
-#' jaccard_similarity_matrix(sets, remove_diag = FALSE)  # 3 x 3
-#' @export
-jaccard_similarity_matrix <- function(list_of_lists, remove_diag = TRUE) {
-  n   <- length(list_of_lists)
-  if (n < 1L) {
-    stop("`list_of_lists` must contain at least one set.", call. = FALSE)
-  }
-  mat <- matrix(0, nrow = n, ncol = n)
-  diag(mat) <- 1
-  for (i in seq_len(n - 1L)) {
-    for (j in seq.int(i + 1L, n)) {
-      v         <- jaccard_similarity(list_of_lists[[i]], list_of_lists[[j]])
-      mat[i, j] <- v
-      mat[j, i] <- v
-    }
-  }
-  if (remove_diag) {
-    out <- matrix(0, nrow = n, ncol = n - 1L)
-    for (i in seq_len(n)) {
-      out[i, ] <- mat[i, setdiff(seq_len(n), i)]
-    }
-    mat <- out
-  }
-  mat
-}
-
-# ── Adjusted similarity ───────────────────────────────────────────────────────
-
-#' Adjusted Similarity Between Two Feature Sets
-#'
-#' Computes a chance-corrected similarity between two feature sets.  Unlike
-#' [jaccard_similarity()], the adjusted measure accounts for the expected
-#' random overlap given the sizes of both sets and the total feature universe,
-#' so it does not systematically penalise methods that select many features.
-#'
-#' The formula is analogous to Cohen's kappa for sets:
-#' \deqn{S_{\text{adj}}(A, B) =
-#'   \frac{r - \mathbb{E}[r]}{\min(k_1, k_2) - \max(0, k_1 + k_2 - d)}}
-#' where \eqn{r = |A \cap B|}, \eqn{k_i = |A_i|}, \eqn{d =} `n_universe`,
-#' and \eqn{\mathbb{E}[r] = k_1 k_2 / d}.
-#'
-#' Returns 0 when either set is empty or equals the full universe (edge cases
-#' where the correction denominator is zero).
-#'
-#' @param set1 Character or integer vector of selected feature identifiers.
-#' @param set2 Character or integer vector of selected feature identifiers.
-#' @param n_universe Integer; total number of candidate features in the
-#'   universe (i.e. the number of columns in the original predictor matrix).
-#' @param list1 Deprecated; use `set1` instead.  If supplied by name, a
-#'   deprecation warning is emitted and the value is used as `set1` when the
-#'   latter is `NULL`.  It will be removed in a future release.
-#' @param list2 Deprecated; use `set2` instead.  If supplied by name, a
-#'   deprecation warning is emitted and the value is used as `set2` when the
-#'   latter is `NULL`.  It will be removed in a future release.
-#' @param nb_total_elements Deprecated; use `n_universe` instead.  If supplied
-#'   by name, a deprecation warning is emitted and the value is used as
-#'   `n_universe` when the latter is `NULL`.  It will be removed in a future
-#'   release.
-#'
-#' @return Numeric scalar in \eqn{(-1, 1]}.  Values above 0 indicate more
-#'   overlap than expected by chance; 1 means perfect agreement; negative
-#'   values indicate less overlap than chance.
-#'
-#' @seealso [adjusted_similarity_pairwise()] for computing all pairwise values at
-#'   once, [adjusted_similarity_summary()] for a summary statistic,
-#'   [jaccard_similarity()] for the non-chance-corrected alternative.
-#'
-#' @examples
-#' # 10-feature universe; sets A and B share 2 out of 3 features each
-#' adjusted_similarity(c("f1","f2","f3"), c("f2","f3","f4"), n_universe = 10L)
-#' adjusted_similarity(c("f1","f2"),      c("f1","f2"),      n_universe = 10L) # 0.8
-#' adjusted_similarity(character(0),      c("f1"),           n_universe = 10L) # 0
-#' @export
-adjusted_similarity <- function(set1 = NULL, set2 = NULL, n_universe = NULL,
-                                list1 = NULL, list2 = NULL,
-                                nb_total_elements = NULL) {
-  # Deprecation shim: `list1`/`list2`/`nb_total_elements` were renamed to
-  # `set1`/`set2`/`n_universe`.  missing() (not is.null()) so that explicit
-  # NULLs also warn; purely positional calls are unaffected.
-  if (!missing(list1) || !missing(list2) || !missing(nb_total_elements)) {
-    warning(
-      "`list1`, `list2` and `nb_total_elements` are deprecated; use ",
-      "`set1`, `set2` and `n_universe` instead.",
-      call. = FALSE
-    )
-    if (is.null(set1)) set1 <- list1
-    if (is.null(set2)) set2 <- list2
-    if (is.null(n_universe)) n_universe <- nb_total_elements
-  }
-  if (is.null(n_universe)) {
-    stop("argument \"n_universe\" is missing, with no default", call. = FALSE)
-  }
-
+# Scalar chance-corrected (Cohen's-kappa-like) similarity between two sets.
+.adjusted_scalar <- function(set1, set2, n_universe) {
   s1 <- unique(set1)
   s2 <- unique(set2)
   r  <- length(intersect(s1, s2))
@@ -189,138 +211,8 @@ adjusted_similarity <- function(set1 = NULL, set2 = NULL, n_universe = NULL,
   num / denom
 }
 
-#' Upper-Triangle Adjusted Similarity Values
-#'
-#' Computes the full pairwise adjusted-similarity matrix for N feature sets and
-#' returns only the N\eqn{\times}(N-1)/2 off-diagonal upper-triangle values as
-#' a flat vector.  This format is convenient for computing summary statistics
-#' (see [adjusted_similarity_summary()]) or for Wilcoxon/permutation tests
-#' comparing reproducibility across methods.
-#'
-#' @param list_of_lists A list of character/integer vectors, one per STABL run.
-#' @param nb_total_elements Integer; total number of candidate features.
-#'
-#' @return Numeric vector of length N*(N-1)/2 containing the pairwise
-#'   adjusted-similarity values for all unique pairs (row-major upper-triangle
-#'   order, matching the Python convention).
-#'
-#' @seealso [adjusted_similarity()] for the pairwise function,
-#'   [adjusted_similarity_summary()] for a one-number summary,
-#'   [pearson_similarity_pairwise()] for an alternative chance-correction.
-#'
-#' @examples
-#' sets <- list(c("f1","f2","f3"), c("f2","f3","f4"), c("f1","f3","f5"))
-#' adjusted_similarity_pairwise(sets, nb_total_elements = 10L)
-#' @export
-adjusted_similarity_pairwise <- function(list_of_lists, nb_total_elements) {
-  .pairwise_upper_triangle(
-    list_of_lists,
-    function(a, b) adjusted_similarity(a, b, n_universe = nb_total_elements)
-  )
-}
-
-#' Summary Statistic of Adjusted Similarity Values
-#'
-#' Convenience wrapper that computes all pairwise adjusted similarities
-#' (via [adjusted_similarity_pairwise()]) and reduces them to a single
-#' location statistic with an associated spread measure.  Useful for
-#' reporting a single reproducibility number per STABL configuration in
-#' benchmarking tables.
-#'
-#' @param list_of_lists A list of character/integer vectors, one per run.
-#' @param nb_total_elements Integer; total number of candidate features.
-#' @param stat Character; `"median"` (default, robust to outliers) or
-#'   `"mean"`.
-#'
-#' @return A named list with two elements:
-#'   \describe{
-#'     \item{`statistic`}{The median (or mean) of adjusted-similarity values.}
-#'     \item{`err`}{For `"median"`: the 25th and 75th percentile vector
-#'       (IQR bounds).  For `"mean"`: the root-mean-squared deviation
-#'       (RMSD / population SD).}
-#'   }
-#'
-#' @seealso [adjusted_similarity_pairwise()], [pearson_similarity_summary()]
-#'
-#' @examples
-#' sets <- list(c("f1","f2","f3"), c("f2","f3","f4"), c("f1","f3","f5"))
-#' adjusted_similarity_summary(sets, nb_total_elements = 10L)
-#' adjusted_similarity_summary(sets, nb_total_elements = 10L, stat = "mean")
-#' @export
-adjusted_similarity_summary <- function(list_of_lists, nb_total_elements,
-                                        stat = "median") {
-  if (length(list_of_lists) < 2L) {
-    stop("`list_of_lists` must contain at least two sets to summarize ",
-         "pairwise similarity.", call. = FALSE)
-  }
-  vals <- adjusted_similarity_pairwise(list_of_lists, nb_total_elements)
-  .similarity_summary(vals, stat)
-}
-
-# ── Pearson similarity ────────────────────────────────────────────────────────
-
-#' Pearson-Corrected Similarity Between Two Feature Sets
-#'
-#' Computes a Pearson-correlation-inspired similarity that corrects for
-#' expected random intersection.  This is a second chance-correction approach
-#' (alongside [adjusted_similarity()]) that normalises by the geometric mean
-#' of the within-set variances under independent Bernoulli sampling.
-#'
-#' The formula is:
-#' \deqn{S_{\text{Pearson}}(A, B) =
-#'   \frac{r - k_i k_j / d}{d \cdot \upsilon_i \upsilon_j}}
-#' where \eqn{r = |A \cap B|}, \eqn{k_i = |A_i|}, \eqn{d} is the universe
-#' size, and \eqn{\upsilon_i = \sqrt{\pi_i (1 - \pi_i)}} with
-#' \eqn{\pi_i = k_i / d}.
-#'
-#' Edge cases: returns 1 when both sets are empty or both equal the universe;
-#' returns 0 when one set is empty or equals the universe.
-#'
-#' @param set1 Character or integer vector of selected feature identifiers.
-#' @param set2 Character or integer vector of selected feature identifiers.
-#' @param n_universe Integer; total number of candidate features in the universe.
-#' @param list_i Deprecated; use `set1` instead.  If supplied by name, a
-#'   deprecation warning is emitted and the value is used as `set1` when the
-#'   latter is `NULL`.  It will be removed in a future release.
-#' @param list_j Deprecated; use `set2` instead.  If supplied by name, a
-#'   deprecation warning is emitted and the value is used as `set2` when the
-#'   latter is `NULL`.  It will be removed in a future release.
-#' @param d Deprecated; use `n_universe` instead.  If supplied by name, a
-#'   deprecation warning is emitted and the value is used as `n_universe` when
-#'   the latter is `NULL`.  It will be removed in a future release.
-#'
-#' @return Numeric scalar.  Positive values indicate more overlap than chance;
-#'   the maximum is exactly 1 for identical non-degenerate sets (the
-#'   statistic is the phi coefficient).
-#'
-#' @seealso [pearson_similarity_pairwise()] for computing all pairwise values at
-#'   once, [pearson_similarity_summary()] for a summary statistic,
-#'   [adjusted_similarity()] for an alternative chance-correction.
-#'
-#' @examples
-#' pearson_similarity(c("f1","f2","f3"), c("f2","f3","f4"), n_universe = 10L)
-#' pearson_similarity(c("f1","f2"),      c("f1","f2"),      n_universe = 10L) # exactly 1
-#' pearson_similarity(character(0),      c("f1","f2"),      n_universe = 10L) # 0
-#' @export
-pearson_similarity <- function(set1 = NULL, set2 = NULL, n_universe = NULL,
-                               list_i = NULL, list_j = NULL, d = NULL) {
-  # Deprecation shim: `list_i`/`list_j`/`d` were renamed to
-  # `set1`/`set2`/`n_universe`.  missing() (not is.null()) so that explicit
-  # NULLs also warn; purely positional calls are unaffected.
-  if (!missing(list_i) || !missing(list_j) || !missing(d)) {
-    warning(
-      "`list_i`, `list_j` and `d` are deprecated; use ",
-      "`set1`, `set2` and `n_universe` instead.",
-      call. = FALSE
-    )
-    if (is.null(set1)) set1 <- list_i
-    if (is.null(set2)) set2 <- list_j
-    if (is.null(n_universe)) n_universe <- d
-  }
-  if (is.null(n_universe)) {
-    stop("argument \"n_universe\" is missing, with no default", call. = FALSE)
-  }
-
+# Scalar Pearson-corrected (phi-coefficient) similarity between two sets.
+.pearson_scalar <- function(set1, set2, n_universe) {
   si <- unique(set1)
   sj <- unique(set2)
   r  <- length(intersect(si, sj))
@@ -343,81 +235,284 @@ pearson_similarity <- function(set1 = NULL, set2 = NULL, n_universe = NULL,
   (r - exp_r) / (d * upsilon_i * upsilon_j)
 }
 
-#' Upper-Triangle Pearson Similarity Values
-#'
-#' Computes all pairwise Pearson-corrected similarities and returns the
-#' N\eqn{\times}(N-1)/2 upper-triangle values as a flat vector (same layout
-#' as [adjusted_similarity_pairwise()], enabling direct comparison between the
-#' two metrics on the same data).
-#'
-#' @param list_of_lists A list of character/integer vectors, one per run.
-#' @param nb_total_elements Integer; total number of candidate features.
-#' @param d Deprecated; use `nb_total_elements` instead.
-#'
-#' @return Numeric vector of length N*(N-1)/2.
-#'
-#' @seealso [pearson_similarity()] for the pairwise function,
-#'   [pearson_similarity_summary()] for a one-number summary,
-#'   [adjusted_similarity_pairwise()] for an alternative chance-correction.
-#'
-#' @examples
-#' sets <- list(c("f1","f2","f3"), c("f2","f3","f4"), c("f1","f3","f5"))
-#' pearson_similarity_pairwise(sets, nb_total_elements = 10L)
-#' @export
-pearson_similarity_pairwise <- function(list_of_lists, nb_total_elements,
-                                        d = NULL) {
-  # Deprecation shim: `d` was renamed to `nb_total_elements` for consistency
-  # with the adjusted-similarity family.  missing() (not is.null()) so that
-  # explicit NULLs also warn; purely positional calls are unaffected.
-  if (!missing(d) && !is.null(d)) {
-    warning(
-      "`d` is deprecated; use `nb_total_elements` instead.", call. = FALSE
-    )
-    if (is.null(nb_total_elements)) nb_total_elements <- d
-  }
-  .pairwise_upper_triangle(
-    list_of_lists,
-    function(a, b) pearson_similarity(a, b, n_universe = nb_total_elements)
+# Binary scalar function for the chosen method, with n_universe bound in.
+.similarity_scalar_fn <- function(method, n_universe = NULL) {
+  switch(
+    method,
+    jaccard  = .jaccard_scalar,
+    adjusted = function(a, b) .adjusted_scalar(a, b, n_universe),
+    pearson  = function(a, b) .pearson_scalar(a, b, n_universe)
   )
 }
 
-#' Summary Statistic of Pearson Similarity Values
+# Full symmetric N x N pairwise similarity matrix.  The diagonal is 1 for
+# the jaccard and pearson methods (self-similarity is always 1 under their
+# edge rules) and the honest computed self-value for the adjusted method.
+.similarity_matrix <- function(list_of_lists, method, n_universe,
+                               remove_diag = FALSE) {
+  n <- length(list_of_lists)
+  if (n < 1L) {
+    stop("`list_of_lists` must contain at least one set.", call. = FALSE)
+  }
+  fn  <- .similarity_scalar_fn(method, n_universe)
+  mat <- matrix(0, nrow = n, ncol = n)
+  if (method == "adjusted") {
+    for (i in seq_len(n)) {
+      mat[i, i] <- fn(list_of_lists[[i]], list_of_lists[[i]])
+    }
+  } else {
+    diag(mat) <- 1
+  }
+  if (n >= 2L) {
+    for (i in seq_len(n - 1L)) {
+      for (j in seq.int(i + 1L, n)) {
+        v         <- fn(list_of_lists[[i]], list_of_lists[[j]])
+        mat[i, j] <- v
+        mat[j, i] <- v
+      }
+    }
+  }
+  if (remove_diag) {
+    out <- matrix(0, nrow = n, ncol = n - 1L)
+    for (i in seq_len(n)) {
+      out[i, ] <- mat[i, setdiff(seq_len(n), i)]
+    }
+    mat <- out
+  }
+  mat
+}
+
+# ── Deprecated shims (removal slated for 1.0.0) ──────────────────────────────
+#
+# The eight historical similarity entry points forward to stabl_similarity()
+# and stabl_similarity_summary().  They remain exported so existing scripts
+# keep working, but each call emits a single .Deprecated() warning; the
+# legacy argument names (list1/list2/nb_total_elements, list_i/list_j/d) are
+# mapped silently.  The shims are excluded from the pkgdown reference index.
+
+#' Jaccard Similarity Between Two Feature Sets (Deprecated)
 #'
-#' Convenience wrapper analogous to [adjusted_similarity_summary()] but
-#' using the Pearson-corrected similarity.  See [pearson_similarity()] for a
-#' description of the underlying metric and when to prefer it over the
-#' adjusted similarity.
+#' `jaccard_similarity()` is deprecated and will be removed in stablr 1.0.0.
+#' Use [stabl_similarity()] instead:
+#' `stabl_similarity(list1, list2, method = "jaccard")`.
+#'
+#' @param list1 Character or integer vector of selected feature identifiers.
+#' @param list2 Character or integer vector of selected feature identifiers.
+#'
+#' @return Numeric scalar in \eqn{[0, 1]}; see [stabl_similarity()].
+#'
+#' @seealso [stabl_similarity()]
+#'
+#' @examples
+#' # Deprecated shim — equivalent canonical call:
+#' stabl_similarity(c("A", "B", "C"), c("B", "C", "D"), method = "jaccard")
+#' @export
+jaccard_similarity <- function(list1, list2) {
+  .Deprecated("stabl_similarity")
+  stabl_similarity(list1, list2, method = "jaccard")
+}
+
+#' Pairwise Jaccard Matrix from a List of Feature Sets (Deprecated)
+#'
+#' `jaccard_similarity_matrix()` is deprecated and will be removed in stablr
+#' 1.0.0.  Use [stabl_similarity()] with `as_matrix = TRUE` instead:
+#' `stabl_similarity(list_of_lists, method = "jaccard", as_matrix = TRUE)`.
+#'
+#' @param list_of_lists A list of character/integer vectors, one per STABL
+#'   run (e.g. one per cross-validation fold).
+#' @param remove_diag Logical; if `TRUE` (default) the self-similarity
+#'   diagonal is removed row-wise, yielding an \eqn{N \times (N - 1)} matrix.
+#'
+#' @return Numeric matrix; see [stabl_similarity()].
+#'
+#' @seealso [stabl_similarity()]
+#'
+#' @examples
+#' sets <- list(c("A","B","C"), c("B","C","D"), c("A","C","E"))
+#' # Deprecated shim — equivalent canonical call:
+#' stabl_similarity(sets, method = "jaccard", as_matrix = TRUE)
+#' stabl_similarity(sets, method = "jaccard", as_matrix = TRUE,
+#'                  remove_diag = TRUE)
+#' @export
+jaccard_similarity_matrix <- function(list_of_lists, remove_diag = TRUE) {
+  .Deprecated("stabl_similarity")
+  stabl_similarity(list_of_lists, method = "jaccard", as_matrix = TRUE,
+                   remove_diag = remove_diag)
+}
+
+#' Adjusted Similarity Between Two Feature Sets (Deprecated)
+#'
+#' `adjusted_similarity()` is deprecated and will be removed in stablr 1.0.0.
+#' Use [stabl_similarity()] instead:
+#' `stabl_similarity(set1, set2, method = "adjusted", n_universe = n_universe)`.
+#'
+#' @param set1 Character or integer vector of selected feature identifiers.
+#' @param set2 Character or integer vector of selected feature identifiers.
+#' @param n_universe Integer; total number of candidate features in the
+#'   universe (i.e. the number of columns in the original predictor matrix).
+#' @param list1 Legacy name for `set1`; mapped silently.
+#' @param list2 Legacy name for `set2`; mapped silently.
+#' @param nb_total_elements Legacy name for `n_universe`; mapped silently.
+#'
+#' @return Numeric scalar in \eqn{(-1, 1]}; see [stabl_similarity()].
+#'
+#' @seealso [stabl_similarity()]
+#'
+#' @examples
+#' # Deprecated shim — equivalent canonical call:
+#' stabl_similarity(c("f1", "f2", "f3"), c("f2", "f3", "f4"),
+#'                  method = "adjusted", n_universe = 10L)
+#' @export
+adjusted_similarity <- function(set1 = NULL, set2 = NULL, n_universe = NULL,
+                                list1 = NULL, list2 = NULL,
+                                nb_total_elements = NULL) {
+  .Deprecated("stabl_similarity")
+  # Legacy argument names are mapped silently; the function-level
+  # deprecation warning above is the single warning emitted.
+  if (is.null(set1)) set1 <- list1
+  if (is.null(set2)) set2 <- list2
+  if (is.null(n_universe)) n_universe <- nb_total_elements
+  stabl_similarity(set1, set2, method = "adjusted", n_universe = n_universe)
+}
+
+#' Upper-Triangle Adjusted Similarity Values (Deprecated)
+#'
+#' `adjusted_similarity_pairwise()` is deprecated and will be removed in
+#' stablr 1.0.0.  Use [stabl_similarity()] instead:
+#' `stabl_similarity(list_of_lists, method = "adjusted", n_universe = ...)`.
+#'
+#' @param list_of_lists A list of character/integer vectors, one per STABL run.
+#' @param nb_total_elements Integer; total number of candidate features.
+#'
+#' @return Numeric vector of length N*(N-1)/2 in row-major upper-triangle
+#'   order; see [stabl_similarity()].
+#'
+#' @seealso [stabl_similarity()], [stabl_similarity_summary()]
+#'
+#' @examples
+#' sets <- list(c("f1","f2","f3"), c("f2","f3","f4"), c("f1","f3","f5"))
+#' # Deprecated shim — equivalent canonical call:
+#' stabl_similarity(sets, method = "adjusted", n_universe = 10L)
+#' @export
+adjusted_similarity_pairwise <- function(list_of_lists, nb_total_elements) {
+  .Deprecated("stabl_similarity")
+  stabl_similarity(list_of_lists, method = "adjusted",
+                   n_universe = nb_total_elements)
+}
+
+#' Summary Statistic of Adjusted Similarity Values (Deprecated)
+#'
+#' `adjusted_similarity_summary()` is deprecated and will be removed in
+#' stablr 1.0.0.  Use [stabl_similarity_summary()] instead:
+#' `stabl_similarity_summary(list_of_lists, method = "adjusted", n_universe = ...)`.
 #'
 #' @param list_of_lists A list of character/integer vectors, one per run.
 #' @param nb_total_elements Integer; total number of candidate features.
 #' @param stat Character; `"median"` (default) or `"mean"`.
-#' @param d Deprecated; use `nb_total_elements` instead.
 #'
-#' @return A named list with `statistic` and `err` (see
-#'   [adjusted_similarity_summary()] for the exact definitions).
+#' @return A named list with `statistic` and `err`; see
+#'   [stabl_similarity_summary()].
 #'
-#' @seealso [pearson_similarity_pairwise()], [adjusted_similarity_summary()]
+#' @seealso [stabl_similarity_summary()]
 #'
 #' @examples
 #' sets <- list(c("f1","f2","f3"), c("f2","f3","f4"), c("f1","f3","f5"))
-#' pearson_similarity_summary(sets, nb_total_elements = 10L)
-#' pearson_similarity_summary(sets, nb_total_elements = 10L, stat = "mean")
+#' # Deprecated shim — equivalent canonical call:
+#' stabl_similarity_summary(sets, method = "adjusted", n_universe = 10L)
 #' @export
-pearson_similarity_summary <- function(list_of_lists, nb_total_elements,
+adjusted_similarity_summary <- function(list_of_lists, nb_total_elements,
+                                        stat = "median") {
+  .Deprecated("stabl_similarity_summary")
+  stabl_similarity_summary(list_of_lists, method = "adjusted",
+                           n_universe = nb_total_elements, stat = stat)
+}
+
+#' Pearson-Corrected Similarity Between Two Feature Sets (Deprecated)
+#'
+#' `pearson_similarity()` is deprecated and will be removed in stablr 1.0.0.
+#' Use [stabl_similarity()] instead:
+#' `stabl_similarity(set1, set2, method = "pearson", n_universe = n_universe)`.
+#'
+#' @param set1 Character or integer vector of selected feature identifiers.
+#' @param set2 Character or integer vector of selected feature identifiers.
+#' @param n_universe Integer; total number of candidate features in the universe.
+#' @param list_i Legacy name for `set1`; mapped silently.
+#' @param list_j Legacy name for `set2`; mapped silently.
+#' @param d Legacy name for `n_universe`; mapped silently.
+#'
+#' @return Numeric scalar; see [stabl_similarity()].
+#'
+#' @seealso [stabl_similarity()]
+#'
+#' @examples
+#' # Deprecated shim — equivalent canonical call:
+#' stabl_similarity(c("f1", "f2", "f3"), c("f2", "f3", "f4"),
+#'                  method = "pearson", n_universe = 10L)
+#' @export
+pearson_similarity <- function(set1 = NULL, set2 = NULL, n_universe = NULL,
+                               list_i = NULL, list_j = NULL, d = NULL) {
+  .Deprecated("stabl_similarity")
+  # Legacy argument names are mapped silently; see adjusted_similarity().
+  if (is.null(set1)) set1 <- list_i
+  if (is.null(set2)) set2 <- list_j
+  if (is.null(n_universe)) n_universe <- d
+  stabl_similarity(set1, set2, method = "pearson", n_universe = n_universe)
+}
+
+#' Upper-Triangle Pearson Similarity Values (Deprecated)
+#'
+#' `pearson_similarity_pairwise()` is deprecated and will be removed in
+#' stablr 1.0.0.  Use [stabl_similarity()] instead:
+#' `stabl_similarity(list_of_lists, method = "pearson", n_universe = ...)`.
+#'
+#' @param list_of_lists A list of character/integer vectors, one per run.
+#' @param nb_total_elements Integer; total number of candidate features.
+#' @param d Legacy name for `nb_total_elements`; mapped silently.
+#'
+#' @return Numeric vector of length N*(N-1)/2; see [stabl_similarity()].
+#'
+#' @seealso [stabl_similarity()], [stabl_similarity_summary()]
+#'
+#' @examples
+#' sets <- list(c("f1","f2","f3"), c("f2","f3","f4"), c("f1","f3","f5"))
+#' # Deprecated shim — equivalent canonical call:
+#' stabl_similarity(sets, method = "pearson", n_universe = 10L)
+#' @export
+pearson_similarity_pairwise <- function(list_of_lists, nb_total_elements = NULL,
+                                        d = NULL) {
+  .Deprecated("stabl_similarity")
+  if (is.null(nb_total_elements)) nb_total_elements <- d
+  stabl_similarity(list_of_lists, method = "pearson",
+                   n_universe = nb_total_elements)
+}
+
+#' Summary Statistic of Pearson Similarity Values (Deprecated)
+#'
+#' `pearson_similarity_summary()` is deprecated and will be removed in
+#' stablr 1.0.0.  Use [stabl_similarity_summary()] instead:
+#' `stabl_similarity_summary(list_of_lists, method = "pearson", n_universe = ...)`.
+#'
+#' @param list_of_lists A list of character/integer vectors, one per run.
+#' @param nb_total_elements Integer; total number of candidate features.
+#' @param stat Character; `"median"` (default) or `"mean"`.
+#' @param d Legacy name for `nb_total_elements`; mapped silently.
+#'
+#' @return A named list with `statistic` and `err`; see
+#'   [stabl_similarity_summary()].
+#'
+#' @seealso [stabl_similarity_summary()]
+#'
+#' @examples
+#' sets <- list(c("f1","f2","f3"), c("f2","f3","f4"), c("f1","f3","f5"))
+#' # Deprecated shim — equivalent canonical call:
+#' stabl_similarity_summary(sets, method = "pearson", n_universe = 10L)
+#' @export
+pearson_similarity_summary <- function(list_of_lists, nb_total_elements = NULL,
                                        stat = "median", d = NULL) {
-  # Deprecation shim: see pearson_similarity_pairwise().
-  if (!missing(d) && !is.null(d)) {
-    warning(
-      "`d` is deprecated; use `nb_total_elements` instead.", call. = FALSE
-    )
-    if (is.null(nb_total_elements)) nb_total_elements <- d
-  }
-  if (length(list_of_lists) < 2L) {
-    stop("`list_of_lists` must contain at least two sets to summarize ",
-         "pairwise similarity.", call. = FALSE)
-  }
-  vals <- pearson_similarity_pairwise(list_of_lists, nb_total_elements)
-  .similarity_summary(vals, stat)
+  .Deprecated("stabl_similarity_summary")
+  if (is.null(nb_total_elements)) nb_total_elements <- d
+  stabl_similarity_summary(list_of_lists, method = "pearson",
+                           n_universe = nb_total_elements, stat = stat)
 }
 
 # ── Classification metrics ────────────────────────────────────────────────────

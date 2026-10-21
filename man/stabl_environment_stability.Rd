@@ -73,5 +73,5 @@ get_min_scores(res)                 # same, via accessor
 \seealso{
 \code{\link[=stabl_fit]{stabl_fit()}},
 \code{\link[=get_importances]{get_importances()}},
-\code{\link[=adjusted_similarity]{adjusted_similarity()}}.
+\code{\link[=stabl_similarity]{stabl_similarity()}}.
 }

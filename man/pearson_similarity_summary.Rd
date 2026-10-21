@@ -2,11 +2,11 @@
 % Please edit documentation in R/metrics.R
 \name{pearson_similarity_summary}
 \alias{pearson_similarity_summary}
-\title{Summary Statistic of Pearson Similarity Values}
+\title{Summary Statistic of Pearson Similarity Values (Deprecated)}
 \usage{
 pearson_similarity_summary(
   list_of_lists,
-  nb_total_elements,
+  nb_total_elements = NULL,
   stat = "median",
   d = NULL
 )
@@ -18,23 +18,22 @@ pearson_similarity_summary(
 
 \item{stat}{Character; \code{"median"} (default) or \code{"mean"}.}
 
-\item{d}{Deprecated; use \code{nb_total_elements} instead.}
+\item{d}{Legacy name for \code{nb_total_elements}; mapped silently.}
 }
 \value{
-A named list with \code{statistic} and \code{err} (see
-\code{\link[=adjusted_similarity_summary]{adjusted_similarity_summary()}} for the exact definitions).
+A named list with \code{statistic} and \code{err}; see
+\code{\link[=stabl_similarity_summary]{stabl_similarity_summary()}}.
 }
 \description{
-Convenience wrapper analogous to \code{\link[=adjusted_similarity_summary]{adjusted_similarity_summary()}} but
-using the Pearson-corrected similarity.  See \code{\link[=pearson_similarity]{pearson_similarity()}} for a
-description of the underlying metric and when to prefer it over the
-adjusted similarity.
+\code{pearson_similarity_summary()} is deprecated and will be removed in
+stablr 1.0.0.  Use \code{\link[=stabl_similarity_summary]{stabl_similarity_summary()}} instead:
+\code{stabl_similarity_summary(list_of_lists, method = "pearson", n_universe = ...)}.
 }
 \examples{
 sets <- list(c("f1","f2","f3"), c("f2","f3","f4"), c("f1","f3","f5"))
-pearson_similarity_summary(sets, nb_total_elements = 10L)
-pearson_similarity_summary(sets, nb_total_elements = 10L, stat = "mean")
+# Deprecated shim — equivalent canonical call:
+stabl_similarity_summary(sets, method = "pearson", n_universe = 10L)
 }
 \seealso{
-\code{\link[=pearson_similarity_pairwise]{pearson_similarity_pairwise()}}, \code{\link[=adjusted_similarity_summary]{adjusted_similarity_summary()}}
+\code{\link[=stabl_similarity_summary]{stabl_similarity_summary()}}
 }

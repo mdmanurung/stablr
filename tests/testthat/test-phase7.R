@@ -79,26 +79,26 @@ library(stablr)
 
 # ── metrics.R ─────────────────────────────────────────────────────────────────
 
-test_that("jaccard_similarity returns 0 for disjoint sets", {
-  expect_equal(jaccard_similarity(c("a","b"), c("c","d")), 0)
+test_that("stabl_similarity (jaccard) returns 0 for disjoint sets", {
+  expect_equal(stabl_similarity(c("a","b"), c("c","d")), 0)
 })
 
-test_that("jaccard_similarity returns 1 for identical sets", {
-  expect_equal(jaccard_similarity(c("x","y","z"), c("x","y","z")), 1)
+test_that("stabl_similarity (jaccard) returns 1 for identical sets", {
+  expect_equal(stabl_similarity(c("x","y","z"), c("x","y","z")), 1)
 })
 
-test_that("jaccard_similarity correct partial overlap", {
+test_that("stabl_similarity (jaccard) correct partial overlap", {
   # intersection={b}, union={a,b,c} -> 1/3
-  expect_equal(jaccard_similarity(c("a","b"), c("b","c")), 1/3)
+  expect_equal(stabl_similarity(c("a","b"), c("b","c")), 1/3)
 })
 
-test_that("jaccard_similarity both empty returns 0", {
-  expect_equal(jaccard_similarity(character(0), character(0)), 0)
+test_that("stabl_similarity (jaccard) both empty returns 0", {
+  expect_equal(stabl_similarity(character(0), character(0)), 0)
 })
 
-test_that("jaccard_similarity_matrix returns correct dimensions with remove_diag", {
+test_that("stabl_similarity matrix returns correct dimensions with remove_diag", {
   lists <- list(c("a","b"), c("b","c"), c("a","c"))
-  mat <- jaccard_similarity_matrix(lists, remove_diag = TRUE)
+  mat <- stabl_similarity(lists, method = "jaccard", as_matrix = TRUE, remove_diag = TRUE)
   # Python parity: N lists -> N rows and (N - 1) columns.
   expect_equal(nrow(mat), 3L)
   expect_equal(ncol(mat), 2L)
@@ -114,17 +114,17 @@ test_that("metrics functions match frozen Python reference values", {
   tol <- 1e-12
 
   expect_equal(
-    jaccard_similarity(inp$pair_pred, inp$pair_true),
+    stabl_similarity(inp$pair_pred, inp$pair_true),
     unname(ref$scalars[["jaccard_similarity_pair"]]),
     tolerance = tol
   )
   expect_equal(
-    adjusted_similarity(inp$pair_pred, inp$pair_true, inp$nb_total),
+    stabl_similarity(inp$pair_pred, inp$pair_true, method = "adjusted", n_universe = inp$nb_total),
     unname(ref$scalars[["adjusted_similarity_pair"]]),
     tolerance = tol
   )
   expect_equal(
-    pearson_similarity(inp$pair_pred, inp$pair_true, inp$d),
+    stabl_similarity(inp$pair_pred, inp$pair_true, method = "pearson", n_universe = inp$d),
     unname(ref$scalars[["pearson_similarity_pair"]]),
     tolerance = tol
   )
@@ -149,7 +149,7 @@ test_that("metrics functions match frozen Python reference values", {
     tolerance = tol
   )
 
-  r_jaccard_rowmajor <- as.vector(t(jaccard_similarity_matrix(inp$list_of_lists, remove_diag = TRUE)))
+  r_jaccard_rowmajor <- as.vector(t(stabl_similarity(inp$list_of_lists, method = "jaccard", as_matrix = TRUE, remove_diag = TRUE)))
   expect_equal(
     r_jaccard_rowmajor,
     .get_python_metric_vector(ref, "jaccard_matrix_remove_diag_rowmajor"),
@@ -157,17 +157,17 @@ test_that("metrics functions match frozen Python reference values", {
   )
 
   expect_equal(
-    adjusted_similarity_pairwise(inp$list_of_lists, inp$nb_total),
+    stabl_similarity(inp$list_of_lists, method = "adjusted", n_universe = inp$nb_total),
     .get_python_metric_vector(ref, "adjusted_similarity_values"),
     tolerance = tol
   )
   expect_equal(
-    pearson_similarity_pairwise(inp$list_of_lists, inp$d),
+    stabl_similarity(inp$list_of_lists, method = "pearson", n_universe = inp$d),
     .get_python_metric_vector(ref, "pearson_similarity_values"),
     tolerance = tol
   )
 
-  adj_med <- adjusted_similarity_summary(inp$list_of_lists, inp$nb_total, stat = "median")
+  adj_med <- stabl_similarity_summary(inp$list_of_lists, method = "adjusted", n_universe = inp$nb_total, stat = "median")
   expect_equal(
     adj_med$statistic,
     unname(ref$scalars[["adjusted_similarity_measure_median_stat"]]),
@@ -182,7 +182,7 @@ test_that("metrics functions match frozen Python reference values", {
     tolerance = tol
   )
 
-  adj_mean <- adjusted_similarity_summary(inp$list_of_lists, inp$nb_total, stat = "mean")
+  adj_mean <- stabl_similarity_summary(inp$list_of_lists, method = "adjusted", n_universe = inp$nb_total, stat = "mean")
   expect_equal(
     adj_mean$statistic,
     unname(ref$scalars[["adjusted_similarity_measure_mean_stat"]]),
@@ -194,7 +194,7 @@ test_that("metrics functions match frozen Python reference values", {
     tolerance = tol
   )
 
-  pear_med <- pearson_similarity_summary(inp$list_of_lists, inp$d, stat = "median")
+  pear_med <- stabl_similarity_summary(inp$list_of_lists, method = "pearson", n_universe = inp$d, stat = "median")
   expect_equal(
     pear_med$statistic,
     unname(ref$scalars[["pearson_similarity_measure_median_stat"]]),
@@ -209,7 +209,7 @@ test_that("metrics functions match frozen Python reference values", {
     tolerance = tol
   )
 
-  pear_mean <- pearson_similarity_summary(inp$list_of_lists, inp$d, stat = "mean")
+  pear_mean <- stabl_similarity_summary(inp$list_of_lists, method = "pearson", n_universe = inp$d, stat = "mean")
   expect_equal(
     pear_mean$statistic,
     unname(ref$scalars[["pearson_similarity_measure_mean_stat"]]),
@@ -222,65 +222,65 @@ test_that("metrics functions match frozen Python reference values", {
   )
 })
 
-test_that("adjusted_similarity zero for empty set", {
-  expect_equal(adjusted_similarity(character(0), c("a","b"), 10L), 0)
+test_that("stabl_similarity (adjusted) zero for empty set", {
+  expect_equal(stabl_similarity(character(0), c("a","b"), method = "adjusted", n_universe = 10L), 0)
 })
 
-test_that("adjusted_similarity zero when set equals universe", {
+test_that("stabl_similarity (adjusted) zero when set equals universe", {
   all_feats <- letters[1:5]
-  expect_equal(adjusted_similarity(all_feats, all_feats[1:3], 5L), 0)
+  expect_equal(stabl_similarity(all_feats, all_feats[1:3], method = "adjusted", n_universe = 5L), 0)
 })
 
-test_that("adjusted_similarity errors when union > nb_total_elements", {
+test_that("stabl_similarity (adjusted) errors when union > n_universe", {
   expect_error(
-    adjusted_similarity(letters[1:5], letters[6:10], 8L),
+    stabl_similarity(letters[1:5], letters[6:10], method = "adjusted", n_universe = 8L),
     "exceeds"
   )
 })
 
-test_that("adjusted_similarity_pairwise returns upper-triangle vector", {
+test_that("stabl_similarity (adjusted) returns upper-triangle vector", {
   lists <- list(c("a","b","c"), c("b","c","d"), c("a","c","d"), c("a","b","d"))
-  vals  <- adjusted_similarity_pairwise(lists, 6L)
+  vals  <- stabl_similarity(lists, method = "adjusted", n_universe = 6L)
   expect_length(vals, 4L * 3L / 2L)  # n*(n-1)/2 = 6
   expect_true(all(is.numeric(vals)))
 })
 
-test_that("adjusted_similarity_summary median returns list with statistic and err", {
+test_that("stabl_similarity_summary (adjusted) median returns list with statistic and err", {
   lists <- list(c("a","b"), c("b","c"), c("a","c"))
-  res   <- adjusted_similarity_summary(lists, 5L, stat = "median")
+  res   <- stabl_similarity_summary(lists, method = "adjusted", n_universe = 5L, stat = "median")
   expect_named(res, c("statistic", "err"))
   expect_length(res$err, 2L)
 })
 
-test_that("adjusted_similarity_summary mean returns sd as err", {
+test_that("stabl_similarity_summary (adjusted) mean returns sd as err", {
   lists <- list(c("a","b"), c("b","c"), c("a","c"))
-  res   <- adjusted_similarity_summary(lists, 5L, stat = "mean")
+  res   <- stabl_similarity_summary(lists, method = "adjusted", n_universe = 5L, stat = "mean")
   expect_named(res, c("statistic", "err"))
   expect_length(res$err, 1L)
 })
 
-test_that("adjusted_similarity_summary errors on unknown stat", {
+test_that("stabl_similarity_summary errors on unknown stat", {
   lists <- list(c("a","b"), c("b","c"))
-  expect_error(adjusted_similarity_summary(lists, 5L, stat = "mode"), "mean")
+  expect_error(stabl_similarity_summary(lists, method = "adjusted", n_universe = 5L, stat = "mode"), "mean")
 })
 
-test_that("pearson_similarity returns 1 when both sets empty", {
-  expect_equal(pearson_similarity(character(0), character(0), 10L), 1)
+test_that("stabl_similarity (pearson) returns 1 when both sets empty", {
+  expect_equal(stabl_similarity(character(0), character(0), method = "pearson", n_universe = 10L), 1)
 })
 
-test_that("pearson_similarity returns 0 when one set empty", {
-  expect_equal(pearson_similarity(character(0), c("a","b"), 10L), 0)
+test_that("stabl_similarity (pearson) returns 0 when one set empty", {
+  expect_equal(stabl_similarity(character(0), c("a","b"), method = "pearson", n_universe = 10L), 0)
 })
 
-test_that("pearson_similarity_pairwise upper-triangle length", {
+test_that("stabl_similarity (pearson) upper-triangle length", {
   lists <- list(c("a","b"), c("b","c"), c("c","d"))
-  vals  <- pearson_similarity_pairwise(lists, 6L)
+  vals  <- stabl_similarity(lists, method = "pearson", n_universe = 6L)
   expect_length(vals, 3L)  # 3*(3-1)/2 = 3
 })
 
-test_that("pearson_similarity_summary returns correct structure", {
+test_that("stabl_similarity_summary (pearson) returns correct structure", {
   lists <- list(c("a","b"), c("b","c"), c("a","d"))
-  res   <- pearson_similarity_summary(lists, 6L)
+  res   <- stabl_similarity_summary(lists, method = "pearson", n_universe = 6L)
   expect_named(res, c("statistic", "err"))
 })
 
@@ -315,12 +315,12 @@ test_that("fscore_similarity returns 0 for empty predicted with non-empty true",
 
 # ── exports.R ─────────────────────────────────────────────────────────────────
 
-test_that("export_stabl_to_csv writes expected files", {
+test_that("save_stabl_results CSV mode writes expected files", {
   fit  <- .make_fit()
   path <- tempfile("stablr_test_export")
   on.exit(unlink(path, recursive = TRUE))
 
-  export_stabl_to_csv(fit, path)
+  save_stabl_results(fit, path, what = "csv")
 
   expect_true(file.exists(file.path(path, "STABL scores.csv")))
   expect_true(file.exists(file.path(path, "Max STABL scores.csv")))
@@ -328,18 +328,18 @@ test_that("export_stabl_to_csv writes expected files", {
   expect_true(file.exists(file.path(path, "Max STABL artificial scores.csv")))
 })
 
-test_that("export_stabl_to_csv skips artificial files when no artificial_type", {
+test_that("save_stabl_results CSV mode skips artificial files when no artificial_type", {
   fit  <- .make_fit(artificial_type = NULL, hard_threshold = 0.3)
   path <- tempfile("stablr_test_export_noart")
   on.exit(unlink(path, recursive = TRUE))
 
-  export_stabl_to_csv(fit, path)
+  save_stabl_results(fit, path, what = "csv")
 
   expect_true(file.exists(file.path(path, "STABL scores.csv")))
   expect_false(file.exists(file.path(path, "STABL artificial scores.csv")))
 })
 
-test_that("export_stabl_to_csv STABL scores.csv has correct dimensions", {
+test_that("save_stabl_results CSV mode STABL scores.csv has correct dimensions", {
   n <- 30L; p <- 6L; n_lambda <- 4L
   set.seed(10)
   x <- matrix(rnorm(n * p), n, p,
@@ -351,7 +351,7 @@ test_that("export_stabl_to_csv STABL scores.csv has correct dimensions", {
 
   path <- tempfile("stablr_csv_dim")
   on.exit(unlink(path, recursive = TRUE))
-  export_stabl_to_csv(fit, path)
+  save_stabl_results(fit, path, what = "csv")
 
   df <- utils::read.csv(file.path(path, "STABL scores.csv"), row.names = 1L)
   expect_equal(nrow(df), p)
@@ -444,7 +444,7 @@ test_that("bundled OOL smoke export helpers write stable artifact schema", {
   save_path <- tempfile("stablr real data save")
   on.exit(unlink(c(csv_path, save_path), recursive = TRUE), add = TRUE)
 
-  export_stabl_to_csv(fit, csv_path)
+  save_stabl_results(fit, csv_path, what = "csv")
 
   scores_csv <- utils::read.csv(
     file.path(csv_path, "STABL scores.csv"),
@@ -742,9 +742,9 @@ test_that("plotting and export helpers reject invalid scalar arguments", {
   expect_error(scatterplot_features("f1", x, y_num, ncol = 0L), "ncol")
   expect_error(scatterplot_features("f1", x, y_num, title = ""), "title")
 
-  expect_error(export_stabl_to_csv(fit_no_art, path = NA_character_), "path")
-  expect_error(export_stabl_to_csv(fit_no_art, path = ""), "path")
-  expect_error(export_stabl_to_csv(fit_no_art, path = c("a", "b")), "path")
+  expect_error(save_stabl_results(fit_no_art, path = NA_character_, what = "csv"), "path")
+  expect_error(save_stabl_results(fit_no_art, path = "", what = "csv"), "path")
+  expect_error(save_stabl_results(fit_no_art, path = c("a", "b"), what = "csv"), "path")
 
   path <- file.path(tempdir(), paste0("stabl-results-invalid-", sample.int(1e6, 1L)))
   expect_error(save_stabl_results(fit_no_art, path, x = x, y = y_num, figure_fmt = ""), "figure_fmt")
@@ -773,16 +773,16 @@ test_that("plot_stabl_path renders single-lambda grids as points (E12 regression
 })
 
 test_that("similarity summaries reject fewer than two sets", {
-  expect_error(adjusted_similarity_summary(list(c("a", "b")), 10L),
+  expect_error(stabl_similarity_summary(list(c("a", "b")), method = "adjusted", n_universe = 10L),
                "at least two sets")
-  expect_error(pearson_similarity_summary(list(c("a", "b")), 10L),
+  expect_error(stabl_similarity_summary(list(c("a", "b")), method = "pearson", n_universe = 10L),
                "at least two sets")
-  expect_error(adjusted_similarity_summary(list(), 10L),
+  expect_error(stabl_similarity_summary(list(), method = "adjusted", n_universe = 10L),
                "at least two sets")
 })
 
-test_that("jaccard_similarity_matrix errors informatively on empty input", {
-  expect_error(jaccard_similarity_matrix(list()), "at least one set")
+test_that("stabl_similarity matrix errors informatively on empty input", {
+  expect_error(stabl_similarity(list(), as_matrix = TRUE), "at least one set")
 })
 
 test_that(".binary_probability_metrics rejects NA truth", {

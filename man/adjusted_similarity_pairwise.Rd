@@ -2,7 +2,7 @@
 % Please edit documentation in R/metrics.R
 \name{adjusted_similarity_pairwise}
 \alias{adjusted_similarity_pairwise}
-\title{Upper-Triangle Adjusted Similarity Values}
+\title{Upper-Triangle Adjusted Similarity Values (Deprecated)}
 \usage{
 adjusted_similarity_pairwise(list_of_lists, nb_total_elements)
 }
@@ -12,23 +12,19 @@ adjusted_similarity_pairwise(list_of_lists, nb_total_elements)
 \item{nb_total_elements}{Integer; total number of candidate features.}
 }
 \value{
-Numeric vector of length N*(N-1)/2 containing the pairwise
-adjusted-similarity values for all unique pairs (row-major upper-triangle
-order, matching the Python convention).
+Numeric vector of length N*(N-1)/2 in row-major upper-triangle
+order; see \code{\link[=stabl_similarity]{stabl_similarity()}}.
 }
 \description{
-Computes the full pairwise adjusted-similarity matrix for N feature sets and
-returns only the N\eqn{\times}(N-1)/2 off-diagonal upper-triangle values as
-a flat vector.  This format is convenient for computing summary statistics
-(see \code{\link[=adjusted_similarity_summary]{adjusted_similarity_summary()}}) or for Wilcoxon/permutation tests
-comparing reproducibility across methods.
+\code{adjusted_similarity_pairwise()} is deprecated and will be removed in
+stablr 1.0.0.  Use \code{\link[=stabl_similarity]{stabl_similarity()}} instead:
+\code{stabl_similarity(list_of_lists, method = "adjusted", n_universe = ...)}.
 }
 \examples{
 sets <- list(c("f1","f2","f3"), c("f2","f3","f4"), c("f1","f3","f5"))
-adjusted_similarity_pairwise(sets, nb_total_elements = 10L)
+# Deprecated shim — equivalent canonical call:
+stabl_similarity(sets, method = "adjusted", n_universe = 10L)
 }
 \seealso{
-\code{\link[=adjusted_similarity]{adjusted_similarity()}} for the pairwise function,
-\code{\link[=adjusted_similarity_summary]{adjusted_similarity_summary()}} for a one-number summary,
-\code{\link[=pearson_similarity_pairwise]{pearson_similarity_pairwise()}} for an alternative chance-correction.
+\code{\link[=stabl_similarity]{stabl_similarity()}}, \code{\link[=stabl_similarity_summary]{stabl_similarity_summary()}}
 }

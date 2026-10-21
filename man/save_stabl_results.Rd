@@ -2,32 +2,34 @@
 % Please edit documentation in R/exports.R
 \name{save_stabl_results}
 \alias{save_stabl_results}
-\title{Save All STABL Results to Disk}
+\title{Save STABL Results to Disk}
 \usage{
 save_stabl_results(
   object,
   path,
-  x,
-  y,
+  x = NULL,
+  y = NULL,
   figure_fmt = "pdf",
   new_hard_threshold = NULL,
   task_type = "binary",
-  override = FALSE
+  override = FALSE,
+  what = c("all", "csv")
 )
 }
 \arguments{
 \item{object}{A fitted \code{"stabl_fit"} object returned by \code{\link[=stabl_fit]{stabl_fit()}}.}
 
 \item{path}{Character string; path to the output directory.  Created
-recursively if it does not already exist.  Raises an error if the
-directory exists and \code{override = FALSE}.}
+recursively if it does not already exist.  When \code{what = "all"}, raises
+an error if the directory exists and \code{override = FALSE}; when
+\code{what = "csv"}, an existing directory is reused without error.}
 
 \item{x}{Numeric matrix of predictors used to fit \code{object}.  Required
-for per-feature distribution plots; must contain at least the selected
-feature columns.}
+when \code{what = "all"} (for per-feature distribution plots); must contain
+at least the selected feature columns.  Ignored when \code{what = "csv"}.}
 
 \item{y}{Outcome vector, factor, or \code{survival::Surv} object used to fit
-\code{object}.  Required for per-feature distribution plots.}
+\code{object}.  Required when \code{what = "all"}; ignored when \code{what = "csv"}.}
 
 \item{figure_fmt}{Character; graphics device extension used when saving
 plots.  Common choices: \code{"pdf"} (default, publication quality),
@@ -42,36 +44,61 @@ or \code{"regression"}.  Determines which per-feature plot is generated:
 grouped boxplots for classification, LOESS scatter for regression.}
 
 \item{override}{Logical; if \code{TRUE}, an existing directory with the same
-path is accepted and its contents may be overwritten.  Default \code{FALSE}.}
+path is accepted and its contents may be overwritten.  Default \code{FALSE}.
+Only used when \code{what = "all"}.}
+
+\item{what}{Character; \code{"all"} (default) for the complete result set
+including plots, or \code{"csv"} for the CSV tables only.  The \code{"csv"} mode
+requires neither \code{x}/\code{y} nor a ggplot2 installation.}
 }
 \value{
 Invisibly returns \code{path} as a normalised absolute string.
 }
 \description{
-Writes a complete set of STABL result artefacts — stability scores, the
+Writes STABL result artefacts into a single output directory.  With the
+default \code{what = "all"} this is the complete set — stability scores, the
 list of selected features, the FDR diagnostic graph, the stability path
-plot, and per-feature distribution plots — into a single output directory.
-This is the recommended way to persist and share results from a single
-\code{\link[=stabl_fit]{stabl_fit()}} call.
+plot, and per-feature distribution plots — and is the recommended way to
+persist and share results from a single \code{\link[=stabl_fit]{stabl_fit()}} call.  With
+\code{what = "csv"} only the tabular CSV exports are written.
 }
 \details{
-The function orchestrates several lower-level helpers:
-\code{\link[=export_stabl_to_csv]{export_stabl_to_csv()}} for tabular data, \code{\link[=plot_fdr_graph]{plot_fdr_graph()}} and
+With \code{what = "all"} the function orchestrates several lower-level helpers:
+the CSV export engine for tabular data, \code{\link[=plot_fdr_graph]{plot_fdr_graph()}} and
 \code{\link[=plot_stabl_path]{plot_stabl_path()}} for diagnostic plots, and \code{\link[=boxplot_features]{boxplot_features()}} or
 \code{\link[=scatterplot_features]{scatterplot_features()}} for per-feature distribution visualisations.
 All graphics are saved using \code{ggplot2::ggsave()} in the format specified
 by \code{figure_fmt}.
+
+CSV files written (both modes):
+\itemize{
+\item \verb{STABL scores.csv} — full p x L stability score matrix.
+\item \verb{Max STABL scores.csv} — per-feature maximum stability score, sorted
+descending.
+\item \verb{STABL artificial scores.csv} — artificial feature scores (only when
+artificial-feature scores are present, i.e. \code{object$stabl_scores_artificial_}
+is not \code{NULL}).
+\item \verb{Max STABL artificial scores.csv} — artificial max scores, sorted
+descending (only when artificial features were used).
+}
 }
 \examples{
 \donttest{
+set.seed(1L)
+x <- matrix(rnorm(40 * 6), 40, 6,
+             dimnames = list(paste0("s", 1:40), paste0("f", 1:6)))
+y <- setNames(rnorm(40), rownames(x))
+fit <- stabl_fit(x, y,
+                 lambda_grid  = data.frame(lambda = c(0.3, 0.1, 0.05)),
+                 n_bootstraps = 6L, hard_threshold = 0.3, random_state = 1L)
+
+# CSV tables only (no ggplot2 required)
+out_csv <- file.path(tempdir(), "stabl_csv_export")
+save_stabl_results(fit, out_csv, what = "csv")
+list.files(out_csv)
+
+# Complete result set
 if (requireNamespace("ggplot2", quietly = TRUE)) {
-  set.seed(1L)
-  x <- matrix(rnorm(40 * 6), 40, 6,
-               dimnames = list(paste0("s", 1:40), paste0("f", 1:6)))
-  y <- setNames(rnorm(40), rownames(x))
-  fit <- stabl_fit(x, y,
-                   lambda_grid  = data.frame(lambda = c(0.3, 0.1, 0.05)),
-                   n_bootstraps = 6L, hard_threshold = 0.3, random_state = 1L)
   out_dir <- file.path(tempdir(), "stabl_results")
   save_stabl_results(fit, out_dir, x = x, y = y,
                      task_type = "regression", figure_fmt = "png")
@@ -80,6 +107,5 @@ if (requireNamespace("ggplot2", quietly = TRUE)) {
 }
 }
 \seealso{
-\code{\link[=export_stabl_to_csv]{export_stabl_to_csv()}} for the CSV-only variant,
-\code{\link[=plot_stabl_path]{plot_stabl_path()}}, \code{\link[=plot_fdr_graph]{plot_fdr_graph()}}
+\code{\link[=plot_stabl_path]{plot_stabl_path()}}, \code{\link[=plot_fdr_graph]{plot_fdr_graph()}}, \code{\link[=boxplot_features]{boxplot_features()}}
 }

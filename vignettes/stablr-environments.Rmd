@@ -146,7 +146,7 @@ Treat high `mean_scores` with low `min_scores` as a *batch-dependent*
 candidate. Such a candidate warrants investigation, not export. The
 `pairwise_adjusted_similarity` matrix additionally summarises agreement
 between the *selected sets* of any two environments. The agreement is
-chance-corrected via `adjusted_similarity()`.
+chance-corrected via `stabl_similarity()` with `method = "adjusted"`.
 
 Two practical notes:
 

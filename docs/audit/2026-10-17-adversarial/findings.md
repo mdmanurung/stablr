@@ -2333,6 +2333,55 @@ never affected — R CMD check is hermetic.)  Gates: suite 63 files /
 check 0E/0W/1N (pre-existing installed-size NOTE); all 14 vignettes
 rebuild clean.
 
+**API-streamlining PR-B (2026-10-21, Phase 14):** second
+mixOmics-style streamlining pass — merge the three redundant function
+families flagged by the PR-A census behind one verb function per task;
+the legacy names stay exported as soft-deprecated shims (removal slated
+for 1.0.0; `inst/release/removal-ledger.csv` gains 10 rows).
+Similarity 8 -> 2: new exported `stabl_similarity(x, y = NULL,
+method = c("jaccard", "adjusted", "pearson"), n_universe = NULL,
+as_matrix = FALSE, remove_diag = FALSE)` and
+`stabl_similarity_summary(x, method, n_universe = NULL,
+stat = c("median", "mean"))` absorb the eight jaccard/adjusted/pearson
+scalar, pairwise, summary, and matrix variants; the engines move to
+internal `.jaccard_scalar` / `.adjusted_scalar` / `.pearson_scalar` /
+`.similarity_matrix` with the legacy bodies verbatim.  Export 2 -> 1:
+`save_stabl_results()` gains `what = c("all", "csv")`; `what = "csv"`
+keeps the lenient `export_stabl_to_csv()` semantics (returns the CSV
+paths before any x/y validation) via internal `.export_stabl_to_csv()`;
+`export_stabl_to_csv()` becomes a shim.  Preprocess-fit 2 -> 1:
+`stabl_preprocess_fit()` gains a recipe route (`inherits(transforms,
+"recipe")` dispatches to internal `.stabl_preprocess_fit_recipes()`);
+`stabl_preprocess_fit_recipes()` becomes a shim; the fold dispatcher
+now calls the single public entry.  All 10 shims emit exactly one
+`.Deprecated` per call naming the replacement and forward identically
+(new `test-api-shims.R` pins both); legacy argument names
+(`list1`/`list2`/`nb_total_elements`, `list_i`/`list_j`/`d`) map
+silently — no arg-level warnings — disclosed.  Internal callers
+repointed (`stabl_environment_stability()` engine call,
+`stabl_multiomic_selection_stability()` matrix call + seealso) so the
+package itself never triggers the deprecations.  Two deliberate
+behavior changes, disclosed: the `method = "adjusted"` matrix diagonal
+is now the honest computed self-similarity (1 - k/d for k <= d/2)
+instead of a forced 1 (jaccard/pearson diagonals remain 1; documented
+in `?stabl_similarity` and NEWS); and a latent legacy bug is fixed —
+`pearson_similarity_pairwise(sets, d = 10)` errored on the missing
+`nb_total_elements` default, while the shims now default
+`n_universe = NULL` so the `d` fallback works.  One ordering
+constraint preserved: the new x/y-required check in
+`save_stabl_results()` sits after the ggplot2 guard so the pinned A8
+regression test (mocked no-ggplot2 error) still passes.  45 -> 47
+exports; registry 88 -> 90 rows; `_pkgdown.yml` quarantines all 10
+shims off the reference index (56 entries = 37 exports + 18 S3 +
+package page); README, API_REFERENCE, MIGRATION_0.3_TO_1.0,
+PYTHON_TO_R_MAPPING, 4 vignettes, and
+`inst/analysis/run_methodology_validation.R` repointed to canonical
+names; `test-phase7.R` repointed (55 call sites; pinned error messages
+preserved) and the C2 deprecation contract rewritten for the silent
+arg mapping.  Gates: suite 64 files / 0 failed / 0 errors / 1 skip /
+3 warnings (exact PR-G parity); R CMD check 0E/0W/1N (pre-existing
+installed-size NOTE); all 14 vignettes rebuild clean.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3

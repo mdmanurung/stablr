@@ -45,6 +45,6 @@ stab$similarity_matrix
 stab$mean_pairwise_similarity
 }
 \seealso{
-\code{\link[=jaccard_similarity_matrix]{jaccard_similarity_matrix()}} for the underlying metric and
+\code{\link[=stabl_similarity]{stabl_similarity()}} for the underlying metric and
 \code{\link[=stabl_multiomic_nested_cv]{stabl_multiomic_nested_cv()}} for the study-disjoint scheme.
 }

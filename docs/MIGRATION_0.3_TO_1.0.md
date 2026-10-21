@@ -17,15 +17,25 @@ execution of archived scripts.
 |---|---|
 | `classic_bootstrap_indices(...)` | internal; use `stabl_fit(..., stratify_bootstrap = ..., bootstrap_strata = ...)` |
 | `get_feature_names_out(object, ...)` | `get_feature_names(object, ...)` |
-| `jaccard_matrix(list_of_lists, ...)` | `jaccard_similarity_matrix(list_of_lists, ...)` |
-| `adjusted_similarity_values(list_of_lists, n)` | `adjusted_similarity_pairwise(list_of_lists, n)` |
-| `adjusted_similarity_measure(list_of_lists, n, stat)` | `adjusted_similarity_summary(list_of_lists, n, stat)` |
-| `pearson_similarity_values(list_of_lists, d)` | `pearson_similarity_pairwise(list_of_lists, d)` |
-| `pearson_similarity_measure(list_of_lists, d, stat)` | `pearson_similarity_summary(list_of_lists, d, stat)` |
+| `jaccard_matrix(list_of_lists, ...)` | `stabl_similarity(list_of_lists, method = "jaccard", as_matrix = TRUE)` |
+| `adjusted_similarity_values(list_of_lists, n)` | `stabl_similarity(list_of_lists, method = "adjusted", n_universe = n)` |
+| `adjusted_similarity_measure(list_of_lists, n, stat)` | `stabl_similarity_summary(list_of_lists, method = "adjusted", n_universe = n, stat = stat)` |
+| `pearson_similarity_values(list_of_lists, d)` | `stabl_similarity(list_of_lists, method = "pearson", n_universe = d)` |
+| `pearson_similarity_measure(list_of_lists, d, stat)` | `stabl_similarity_summary(list_of_lists, method = "pearson", n_universe = d, stat = stat)` |
 | `stacked_multi_omic(...)` | `stabl_multiomic_stacked(...)` |
 
 The Python-parity fixtures keep their historical file and key names
 (`jaccard_matrix_remove_diag_rowmajor`, ...); only the R entry points moved.
+
+The 0.3.0 intermediate names `jaccard_similarity()`,
+`jaccard_similarity_matrix()`, `adjusted_similarity()`,
+`adjusted_similarity_pairwise()`, `adjusted_similarity_summary()`,
+`pearson_similarity()`, `pearson_similarity_pairwise()`,
+`pearson_similarity_summary()`, `export_stabl_to_csv()`, and
+`stabl_preprocess_fit_recipes()` are likewise deprecated shims forwarding
+to `stabl_similarity()`, `stabl_similarity_summary()`,
+`save_stabl_results()`, and `stabl_preprocess_fit()`; they are removed in
+1.0.0 together with the pre-0.3.0 aliases above.
 
 ## 2. Removed duplicate generics
 

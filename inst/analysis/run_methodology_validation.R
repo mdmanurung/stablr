@@ -748,15 +748,15 @@
 }
 
 .similarity_scalar_observations <- function(inp) {
-  adj_median <- stablr::adjusted_similarity_summary(inp$list_of_lists, inp$nb_total)
-  adj_mean <- stablr::adjusted_similarity_summary(inp$list_of_lists, inp$nb_total, stat = "mean")
-  pear_median <- stablr::pearson_similarity_summary(inp$list_of_lists, inp$d)
-  pear_mean <- stablr::pearson_similarity_summary(inp$list_of_lists, inp$d, stat = "mean")
+  adj_median <- stablr::stabl_similarity_summary(inp$list_of_lists, method = "adjusted", n_universe = inp$nb_total)
+  adj_mean <- stablr::stabl_similarity_summary(inp$list_of_lists, method = "adjusted", n_universe = inp$nb_total, stat = "mean")
+  pear_median <- stablr::stabl_similarity_summary(inp$list_of_lists, method = "pearson", n_universe = inp$d)
+  pear_mean <- stablr::stabl_similarity_summary(inp$list_of_lists, method = "pearson", n_universe = inp$d, stat = "mean")
 
   c(
-    jaccard_similarity_pair = stablr::jaccard_similarity(inp$pair_pred, inp$pair_true),
-    adjusted_similarity_pair = stablr::adjusted_similarity(inp$pair_pred, inp$pair_true, inp$nb_total),
-    pearson_similarity_pair = stablr::pearson_similarity(inp$pair_pred, inp$pair_true, inp$d),
+    jaccard_similarity_pair = stablr::stabl_similarity(inp$pair_pred, inp$pair_true, method = "jaccard"),
+    adjusted_similarity_pair = stablr::stabl_similarity(inp$pair_pred, inp$pair_true, method = "adjusted", n_universe = inp$nb_total),
+    pearson_similarity_pair = stablr::stabl_similarity(inp$pair_pred, inp$pair_true, method = "pearson", n_universe = inp$d),
     fdr_similarity_pair = stablr:::fdr_similarity(inp$pair_pred, inp$pair_true),
     tpr_similarity_pair = stablr:::tpr_similarity(inp$pair_pred, inp$pair_true),
     fscore_similarity_beta1_pair = stablr:::fscore_similarity(inp$pair_pred, inp$pair_true, beta = 1),
@@ -775,11 +775,11 @@
 }
 
 .similarity_vector_observations <- function(inp) {
-  jaccard <- stablr::jaccard_similarity_matrix(inp$list_of_lists, remove_diag = TRUE)
+  jaccard <- stablr::stabl_similarity(inp$list_of_lists, method = "jaccard", as_matrix = TRUE, remove_diag = TRUE)
   list(
     jaccard_matrix_remove_diag_rowmajor = as.vector(t(jaccard)),
-    adjusted_similarity_values = stablr::adjusted_similarity_pairwise(inp$list_of_lists, inp$nb_total),
-    pearson_similarity_values = stablr::pearson_similarity_pairwise(inp$list_of_lists, inp$d)
+    adjusted_similarity_values = stablr::stabl_similarity(inp$list_of_lists, method = "adjusted", n_universe = inp$nb_total),
+    pearson_similarity_values = stablr::stabl_similarity(inp$list_of_lists, method = "pearson", n_universe = inp$d)
   )
 }
 

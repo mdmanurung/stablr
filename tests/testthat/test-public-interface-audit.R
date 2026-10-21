@@ -26,7 +26,7 @@ test_that("public-interface audit exactly covers NAMESPACE", {
     s3_parts, function(x) paste0(x[[1L]], ".", x[[2L]]), character(1L)
   )
 
-  expect_length(exports, 45L)
+  expect_length(exports, 47L)
   expect_length(s3, 43L)
   expect_setequal(audit$interface[audit$kind == "export"], exports)
   expect_setequal(audit$interface[audit$kind == "s3"], s3)

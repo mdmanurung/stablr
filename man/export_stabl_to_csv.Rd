@@ -2,7 +2,7 @@
 % Please edit documentation in R/exports.R
 \name{export_stabl_to_csv}
 \alias{export_stabl_to_csv}
-\title{Export STABL Stability Scores to CSV}
+\title{Export STABL Stability Scores to CSV (Deprecated)}
 \usage{
 export_stabl_to_csv(object, path)
 }
@@ -16,23 +16,9 @@ directory.}
 Invisibly returns \code{path} (as a normalized string).
 }
 \description{
-Writes the full stability-score matrix, the per-feature maximum stability
-scores, and (when artificial features were used) the corresponding
-artificial-feature scores to CSV files in the directory specified by
-\code{path}.
-}
-\details{
-Files written:
-\itemize{
-\item \verb{STABL scores.csv} — full p x L stability score matrix.
-\item \verb{Max STABL scores.csv} — per-feature maximum stability score, sorted
-descending.
-\item \verb{STABL artificial scores.csv} — artificial feature scores (only when
-artificial-feature scores are present, i.e. \code{object$stabl_scores_artificial_}
-is not \code{NULL}).
-\item \verb{Max STABL artificial scores.csv} — artificial max scores, sorted
-descending (only when artificial features were used).
-}
+\code{export_stabl_to_csv()} is deprecated and will be removed in stablr 1.0.0.
+Use \code{\link[=save_stabl_results]{save_stabl_results()}} with \code{what = "csv"} instead:
+\code{save_stabl_results(object, path, what = "csv")}.
 }
 \examples{
 \donttest{
@@ -43,8 +29,11 @@ y <- setNames(rnorm(40), rownames(x))
 fit <- stabl_fit(x, y,
                  lambda_grid  = data.frame(lambda = c(0.3, 0.1, 0.05)),
                  n_bootstraps = 6L, hard_threshold = 0.3, random_state = 1L)
-out_dir <- file.path(tempdir(), "stabl_csv_export")
-export_stabl_to_csv(fit, out_dir)
-list.files(out_dir)
+# Deprecated shim — equivalent canonical call:
+save_stabl_results(fit, file.path(tempdir(), "stabl_csv_export"),
+                   what = "csv")
 }
+}
+\seealso{
+\code{\link[=save_stabl_results]{save_stabl_results()}}
 }

@@ -18,19 +18,25 @@
 #'
 #' Learns preprocessing parameters from a training matrix only.  The result
 #' is a `"stabl_preprocessing"` object that [stabl_preprocess_apply()] applies
-#' to training or assessment data without refitting.
+#' to training or assessment data without refitting.  When `transforms` is an
+#' unprepped `recipes::recipe`, the recipe is prepped on the training data
+#' only (wrapping [recipes::prep()]).
 #'
 #' @param x_train Numeric training matrix (samples × features) with column
 #'   names.
-#' @param transforms Character vector naming the transforms to fit.
-#'   Supported: `"zv"` (zero-variance filter), `"impute_median"` (median
-#'   imputation), `"center"`, `"scale"`.  Transforms are always applied in
-#'   the fixed order `"zv"` -> `"impute_median"` -> `"center"` -> `"scale"`,
-#'   regardless of the order in `transforms`.  `NULL` or `character(0)` fits
-#'   an identity transform that leaves input unchanged.
+#' @param transforms Character vector naming the transforms to fit, or an
+#'   unprepped `recipes::recipe` object (requires the `recipes` package, in
+#'   `Suggests`).  Supported character values: `"zv"` (zero-variance
+#'   filter), `"impute_median"` (median imputation), `"center"`, `"scale"`.
+#'   Transforms are always applied in the fixed order `"zv"` ->
+#'   `"impute_median"` -> `"center"` -> `"scale"`, regardless of the order
+#'   in `transforms`.  `NULL` or `character(0)` fits an identity transform
+#'   that leaves input unchanged.
 #' @param zv_tol Non-negative numeric; a feature whose training variance is
-#'   `<= zv_tol` is removed by `"zv"`.
-#' @param ... Reserved for future use.
+#'   `<= zv_tol` is removed by `"zv"`.  Ignored when `transforms` is a
+#'   recipe.
+#' @param ... Passed to [recipes::prep()] when `transforms` is a recipe;
+#'   reserved for future use otherwise.
 #'
 #' @return A `"stabl_preprocessing"` object recording the fitted parameters,
 #'   the retained feature names, and the feature mapping.
@@ -40,11 +46,22 @@
 #'             dimnames = list(paste0("s", 1:40), paste0("f", 1:5)))
 #' pp <- stabl_preprocess_fit(x, transforms = c("center", "scale"))
 #' xt <- stabl_preprocess_apply(pp, x)
+#'
+#' if (requireNamespace("recipes", quietly = TRUE)) {
+#'   rec <- recipes::recipe(~ ., data = as.data.frame(x))
+#'   rec <- recipes::step_center(rec, recipes::all_predictors())
+#'   pp_rec <- stabl_preprocess_fit(x, transforms = rec)
+#'   xt_rec <- stabl_preprocess_apply(pp_rec, x)
+#' }
 #' @export
 stabl_preprocess_fit <- function(x_train,
                                  transforms = c("center", "scale"),
                                  zv_tol = 0,
                                  ...) {
+  # recipes route: an unprepped recipe is prepped on the training data only.
+  if (inherits(transforms, "recipe")) {
+    return(.stabl_preprocess_fit_recipes(transforms, x_train, ...))
+  }
   x_train <- as.matrix(x_train)
   if (!is.numeric(x_train)) {
     stop("`x_train` must be numeric.", call. = FALSE)
@@ -246,17 +263,21 @@ stabl_preprocess_apply.stabl_preprocessing <- function(object, x, ...) {
 
 # ── Optional recipes integration (Suggests) ──────────────────────────────────
 
-#' Fit a preprocessing transform from a recipes recipe
+#' Fit a preprocessing transform from a recipes recipe (Deprecated)
 #'
-#' Wraps [recipes::prep()] on training data only.  Requires the `recipes`
-#' package (in `Suggests`, not `Imports`).
+#' `stabl_preprocess_fit_recipes()` is deprecated and will be removed in
+#' stablr 1.0.0.  Use [stabl_preprocess_fit()] instead, which accepts an
+#' unprepped recipe directly:
+#' `stabl_preprocess_fit(x_train, transforms = recipe)`.
 #'
-#' @param recipe A `recipes::recipe()` object.
+#' @param recipe A `recipes::recipe()` object (unprepped).
 #' @param x_train Training data frame or matrix.
 #' @param ... Passed to [recipes::prep()].
 #'
 #' @return A `"stabl_preprocessing_recipes"` object wrapping the prepped
 #'   recipe.
+#'
+#' @seealso [stabl_preprocess_fit()], [stabl_preprocess_apply()]
 #'
 #' @examples
 #' if (requireNamespace("recipes", quietly = TRUE)) {
@@ -264,11 +285,24 @@ stabl_preprocess_apply.stabl_preprocessing <- function(object, x, ...) {
 #'               dimnames = list(paste0("s", 1:40), paste0("f", 1:4)))
 #'   rec <- recipes::recipe(~ ., data = as.data.frame(x))
 #'   rec <- recipes::step_center(rec, recipes::all_predictors())
-#'   pp <- stabl_preprocess_fit_recipes(rec, x)
+#'   # Deprecated shim — equivalent canonical call:
+#'   pp <- stabl_preprocess_fit(x, transforms = rec)
 #'   xt <- stabl_preprocess_apply(pp, x)
 #' }
 #' @export
 stabl_preprocess_fit_recipes <- function(recipe, x_train, ...) {
+  .Deprecated(msg = paste0(
+    "'stabl_preprocess_fit_recipes' is deprecated and will be removed in ",
+    "stablr 1.0.0.\nUse 'stabl_preprocess_fit(x_train, transforms = recipe)' ",
+    "instead."
+  ))
+  stabl_preprocess_fit(x_train, transforms = recipe, ...)
+}
+
+# Internal engine behind the recipes route of stabl_preprocess_fit() and the
+# deprecated stabl_preprocess_fit_recipes() shim.  Wraps recipes::prep() on
+# training data only; requires the `recipes` package (Suggests).
+.stabl_preprocess_fit_recipes <- function(recipe, x_train, ...) {
   if (!requireNamespace("recipes", quietly = TRUE)) {
     stop("The `recipes` package is required for recipe-based preprocessing. ",
          "Install it or use stabl_preprocess_fit().", call. = FALSE)
@@ -349,8 +383,7 @@ stabl_preprocess_apply.stabl_preprocessing_recipes <- function(object, x, ...) {
 .fit_fold_preprocessing <- function(preprocessing, x_train) {
   .validate_preprocessing_spec(preprocessing)
   if (is.null(preprocessing)) return(NULL)
-  if (is.character(preprocessing)) {
-    return(stabl_preprocess_fit(x_train, transforms = preprocessing))
-  }
-  stabl_preprocess_fit_recipes(preprocessing, x_train)
+  # Character vectors and unprepped recipes are both handled by
+  # stabl_preprocess_fit() (the latter via its recipes route).
+  stabl_preprocess_fit(x_train, transforms = preprocessing)
 }

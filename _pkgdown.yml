@@ -127,7 +127,6 @@ reference:
   - plot.stabl_interpretation
   - stabl_preprocess_fit
   - stabl_preprocess_apply
-  - stabl_preprocess_fit_recipes
   - print.stabl_analysis
   - summary.stabl_analysis
 
@@ -165,20 +164,19 @@ reference:
   - print.summary.stabl_fit
 
 - title: Export
+  desc: Single entry point for persisting results — CSV tables only
+    (what = "csv") or the full results bundle (default what = "all").
   contents:
-  - export_stabl_to_csv
   - save_stabl_results
 
 - title: Selection Similarity Metrics
+  desc: Reproducibility of selected feature sets across runs — one pairwise
+    verb with three methods, plus a one-number summary.  The eight 0.3.0
+    similarity names remain as deprecated shims until 1.0.0 and are
+    intentionally not listed here.
   contents:
-  - jaccard_similarity
-  - jaccard_similarity_matrix
-  - adjusted_similarity
-  - adjusted_similarity_pairwise
-  - adjusted_similarity_summary
-  - pearson_similarity
-  - pearson_similarity_pairwise
-  - pearson_similarity_summary
+  - stabl_similarity
+  - stabl_similarity_summary
 
 articles:
 - title: Workflows

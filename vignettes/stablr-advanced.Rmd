@@ -42,8 +42,8 @@ The introductory and multi-omic vignettes describe the core Gaussian and binomia
 | sPLS-DA classification | `base_learner = "splsda"` |
 | Artificial features | `artificial_type = "random_permutation"`, `"knockoff"`, `"knockoff_equi"`, `"knockoff_mvr"`, or `NULL` |
 | Grouped bootstrap | `sample_groups` argument of `stabl_fit()` |
-| Reproducibility metrics | `jaccard_similarity()`, `adjusted_similarity()` |
-| Disk export | `export_stabl_to_csv()`, `save_stabl_results()` |
+| Reproducibility metrics | `stabl_similarity()`, `stabl_similarity_summary()` |
+| Disk export | `save_stabl_results()` |
 | Outer multi-omic CV | `stabl_multiomic_cv()` |
 | Cooperative diagnostics | `get_cooperative_features()`, `plot()` on native fits |
 | Biomarker interpretation | `stabl_interpret()` |
@@ -285,13 +285,13 @@ fit_b <- run_once(22L)
 sel_a <- get_feature_names(fit_a)
 sel_b <- get_feature_names(fit_b)
 
-jaccard_similarity(sel_a, sel_b)
-adjusted_similarity(sel_a, sel_b, n_universe = ncol(x_grp))
+stabl_similarity(sel_a, sel_b)
+stabl_similarity(sel_a, sel_b, method = "adjusted", n_universe = ncol(x_grp))
 
 # Pairwise matrix across several seeds
 fits <- lapply(11:14, run_once)
 sels <- lapply(fits, get_feature_names)
-jaccard_similarity_matrix(sels)
+stabl_similarity(sels, method = "jaccard", as_matrix = TRUE, remove_diag = TRUE)
 ```
 
 The first two printed values are the Jaccard and the adjusted similarity between the selections from seeds 11 and 22. The matrix at the end gives the pairwise Jaccard similarities for the fits with seeds 11 to 14; off-diagonal values close to 1 indicate selections that are robust to the random state.
@@ -302,7 +302,7 @@ The same matrix is easier to compare as a heatmap.
 # Keep the full square matrix (remove_diag = FALSE) so both axes carry the
 # seed labels; as.table() on the diagonal-removed matrix would mislabel the
 # second axis with row indices instead of seed ids.
-jm <- jaccard_similarity_matrix(sels, remove_diag = FALSE)
+jm <- stabl_similarity(sels, method = "jaccard", as_matrix = TRUE)
 dimnames(jm) <- list(seed_a = as.character(11:14), seed_b = as.character(11:14))
 jm_df <- as.data.frame(as.table(jm))
 names(jm_df) <- c("seed_a", "seed_b", "jaccard")
@@ -319,7 +319,7 @@ ggplot2::ggplot(jm_df, ggplot2::aes(seed_a, seed_b, fill = jaccard)) +
 
 # 7 Exporting results to disk
 
-`export_stabl_to_csv()` writes stability-score tables for a single-omic fit. `save_stabl_results()` bundles scores, diagnostics, selected-feature tables, and feature-distribution figures for a full analysis folder. It writes `STABL scores.csv`, `Max STABL scores.csv`, `FDR Graph.<fmt>`, `Stability Path.<fmt>`, `Selected Features/Selected features.csv`, and `Selected Features/Feature distributions.<fmt>` when the relevant diagnostics and selected features are available.
+`save_stabl_results()` with `what = "csv"` writes stability-score tables for a single-omic fit. With the default `what = "all"` it bundles scores, diagnostics, selected-feature tables, and feature-distribution figures for a full analysis folder. It writes `STABL scores.csv`, `Max STABL scores.csv`, `FDR Graph.<fmt>`, `Stability Path.<fmt>`, `Selected Features/Selected features.csv`, and `Selected Features/Feature distributions.<fmt>` when the relevant diagnostics and selected features are available.
 
 The following commands write the score tables and the full results bundle to a temporary directory.
 
@@ -328,7 +328,7 @@ The following commands write the score tables and the full results bundle to a t
 tmp <- tempfile("stablr_export")
 dir.create(tmp)
 
-export_stabl_to_csv(fit_grp, path = file.path(tmp, "grp"))
+save_stabl_results(fit_grp, path = file.path(tmp, "grp"), what = "csv")
 list.files(file.path(tmp, "grp"))
 
 save_stabl_results(

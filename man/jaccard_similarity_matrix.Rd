@@ -2,38 +2,32 @@
 % Please edit documentation in R/metrics.R
 \name{jaccard_similarity_matrix}
 \alias{jaccard_similarity_matrix}
-\title{Pairwise Jaccard Matrix from a List of Feature Sets}
+\title{Pairwise Jaccard Matrix from a List of Feature Sets (Deprecated)}
 \usage{
 jaccard_similarity_matrix(list_of_lists, remove_diag = TRUE)
 }
 \arguments{
-\item{list_of_lists}{A list of character/integer vectors, one per STABL run
-(e.g. one per cross-validation fold).}
+\item{list_of_lists}{A list of character/integer vectors, one per STABL
+run (e.g. one per cross-validation fold).}
 
-\item{remove_diag}{Logical; if \code{TRUE} (default) the diagonal column
-(self-similarity = 1) is removed from the output.}
+\item{remove_diag}{Logical; if \code{TRUE} (default) the self-similarity
+diagonal is removed row-wise, yielding an \eqn{N \times (N - 1)} matrix.}
 }
 \value{
-Numeric matrix of dimension N\eqn{\times}N (or N\eqn{\times}(N-1)
-when \code{remove_diag = TRUE}).  Row/column order matches \code{list_of_lists}.
+Numeric matrix; see \code{\link[=stabl_similarity]{stabl_similarity()}}.
 }
 \description{
-Computes all N\eqn{\times}N pairwise Jaccard similarities in one call.
-Useful for visualising the reproducibility of STABL across multiple
-cross-validation folds or repeated runs: a boxplot of the off-diagonal
-values summarises how consistently the same features are selected.
-}
-\details{
-By default the self-similarity diagonal (always 1) is removed, so the
-returned matrix has \eqn{N \times (N - 1)} columns and each row contains
-the \eqn{N - 1} similarities of run \eqn{i} with every other run.
+\code{jaccard_similarity_matrix()} is deprecated and will be removed in stablr
+1.0.0.  Use \code{\link[=stabl_similarity]{stabl_similarity()}} with \code{as_matrix = TRUE} instead:
+\code{stabl_similarity(list_of_lists, method = "jaccard", as_matrix = TRUE)}.
 }
 \examples{
 sets <- list(c("A","B","C"), c("B","C","D"), c("A","C","E"))
-jaccard_similarity_matrix(sets)           # 3 x 2 (diagonal removed)
-jaccard_similarity_matrix(sets, remove_diag = FALSE)  # 3 x 3
+# Deprecated shim — equivalent canonical call:
+stabl_similarity(sets, method = "jaccard", as_matrix = TRUE)
+stabl_similarity(sets, method = "jaccard", as_matrix = TRUE,
+                 remove_diag = TRUE)
 }
 \seealso{
-\code{\link[=jaccard_similarity]{jaccard_similarity()}}, \code{\link[=adjusted_similarity_pairwise]{adjusted_similarity_pairwise()}},
-\code{\link[=pearson_similarity_pairwise]{pearson_similarity_pairwise()}}
+\code{\link[=stabl_similarity]{stabl_similarity()}}
 }

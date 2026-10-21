@@ -121,16 +121,9 @@ test_that("plot.stabl delegates to plot.stabl_fit and returns a ggplot", {
 })
 
 # ---- argument renames on canonical functions (retained) -----------------
-
-test_that("pearson_similarity_pairwise/summary: deprecated `d` warns and matches nb_total_elements", {
-  sets <- list(c("f1", "f2", "f3"), c("f2", "f3", "f4"), c("f1", "f3", "f5"))
-  w <- .catch_warnings(old <- pearson_similarity_pairwise(sets, NULL, d = 10L))
-  expect_true(any(grepl("`d` is deprecated", w, fixed = TRUE)))
-  expect_identical(old, pearson_similarity_pairwise(sets, 10L))
-  w2 <- .catch_warnings(old2 <- pearson_similarity_summary(sets, NULL, d = 10L))
-  expect_true(any(grepl("`d` is deprecated", w2, fixed = TRUE)))
-  expect_identical(old2, pearson_similarity_summary(sets, 10L))
-})
+# (The pearson_similarity_pairwise/summary `d`-mapping tests moved to
+# test-api-deprecation.R when those functions became deprecated shims of
+# stabl_similarity() in Phase 14 PR-B.)
 
 # ---- stabl_fit(sample_groups =) ----------------------------------------------
 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/metrics.R
 \name{adjusted_similarity_summary}
 \alias{adjusted_similarity_summary}
-\title{Summary Statistic of Adjusted Similarity Values}
+\title{Summary Statistic of Adjusted Similarity Values (Deprecated)}
 \usage{
 adjusted_similarity_summary(list_of_lists, nb_total_elements, stat = "median")
 }
@@ -11,30 +11,22 @@ adjusted_similarity_summary(list_of_lists, nb_total_elements, stat = "median")
 
 \item{nb_total_elements}{Integer; total number of candidate features.}
 
-\item{stat}{Character; \code{"median"} (default, robust to outliers) or
-\code{"mean"}.}
+\item{stat}{Character; \code{"median"} (default) or \code{"mean"}.}
 }
 \value{
-A named list with two elements:
-\describe{
-\item{\code{statistic}}{The median (or mean) of adjusted-similarity values.}
-\item{\code{err}}{For \code{"median"}: the 25th and 75th percentile vector
-(IQR bounds).  For \code{"mean"}: the root-mean-squared deviation
-(RMSD / population SD).}
-}
+A named list with \code{statistic} and \code{err}; see
+\code{\link[=stabl_similarity_summary]{stabl_similarity_summary()}}.
 }
 \description{
-Convenience wrapper that computes all pairwise adjusted similarities
-(via \code{\link[=adjusted_similarity_pairwise]{adjusted_similarity_pairwise()}}) and reduces them to a single
-location statistic with an associated spread measure.  Useful for
-reporting a single reproducibility number per STABL configuration in
-benchmarking tables.
+\code{adjusted_similarity_summary()} is deprecated and will be removed in
+stablr 1.0.0.  Use \code{\link[=stabl_similarity_summary]{stabl_similarity_summary()}} instead:
+\code{stabl_similarity_summary(list_of_lists, method = "adjusted", n_universe = ...)}.
 }
 \examples{
 sets <- list(c("f1","f2","f3"), c("f2","f3","f4"), c("f1","f3","f5"))
-adjusted_similarity_summary(sets, nb_total_elements = 10L)
-adjusted_similarity_summary(sets, nb_total_elements = 10L, stat = "mean")
+# Deprecated shim — equivalent canonical call:
+stabl_similarity_summary(sets, method = "adjusted", n_universe = 10L)
 }
 \seealso{
-\code{\link[=adjusted_similarity_pairwise]{adjusted_similarity_pairwise()}}, \code{\link[=pearson_similarity_summary]{pearson_similarity_summary()}}
+\code{\link[=stabl_similarity_summary]{stabl_similarity_summary()}}
 }

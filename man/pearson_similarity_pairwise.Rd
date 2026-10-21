@@ -2,32 +2,30 @@
 % Please edit documentation in R/metrics.R
 \name{pearson_similarity_pairwise}
 \alias{pearson_similarity_pairwise}
-\title{Upper-Triangle Pearson Similarity Values}
+\title{Upper-Triangle Pearson Similarity Values (Deprecated)}
 \usage{
-pearson_similarity_pairwise(list_of_lists, nb_total_elements, d = NULL)
+pearson_similarity_pairwise(list_of_lists, nb_total_elements = NULL, d = NULL)
 }
 \arguments{
 \item{list_of_lists}{A list of character/integer vectors, one per run.}
 
 \item{nb_total_elements}{Integer; total number of candidate features.}
 
-\item{d}{Deprecated; use \code{nb_total_elements} instead.}
+\item{d}{Legacy name for \code{nb_total_elements}; mapped silently.}
 }
 \value{
-Numeric vector of length N*(N-1)/2.
+Numeric vector of length N*(N-1)/2; see \code{\link[=stabl_similarity]{stabl_similarity()}}.
 }
 \description{
-Computes all pairwise Pearson-corrected similarities and returns the
-N\eqn{\times}(N-1)/2 upper-triangle values as a flat vector (same layout
-as \code{\link[=adjusted_similarity_pairwise]{adjusted_similarity_pairwise()}}, enabling direct comparison between the
-two metrics on the same data).
+\code{pearson_similarity_pairwise()} is deprecated and will be removed in
+stablr 1.0.0.  Use \code{\link[=stabl_similarity]{stabl_similarity()}} instead:
+\code{stabl_similarity(list_of_lists, method = "pearson", n_universe = ...)}.
 }
 \examples{
 sets <- list(c("f1","f2","f3"), c("f2","f3","f4"), c("f1","f3","f5"))
-pearson_similarity_pairwise(sets, nb_total_elements = 10L)
+# Deprecated shim — equivalent canonical call:
+stabl_similarity(sets, method = "pearson", n_universe = 10L)
 }
 \seealso{
-\code{\link[=pearson_similarity]{pearson_similarity()}} for the pairwise function,
-\code{\link[=pearson_similarity_summary]{pearson_similarity_summary()}} for a one-number summary,
-\code{\link[=adjusted_similarity_pairwise]{adjusted_similarity_pairwise()}} for an alternative chance-correction.
+\code{\link[=stabl_similarity]{stabl_similarity()}}, \code{\link[=stabl_similarity_summary]{stabl_similarity_summary()}}
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/metrics.R
 \name{adjusted_similarity}
 \alias{adjusted_similarity}
-\title{Adjusted Similarity Between Two Feature Sets}
+\title{Adjusted Similarity Between Two Feature Sets (Deprecated)}
 \usage{
 adjusted_similarity(
   set1 = NULL,
@@ -21,48 +21,25 @@ adjusted_similarity(
 \item{n_universe}{Integer; total number of candidate features in the
 universe (i.e. the number of columns in the original predictor matrix).}
 
-\item{list1}{Deprecated; use \code{set1} instead.  If supplied by name, a
-deprecation warning is emitted and the value is used as \code{set1} when the
-latter is \code{NULL}.  It will be removed in a future release.}
+\item{list1}{Legacy name for \code{set1}; mapped silently.}
 
-\item{list2}{Deprecated; use \code{set2} instead.  If supplied by name, a
-deprecation warning is emitted and the value is used as \code{set2} when the
-latter is \code{NULL}.  It will be removed in a future release.}
+\item{list2}{Legacy name for \code{set2}; mapped silently.}
 
-\item{nb_total_elements}{Deprecated; use \code{n_universe} instead.  If supplied
-by name, a deprecation warning is emitted and the value is used as
-\code{n_universe} when the latter is \code{NULL}.  It will be removed in a future
-release.}
+\item{nb_total_elements}{Legacy name for \code{n_universe}; mapped silently.}
 }
 \value{
-Numeric scalar in \eqn{(-1, 1]}.  Values above 0 indicate more
-overlap than expected by chance; 1 means perfect agreement; negative
-values indicate less overlap than chance.
+Numeric scalar in \eqn{(-1, 1]}; see \code{\link[=stabl_similarity]{stabl_similarity()}}.
 }
 \description{
-Computes a chance-corrected similarity between two feature sets.  Unlike
-\code{\link[=jaccard_similarity]{jaccard_similarity()}}, the adjusted measure accounts for the expected
-random overlap given the sizes of both sets and the total feature universe,
-so it does not systematically penalise methods that select many features.
-}
-\details{
-The formula is analogous to Cohen's kappa for sets:
-\deqn{S_{\text{adj}}(A, B) =
-  \frac{r - \mathbb{E}[r]}{\min(k_1, k_2) - \max(0, k_1 + k_2 - d)}}
-where \eqn{r = |A \cap B|}, \eqn{k_i = |A_i|}, \eqn{d =} \code{n_universe},
-and \eqn{\mathbb{E}[r] = k_1 k_2 / d}.
-
-Returns 0 when either set is empty or equals the full universe (edge cases
-where the correction denominator is zero).
+\code{adjusted_similarity()} is deprecated and will be removed in stablr 1.0.0.
+Use \code{\link[=stabl_similarity]{stabl_similarity()}} instead:
+\code{stabl_similarity(set1, set2, method = "adjusted", n_universe = n_universe)}.
 }
 \examples{
-# 10-feature universe; sets A and B share 2 out of 3 features each
-adjusted_similarity(c("f1","f2","f3"), c("f2","f3","f4"), n_universe = 10L)
-adjusted_similarity(c("f1","f2"),      c("f1","f2"),      n_universe = 10L) # 0.8
-adjusted_similarity(character(0),      c("f1"),           n_universe = 10L) # 0
+# Deprecated shim — equivalent canonical call:
+stabl_similarity(c("f1", "f2", "f3"), c("f2", "f3", "f4"),
+                 method = "adjusted", n_universe = 10L)
 }
 \seealso{
-\code{\link[=adjusted_similarity_pairwise]{adjusted_similarity_pairwise()}} for computing all pairwise values at
-once, \code{\link[=adjusted_similarity_summary]{adjusted_similarity_summary()}} for a summary statistic,
-\code{\link[=jaccard_similarity]{jaccard_similarity()}} for the non-chance-corrected alternative.
+\code{\link[=stabl_similarity]{stabl_similarity()}}
 }
