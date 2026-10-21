@@ -97,6 +97,36 @@
   `inst/release/removal-ledger.csv`, and `_pkgdown.yml` are updated to
   match.
 
+## API changes (2026-10-21, Phase 14 PR-D: the 1.0.0 API cut)
+
+- The ten deprecated shims whose removal was announced for 1.0.0 are now
+  removed: the eight 0.3.0 similarity names (`jaccard_similarity()`,
+  `jaccard_similarity_matrix()`, `adjusted_similarity()`,
+  `adjusted_similarity_pairwise()`, `adjusted_similarity_summary()`,
+  `pearson_similarity()`, `pearson_similarity_pairwise()`,
+  `pearson_similarity_summary()`), `export_stabl_to_csv()`, and
+  `stabl_preprocess_fit_recipes()`.  This is a breaking change: 0.3.0
+  code calling these names now fails with "could not find function".
+  Use the canonical entry points instead -- `stabl_similarity()` /
+  `stabl_similarity_summary()` for selection similarity,
+  `save_stabl_results(what = "csv")` for CSV export, and
+  `stabl_preprocess_fit()` (which accepts a `recipes::recipe` directly)
+  for preprocessing; the full name mapping is in
+  `docs/MIGRATION_0.3_TO_1.0.md`.
+- The two zero-documentation multi-omic diagnostics,
+  `stabl_multiomic_study_diagnostics()` and
+  `stabl_multiomic_selection_stability()`, stay exported and are now
+  demonstrated in a new "Study-diagnostics utilities" section of the
+  multi-omic vignette.
+- The public export count drops from 46 to 36 -- the final 1.0.0 API
+  surface (36 exported functions plus 43 registered S3 methods).
+  `inst/release/public-interface-audit.csv` (79 rows),
+  `inst/release/removal-ledger.csv` (the ten shim rows flip to
+  `removed`), `NAMESPACE`, `_pkgdown.yml`, the migration, API-reference,
+  and Python-mapping docs, and the getting-started vignette are updated
+  to match; `test-api-shims.R` is removed and the shim legacy-argument
+  tests in `test-api-deprecation.R` are retired with the shims.
+
 ## Tests (2026-10-21, functional verification audit)
 
 - New test file `test-functional-audit.R` closes the gaps found by the

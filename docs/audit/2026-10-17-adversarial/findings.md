@@ -2433,6 +2433,49 @@ repointed to the `study_labels` arguments.  Gates: suite 64 files /
 check 0E/0W/1N (pre-existing installed-size NOTE); all 14 vignettes
 rebuild clean.
 
+**API-streamlining PR-D (2026-10-21, Phase 14):** the 1.0.0 API cut —
+the ten deprecated shims whose removal was announced for 1.0.0 are
+hard-removed: the eight 0.3.0 similarity names (`jaccard_similarity`,
+`jaccard_similarity_matrix`, `adjusted_similarity`,
+`adjusted_similarity_pairwise`, `adjusted_similarity_summary`,
+`pearson_similarity`, `pearson_similarity_pairwise`,
+`pearson_similarity_summary`), `export_stabl_to_csv`, and
+`stabl_preprocess_fit_recipes`.  Breaking change, pre-announced by the
+PR-B deprecation warnings: 0.3.0 code calling these names now fails
+with "could not find function"; the canonical replacements
+(`stabl_similarity()` / `stabl_similarity_summary()` for selection
+similarity, `save_stabl_results(what = "csv")` for CSV export,
+`stabl_preprocess_fit()` accepting a `recipes::recipe` directly) and
+the full name mapping are in `docs/MIGRATION_0.3_TO_1.0.md` and NEWS.
+The internal engines (`.jaccard_scalar`, `.adjusted_scalar`,
+`.pearson_scalar`, `.similarity_scalar_fn`, `.similarity_matrix`,
+`.export_stabl_to_csv`, `.stabl_preprocess_fit_recipes`) are untouched
+— zero behavior change behind the canonical entry points
+(smoke-verified post-removal: the ten names are absent from the
+namespace, canonical similarity/preprocessing outputs unchanged on
+fixed toy inputs, targeted test files 0 failed / 0 errors).  The last
+open API decision is closed via the document route (user-delegated;
+the PR-C census recommendation): `stabl_multiomic_study_diagnostics()`
+and `stabl_multiomic_selection_stability()` stay exported and are now
+demonstrated in a new "Study-diagnostics utilities" section of the
+multi-omic vignette (fast toy data: 48 samples / 6 studies, nested_cv
+with 2x2 folds and 10 bootstraps — seconds of runtime).  46 -> 36
+exports — the final 1.0.0 API surface (36 exported functions + 43
+registered S3 methods); registry 89 -> 79 rows; the ten shim rows in
+`inst/release/removal-ledger.csv` flip to `removed`;
+`tests/testthat/test-api-shims.R` is deleted and the shim
+legacy-argument tests in `test-api-deprecation.R` are retired with the
+shims (suite 64 -> 63 files); NAMESPACE, `_pkgdown.yml`, the migration,
+API-reference, and Python-mapping docs, and the getting-started
+vignette are updated to match.  Gates: suite 63 files / 0 failed /
+0 errors / 1 skip / 3 warnings (exact PR-G parity); R CMD check
+0E/0W/1N (pre-existing installed-size NOTE); all 14 vignettes rebuild
+clean including the new section.  The remaining path to the 1.0.0
+release is human-gated and untouched: DESCRIPTION 0.3.0 -> 1.0.0 bump,
+SCI-04 independent review, sealed full v1/v2 re-run, cross-OS check
+matrix, CRAN submission, v1.0.0 tag/release, and
+stablr-reproducibility pointer updates.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3

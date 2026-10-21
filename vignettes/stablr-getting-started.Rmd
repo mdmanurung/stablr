@@ -200,8 +200,8 @@ canonical names — `get_feature_names()`, `stabl_multiomic_stacked()`,
 `NEWS.md` and `docs/MIGRATION_0.3_TO_1.0.md` for the full mapping.
 The 0.3.0 similarity names (`jaccard_similarity()`,
 `jaccard_similarity_matrix()`, `adjusted_similarity()`, and relatives)
-remain available until 1.0.0 as deprecated shims forwarding to
-`stabl_similarity()` / `stabl_similarity_summary()`.
+were removed ahead of 1.0.0; use `stabl_similarity()` /
+`stabl_similarity_summary()`.
 Bootstrap index generation (the `classic_bootstrap_indices()` replacement)
 is internal machinery; control resampling through `stabl_fit()`'s
 `n_bootstraps`, `stratify_bootstrap`, `bootstrap_strata`, and

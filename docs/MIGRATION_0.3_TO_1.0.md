@@ -1,7 +1,8 @@
 # Migrating from stablr 0.3.x to 1.0.0
 
 stablr 1.0.0 is a **breaking** major release. It removes the deprecated
-compatibility shims introduced at the 0.3.0 rename, deletes duplicate
+compatibility shims introduced at the 0.3.0 rename and the 0.3.0
+intermediate similarity/export/preprocessing names, deletes duplicate
 beginner generics, internalizes learner-factory and utility-plotting
 helpers that were never the extension contract used by `stabl_fit()`, and
 retires the experimental oblique random-forest learner. Every removal has a
@@ -23,19 +24,25 @@ execution of archived scripts.
 | `pearson_similarity_values(list_of_lists, d)` | `stabl_similarity(list_of_lists, method = "pearson", n_universe = d)` |
 | `pearson_similarity_measure(list_of_lists, d, stat)` | `stabl_similarity_summary(list_of_lists, method = "pearson", n_universe = d, stat = stat)` |
 | `stacked_multi_omic(...)` | `stabl_multiomic_stacked(...)` |
+| `jaccard_similarity(list1, list2)` | `stabl_similarity(list1, list2, method = "jaccard")` |
+| `jaccard_similarity_matrix(list_of_lists, ...)` | `stabl_similarity(list_of_lists, method = "jaccard", as_matrix = TRUE)` |
+| `adjusted_similarity(set1, set2, n)` | `stabl_similarity(set1, set2, method = "adjusted", n_universe = n)` |
+| `adjusted_similarity_pairwise(list_of_lists, n)` | `stabl_similarity(list_of_lists, method = "adjusted", n_universe = n)` |
+| `adjusted_similarity_summary(list_of_lists, n, stat)` | `stabl_similarity_summary(list_of_lists, method = "adjusted", n_universe = n, stat = stat)` |
+| `pearson_similarity(set1, set2, d)` | `stabl_similarity(set1, set2, method = "pearson", n_universe = d)` |
+| `pearson_similarity_pairwise(list_of_lists, d)` | `stabl_similarity(list_of_lists, method = "pearson", n_universe = d)` |
+| `pearson_similarity_summary(list_of_lists, d, stat)` | `stabl_similarity_summary(list_of_lists, method = "pearson", n_universe = d, stat = stat)` |
+| `export_stabl_to_csv(object, path)` | `save_stabl_results(object, path, what = "csv")` |
+| `stabl_preprocess_fit_recipes(recipe, x_train)` | `stabl_preprocess_fit(x_train, transforms = recipe)` |
 
 The Python-parity fixtures keep their historical file and key names
 (`jaccard_matrix_remove_diag_rowmajor`, ...); only the R entry points moved.
 
-The 0.3.0 intermediate names `jaccard_similarity()`,
-`jaccard_similarity_matrix()`, `adjusted_similarity()`,
-`adjusted_similarity_pairwise()`, `adjusted_similarity_summary()`,
-`pearson_similarity()`, `pearson_similarity_pairwise()`,
-`pearson_similarity_summary()`, `export_stabl_to_csv()`, and
-`stabl_preprocess_fit_recipes()` are likewise deprecated shims forwarding
-to `stabl_similarity()`, `stabl_similarity_summary()`,
-`save_stabl_results()`, and `stabl_preprocess_fit()`; they are removed in
-1.0.0 together with the pre-0.3.0 aliases above.
+The ten 0.3.0 intermediate names in the table (the
+`jaccard_similarity()` / `adjusted_similarity*()` /
+`pearson_similarity*()` family, `export_stabl_to_csv()`, and
+`stabl_preprocess_fit_recipes()`) spent the 0.3.x series as deprecated
+shims forwarding to the canonical names and are removed in the same cut.
 
 ## 2. Removed duplicate generics
 

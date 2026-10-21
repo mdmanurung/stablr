@@ -171,8 +171,7 @@ reference:
 - title: Selection Similarity Metrics
   desc: Reproducibility of selected feature sets across runs — one pairwise
     verb with three methods, plus a one-number summary.  The eight 0.3.0
-    similarity names remain as deprecated shims until 1.0.0 and are
-    intentionally not listed here.
+    similarity names were removed ahead of 1.0.0.
   contents:
   - stabl_similarity
   - stabl_similarity_summary

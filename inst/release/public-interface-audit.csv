@@ -1,16 +1,12 @@
 interface,kind,generic,class,area,implementation,documentation,example_status,valid_evidence,invalid_evidence,coverage
 load_ool_data,export,,,data,R/data_helpers.R,man/load_ool_data.Rd,running,test-load-ool-data.R,test-load-ool-data.R,utility_contract
-adjusted_similarity,export,,,metric,R/metrics.R,man/adjusted_similarity.Rd,running,test-api-shims.R;test-api-deprecation.R,test-api-deprecation.R,utility_contract
 auto_lambda_grid,export,,,selection,R/learner_adapters.R,man/auto_lambda_grid.Rd,running,test-stabl-fit.R,test-input-validation.R,core_contract
 compute_fdp_plus,export,,,selection,R/fdp_control.R,man/compute_fdp_plus.Rd,running,test-fdp-plus-invariants.R;test-functional-audit.R,test-fdp-plus-invariants.R,core_contract
-export_stabl_to_csv,export,,,export,R/exports.R,man/export_stabl_to_csv.Rd,runnable_donttest,test-api-shims.R,not_applicable-forwarding-shim,utility_contract
 get_cooperative_diagnostics,export,,,multiomic,R/stabl_accessors.R,man/get_cooperative_diagnostics.Rd,runnable_donttest,test-multiomic-workflows.R,test-multiomic-workflows.R,accessor_contract
 get_cooperative_features,export,,,multiomic,R/stabl_accessors.R,man/get_cooperative_features.Rd,runnable_donttest,test-multiomic-workflows.R,test-multiomic-workflows.R,accessor_contract
 get_importances,export,,,selection,R/stabl_accessors.R,man/get_importances.Rd,running,test-stabl-fit.R,test-stabl-fit.R,accessor_contract
 get_stabl_scores,export,,,selection,R/stabl_accessors.R,man/get_stabl_scores.Rd,running,test-accessor-roundtrip.R,test-accessor-roundtrip.R,accessor_contract
 get_support,export,,,selection,R/stabl_accessors.R,man/get_support.Rd,running,test-stabl-fit.R,test-stabl-fit.R,accessor_contract
-jaccard_similarity,export,,,metric,R/metrics.R,man/jaccard_similarity.Rd,running,test-api-shims.R;test-api-deprecation.R,not_applicable-total-set-function,utility_contract
-pearson_similarity,export,,,metric,R/metrics.R,man/pearson_similarity.Rd,running,test-api-shims.R;test-api-deprecation.R,test-api-deprecation.R,utility_contract
 plot_fdr_graph,export,,,visualization,R/visualization.R,man/plot_fdr_graph.Rd,runnable_donttest,test-phase7.R,test-phase7.R,utility_contract
 plot_stabl_path,export,,,visualization,R/visualization.R,man/plot_stabl_path.Rd,running,test-phase7.R,test-phase7.R,utility_contract
 save_stabl_results,export,,,export,R/exports.R,man/save_stabl_results.Rd,runnable_donttest,test-phase7.R,test-phase7.R,utility_contract
@@ -51,11 +47,6 @@ get_min_scores.stabl_env_stability,s3,get_min_scores,stabl_env_stability,workflo
 print.stabl_env_stability,s3,print,stabl_env_stability,workflow,R/environment_stability.R,man/print.stabl_env_stability.Rd,running,test-environment-stability.R,not_applicable-print-method,accessor_contract
 stabl,export,,,selection,R/stabl.R,man/stabl.Rd,running,test-stabl-wrapper.R,test-stabl-wrapper.R,core_contract
 get_feature_names,export,,,selection,R/stabl_accessors.R,man/get_feature_names.Rd,running,test-accessor-roundtrip.R,test-validation-edges.R,accessor_contract
-jaccard_similarity_matrix,export,,,metric,R/metrics.R,man/jaccard_similarity_matrix.Rd,running,test-api-shims.R;test-api-deprecation.R,not_applicable-forwarding-shim,utility_contract
-adjusted_similarity_pairwise,export,,,metric,R/metrics.R,man/adjusted_similarity_pairwise.Rd,running,test-api-shims.R;test-api-deprecation.R,not_applicable-forwarding-shim,utility_contract
-adjusted_similarity_summary,export,,,metric,R/metrics.R,man/adjusted_similarity_summary.Rd,running,test-api-shims.R;test-api-deprecation.R,not_applicable-forwarding-shim,utility_contract
-pearson_similarity_pairwise,export,,,metric,R/metrics.R,man/pearson_similarity_pairwise.Rd,running,test-api-shims.R;test-api-deprecation.R,not_applicable-forwarding-shim,utility_contract
-pearson_similarity_summary,export,,,metric,R/metrics.R,man/pearson_similarity_summary.Rd,running,test-api-shims.R;test-api-deprecation.R,not_applicable-forwarding-shim,utility_contract
 stabl_similarity,export,,,metric,R/metrics.R,man/stabl_similarity.Rd,running,test-phase7.R,test-phase7.R,utility_contract
 stabl_similarity_summary,export,,,metric,R/metrics.R,man/stabl_similarity_summary.Rd,running,test-phase7.R,test-phase7.R,utility_contract
 stabl_multiomic_stacked,export,,,multiomic,R/multiomic_workflows.R,man/stabl_multiomic_stacked.Rd,running,test-late-fusion-oof.R,test-scientific-defects.R,core_contract
@@ -71,7 +62,6 @@ summary.stabl_interpretation,s3,summary,stabl_interpretation,interpretation,R/in
 plot.stabl_interpretation,s3,plot,stabl_interpretation,interpretation,R/interpretation.R,man/stabl_interpret.Rd,running,test-interpretation.R,not_applicable-method,accessor_contract
 stabl_preprocess_fit,export,,,preprocessing,R/preprocessing.R,man/stabl_preprocess_fit.Rd,running,test-preprocessing.R,test-preprocessing.R,core_contract
 stabl_preprocess_apply,export,,,preprocessing,R/preprocessing.R,man/stabl_preprocess_apply.Rd,running,test-preprocessing.R,test-preprocessing.R,core_contract
-stabl_preprocess_fit_recipes,export,,,preprocessing,R/preprocessing.R,man/stabl_preprocess_fit_recipes.Rd,running,test-api-shims.R,not_applicable-forwarding-shim,utility_contract
 stabl_preprocess_apply.stabl_preprocessing,s3,stabl_preprocess_apply,stabl_preprocessing,preprocessing,R/preprocessing.R,man/stabl_preprocess_apply.Rd,running,test-preprocessing.R,not_applicable-method,accessor_contract
 stabl_preprocess_apply.stabl_preprocessing_recipes,s3,stabl_preprocess_apply,stabl_preprocessing_recipes,preprocessing,R/preprocessing.R,man/stabl_preprocess_apply.Rd,running,test-preprocessing.R,not_applicable-method,accessor_contract
 stabl_analyze,export,,,workflow,R/analysis_workflow.R,man/stabl_analyze.Rd,running,test-analysis-workflow.R,test-analysis-workflow.R,core_contract

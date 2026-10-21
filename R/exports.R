@@ -194,49 +194,12 @@ save_stabl_results <- function(
   invisible(normalizePath(path))
 }
 
-# ── Deprecated shims (removal slated for 1.0.0) ──────────────────────────────
-
-#' Export STABL Stability Scores to CSV (Deprecated)
-#'
-#' `export_stabl_to_csv()` is deprecated and will be removed in stablr 1.0.0.
-#' Use [save_stabl_results()] with `what = "csv"` instead:
-#' `save_stabl_results(object, path, what = "csv")`.
-#'
-#' @param object A fitted `"stabl_fit"` object from [stabl_fit()].
-#' @param path Character string; path to an existing (or to-be-created)
-#'   directory.
-#'
-#' @return Invisibly returns `path` (as a normalized string).
-#'
-#' @seealso [save_stabl_results()]
-#'
-#' @examples
-#' \donttest{
-#' set.seed(1L)
-#' x <- matrix(rnorm(40 * 6), 40, 6,
-#'              dimnames = list(paste0("s", 1:40), paste0("f", 1:6)))
-#' y <- setNames(rnorm(40), rownames(x))
-#' fit <- stabl_fit(x, y,
-#'                  lambda_grid  = data.frame(lambda = c(0.3, 0.1, 0.05)),
-#'                  n_bootstraps = 6L, hard_threshold = 0.3, random_state = 1L)
-#' # Deprecated shim — equivalent canonical call:
-#' save_stabl_results(fit, file.path(tempdir(), "stabl_csv_export"),
-#'                    what = "csv")
-#' }
-#' @export
-export_stabl_to_csv <- function(object, path) {
-  .Deprecated(msg = paste0(
-    "'export_stabl_to_csv' is deprecated and will be removed in stablr 1.0.0.\n",
-    "Use 'save_stabl_results(object, path, what = \"csv\")' instead."
-  ))
-  .export_stabl_to_csv(object, path)
-}
 
 # ── Internal helpers ──────────────────────────────────────────────────────────
 
-# CSV export engine behind save_stabl_results(what = "csv") and the
-# deprecated export_stabl_to_csv() shim.  Lenient by design: creates the
-# output directory recursively and never errors on an existing one.
+# CSV export engine behind save_stabl_results(what = "csv").  Lenient by
+# design: creates the output directory recursively and never errors on an
+# existing one.
 .export_stabl_to_csv <- function(object, path) {
   .check_fitted_stabl(object)
   path <- .validate_nonempty_scalar_character(path, "path")

@@ -341,8 +341,8 @@ Additional artifacts with `what = "all"`:
 | `Selected Features/Selected features.csv` | Always. |
 | `Selected Features/Feature distributions.<fmt>` | When at least one feature is selected. |
 
-`export_stabl_to_csv()` remains as a deprecated shim for
-`save_stabl_results(what = "csv")` until 1.0.0.
+`export_stabl_to_csv()` was removed ahead of 1.0.0; use
+`save_stabl_results(what = "csv")`.
 
 ## Selection Similarity Metrics
 
@@ -356,7 +356,7 @@ The eight 0.3.0 names (`jaccard_similarity()`,
 `jaccard_similarity_matrix()`, `adjusted_similarity()`,
 `adjusted_similarity_pairwise()`, `adjusted_similarity_summary()`,
 `pearson_similarity()`, `pearson_similarity_pairwise()`, and
-`pearson_similarity_summary()`) remain as deprecated shims until 1.0.0.
+`pearson_similarity_summary()`) were removed ahead of 1.0.0.
 
 The realized-performance benchmark helpers `fdr_similarity()`,
 `tpr_similarity()`, and `fscore_similarity()` were internalized in 1.0.0

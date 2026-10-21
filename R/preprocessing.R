@@ -263,45 +263,10 @@ stabl_preprocess_apply.stabl_preprocessing <- function(object, x, ...) {
 
 # ── Optional recipes integration (Suggests) ──────────────────────────────────
 
-#' Fit a preprocessing transform from a recipes recipe (Deprecated)
-#'
-#' `stabl_preprocess_fit_recipes()` is deprecated and will be removed in
-#' stablr 1.0.0.  Use [stabl_preprocess_fit()] instead, which accepts an
-#' unprepped recipe directly:
-#' `stabl_preprocess_fit(x_train, transforms = recipe)`.
-#'
-#' @param recipe A `recipes::recipe()` object (unprepped).
-#' @param x_train Training data frame or matrix.
-#' @param ... Passed to [recipes::prep()].
-#'
-#' @return A `"stabl_preprocessing_recipes"` object wrapping the prepped
-#'   recipe.
-#'
-#' @seealso [stabl_preprocess_fit()], [stabl_preprocess_apply()]
-#'
-#' @examples
-#' if (requireNamespace("recipes", quietly = TRUE)) {
-#'   x <- matrix(rnorm(40 * 4), 40, 4,
-#'               dimnames = list(paste0("s", 1:40), paste0("f", 1:4)))
-#'   rec <- recipes::recipe(~ ., data = as.data.frame(x))
-#'   rec <- recipes::step_center(rec, recipes::all_predictors())
-#'   # Deprecated shim — equivalent canonical call:
-#'   pp <- stabl_preprocess_fit(x, transforms = rec)
-#'   xt <- stabl_preprocess_apply(pp, x)
-#' }
-#' @export
-stabl_preprocess_fit_recipes <- function(recipe, x_train, ...) {
-  .Deprecated(msg = paste0(
-    "'stabl_preprocess_fit_recipes' is deprecated and will be removed in ",
-    "stablr 1.0.0.\nUse 'stabl_preprocess_fit(x_train, transforms = recipe)' ",
-    "instead."
-  ))
-  stabl_preprocess_fit(x_train, transforms = recipe, ...)
-}
 
-# Internal engine behind the recipes route of stabl_preprocess_fit() and the
-# deprecated stabl_preprocess_fit_recipes() shim.  Wraps recipes::prep() on
-# training data only; requires the `recipes` package (Suggests).
+# Internal engine behind the recipes route of stabl_preprocess_fit().
+# Wraps recipes::prep() on training data only; requires the `recipes`
+# package (Suggests).
 .stabl_preprocess_fit_recipes <- function(recipe, x_train, ...) {
   if (!requireNamespace("recipes", quietly = TRUE)) {
     stop("The `recipes` package is required for recipe-based preprocessing. ",
