@@ -176,6 +176,13 @@ ordinal learner is experimental pending its calibration study
 aggregates per-environment selections by their minimum frequency; it is
 calibrated for small feature panels (see
 [`?stabl_environment_stability`](https://mdmanurung.github.io/stablr/reference/stabl_environment_stability.md)).
+On the evidence of the WS-8 v3 candidate benchmark
+(`benchmarks/ws8_v3/`), use it as a transportability *gate* and
+batch-dependence diagnostic — not as a ranking procedure: ranking by
+per-cohort effect-size meta-analysis replicated better in held-out
+cohorts on the eight-cohort aging atlas (see
+[`vignette("stablr-aging-case-study")`](https://mdmanurung.github.io/stablr/articles/stablr-aging-case-study.md),
+Section 10.9).
 
 Interpretation limits are part of the contract. The fitted threshold is
 the first minimizer of the observed FDP+ curve; a plotted `fdr_target`
