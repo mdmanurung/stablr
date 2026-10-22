@@ -1,5 +1,26 @@
 # stablr 0.3.0.9000 (development)
 
+## Documentation and guidance (2026-10-21, WS-8 v3 candidate benchmark)
+
+- The WS-8 v3 candidate benchmark (`benchmarks/ws8_v3/`) extended the
+  WS-8 v2 six-selector matrix with four candidates — M6
+  heterogeneity-filtered random-effects meta-analysis, M7 MINT-STABL
+  (with tuned control M7c), M8 contrast-penalized STABL, and M9
+  ComBat-merge-then-select (with transform controls M9b/M9s) — on the
+  eight-cohort aging atlas, 8-fold leave-one-cohort-out, package pinned
+  at one commit. No candidate beat the simple random-effects
+  meta-analysis ranking (M0, macro R@10 0.395); M7, M8, and M9 were
+  significantly worse (sign-flip p = 0.008); the M4 − M0 contrast
+  replicated attenuated (−0.068, p = 0.047).
+- Repositioned roles on this evidence: `stabl_environment_stability()`
+  is the transportability *gate* and batch-dependence diagnostic
+  (the membership question); per-cohort association with
+  random-effects meta-analysis is the *ranking* procedure. The
+  "Environment Stability" and "aging case study" vignettes now
+  cross-reference the benchmark (Sections 6 and 10.9).
+  ComBat-merge-then-select is documented as an anti-pattern when batch
+  structure is associated with the outcome.
+
 ## API changes (2026-10-21, Phase 14 PR-A: internal machinery hidden)
 
 - Nine exported functions are internalized — they remain in the package

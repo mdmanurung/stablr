@@ -132,7 +132,12 @@ dozen predictors (`base_learner = "rf"`). The ordinal learner is
 experimental pending its calibration study (`base_learner = "ordinal"`).
 The environment-stability workflow aggregates per-environment selections by
 their minimum frequency; it is calibrated for small feature panels (see
-`?stabl_environment_stability`).
+`?stabl_environment_stability`). On the evidence of the WS-8 v3 candidate
+benchmark (`benchmarks/ws8_v3/`), use it as a transportability *gate* and
+batch-dependence diagnostic — not as a ranking procedure: ranking by
+per-cohort effect-size meta-analysis replicated better in held-out cohorts
+on the eight-cohort aging atlas (see `vignette("stablr-aging-case-study")`,
+Section 10.9).
 
 Interpretation limits are part of the contract. The fitted threshold is the
 first minimizer of the observed FDP+ curve; a plotted `fdr_target` is a
