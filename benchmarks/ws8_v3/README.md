@@ -24,6 +24,7 @@ as the application case study.
 | M9 | ComBat(~age) harmonization + pooled STABL; held-out transform `eb_newbatch` | mandatory baseline |
 | M9s | M9 with strict `standardize_only` held-out transform | transform sensitivity |
 | M9b | M9 with `mod = NULL` (no age protection) | post-hoc sensitivity motivated by the M9 prediction failure mechanism |
+| M10 | Invariant Causal Prediction (`InvariantCausalPrediction::ICP`, 7 training cohorts as environments) | post-hoc addendum: direct evidence on ICP itself |
 
 ## Endpoints
 
@@ -98,3 +99,15 @@ P20 clock-panel recovery (0.85, GZMK/GZMB ranked #1/#1) but does not
 transport. M7/M8 native panels are not distinguishable from permutation
 null. ComBat-merge-then-select is an anti-pattern for this use case
 (replication collapse; held-out prediction at the median baseline).
+
+**M10 addendum (2026-10-22).** ICP proper
+(`InvariantCausalPrediction::ICP`, 7 training cohorts as environments) was
+run through the same LOCO harness: macro R@10 = 0.055, worst arm in the
+matrix (M0 − M10 = +0.340, exact sign-flip p = 0.0078), with a degenerate
+accepted set (59/59 in every fold). The premise of ICP — some feature
+subset yields residuals invariant across environments — fails on this
+atlas: even the full 59-feature OLS has strongly cohort-dependent residuals
+(Kruskal–Wallis p = 2e-13; Levene p = 1.4e-17). Four configurations
+(selection method, α, gof, maxNoObs) are identically degenerate; larger
+candidate sets are computationally infeasible (> 40 min/fold). See
+`results/m10_icp/M10_ADDENDUM.md`.
