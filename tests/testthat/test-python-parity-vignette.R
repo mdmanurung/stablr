@@ -20,15 +20,21 @@
 }
 
 .parity_vignette_sha256 <- function(path) {
+  # Normalize to forward slashes: GNU coreutils escapes output lines for
+  # filenames containing "\" by prefixing the digest with a "\", which
+  # would corrupt the parsed token on Windows.
+  path <- gsub("\\\\", "/", path)
   sha256sum <- Sys.which("sha256sum")
   if (nzchar(sha256sum)) {
-    output <- system2(sha256sum, path, stdout = TRUE, stderr = TRUE)
-    return(tolower(strsplit(output[[1L]], "[[:space:]]+")[[1L]][[1L]]))
+    output <- system2(sha256sum, shQuote(path), stdout = TRUE, stderr = TRUE)
+    token <- strsplit(output[[1L]], "[[:space:]]+")[[1L]][[1L]]
+    return(tolower(sub("^\\\\+", "", token)))
   }
   shasum <- Sys.which("shasum")
   if (nzchar(shasum)) {
-    output <- system2(shasum, c("-a", "256", path), stdout = TRUE, stderr = TRUE)
-    return(tolower(strsplit(output[[1L]], "[[:space:]]+")[[1L]][[1L]]))
+    output <- system2(shasum, c("-a", "256", shQuote(path)), stdout = TRUE, stderr = TRUE)
+    token <- strsplit(output[[1L]], "[[:space:]]+")[[1L]][[1L]]
+    return(tolower(sub("^\\\\+", "", token)))
   }
   NA_character_
 }

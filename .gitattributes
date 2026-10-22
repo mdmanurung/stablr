@@ -6,3 +6,11 @@ tests/testthat/fixtures/multiview_parity/*.json text eol=lf
 tests/testthat/fixtures/multiview_parity/*.csv text eol=lf
 tests/testthat/fixtures/multiview_parity/*.sha256 text eol=lf
 tests/testthat/fixtures/multiview_parity/*.rds binary
+
+# Hash-contract fixtures: never convert line endings on any platform.
+# The tests hash the INSTALLED copies (inst/extdata/) against SHA-256
+# manifests, so checkout-time CRLF conversion on Windows breaks them.
+# These rules take precedence over the per-directory rules above
+# (last matching line wins) and over core.autocrlf.
+inst/extdata/** -text
+tests/testthat/fixtures/** -text
