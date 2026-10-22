@@ -24,6 +24,7 @@ set.seed(42)
 - 3 The environment-stability workflow
 - 4 Interpretation of the aggregated scores
 - 5 Relation to invariant causal prediction
+- 6 Empirical positioning: the WS-8 v3 benchmark
 
 # 1 Introduction
 
@@ -141,10 +142,14 @@ is only as reliable as its *weakest* environment:
   low. The minimum flags it as **not transportable**.
 - The null features never accumulate a high minimum.
 
-A practical reporting pattern follows. Rank features by `res$min_scores`.
-Treat high `mean_scores` with low `min_scores` as a *batch-dependent*
-candidate. Such a candidate warrants investigation, not export. The
-`pairwise_adjusted_similarity` matrix additionally summarises agreement
+A practical reporting pattern follows. Use `res$min_scores` as a
+*transportability gate*, not as a ranking: features above the bar in every
+environment are export candidates, and features with high `mean_scores`
+but low `min_scores` are *batch-dependent* candidates. Such a candidate
+warrants investigation, not export. (For ranking features by replication
+strength, the WS-8 v3 benchmark found per-cohort effect-size
+meta-analysis preferable on a real eight-cohort atlas; see Section 6.)
+The `pairwise_adjusted_similarity` matrix additionally summarises agreement
 between the *selected sets* of any two environments. The agreement is
 chance-corrected via `stabl_similarity()` with `method = "adjusted"`.
 
@@ -184,3 +189,46 @@ confounding. It also classically needs an environment-valued variable.
 The workflow fits one operational question: which biomarkers hold up in
 every environment in which they were measured. The result is a feature set
 that is reliable **and** transportable.
+
+# 6 Empirical positioning: the WS-8 v3 benchmark
+
+How does this workflow compare with simpler ways of combining per-cohort
+evidence? The WS-8 v3 benchmark (`benchmarks/ws8_v3/` in the package
+source; see the companion vignette "Case study: age-associated cell types
+across eight cohorts", Section 10.9) evaluated the six v2 selectors plus
+four new candidates on the eight-cohort aging atlas (2,609 donors, 59
+cell-type features) under a locked protocol: 8-fold leave-one-cohort-out,
+primary endpoint held-out directional replication of the top-10 panel
+(macro R@10), package pinned at one commit, one seed.
+
+The findings relevant to this vignette:
+
+- **As a ranking procedure, min-agg scores are not the strongest
+  available.** Ranking by min-agg stability scores (the M4 selector)
+  replicates worse in held-out cohorts than ranking by a random-effects
+  meta-analysis of per-cohort effect estimates (M0): M4 − M0 = −0.068
+  [−0.122, −0.015], sign-flip p = 0.047 on the pinned package (the v2
+  estimate was −0.108, p = 0.016). The workflow does retain a clear
+  advantage over pooled STABL (M4 − M3 = +0.185, p = 0.008): fitting one
+  pooled model across cohorts is the wrong baseline, and per-environment
+  fitting is the right one.
+- **The workflow's strength is the membership question.** Which features
+  pass the bar in *every* cohort, and which are batch-dependent (high
+  mean score, low min score)? The benchmark's heterogeneity audit
+  (per-feature Cochran's Q, I², sign concordance) is the effect-size
+  analogue of the same invariance idea, and the two are complementary:
+  selection-frequency invariance for gating, effect-size pooling for
+  ranking.
+- **Harmonize-then-select is the wrong direction.** Merging cohorts after
+  ComBat harmonization and selecting on the merged data was strongly
+  inferior (macro R@10 0.060 vs 0.395 for M0), for a mechanistic reason:
+  a label-free transform cannot reproduce the covariate terms of the
+  training fit, so between-cohort outcome signal is removed before
+  selection ever sees it.
+
+The resulting division of labor on this evidence: use
+`stabl_environment_stability()` as the transportability *gate* and
+batch-dependence diagnostic, and use per-cohort association with
+random-effects meta-analysis as the *ranking* procedure. The benchmark is
+a single application (immune aging, 59 compositional features, 8
+cohorts); it is a case study, not calibration evidence for any selector.

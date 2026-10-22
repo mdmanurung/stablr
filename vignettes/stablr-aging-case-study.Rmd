@@ -53,7 +53,12 @@ cat(
 > verifiable from the committed table), and the script-level and
 > vignette-level MAE summaries used different estimands (micro vs macro).
 > The v1 numbers below are otherwise as committed. Where v1 and v2
-> differ, v2 is authoritative.
+> differ, v2 is authoritative. A v3 candidate benchmark (2026-10-21,
+> `benchmarks/ws8_v3/`) then extended the six-selector matrix with four
+> candidate mechanisms and ComBat baselines on a pinned package;
+> Section 10.9 summarizes its findings and the resulting division of
+> labor between the environment-stability workflow and meta-analytic
+> ranking.
 ", sep = ""
 )
 ```
@@ -762,6 +767,55 @@ ledger carries the full entries (V11–V15).
   null, and recovers exactly the sparse truth. The pilot runs 5 replicates
   per scenario of a planned 20 (inputs and seeds are committed;
   `benchmarks/ws8_v2/results/s1/`).
+
+## 10.9 The v3 candidate benchmark (2026-10-21)
+
+A third revision (`benchmarks/ws8_v3/`, branch `ws8-v3-candidates`) kept
+the v2 protocol (8-fold leave-one-cohort-out, macro R@10 primary
+endpoint, seed 20261013) and pinned the package at one commit
+(`a8f3a58`) to remove the version drift between v2-era runs. It re-ran
+M0–M5 like-for-like and added four candidate mechanisms plus ComBat
+baselines: M6, a heterogeneity-filtered random-effects meta-analysis;
+M7, MINT-STABL (integrative multi-cohort selection) with a tuned control
+M7c; M8, contrast-penalized STABL; and M9, ComBat-merge-then-select,
+with transform controls M9b/M9s.
+
+Findings that update this vignette:
+
+- **The M4 − M0 contrast replicates on the pinned package, attenuated.**
+  Like-for-like macro R@10: M0 0.395, M1 0.386, M5 0.354, M4 0.327, M3
+  0.142, M2 0.118. M0–M3 reproduce bit-exactly; the environment-stability
+  wrapper itself changed between the v2-era commits and the pin, moving
+  M4 from 0.286 to 0.327 and M5 from 0.321 to 0.354. M4 − M0 = −0.068
+  [−0.122, −0.015], p = 0.047 (v2: −0.108, p = 0.016); M4 − M3 = +0.185,
+  p = 0.008. The v2 reading stands on the current package:
+  environment-aware aggregation beats pooled STABL and does not beat the
+  simple meta-analysis ranking.
+- **No candidate mechanism beat M0.** M6 tied M0 on the ranking endpoint
+  by construction (its ranking *is* the M0 ranking; its added value is
+  the per-feature heterogeneity audit — 33 of 59 features BH-significant,
+  29 of those 33 failing Cochran's Q at p < 0.10, median I² = 0.81 — and
+  a strict native panel of 4 low-heterogeneity features, none in the
+  source publication's 20-population clock panel). M7 (0.219), M8
+  (0.109), and M9 (0.060) were all significantly worse than M0
+  (sign-flip p = 0.008). M7 ranked the paper's GZMK+/GZMB+ Tem
+  components #1 on the full atlas (top-20 panel concordance 0.85) but
+  did not transport (LOCO 0.219): concordance without transportability.
+- **ComBat-merge-then-select is an anti-pattern here.** The failure is
+  mechanistic: a label-free transform cannot reproduce the covariate
+  terms of the training fit, so between-cohort outcome signal is removed
+  before selection or prediction. Prediction MAE stays near the median
+  baseline (18.5–18.9 years) even with a consistent transform (M9b),
+  while every non-harmonized selector lands between 11.9 and 14.7.
+- **Repositioned roles.** The environment-stability workflow (M4/M5) is
+  the transportability *gate* and batch-dependence diagnostic; per-cohort
+  association with random-effects meta-analysis (M0, plus M6's
+  heterogeneity report) is the *ranking* workflow. Section 10.7's
+  conclusion is unchanged and now cross-validated on a pinned package
+  with a wider method matrix.
+
+Like this vignette, the v3 benchmark is a single application case study;
+it is not calibration evidence for any selector.
 
 # References
 
