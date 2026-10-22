@@ -1,0 +1,13 @@
+"method","p20_native","p20_top20","p20_recovery_top20","refpop_top20","refpop_native","refpop_sign_concordant_top20","gzmk_rank","gzmb_rank","gzmk_native","gzmb_native","n_native"
+"M0",0,16,0.8,7,0,7,17,16,FALSE,FALSE,0
+"M1",13,14,0.7,5,5,5,25,21,FALSE,FALSE,19
+"M2",20,7,0.35,5,8,5,16,42,TRUE,TRUE,59
+"M3",18,12,0.6,6,7,6,19,18,TRUE,TRUE,42
+"M4",12,10,0.5,5,6,5,36,28,FALSE,FALSE,24
+"M5",20,10,0.5,5,8,5,35,29,TRUE,TRUE,59
+"M6",0,16,0.8,7,1,7,17,16,FALSE,FALSE,4
+"M7",19,17,0.85,7,8,7,1,1,TRUE,TRUE,40
+"M7c",19,11,0.55,5,8,5,31,32,TRUE,TRUE,41
+"M8",16,15,0.75,6,6,6,1,49,TRUE,FALSE,48
+"M9",20,4,0.2,2,8,2,37,36,TRUE,TRUE,59
+"M9b",20,4,0.2,2,8,2,37,36,TRUE,TRUE,59
