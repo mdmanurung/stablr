@@ -120,7 +120,7 @@ degenerate outcome falls back to a deterministic intercept-only model
 (training event prevalence / majority class for classification, training
 mean for regression); a one-feature panel uses a glm (stored as bare
 coefficients); two or more features use a seeded
-[`glmnet::cv.glmnet()`](https://glmnet.stanford.edu/reference/cv.glmnet.html)
+[`glmnet::cv.glmnet()`](https://rdrr.io/pkg/glmnet/man/cv.glmnet.html)
 fit. Only binomial and gaussian fits are supported; other families fail
 clearly.
 
