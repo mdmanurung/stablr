@@ -763,10 +763,16 @@ ledger carries the full entries (V11–V15).
   four — including the pure null — with empirical FDP 0.83–1.00: the
   saturation is structural, not an atlas property. Under known truth,
   per-cohort STABL voting (M1) matches the association ranking under
-  homogeneity, beats it under heterogeneity, selects nothing under the
-  null, and recovers exactly the sparse truth. The pilot runs 5 replicates
-  per scenario of a planned 20 (inputs and seeds are committed;
-  `benchmarks/ws8_v2/results/s1/`).
+  homogeneity (R@10 0.203 vs 0.203), nominally exceeds it under
+  heterogeneity (0.160 vs 0.154), selects nothing under the null, and
+  recovers exactly the sparse truth (top-10 recovery 1.00, sign accuracy
+  1.00, native FDP 0). The full calibration runs 20 replicates per
+  scenario (80 total; inputs, seeds, and per-replicate results are
+  committed; `benchmarks/ws8_v2/results/s1/`). Under the pure null every
+  arm sits at noise level (|R@10| ≤ 0.005). Reps 1–5 predate the v3
+  package pin and reps 6–20 ran on the pinned commit; the pooled
+  conclusions match the pilot, so the ranking story is not sensitive to
+  the version drift.
 
 ## 10.9 The v3 candidate benchmark (2026-10-21)
 
