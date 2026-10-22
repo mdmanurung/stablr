@@ -2476,6 +2476,38 @@ SCI-04 independent review, sealed full v1/v2 re-run, cross-OS check
 matrix, CRAN submission, v1.0.0 tag/release, and
 stablr-reproducibility pointer updates.
 
+**Sealed full v1/v2 re-run (2026-10-22, 1.0.0 release gate):** the
+human-gated sealed checkpoint was executed against the reproduction
+compendium (`stablr-reproducibility`).  The submodule pin was bumped
+`6aa5a6e` -> `fdbf7f1` (the 1.0.0 API cut) and the full chain was re-run
+from the MD5-pinned raw atlas with the environment matched to the
+committed sessionInfo (R 4.4.2, ranger 0.18.0, glmnet 5.0, knockoff
+0.3.6, data.table 1.18.6.1, ggplot2 4.0.3): the v1 showcase (~55 min)
+and all 10 v2 pipeline stages (~5 h; gate G1 passed, M0-M5 LOCO groups,
+50-permutation age null, real reference, biology, figures, report
+render).  Verdict (delegated strict-stop criterion): **claims-level
+reproducibility PASS, bit-level FAIL** — every re-tested claims-ledger
+conclusion (V1-V9) holds with the same direction and significance (V1
+M4>M3 +0.185 vs +0.145; V3 M4<M0 -0.068, p 0.047 vs -0.108, p 0.016;
+null saturation 59/59 features in 50/50 permutations identical; biology
+bit-identical; the mixed/negative headline unchanged in structure),
+while 81 of the 108 regenerated v2 artifacts and all 9 regenerated v1
+tables differ byte-level, with the delta scoped to the
+RNG-stream-sensitive M4/M5 STABL knockoff paths and the exploratory v1
+layer (M0-M3 bit-exact; v1 environment-stability z-scores bit-identical;
+the committed v1 artifacts predate Phase 13 and were never re-verified).
+Per the strict-stop criterion the committed result tables were NOT
+re-based — the published values stand, and the re-base (adopting fresh
+numbers + updating the vignette's inlined values) is recorded as a
+separate human-gated decision.  Evidence committed to the compendium
+(`verification/sealed_rerun_2026-10-22/`: pre/post checksums of 870
+artifacts, complete diff list, v1 comparison, VERDICT.md with the
+claims-impact assessment; compendium commits 437e4ec + 64b14c6, pushed
+and three-way verified).  Incidental finding: the compendium
+`run_v2_pipeline.sh` final sync step has a pre-existing path bug (copies
+a `stablr/…` relative path after `cd stablr`) — documented in the
+compendium README; the canonical copy was historically placed manually.
+
 ### Phase 6 — independent synthetic-DGP validation (lead auditor; artifacts: /workspace/phase6_out/)
 
 Designs: D1 sparse independent (10/150 signal), D2 pure null, D3
