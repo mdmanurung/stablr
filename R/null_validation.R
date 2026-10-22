@@ -621,7 +621,7 @@ plot.stabl_null_validation <- function(
   if ("saturation" %in% which && length(x$replicates) > 0L) {
     df <- data.frame(
       rep = seq_along(x$replicates),
-      real = vapply(
+      prop_real = vapply(
         x$replicates, function(r) r$prop_real_at_selection, numeric(1L)
       ),
       artificial = vapply(
@@ -633,7 +633,7 @@ plot.stabl_null_validation <- function(
     df <- df[stats::complete.cases(df), , drop = FALSE]
     if (nrow(df) > 0L) {
       plots$saturation <- ggplot2::ggplot(
-        df, ggplot2::aes(x = real, y = artificial)
+        df, ggplot2::aes(x = prop_real, y = artificial)
       ) +
         ggplot2::geom_point() +
         ggplot2::labs(
