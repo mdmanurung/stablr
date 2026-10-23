@@ -78,7 +78,7 @@ Cooperative fusion method implemented in the native stablr engine.
     }
 
 Manurung M (2026). stablr: Sparse and Reliable Biomarker Discovery in R.
-R package version 0.3.0. https://github.com/mdmanurung/stablr
+R package version 0.4.0. https://github.com/mdmanurung/stablr
 
     @Manual{,
       title = {stablr: Sparse and Reliable Biomarker Discovery in R},

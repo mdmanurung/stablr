@@ -1,6 +1,29 @@
 # Changelog
 
-## stablr 0.3.0.9000 (development)
+## stablr 0.4.0
+
+### Benchmarks and robustness (2026-10-22)
+
+- ICP proper was run as an addendum arm (M10) through the identical LOCO
+  harness: `InvariantCausalPrediction::ICP()` is degenerate on the
+  eight-cohort aging atlas (macro <R@10> 0.055 — the worst arm in the
+  extended matrix; accepted set 59/59 in every fold; four configurations
+  identically degenerate). Diagnosis: even the full 59-feature OLS has
+  cohort-dependent residuals, so no invariant linear model exists for
+  ICP to find. Artifacts: `benchmarks/ws8_v3/results/m10_icp/`,
+  `benchmarks/ws8_v3/m10_icp_v3.R`.
+- The S1 synthetic-calibration suite completed its full run (20
+  replicates × 4 truth regimes, 80/80). Under the pure null every arm
+  sits at noise level (\|<R@10>\| ≤ 0.005); the RE-meta ranking and
+  per-cohort STABL voting dominate under known truth (M1 recovers the
+  sparse truth exactly, native FDP 0); the environment-stability arms
+  accept all 59 native features with empirical FDP 0.83–1.00 under every
+  regime. Results: `benchmarks/ws8_v2/results/s1/`.
+- R-CMD-check is green on all five platforms (ubuntu devel/release/
+  oldrel-1, macOS, Windows): a defunct `real()` symbol reference in the
+  null-validation plot was removed, and the hash-contract fixtures are
+  now excluded from EOL conversion (`.gitattributes -text` rules) with a
+  hardened SHA-256 helper for Windows paths.
 
 ### Documentation and guidance (2026-10-21, WS-8 v3 candidate benchmark)
 

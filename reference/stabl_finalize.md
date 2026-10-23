@@ -161,7 +161,7 @@ final
 #>   requires:    6 input column(s)
 #>   preprocessing: center, scale
 #>   development: stabl_fit (full-data refit; not cross-validated performance)
-#>   stablr:      0.3.0
+#>   stablr:      0.4.0
 predict(final, x[1:3, ], type = "response")
 #> [1]  0.1957291 -1.9545288  4.2163516
 ```

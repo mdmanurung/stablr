@@ -296,7 +296,7 @@ final
 #>   requires:    8 input column(s)
 #>   preprocessing: center, scale
 #>   development: stabl_analysis_validated (full-data refit; not cross-validated performance)
-#>   stablr:      0.3.0
+#>   stablr:      0.4.0
 predict(final, x[1:3, ], type = "response")
 #> [1] -3.5231401  0.7149864 -2.1361474
 ```
